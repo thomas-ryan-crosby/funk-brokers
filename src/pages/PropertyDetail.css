@@ -151,38 +151,43 @@
   margin-bottom: 24px;
 }
 
-.btn-primary,
-.btn-secondary {
+.property-actions .btn {
+  width: 100%;
+  text-align: center;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 14px 24px;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   font-size: 16px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s;
+  font-family: inherit;
 }
 
-.btn-large {
-  width: 100%;
-}
-
-.btn-primary {
+.property-actions .btn-primary {
   background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
   color: white;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);
 }
 
-.btn-primary:hover {
-  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+.property-actions .btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
 }
 
-.btn-secondary {
+.property-actions .btn-secondary {
   background: #f5f5f5;
   color: #333;
   border: 1px solid #ddd;
 }
 
-.btn-secondary:hover {
+.property-actions .btn-secondary:hover {
   background: #e8e8e8;
+  transform: translateY(-2px);
 }
 
 .property-details-card {

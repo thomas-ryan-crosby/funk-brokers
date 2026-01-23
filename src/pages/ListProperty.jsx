@@ -208,7 +208,9 @@ const ListProperty = () => {
         <div className="success-message">
           <h2>Property Listed Successfully!</h2>
           <p>Your property has been added to the marketplace.</p>
-          <a href="/#/browse">View All Properties</a>
+          <button onClick={() => navigate('/browse')} className="btn btn-primary btn-large">
+            View All Properties
+          </button>
         </div>
       </div>
     );

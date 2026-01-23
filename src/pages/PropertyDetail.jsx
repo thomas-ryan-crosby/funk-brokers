@@ -5,6 +5,7 @@ import './PropertyDetail.css';
 
 const PropertyDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -54,7 +55,9 @@ const PropertyDetail = () => {
       <div className="property-detail-page">
         <div className="error-state">
           <p>{error || 'Property not found'}</p>
-          <a href="/">Back to Properties</a>
+          <button onClick={() => navigate('/browse')} className="btn btn-primary">
+            Back to Properties
+          </button>
         </div>
       </div>
     );
@@ -164,10 +167,18 @@ const PropertyDetail = () => {
 
           <div className="property-sidebar">
             <div className="property-actions">
-              <Link to={`/#/submit-offer/${property.id}`} className="btn-primary btn-large">
+              <Link to={`/#/submit-offer/${property.id}`} className="btn btn-primary btn-large">
                 Submit Offer
               </Link>
-              <button className="btn-secondary btn-large">Schedule Tour</button>
+              <button 
+                className="btn btn-secondary btn-large"
+                onClick={() => {
+                  // TODO: Implement tour scheduling
+                  alert('Tour scheduling coming soon! For now, please contact the seller directly.');
+                }}
+              >
+                Schedule Tour
+              </button>
             </div>
 
             <div className="property-details-card">

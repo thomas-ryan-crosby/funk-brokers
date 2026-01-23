@@ -141,7 +141,9 @@ const SubmitOffer = () => {
       <div className="submit-offer-page">
         <div className="error-state">
           <p>{error}</p>
-          <button onClick={() => navigate('/#/')}>Back to Properties</button>
+          <button onClick={() => navigate('/browse')} className="btn btn-primary">
+            Back to Properties
+          </button>
         </div>
       </div>
     );
@@ -154,8 +156,10 @@ const SubmitOffer = () => {
           <h2>Offer Submitted Successfully!</h2>
           <p>Your offer has been sent to the seller. You will be notified when they respond.</p>
           <div className="success-actions">
-            <button onClick={() => navigate('/#/')}>Browse More Properties</button>
-            <button onClick={() => navigate(`/#/property/${propertyId}`)}>
+            <button onClick={() => navigate('/browse')} className="btn btn-primary">
+              Browse More Properties
+            </button>
+            <button onClick={() => navigate(`/property/${propertyId}`)} className="btn btn-outline">
               View Property
             </button>
           </div>
