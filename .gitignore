@@ -33,3 +33,16 @@ logs/
 # Temporary files
 *.tmp
 *.temp
+
+# Firebase
+firebase-adminsdk-*.json
+serviceAccountKey.json
+.firebase/
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+
+# Firebase config (contains API keys)
+src/config/firebase-config.js
+.env.production
+.env.development
