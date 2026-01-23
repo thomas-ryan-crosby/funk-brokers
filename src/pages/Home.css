@@ -1,0 +1,105 @@
+.home-page {
+  min-height: 100vh;
+  background: #f5f5f5;
+}
+
+.home-hero {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 60px 20px;
+  text-align: center;
+}
+
+.home-hero h1 {
+  font-size: 48px;
+  margin: 0 0 16px 0;
+  font-weight: 700;
+}
+
+.home-hero p {
+  font-size: 20px;
+  margin: 0;
+  opacity: 0.9;
+}
+
+.home-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 32px;
+}
+
+.home-sidebar {
+  position: sticky;
+  top: 20px;
+  height: fit-content;
+}
+
+.home-main {
+  min-height: 400px;
+}
+
+.properties-header {
+  margin-bottom: 24px;
+}
+
+.properties-header h2 {
+  font-size: 24px;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.properties-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
+}
+
+.loading-state,
+.error-state,
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #666;
+}
+
+.error-state button {
+  margin-top: 16px;
+  padding: 10px 20px;
+  background: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.error-state button:hover {
+  background: #357abd;
+}
+
+@media (max-width: 1024px) {
+  .home-container {
+    grid-template-columns: 1fr;
+  }
+
+  .home-sidebar {
+    position: static;
+  }
+}
+
+@media (max-width: 768px) {
+  .home-hero h1 {
+    font-size: 32px;
+  }
+
+  .home-hero p {
+    font-size: 16px;
+  }
+
+  .properties-grid {
+    grid-template-columns: 1fr;
+  }
+}
