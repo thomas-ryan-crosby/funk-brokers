@@ -36,13 +36,15 @@ export const createProperty = async (propertyData) => {
 
 /**
  * Get all active properties
+ * Note: Firestore requires a composite index for queries with where + orderBy on different fields
+ * For now, we'll fetch all and sort client-side to avoid index requirement
  */
 export const getAllProperties = async () => {
   try {
+    // First, get all active properties (without orderBy to avoid index requirement)
     const q = query(
       collection(db, PROPERTIES_COLLECTION),
-      where('status', '==', 'active'),
-      orderBy('createdAt', 'desc')
+      where('status', '==', 'active')
     );
     const querySnapshot = await getDocs(q);
     const properties = [];
@@ -52,6 +54,14 @@ export const getAllProperties = async () => {
         ...doc.data(),
       });
     });
+    
+    // Sort client-side by createdAt (newest first)
+    properties.sort((a, b) => {
+      const aDate = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
+      const bDate = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
+      return bDate - aDate; // Descending order
+    });
+    
     return properties;
   } catch (error) {
     console.error('Error fetching properties:', error);
