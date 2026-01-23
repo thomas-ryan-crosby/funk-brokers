@@ -1,150 +1,181 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import './Landing.css';
 
 const Landing = () => {
+  const navigate = useNavigate();
+
+  const handleBrowseClick = () => {
+    navigate('/browse');
+  };
+
+  const handleListClick = () => {
+    navigate('/list-property');
+  };
+
   return (
     <div className="landing-page">
       {/* Hero Section */}
       <section className="landing-hero">
-        <div className="hero-content">
-          <h1 className="hero-title">Buy and Sell Real Estate Without Brokers</h1>
-          <p className="hero-subtitle">
-            Connect directly with buyers and sellers. Save thousands in commission fees.
-            Complete your transaction with confidence and transparency.
-          </p>
-          <div className="hero-actions">
-            <Link to="/#/browse" className="btn btn-primary btn-large">
-              Browse Properties
-            </Link>
-            <Link to="/#/list-property" className="btn btn-secondary btn-large">
-              List Your Property
-            </Link>
-          </div>
-        </div>
-        <div className="hero-image">
-          <div className="hero-placeholder">
-            <svg viewBox="0 0 400 300" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <rect width="400" height="300" fill="#e8f4f8"/>
-              <path d="M100 150 L200 100 L300 150 L300 250 L100 250 Z" fill="#4a90e2" opacity="0.3"/>
-              <rect x="120" y="180" width="60" height="70" fill="#4a90e2" opacity="0.5"/>
-              <rect x="220" y="180" width="60" height="70" fill="#4a90e2" opacity="0.5"/>
-            </svg>
+        <div className="hero-container">
+          <div className="hero-content">
+            <h1 className="hero-title">
+              Real Estate Transactions
+              <span className="title-highlight"> Without the Middleman</span>
+            </h1>
+            <p className="hero-description">
+              Connect directly with buyers and sellers. Save thousands in commission fees while 
+              maintaining full control of your transaction. Our platform guides you through every step.
+            </p>
+            <div className="hero-cta">
+              <button onClick={handleBrowseClick} className="btn btn-primary">
+                Browse Properties
+              </button>
+              <button onClick={handleListClick} className="btn btn-secondary">
+                List Your Property
+              </button>
+            </div>
+            <div className="hero-stats">
+              <div className="stat">
+                <span className="stat-value">$0</span>
+                <span className="stat-label">Broker Fees</span>
+              </div>
+              <div className="stat-divider"></div>
+              <div className="stat">
+                <span className="stat-value">100%</span>
+                <span className="stat-label">Direct</span>
+              </div>
+              <div className="stat-divider"></div>
+              <div className="stat">
+                <span className="stat-value">24/7</span>
+                <span className="stat-label">Access</span>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Benefits Section */}
-      <section className="landing-benefits">
+      {/* Features Section */}
+      <section className="features-section">
         <div className="container">
-          <h2 className="section-title">Why Choose Funk Brokers?</h2>
-          <div className="benefits-grid">
-            <div className="benefit-card">
-              <div className="benefit-icon">💰</div>
-              <h3>Save on Commission</h3>
-              <p>
-                Eliminate traditional broker fees. Keep more of your money when buying or selling.
-              </p>
+          <div className="section-header">
+            <h2 className="section-title">Everything You Need to Succeed</h2>
+            <p className="section-subtitle">
+              A complete platform designed to make real estate transactions simple, secure, and cost-effective
+            </p>
+          </div>
+          <div className="features-grid">
+            <div className="feature-card">
+              <div className="feature-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                </svg>
+              </div>
+              <h3>Zero Commission</h3>
+              <p>Save thousands by eliminating traditional broker fees. Keep more of your money when buying or selling.</p>
             </div>
-            <div className="benefit-card">
-              <div className="benefit-icon">🤝</div>
+            <div className="feature-card">
+              <div className="feature-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+              </div>
               <h3>Direct Communication</h3>
-              <p>
-                Connect directly with buyers and sellers. No middleman, no delays, no confusion.
-              </p>
+              <p>Connect directly with buyers and sellers. No intermediaries, no delays, no miscommunication.</p>
             </div>
-            <div className="benefit-card">
-              <div className="benefit-icon">📋</div>
+            <div className="feature-card">
+              <div className="feature-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/>
+                  <line x1="16" y1="17" x2="8" y2="17"/>
+                  <polyline points="10 9 9 9 8 9"/>
+                </svg>
+              </div>
               <h3>Guided Process</h3>
-              <p>
-                Step-by-step guidance through every phase of your transaction. We've got you covered.
-              </p>
+              <p>Step-by-step guidance through every phase of your transaction. We've got you covered from listing to closing.</p>
             </div>
-            <div className="benefit-card">
-              <div className="benefit-icon">🔒</div>
+            <div className="feature-card">
+              <div className="feature-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                </svg>
+              </div>
               <h3>Secure & Verified</h3>
-              <p>
-                All parties are verified before transactions. Your documents and data are secure.
-              </p>
+              <p>All parties are verified before transactions begin. Your documents and personal information are protected.</p>
             </div>
-            <div className="benefit-card">
-              <div className="benefit-icon">📚</div>
+            <div className="feature-card">
+              <div className="feature-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                </svg>
+              </div>
               <h3>Educational Resources</h3>
-              <p>
-                Learn everything you need to know about real estate transactions. Knowledge is power.
-              </p>
+              <p>Comprehensive guides and resources to help you understand every aspect of real estate transactions.</p>
             </div>
-            <div className="benefit-card">
-              <div className="benefit-icon">⚡</div>
+            <div className="feature-card">
+              <div className="feature-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+                </svg>
+              </div>
               <h3>Fast & Efficient</h3>
-              <p>
-                Streamlined process from listing to closing. Get deals done faster without the bureaucracy.
-              </p>
+              <p>Streamlined process from listing to closing. Get deals done faster without unnecessary bureaucracy.</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* How It Works Section */}
-      <section className="landing-how-it-works">
+      <section className="how-it-works-section">
         <div className="container">
-          <h2 className="section-title">How It Works</h2>
-          <div className="steps-container">
-            <div className="step-item">
-              <div className="step-number">1</div>
-              <h3>For Sellers</h3>
-              <p>Complete our pre-listing checklist, upload your property details, and list your home directly to the marketplace.</p>
+          <div className="section-header">
+            <h2 className="section-title">How It Works</h2>
+            <p className="section-subtitle">Simple, straightforward, and designed for success</p>
+          </div>
+          <div className="steps-wrapper">
+            <div className="step-card">
+              <div className="step-number">01</div>
+              <div className="step-content">
+                <h3>List or Browse</h3>
+                <p>Sellers complete a simple checklist and list their property. Buyers browse our marketplace of verified listings.</p>
+              </div>
             </div>
-            <div className="step-arrow">→</div>
-            <div className="step-item">
-              <div className="step-number">2</div>
-              <h3>For Buyers</h3>
-              <p>Browse properties, complete buyer verification, and submit offers directly to sellers. No broker needed.</p>
+            <div className="step-card">
+              <div className="step-number">02</div>
+              <div className="step-content">
+                <h3>Connect & Verify</h3>
+                <p>Buyers verify their credentials and submit offers directly. Sellers review offers from verified buyers.</p>
+              </div>
             </div>
-            <div className="step-arrow">→</div>
-            <div className="step-item">
-              <div className="step-number">3</div>
-              <h3>Transaction</h3>
-              <p>Our platform guides you through every step: offers, due diligence, inspections, and closing.</p>
+            <div className="step-card">
+              <div className="step-number">03</div>
+              <div className="step-content">
+                <h3>Complete Transaction</h3>
+                <p>Our platform guides you through due diligence, inspections, negotiations, and closing—every step of the way.</p>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="landing-cta">
+      <section className="cta-section">
         <div className="container">
-          <h2>Ready to Get Started?</h2>
-          <p>Join thousands of buyers and sellers who are taking control of their real estate transactions.</p>
-          <div className="cta-actions">
-            <Link to="/#/browse" className="btn btn-primary btn-large">
-              Browse Properties
-            </Link>
-            <Link to="/#/list-property" className="btn btn-outline btn-large">
-              List Your Property
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="landing-stats">
-        <div className="container">
-          <div className="stats-grid">
-            <div className="stat-item">
-              <div className="stat-number">$0</div>
-              <div className="stat-label">Broker Fees</div>
-            </div>
-            <div className="stat-item">
-              <div className="stat-number">100%</div>
-              <div className="stat-label">Direct Communication</div>
-            </div>
-            <div className="stat-item">
-              <div className="stat-number">24/7</div>
-              <div className="stat-label">Platform Access</div>
-            </div>
-            <div className="stat-item">
-              <div className="stat-number">9</div>
-              <div className="stat-label">Step Process Guide</div>
+          <div className="cta-content">
+            <h2>Ready to Get Started?</h2>
+            <p>Join the future of real estate transactions. No brokers, no hidden fees, just direct connections.</p>
+            <div className="cta-buttons">
+              <button onClick={handleBrowseClick} className="btn btn-primary btn-large">
+                Browse Properties
+              </button>
+              <button onClick={handleListClick} className="btn btn-outline btn-large">
+                List Your Property
+              </button>
             </div>
           </div>
         </div>
