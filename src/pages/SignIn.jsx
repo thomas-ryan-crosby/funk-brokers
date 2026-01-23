@@ -29,8 +29,8 @@ const SignIn = () => {
     try {
       await signIn(formData.email, formData.password);
       
-      // Redirect to list property page or previous location
-      const redirectTo = new URLSearchParams(window.location.search).get('redirect') || '/list-property';
+      // Redirect to dashboard or previous location
+      const redirectTo = new URLSearchParams(window.location.search).get('redirect') || '/dashboard';
       navigate(redirectTo);
     } catch (err) {
       let errorMessage = 'Failed to sign in. Please try again.';

@@ -7,6 +7,7 @@ import PropertyDetail from './pages/PropertyDetail';
 import SubmitOffer from './pages/SubmitOffer';
 import SignUp from './pages/SignUp';
 import SignIn from './pages/SignIn';
+import Dashboard from './pages/Dashboard';
 import { logout } from './services/authService';
 import './App.css';
 
@@ -33,6 +34,7 @@ function AppContent() {
               <Link to="/browse">Browse Properties</Link>
               {isAuthenticated ? (
                 <>
+                  <Link to="/dashboard">Dashboard</Link>
                   <Link to="/list-property">List Property</Link>
                   <span className="nav-user">Hi, {user?.displayName || 'User'}</span>
                   <button onClick={handleLogout} className="nav-logout">
@@ -53,6 +55,7 @@ function AppContent() {
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/browse" element={<Home />} />
+            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/list-property" element={<ListProperty />} />
             <Route path="/property/:id" element={<PropertyDetail />} />
             <Route path="/submit-offer/:propertyId" element={<SubmitOffer />} />

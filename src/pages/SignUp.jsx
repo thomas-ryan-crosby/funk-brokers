@@ -54,8 +54,8 @@ const SignUp = () => {
         role: formData.role,
       });
 
-      // Redirect to list property page
-      navigate('/list-property');
+      // Redirect to dashboard
+      navigate('/dashboard');
     } catch (err) {
       let errorMessage = 'Failed to create account. Please try again.';
       

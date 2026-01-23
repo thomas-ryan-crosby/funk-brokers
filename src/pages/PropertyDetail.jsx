@@ -6,14 +6,56 @@ import './PropertyDetail.css';
 const PropertyDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
   const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
+  const [favorited, setFavorited] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
 
   useEffect(() => {
     loadProperty();
   }, [id]);
+
+  useEffect(() => {
+    if (property && isAuthenticated && user) {
+      checkFavoriteStatus();
+    }
+  }, [property, isAuthenticated, user]);
+
+  const checkFavoriteStatus = async () => {
+    if (!user || !property) return;
+    try {
+      const isFav = await isFavorited(user.uid, property.id);
+      setFavorited(isFav);
+    } catch (error) {
+      console.error('Error checking favorite status:', error);
+    }
+  };
+
+  const handleFavoriteToggle = async () => {
+    if (!isAuthenticated) {
+      navigate('/sign-in?redirect=' + encodeURIComponent(`/property/${id}`));
+      return;
+    }
+
+    setFavoriteLoading(true);
+    try {
+      if (favorited) {
+        await removeFromFavorites(user.uid, property.id);
+        setFavorited(false);
+      } else {
+        await addToFavorites(user.uid, property.id);
+        setFavorited(true);
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+      alert('Failed to update favorite. Please try again.');
+    } finally {
+      setFavoriteLoading(false);
+    }
+  };
 
   const loadProperty = async () => {
     try {
@@ -178,6 +220,13 @@ const PropertyDetail = () => {
                 }}
               >
                 Schedule Tour
+              </button>
+              <button
+                className={`btn btn-outline btn-large ${favorited ? 'favorited' : ''}`}
+                onClick={handleFavoriteToggle}
+                disabled={favoriteLoading}
+              >
+                {favoriteLoading ? '...' : favorited ? '★ Favorited' : '☆ Add to Favorites'}
               </button>
             </div>
 
