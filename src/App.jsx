@@ -26,14 +26,14 @@ function AppContent() {
       <div className="App">
         <nav className="app-nav">
           <div className="nav-container">
-            <Link to="/#/" className="nav-logo">
+            <Link to="/" className="nav-logo">
               <h1>Funk Brokers</h1>
             </Link>
             <div className="nav-links">
-              <Link to="/#/browse">Browse Properties</Link>
+              <Link to="/browse">Browse Properties</Link>
               {isAuthenticated ? (
                 <>
-                  <Link to="/#/list-property">List Property</Link>
+                  <Link to="/list-property">List Property</Link>
                   <span className="nav-user">Hi, {user?.displayName || 'User'}</span>
                   <button onClick={handleLogout} className="nav-logout">
                     Sign Out
@@ -41,8 +41,8 @@ function AppContent() {
                 </>
               ) : (
                 <>
-                  <Link to="/#/list-property">List Property</Link>
-                  <Link to="/#/sign-in" className="nav-signin">Sign In</Link>
+                  <Link to="/list-property">List Property</Link>
+                  <Link to="/sign-in" className="nav-signin">Sign In</Link>
                 </>
               )}
             </div>

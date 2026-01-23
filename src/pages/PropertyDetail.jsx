@@ -167,7 +167,7 @@ const PropertyDetail = () => {
 
           <div className="property-sidebar">
             <div className="property-actions">
-              <Link to={`/#/submit-offer/${property.id}`} className="btn btn-primary btn-large">
+              <Link to={`/submit-offer/${property.id}`} className="btn btn-primary btn-large">
                 Submit Offer
               </Link>
               <button 

@@ -367,7 +367,7 @@ const SubmitOffer = () => {
           <div className="form-actions">
             <button
               type="button"
-              onClick={() => navigate(`/#/property/${propertyId}`)}
+              onClick={() => navigate(`/property/${propertyId}`)}
               className="btn-secondary"
             >
               Cancel

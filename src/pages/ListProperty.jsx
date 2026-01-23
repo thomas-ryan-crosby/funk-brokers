@@ -19,7 +19,7 @@ const ListProperty = () => {
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       // Redirect to sign up if not authenticated
-      navigate('/#/sign-up?redirect=/list-property');
+      navigate('/sign-up?redirect=/list-property');
     }
   }, [isAuthenticated, authLoading, navigate]);
 

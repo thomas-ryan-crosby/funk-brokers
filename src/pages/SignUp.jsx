@@ -77,7 +77,7 @@ const SignUp = () => {
     <div className="auth-page">
       <div className="auth-container">
         <div className="auth-header">
-          <Link to="/#/" className="auth-logo">
+          <Link to="/" className="auth-logo">
             <h1>Funk Brokers</h1>
           </Link>
           <h2>Create Your Account</h2>
@@ -168,7 +168,7 @@ const SignUp = () => {
         <div className="auth-footer">
           <p>
             Already have an account?{' '}
-            <Link to="/#/sign-in">Sign in</Link>
+            <Link to="/sign-in">Sign in</Link>
           </p>
         </div>
       </div>
