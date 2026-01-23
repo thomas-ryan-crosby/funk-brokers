@@ -42,7 +42,8 @@ firebase-debug.log
 firestore-debug.log
 ui-debug.log
 
-# Firebase config (contains API keys)
-src/config/firebase-config.js
+# Firebase config - Note: Client-side Firebase config is safe to commit
+# (Security is enforced by Firebase Security Rules)
+# Only admin SDK keys should be kept private
 .env.production
 .env.development
