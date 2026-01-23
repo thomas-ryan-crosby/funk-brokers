@@ -29,13 +29,13 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Build
         run: npm run build
         env:
-          # Add any build-time environment variables here
           NODE_ENV: production
+          # Firebase config is committed, so no secrets needed here
 
       - name: Setup Pages
         uses: actions/configure-pages@v4

@@ -82,38 +82,27 @@ export const getPropertyById = async (propertyId) => {
 
 /**
  * Search properties with filters
+ * Note: Firestore has limitations on compound queries. For complex filters,
+ * we fetch all active properties and filter client-side.
+ * For production, consider using Algolia or similar search service.
  */
 export const searchProperties = async (filters = {}) => {
   try {
-    let q = query(collection(db, PROPERTIES_COLLECTION), where('status', '==', 'active'));
+    // Start with base query for active properties
+    let q = query(
+      collection(db, PROPERTIES_COLLECTION),
+      where('status', '==', 'active')
+    );
 
-    // Apply filters
-    if (filters.minPrice) {
-      q = query(q, where('price', '>=', filters.minPrice));
-    }
-    if (filters.maxPrice) {
-      q = query(q, where('price', '<=', filters.maxPrice));
-    }
-    if (filters.propertyType) {
-      q = query(q, where('propertyType', '==', filters.propertyType));
-    }
-    if (filters.bedrooms) {
-      q = query(q, where('bedrooms', '>=', filters.bedrooms));
-    }
-    if (filters.bathrooms) {
-      q = query(q, where('bathrooms', '>=', filters.bathrooms));
-    }
-    if (filters.city) {
-      q = query(q, where('city', '==', filters.city));
-    }
-    if (filters.state) {
-      q = query(q, where('state', '==', filters.state));
-    }
-
-    // Order by
+    // Apply simple filters that work with single where clause
+    // For complex queries, we'll filter client-side
     const orderByField = filters.orderBy || 'createdAt';
     const orderDirection = filters.orderDirection || 'desc';
-    q = query(q, orderBy(orderByField, orderDirection));
+    
+    // Only add orderBy if it's not a range query on the same field
+    if (orderByField !== 'price' || (!filters.minPrice && !filters.maxPrice)) {
+      q = query(q, orderBy(orderByField, orderDirection));
+    }
 
     // Limit results
     if (filters.limit) {
@@ -121,13 +110,50 @@ export const searchProperties = async (filters = {}) => {
     }
 
     const querySnapshot = await getDocs(q);
-    const properties = [];
+    let properties = [];
     querySnapshot.forEach((doc) => {
       properties.push({
         id: doc.id,
         ...doc.data(),
       });
     });
+
+    // Apply client-side filtering for complex queries
+    if (filters.minPrice) {
+      properties = properties.filter((p) => p.price >= parseFloat(filters.minPrice));
+    }
+    if (filters.maxPrice) {
+      properties = properties.filter((p) => p.price <= parseFloat(filters.maxPrice));
+    }
+    if (filters.propertyType) {
+      properties = properties.filter((p) => p.propertyType === filters.propertyType);
+    }
+    if (filters.bedrooms) {
+      properties = properties.filter((p) => p.bedrooms >= parseInt(filters.bedrooms));
+    }
+    if (filters.bathrooms) {
+      properties = properties.filter((p) => p.bathrooms >= parseFloat(filters.bathrooms));
+    }
+    if (filters.city) {
+      properties = properties.filter(
+        (p) => p.city?.toLowerCase() === filters.city.toLowerCase()
+      );
+    }
+    if (filters.state) {
+      properties = properties.filter(
+        (p) => p.state?.toUpperCase() === filters.state.toUpperCase()
+      );
+    }
+
+    // Sort client-side if needed (for price with range filters)
+    if (orderByField === 'price' && (filters.minPrice || filters.maxPrice)) {
+      properties.sort((a, b) => {
+        const aVal = a[orderByField] || 0;
+        const bVal = b[orderByField] || 0;
+        return orderDirection === 'asc' ? aVal - bVal : bVal - aVal;
+      });
+    }
+
     return properties;
   } catch (error) {
     console.error('Error searching properties:', error);
