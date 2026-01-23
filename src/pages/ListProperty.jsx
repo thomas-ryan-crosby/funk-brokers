@@ -1,16 +1,27 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { createProperty } from '../services/propertyService';
 import { uploadMultipleFiles } from '../services/storageService';
 import PreListingChecklist from '../components/PreListingChecklist';
 import './ListProperty.css';
 
 const ListProperty = () => {
+  const { user, userProfile, isAuthenticated, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
   const [showChecklist, setShowChecklist] = useState(true);
   const [checklistData, setChecklistData] = useState(null);
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      // Redirect to sign up if not authenticated
+      navigate('/#/sign-up?redirect=/list-property');
+    }
+  }, [isAuthenticated, authLoading, navigate]);
 
   const [formData, setFormData] = useState({
     // Basic Information
@@ -156,7 +167,9 @@ const ListProperty = () => {
         hoaFee: formData.hoaFee ? parseFloat(formData.hoaFee) : null,
         propertyTax: formData.propertyTax ? parseFloat(formData.propertyTax) : null,
         photos: photoUrls,
-        sellerId: 'temp-seller-id', // TODO: Replace with actual user ID when auth is added
+        sellerId: user?.uid || '',
+        sellerName: userProfile?.name || user?.displayName || '',
+        sellerEmail: user?.email || '',
       };
 
       // Create property in Firestore
@@ -171,13 +184,31 @@ const ListProperty = () => {
     }
   };
 
+  // Show loading while checking auth
+  if (authLoading) {
+    return (
+      <div className="list-property-page">
+        <div className="loading-state">Loading...</div>
+      </div>
+    );
+  }
+
+  // Show message if not authenticated (will redirect)
+  if (!isAuthenticated) {
+    return (
+      <div className="list-property-page">
+        <div className="loading-state">Redirecting to sign up...</div>
+      </div>
+    );
+  }
+
   if (success) {
     return (
       <div className="list-property-page">
         <div className="success-message">
           <h2>Property Listed Successfully!</h2>
           <p>Your property has been added to the marketplace.</p>
-          <a href="/#/">View All Properties</a>
+          <a href="/#/browse">View All Properties</a>
         </div>
       </div>
     );
