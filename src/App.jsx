@@ -1,4 +1,5 @@
 import { HashRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import Landing from './pages/Landing';
 import Home from './pages/Home';
 import ListProperty from './pages/ListProperty';
 import PropertyDetail from './pages/PropertyDetail';
@@ -11,19 +12,20 @@ function App() {
       <div className="App">
         <nav className="app-nav">
           <div className="nav-container">
-            <Link to="/" className="nav-logo">
+            <Link to="/#/" className="nav-logo">
               <h1>Funk Brokers</h1>
             </Link>
             <div className="nav-links">
-              <Link to="/">Browse Properties</Link>
-              <Link to="/list-property">List Property</Link>
+              <Link to="/#/browse">Browse Properties</Link>
+              <Link to="/#/list-property">List Property</Link>
             </div>
           </div>
         </nav>
 
         <main className="app-main">
           <Routes>
-            <Route path="/" element={<Home />} />
+            <Route path="/" element={<Landing />} />
+            <Route path="/browse" element={<Home />} />
             <Route path="/list-property" element={<ListProperty />} />
             <Route path="/property/:id" element={<PropertyDetail />} />
             <Route path="/submit-offer/:propertyId" element={<SubmitOffer />} />
