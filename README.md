@@ -56,6 +56,16 @@ npm run dev
 npm run build
 ```
 
+## Populating Dummy Data
+
+To populate the Firestore database with sample properties for testing:
+
+```bash
+npm run populate-data
+```
+
+This will add 10 sample properties with various property types, prices, and locations to help visualize the application.
+
 ## Firebase Setup
 
 1. Create a Firebase project at [Firebase Console](https://console.firebase.google.com/)
@@ -80,9 +90,11 @@ funk-brokers/
 │   ├── styles/         # CSS/styling files
 │   └── App.jsx         # Main app component
 ├── firebase/           # Firebase admin SDK and functions
+├── scripts/            # Utility scripts (populate data, etc.)
 ├── public/             # Static assets
 ├── dist/               # Build output (for GitHub Pages)
-└── PRD.md              # Product Requirements Document
+├── PRD.md              # Product Requirements Document
+└── IMPLEMENTATION_CHECKLIST.md  # Implementation progress tracker
 ```
 
 ## Deployment
@@ -104,6 +116,18 @@ npm run build
 - `npm run preview` - Preview production build
 - `npm run lint` - Run ESLint
 - `npm run format` - Format code with Prettier
+- `npm run populate-data` - Populate Firestore with dummy properties
+
+## Implementation Status
+
+See [IMPLEMENTATION_CHECKLIST.md](./IMPLEMENTATION_CHECKLIST.md) for detailed progress tracking.
+
+**Current Status:** ~35% Complete
+- ✅ Core marketplace functionality (listing, search, offers)
+- ✅ Pre-listing and buyer verification checklists
+- 🚧 Offer management dashboard (in progress)
+- ⏳ Transaction workflow (pending)
+- ⏳ Authentication (pending)
 
 ## License
 
@@ -111,4 +135,6 @@ MIT
 
 ## Documentation
 
-See [PRD.md](./PRD.md) for detailed product requirements and specifications.
+- [PRD.md](./PRD.md) - Product Requirements Document
+- [IMPLEMENTATION_CHECKLIST.md](./IMPLEMENTATION_CHECKLIST.md) - Implementation progress
+- [SETUP.md](./SETUP.md) - Detailed setup instructions
