@@ -513,28 +513,54 @@ A comprehensive web application that serves as:
 
 ### 6.1 Platform & Architecture
 - **Platform:** Web application (responsive design)
-- **Architecture:** Modern web stack (to be determined)
-- **Hosting:** Cloud-based (AWS, Azure, or GCP)
-- **Database:** Relational database for structured data
-- **File Storage:** Cloud storage for documents and images
+- **Frontend Framework:** Modern JavaScript framework (React, Vue, or similar)
+- **Hosting:** GitHub Pages (static site hosting)
+- **Backend Services:** Firebase (Google Cloud Platform)
+  - **Database:** Cloud Firestore (NoSQL document database)
+  - **Authentication:** Firebase Authentication
+  - **File Storage:** Firebase Storage (for documents and images)
+  - **Hosting (Optional):** Firebase Hosting (for future migration if needed)
+  - **Functions:** Cloud Functions for Firebase (for serverless operations)
+- **Architecture Pattern:** Client-side application with Firebase backend-as-a-service
 
 ### 6.2 Security & Compliance
-- **Authentication:** Secure user authentication (OAuth 2.0, JWT)
+- **Authentication:** Firebase Authentication
+  - Email/Password authentication
+  - Social authentication (Google, Facebook) - optional
+  - JWT tokens managed by Firebase
 - **Authorization:** Role-based access control (Buyer, Seller)
+  - Firestore Security Rules for data access control
+  - Custom claims for user roles
 - **Data Encryption:** 
-  - In-transit: TLS/SSL
-  - At-rest: Encrypted database and file storage
+  - In-transit: TLS/SSL (enforced by Firebase and GitHub Pages)
+  - At-rest: Encrypted database and file storage (Firebase default encryption)
 - **PII Protection:** GDPR and state-specific compliance
-- **Document Security:** Secure document storage with access controls
+  - Firebase data residency options
+  - User data deletion capabilities
+- **Document Security:** Firebase Storage with security rules
+  - Access controls based on user roles and ownership
+  - Signed URLs for secure document access
 - **Audit Logging:** Track all user actions and document access
+  - Firestore audit logs
+  - Firebase Storage access logs
 
 ### 6.3 Integrations
-- **E-Signature:** DocuSign or similar (for PSA and documents)
-- **Maps:** Google Maps or Mapbox (for property locations)
-- **Email:** Transactional email service (SendGrid, AWS SES)
-- **Payments:** Earnest money escrow integration (future)
-- **Calendar:** Google Calendar or similar (for scheduling)
-- **Title Services:** Integration with title companies (future)
+- **Firebase Services:**
+  - **Firestore:** Primary database for properties, users, offers, transactions
+  - **Firebase Authentication:** User authentication and session management
+  - **Firebase Storage:** Document and image storage (deeds, proofs, photos)
+  - **Cloud Functions:** Serverless functions for:
+    - Email notifications (via SendGrid or similar)
+    - Document processing
+    - Background jobs
+    - Webhook handlers
+- **Third-Party Services:**
+  - **E-Signature:** DocuSign API or similar (for PSA and documents)
+  - **Maps:** Google Maps API or Mapbox (for property locations and search)
+  - **Email:** Transactional email service (SendGrid, Mailgun, or Firebase Extensions)
+  - **Payments:** Earnest money escrow integration (future)
+  - **Calendar:** Google Calendar API (for scheduling tours and walk-throughs)
+  - **Title Services:** Integration with title companies (future)
 
 ### 6.4 Performance Requirements
 - **Page Load Time:** < 3 seconds
@@ -544,10 +570,34 @@ A comprehensive web application that serves as:
 - **Uptime:** 99.9% availability
 
 ### 6.5 Scalability
-- Support for multiple states (state-specific forms and regulations)
-- Horizontal scaling capability
-- Database optimization for large property datasets
-- Caching strategy for frequently accessed data
+- **Firebase Scalability:**
+  - Firestore automatically scales horizontally
+  - Real-time synchronization for live updates
+  - Indexed queries for efficient property searches
+  - CDN-backed Firebase Storage for fast image delivery
+- **Application Scalability:**
+  - Support for multiple states (state-specific forms and regulations)
+  - Client-side caching for frequently accessed data
+  - Lazy loading and code splitting for optimal performance
+  - GitHub Pages CDN for static asset delivery
+- **Database Optimization:**
+  - Firestore composite indexes for complex queries
+  - Pagination for large property datasets
+  - Efficient data structure design for read/write operations
+
+### 6.6 Deployment Strategy
+- **Initial Deployment:** GitHub Pages
+  - Static site hosting via GitHub Actions or manual build
+  - Automatic deployment on push to main branch
+  - Custom domain support
+  - HTTPS enabled by default
+- **Build Process:**
+  - Frontend build generates static files
+  - Firebase configuration embedded in build
+  - Environment variables for Firebase config
+- **Future Migration Options:**
+  - Firebase Hosting (if more server-side features needed)
+  - Maintain GitHub Pages for documentation/landing pages
 
 ---
 
