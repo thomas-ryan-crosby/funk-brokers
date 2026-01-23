@@ -3,12 +3,21 @@
   <head>
     <meta charset="utf-8">
     <title>Funk Brokers</title>
-    <meta http-equiv="refresh" content="0; url=/funk-brokers/">
     <script>
-      window.location.replace('/funk-brokers/');
+      // Single Page Apps for GitHub Pages
+      // https://github.com/rafgraph/spa-github-pages
+      var pathSegmentsToKeep = 1;
+      var l = window.location;
+      l.replace(
+        l.protocol + '//' + l.hostname + (l.port ? ':' + l.port : '') +
+        '/funk-brokers/' +
+        l.pathname.split('/').slice(1 + pathSegmentsToKeep).join('/').replace(/^\/|\/$/g, '') +
+        (l.search ? '&' + l.search.slice(1).replace(/&/g, '&') : '') +
+        l.hash
+      );
     </script>
   </head>
   <body>
-    <p>If you are not redirected, <a href="/funk-brokers/">click here</a>.</p>
+    <p>Redirecting...</p>
   </body>
 </html>
