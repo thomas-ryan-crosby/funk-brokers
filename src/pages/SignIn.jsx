@@ -43,8 +43,11 @@ const SignIn = () => {
         errorMessage = 'Please enter a valid email address.';
       } else if (err.code === 'auth/invalid-credential') {
         errorMessage = 'Invalid email or password. Please try again.';
+      } else if (err.code === 'auth/configuration-not-found') {
+        errorMessage = 'Firebase Authentication is not enabled. Please enable Email/Password authentication in your Firebase Console.';
       }
       
+      console.error('Sign in error:', err);
       setError(errorMessage);
     } finally {
       setLoading(false);

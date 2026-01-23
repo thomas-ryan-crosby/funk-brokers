@@ -65,8 +65,11 @@ const SignUp = () => {
         errorMessage = 'Please enter a valid email address.';
       } else if (err.code === 'auth/weak-password') {
         errorMessage = 'Password is too weak. Please choose a stronger password.';
+      } else if (err.code === 'auth/configuration-not-found') {
+        errorMessage = 'Firebase Authentication is not enabled. Please enable Email/Password authentication in your Firebase Console.';
       }
       
+      console.error('Sign up error:', err);
       setError(errorMessage);
     } finally {
       setLoading(false);
