@@ -2,6 +2,7 @@ import { HashRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import Home from './pages/Home';
 import ListProperty from './pages/ListProperty';
 import PropertyDetail from './pages/PropertyDetail';
+import SubmitOffer from './pages/SubmitOffer';
 import './App.css';
 
 function App() {
@@ -25,6 +26,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/list-property" element={<ListProperty />} />
             <Route path="/property/:id" element={<PropertyDetail />} />
+            <Route path="/submit-offer/:propertyId" element={<SubmitOffer />} />
           </Routes>
         </main>
 

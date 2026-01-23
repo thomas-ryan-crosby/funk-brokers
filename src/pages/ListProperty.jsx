@@ -1,9 +1,12 @@
 import { useState } from 'react';
 import { createProperty } from '../services/propertyService';
 import { uploadMultipleFiles } from '../services/storageService';
+import PreListingChecklist from '../components/PreListingChecklist';
 import './ListProperty.css';
 
 const ListProperty = () => {
+  const [showChecklist, setShowChecklist] = useState(true);
+  const [checklistData, setChecklistData] = useState(null);
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -113,15 +116,27 @@ const ListProperty = () => {
     setError(null);
   };
 
+  const handleChecklistComplete = (data) => {
+    setChecklistData(data);
+    setShowChecklist(false);
+    // Use photos from checklist if available
+    if (data.photos && data.photos.length > 0) {
+      setPhotoPreviews(data.photos);
+      // Note: We'll use the URLs directly from checklist
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
     try {
-      // Upload photos first
+      // Use photos from checklist or upload new ones
       let photoUrls = [];
-      if (photoFiles.length > 0) {
+      if (checklistData && checklistData.photos && checklistData.photos.length > 0) {
+        photoUrls = checklistData.photos;
+      } else if (photoFiles.length > 0) {
         const propertyId = `temp_${Date.now()}`;
         photoUrls = await uploadMultipleFiles(
           photoFiles,
@@ -162,7 +177,17 @@ const ListProperty = () => {
         <div className="success-message">
           <h2>Property Listed Successfully!</h2>
           <p>Your property has been added to the marketplace.</p>
-          <a href="/">View All Properties</a>
+          <a href="/#/">View All Properties</a>
+        </div>
+      </div>
+    );
+  }
+
+  if (showChecklist) {
+    return (
+      <div className="list-property-page">
+        <div className="list-property-container">
+          <PreListingChecklist onComplete={handleChecklistComplete} />
         </div>
       </div>
     );

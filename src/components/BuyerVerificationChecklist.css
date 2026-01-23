@@ -1,0 +1,256 @@
+.buyer-verification-checklist {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 32px;
+  background: white;
+  border-radius: 8px;
+}
+
+.checklist-header {
+  margin-bottom: 32px;
+}
+
+.checklist-header h2 {
+  font-size: 28px;
+  margin: 0 0 8px 0;
+  color: #1a1a1a;
+}
+
+.checklist-header p {
+  color: #666;
+  margin: 0 0 16px 0;
+}
+
+.completion-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #4a90e2;
+  transition: width 0.3s;
+}
+
+.buyer-info-section {
+  margin-bottom: 32px;
+  padding: 20px;
+  background: #f8f9ff;
+  border-radius: 8px;
+}
+
+.buyer-info-section h3 {
+  font-size: 20px;
+  margin: 0 0 16px 0;
+  color: #1a1a1a;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 6px;
+}
+
+.form-group input {
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #4a90e2;
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+}
+
+.checklist-items {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+.checklist-item {
+  padding: 20px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  transition: border-color 0.2s;
+}
+
+.checklist-item:has(input[type="checkbox"]:checked) {
+  border-color: #4a90e2;
+  background: #f8f9ff;
+}
+
+.item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.item-header label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1a1a1a;
+  cursor: pointer;
+}
+
+.item-header input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.item-status {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.item-status.completed {
+  color: #4a90e2;
+}
+
+.item-description {
+  font-size: 14px;
+  color: #666;
+  margin: 0 0 12px 0;
+}
+
+.item-upload {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.item-upload input[type="file"] {
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.uploading {
+  color: #4a90e2;
+  font-size: 14px;
+}
+
+.error {
+  color: #c33;
+  font-size: 14px;
+}
+
+.file-link {
+  display: inline-block;
+  margin-top: 8px;
+  color: #4a90e2;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.file-link:hover {
+  text-decoration: underline;
+}
+
+.financing-options {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.financing-option {
+  flex: 1;
+  padding: 16px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.financing-option label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.financing-divider {
+  font-size: 14px;
+  font-weight: 600;
+  color: #666;
+  padding: 0 8px;
+}
+
+.checklist-actions {
+  text-align: center;
+  padding-top: 24px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.btn-primary {
+  padding: 14px 32px;
+  background: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #357abd;
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-large {
+  padding: 16px 40px;
+  font-size: 18px;
+}
+
+.completion-note {
+  margin-top: 12px;
+  font-size: 14px;
+  color: #666;
+}
+
+@media (max-width: 768px) {
+  .financing-options {
+    flex-direction: column;
+  }
+
+  .financing-divider {
+    padding: 8px 0;
+  }
+}

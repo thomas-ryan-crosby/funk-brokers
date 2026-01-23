@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { getPropertyById } from '../services/propertyService';
 import './PropertyDetail.css';
 
@@ -164,7 +164,9 @@ const PropertyDetail = () => {
 
           <div className="property-sidebar">
             <div className="property-actions">
-              <button className="btn-primary btn-large">Submit Offer</button>
+              <Link to={`/#/submit-offer/${property.id}`} className="btn-primary btn-large">
+                Submit Offer
+              </Link>
               <button className="btn-secondary btn-large">Schedule Tour</button>
             </div>
 
