@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { getPropertyById } from '../services/propertyService';
+import { addToFavorites, removeFromFavorites, isFavorited } from '../services/favoritesService';
 import './PropertyDetail.css';
 
 const PropertyDetail = () => {
