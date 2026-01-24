@@ -175,6 +175,9 @@ const BeginSale = () => {
       timeline: form.timeline,
       readinessChecklist: form.readinessChecklist,
     };
+    try {
+      sessionStorage.setItem('funk_saleProfile', JSON.stringify(saleProfile));
+    } catch (e) { /* ignore */ }
     navigate('/list-property', { state: { saleProfile } });
   };
 

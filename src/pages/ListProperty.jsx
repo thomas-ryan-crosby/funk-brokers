@@ -12,7 +12,18 @@ const ListProperty = () => {
   const { user, userProfile, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const saleProfile = location.state?.saleProfile;
+  const [saleProfile] = useState(() => {
+    const fromState = location.state?.saleProfile;
+    if (fromState) return fromState;
+    try {
+      const raw = sessionStorage.getItem('funk_saleProfile');
+      if (raw) {
+        sessionStorage.removeItem('funk_saleProfile');
+        return JSON.parse(raw);
+      }
+    } catch (e) {}
+    return undefined;
+  });
   const [showQuickModal, setShowQuickModal] = useState(!saleProfile);
   const [showChecklist, setShowChecklist] = useState(false);
   const [checklistData, setChecklistData] = useState(null);
@@ -285,6 +296,11 @@ const ListProperty = () => {
           {step === 1 && (
             <div className="form-step">
               <h2>Basic Information</h2>
+              {saleProfile && (
+                <p className="form-note form-note--sale-profile">
+                  We've filled in your address and target price from your sale profile. Please select the property type to continue.
+                </p>
+              )}
               <div className="form-grid">
                 <div className="form-group full-width">
                   <label>Street Address *</label>

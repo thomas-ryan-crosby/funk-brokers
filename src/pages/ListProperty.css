@@ -66,6 +66,20 @@
   color: #1a1a1a;
 }
 
+.form-note {
+  margin: 0 0 16px 0;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.form-note--sale-profile {
+  color: #475569;
+  background: #f8fafc;
+  padding: 12px 16px;
+  border-radius: 6px;
+  border-left: 3px solid #3b82f6;
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
