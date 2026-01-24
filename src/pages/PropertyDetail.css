@@ -144,11 +144,43 @@
   height: fit-content;
 }
 
-.property-actions {
+.property-actions,
+.property-owner-actions {
   display: flex;
   flex-direction: column;
   gap: 12px;
   margin-bottom: 24px;
+}
+
+.property-owner-actions .owner-stat {
+  margin: 0 0 8px 0;
+  font-size: 15px;
+  color: #475569;
+}
+
+.property-owner-actions .btn {
+  width: 100%;
+  text-align: center;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  color: white;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);
+}
+
+.property-owner-actions .btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
 }
 
 .property-actions .btn {

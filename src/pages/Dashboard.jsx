@@ -120,7 +120,7 @@ const Dashboard = () => {
             <h1>Welcome back, {userProfile?.name || user?.displayName || 'User'}!</h1>
             <p>Manage your properties and favorites</p>
           </div>
-          <Link to="/list-property" className="btn btn-primary">
+          <Link to="/list-property" state={{ startFresh: true }} className="btn btn-primary">
             + List New Property
           </Link>
         </div>
@@ -165,7 +165,7 @@ const Dashboard = () => {
                 {myProperties.length === 0 && (
                   <p className="empty-message">
                     You haven't listed any properties yet.{' '}
-                    <Link to="/list-property">List your first property</Link>
+                    <Link to="/list-property" state={{ startFresh: true }}>List your first property</Link>
                   </p>
                 )}
               </div>
@@ -187,16 +187,12 @@ const Dashboard = () => {
                             View
                           </Link>
                           {property.status === 'active' && (
-                            <button
+                            <Link
+                              to={`/property/${property.id}/edit`}
                               className="btn btn-small btn-outline"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                // TODO: Implement edit functionality
-                                alert('Edit functionality coming soon!');
-                              }}
                             >
                               Edit
-                            </button>
+                            </Link>
                           )}
                         </div>
                       </div>

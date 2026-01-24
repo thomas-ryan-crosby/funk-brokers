@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getPropertyById } from '../services/propertyService';
-import { addToFavorites, removeFromFavorites, isFavorited } from '../services/favoritesService';
+import { addToFavorites, removeFromFavorites, isFavorited, getFavoriteCountForProperty } from '../services/favoritesService';
 import './PropertyDetail.css';
 
 const PropertyDetail = () => {
@@ -25,6 +25,12 @@ const PropertyDetail = () => {
       checkFavoriteStatus();
     }
   }, [property, isAuthenticated, user]);
+
+  useEffect(() => {
+    if (property?.id && isOwner) {
+      getFavoriteCountForProperty(property.id).then(setFavoriteCount);
+    }
+  }, [property?.id, isOwner]);
 
   const checkFavoriteStatus = async () => {
     if (!user || !property) return;
@@ -210,27 +216,41 @@ const PropertyDetail = () => {
           </div>
 
           <div className="property-sidebar">
-            <div className="property-actions">
-              <Link to={`/submit-offer/${property.id}`} className="btn btn-primary btn-large">
-                Submit Offer
-              </Link>
-              <button 
-                className="btn btn-secondary btn-large"
-                onClick={() => {
-                  // TODO: Implement tour scheduling
-                  alert('Tour scheduling coming soon! For now, please contact the seller directly.');
-                }}
-              >
-                Schedule Tour
-              </button>
-              <button
-                className={`btn btn-outline btn-large ${favorited ? 'favorited' : ''}`}
-                onClick={handleFavoriteToggle}
-                disabled={favoriteLoading}
-              >
-                {favoriteLoading ? '...' : favorited ? '★ Favorited' : '☆ Add to Favorites'}
-              </button>
-            </div>
+            {isOwner ? (
+              <div className="property-owner-actions">
+                <p className="owner-stat">
+                  {favoriteCount !== null
+                    ? favoriteCount === 0
+                      ? 'No favorites yet'
+                      : `${favoriteCount} ${favoriteCount === 1 ? 'favorite' : 'favorites'}`
+                    : '—'}
+                </p>
+                <Link to={`/property/${property.id}/edit`} className="btn btn-primary btn-large">
+                  Edit Property
+                </Link>
+              </div>
+            ) : (
+              <div className="property-actions">
+                <Link to={`/submit-offer/${property.id}`} className="btn btn-primary btn-large">
+                  Submit Offer
+                </Link>
+                <button 
+                  className="btn btn-secondary btn-large"
+                  onClick={() => {
+                    alert('Tour scheduling coming soon! For now, please contact the seller directly.');
+                  }}
+                >
+                  Schedule Tour
+                </button>
+                <button
+                  className={`btn btn-outline btn-large ${favorited ? 'favorited' : ''}`}
+                  onClick={handleFavoriteToggle}
+                  disabled={favoriteLoading}
+                >
+                  {favoriteLoading ? '...' : favorited ? '★ Favorited' : '☆ Add to Favorites'}
+                </button>
+              </div>
+            )}
 
             <div className="property-details-card">
               <h3>Property Details</h3>

@@ -100,3 +100,20 @@ export const isFavorited = async (userId, propertyId) => {
   const favorite = await getFavorite(userId, propertyId);
   return !!favorite;
 };
+
+/**
+ * Get the number of users who favorited a property
+ */
+export const getFavoriteCountForProperty = async (propertyId) => {
+  try {
+    const q = query(
+      collection(db, FAVORITES_COLLECTION),
+      where('propertyId', '==', propertyId)
+    );
+    const snap = await getDocs(q);
+    return snap.size;
+  } catch (error) {
+    console.error('Error getting favorite count:', error);
+    return 0;
+  }
+};

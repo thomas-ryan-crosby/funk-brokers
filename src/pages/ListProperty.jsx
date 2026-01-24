@@ -13,6 +13,10 @@ const ListProperty = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [saleProfile] = useState(() => {
+    if (location.state?.startFresh) {
+      try { sessionStorage.removeItem('funk_saleProfile'); } catch (e) {}
+      return undefined;
+    }
     const fromState = location.state?.saleProfile;
     if (fromState) return fromState;
     try {

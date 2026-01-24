@@ -13,6 +13,7 @@ import HowBuyingWorks from './pages/HowBuyingWorks';
 import HowItWorks from './pages/HowItWorks';
 import BeginSale from './pages/BeginSale';
 import BeginPurchase from './pages/BeginPurchase';
+import EditProperty from './pages/EditProperty';
 import { logout } from './services/authService';
 import './App.css';
 
@@ -40,7 +41,7 @@ function AppContent() {
               {isAuthenticated ? (
                 <>
                   <Link to="/dashboard">Dashboard</Link>
-                  <Link to="/list-property">List Property</Link>
+                  <Link to="/list-property" state={{ startFresh: true }}>List Property</Link>
                   <span className="nav-user">Hi, {user?.displayName || 'User'}</span>
                   <button onClick={handleLogout} className="nav-logout">
                     Sign Out
@@ -48,7 +49,7 @@ function AppContent() {
                 </>
               ) : (
                 <>
-                  <Link to="/list-property">List Property</Link>
+                  <Link to="/list-property" state={{ startFresh: true }}>List Property</Link>
                   <Link to="/sign-in" className="nav-signin">Sign In</Link>
                 </>
               )}
@@ -63,6 +64,7 @@ function AppContent() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/list-property" element={<ListProperty />} />
             <Route path="/property/:id" element={<PropertyDetail />} />
+            <Route path="/property/:id/edit" element={<EditProperty />} />
             <Route path="/submit-offer/:propertyId" element={<SubmitOffer />} />
             <Route path="/sign-up" element={<SignUp />} />
             <Route path="/sign-in" element={<SignIn />} />
