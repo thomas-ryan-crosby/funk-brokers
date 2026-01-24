@@ -12,6 +12,7 @@ function parseAddressComponents(components) {
     if (c.types.includes('locality')) city = c.long_name;
     if (!city && c.types.includes('sublocality')) city = c.long_name;
     if (!city && c.types.includes('sublocality_level_1')) city = c.long_name;
+    if (!city && c.types.includes('administrative_area_level_2')) city = c.long_name;
     if (c.types.includes('administrative_area_level_1')) state = c.short_name;
     if (c.types.includes('postal_code')) zipCode = c.long_name;
   }
@@ -53,10 +54,40 @@ const AddressAutocomplete = ({
     }
     const onPlace = () => {
       const place = ac.getPlace();
-      if (!place?.address_components) return;
-      const parsed = parseAddressComponents(place.address_components);
-      if (!parsed.address && place.formatted_address) parsed.address = place.formatted_address;
-      onAddressSelect?.(parsed);
+      if (!place) return;
+
+      const done = (parsed) => {
+        if (!parsed.address && place.formatted_address) parsed.address = place.formatted_address;
+        onAddressSelect?.(parsed);
+      };
+
+      // Use address_components when present and we got city/state/zip
+      if (place.address_components?.length) {
+        const parsed = parseAddressComponents(place.address_components);
+        if (parsed.city && parsed.state && parsed.zipCode) {
+          done(parsed);
+          return;
+        }
+      }
+
+      // Fallback: Geocoder gets full address_components (Autocomplete often omits them).
+      // Requires Geocoding API enabled in Google Cloud.
+      if (place.formatted_address && window.google?.maps?.Geocoder) {
+        new window.google.maps.Geocoder().geocode(
+          { address: place.formatted_address },
+          (results, status) => {
+            if (status === 'OK' && results?.[0]?.address_components) {
+              const parsed = parseAddressComponents(results[0].address_components);
+              parsed.address = place.formatted_address;
+              done(parsed);
+            } else {
+              done({ address: place.formatted_address, city: '', state: '', zipCode: '' });
+            }
+          }
+        );
+      } else {
+        done({ address: place.formatted_address || '', city: '', state: '', zipCode: '' });
+      }
     };
     ac.addListener('place_changed', onPlace);
     return () => {

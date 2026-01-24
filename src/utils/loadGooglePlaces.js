@@ -7,7 +7,11 @@
  * - Maps JavaScript API (enabled)
  * - Places API (enabled)
  *
- * ApiNotActivatedMapError means one or both are not enabled for the API key's project.
+ * ApiNotActivatedMapError: one or both APIs are not enabled for the API key's project.
+ * ApiTargetBlockedMapError: the API key's "Application restrictions" (HTTP referrers)
+ *   block this origin. Add your production URL, e.g.:
+ *   https://thomas-ryan-crosby.github.io/funk-brokers/*
+ *   (and optionally http://localhost:* for dev) under Credentials → your key → HTTP referrers.
  *
  * Note: google.maps.places.Autocomplete is legacy; PlaceAutocompleteElement is
  * recommended for new work. We keep Autocomplete for compatibility.
