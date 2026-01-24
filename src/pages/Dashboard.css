@@ -160,26 +160,23 @@
 .property-item {
   display: flex;
   flex-direction: column;
-  background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  background: #fff;
+  border-radius: 12px;
   overflow: hidden;
-  transition: all 0.2s;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
 
 .property-item:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.property-link {
-  text-decoration: none;
-  color: inherit;
-  flex: 1;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  border-color: #cbd5e1;
 }
 
 .property-actions {
-  padding: 16px;
+  padding: 14px 16px;
   border-top: 1px solid #e2e8f0;
+  background: #fff;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -189,7 +186,9 @@
 
 .action-buttons {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
+  align-items: center;
 }
 
 .status-badge {

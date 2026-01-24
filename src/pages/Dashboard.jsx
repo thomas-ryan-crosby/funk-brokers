@@ -204,9 +204,7 @@ const Dashboard = () => {
                 <div className="properties-list">
                   {activeList.map((property) => (
                     <div key={property.id} className="property-item">
-                      <Link to={`/property/${property.id}`} className="property-link">
-                        <PropertyCard property={property} />
-                      </Link>
+                      <PropertyCard property={property} embedded />
                       <div className="property-actions">
                         {getStatusBadge(property)}
                         <div className="action-buttons">
@@ -233,9 +231,7 @@ const Dashboard = () => {
                   <div className="properties-list">
                     {archivedList.map((property) => (
                       <div key={property.id} className="property-item property-item-archived">
-                        <Link to={`/property/${property.id}`} className="property-link">
-                          <PropertyCard property={property} />
-                        </Link>
+                        <PropertyCard property={property} embedded />
                         <div className="property-actions">
                           {getStatusBadge(property)}
                           <div className="action-buttons">
@@ -271,11 +267,10 @@ const Dashboard = () => {
                 <div className="properties-list">
                   {favoriteProperties.map((property) => (
                     <div key={property.id} className="property-item">
-                      <Link to={`/property/${property.id}`} className="property-link">
-                        <PropertyCard property={property} />
-                      </Link>
+                      <PropertyCard property={property} embedded />
                       <div className="property-actions">
                         <button
+                          type="button"
                           className="btn btn-small btn-outline"
                           onClick={(e) => {
                             e.preventDefault();
@@ -284,10 +279,7 @@ const Dashboard = () => {
                         >
                           Remove from Favorites
                         </button>
-                        <Link
-                          to={`/property/${property.id}`}
-                          className="btn btn-small btn-primary"
-                        >
+                        <Link to={`/property/${property.id}`} className="btn btn-small btn-primary">
                           View Details
                         </Link>
                       </div>
