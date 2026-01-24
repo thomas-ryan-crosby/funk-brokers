@@ -323,6 +323,41 @@
   font-size: 13px;
 }
 
+.btn-danger {
+  background: transparent;
+  color: #dc2626;
+  border-color: #dc2626;
+}
+
+.btn-danger:hover {
+  background: #dc2626;
+  color: white;
+}
+
+.status-archived {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.form-hint {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0 0 16px 0;
+}
+
+.archived-section {
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.archived-section h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: #475569;
+}
+
 .loading-state {
   text-align: center;
   padding: 60px 20px;

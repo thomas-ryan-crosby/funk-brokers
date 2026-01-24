@@ -158,6 +158,36 @@
   color: #475569;
 }
 
+.property-owner-actions .owner-archived-note {
+  font-size: 14px;
+  color: #64748b;
+  margin: 0 0 12px 0;
+}
+
+.property-owner-actions .btn-outline {
+  background: transparent;
+  color: #3b82f6;
+  border: 2px solid #3b82f6;
+  box-shadow: none;
+}
+
+.property-owner-actions .btn-outline:hover {
+  background: #3b82f6;
+  color: white;
+}
+
+.property-owner-actions .btn-danger {
+  background: transparent;
+  color: #dc2626;
+  border: 2px solid #dc2626;
+  box-shadow: none;
+}
+
+.property-owner-actions .btn-danger:hover {
+  background: #dc2626;
+  color: white;
+}
+
 .property-owner-actions .btn {
   width: 100%;
   text-align: center;

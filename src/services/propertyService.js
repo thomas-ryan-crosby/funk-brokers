@@ -61,8 +61,9 @@ export const getAllProperties = async () => {
       const bDate = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
       return bDate - aDate; // Descending order
     });
-    
-    return properties;
+
+    // Exclude archived from browse
+    return properties.filter((p) => p.archived !== true);
   } catch (error) {
     console.error('Error fetching properties:', error);
     throw error;
@@ -70,7 +71,7 @@ export const getAllProperties = async () => {
 };
 
 /**
- * Get all properties by a specific seller
+ * Get all properties by a specific seller (includes archived; caller may split)
  */
 export const getPropertiesBySeller = async (sellerId) => {
   try {
@@ -187,6 +188,9 @@ export const searchProperties = async (filters = {}) => {
       );
     }
 
+    // Exclude archived from search
+    properties = properties.filter((p) => p.archived !== true);
+
     // Sort client-side if needed (for price with range filters)
     if (orderByField === 'price' && (filters.minPrice || filters.maxPrice)) {
       properties.sort((a, b) => {
@@ -227,6 +231,43 @@ export const deleteProperty = async (propertyId) => {
     await updateProperty(propertyId, { status: 'withdrawn' });
   } catch (error) {
     console.error('Error deleting property:', error);
+    throw error;
+  }
+};
+
+/**
+ * Archive a property (hidden from browse; can be restored)
+ */
+export const archiveProperty = async (propertyId) => {
+  try {
+    await updateProperty(propertyId, { archived: true });
+  } catch (error) {
+    console.error('Error archiving property:', error);
+    throw error;
+  }
+};
+
+/**
+ * Restore an archived property
+ */
+export const restoreProperty = async (propertyId) => {
+  try {
+    await updateProperty(propertyId, { archived: false });
+  } catch (error) {
+    console.error('Error restoring property:', error);
+    throw error;
+  }
+};
+
+/**
+ * Permanently delete a property (removes from Firestore; cannot be undone)
+ */
+export const deletePropertyPermanently = async (propertyId) => {
+  try {
+    const docRef = doc(db, PROPERTIES_COLLECTION, propertyId);
+    await deleteDoc(docRef);
+  } catch (error) {
+    console.error('Error permanently deleting property:', error);
     throw error;
   }
 };

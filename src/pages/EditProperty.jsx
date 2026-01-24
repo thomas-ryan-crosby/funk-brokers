@@ -49,6 +49,11 @@ const EditProperty = () => {
         setLoading(false);
         return;
       }
+      if (p.archived) {
+        navigate(`/property/${id}`);
+        setLoading(false);
+        return;
+      }
       setFormData({
         address: p.address || '',
         city: p.city || '',

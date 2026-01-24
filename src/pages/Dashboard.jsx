@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { getPropertiesBySeller } from '../services/propertyService';
+import { getPropertiesBySeller, archiveProperty, restoreProperty, deletePropertyPermanently } from '../services/propertyService';
 import { getUserFavoriteIds, removeFromFavorites } from '../services/favoritesService';
 import { getAllProperties } from '../services/propertyService';
 import { getSavedSearches, removeSavedSearch } from '../services/profileService';
@@ -85,7 +85,8 @@ const Dashboard = () => {
     navigate('/browse', { state: { filters } });
   };
 
-  const getStatusBadge = (status) => {
+  const getStatusBadge = (p) => {
+    if (p.archived) return <span className="status-badge status-archived">Archived</span>;
     const statusConfig = {
       active: { label: 'Active', class: 'status-active' },
       under_contract: { label: 'Under Contract', class: 'status-contract' },
@@ -93,11 +94,43 @@ const Dashboard = () => {
       withdrawn: { label: 'Withdrawn', class: 'status-withdrawn' },
       draft: { label: 'Draft', class: 'status-draft' },
     };
-
+    const status = p.status || 'active';
     const config = statusConfig[status] || { label: status, class: 'status-default' };
-    return (
-      <span className={`status-badge ${config.class}`}>{config.label}</span>
-    );
+    return <span className={`status-badge ${config.class}`}>{config.label}</span>;
+  };
+
+  const activeList = myProperties.filter((p) => !p.archived);
+  const archivedList = myProperties.filter((p) => p.archived);
+
+  const handleArchive = async (propertyId) => {
+    try {
+      await archiveProperty(propertyId);
+      loadDashboardData();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to archive. Please try again.');
+    }
+  };
+
+  const handleRestore = async (propertyId) => {
+    try {
+      await restoreProperty(propertyId);
+      loadDashboardData();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to restore. Please try again.');
+    }
+  };
+
+  const handleDeletePermanently = async (propertyId) => {
+    if (!window.confirm('Permanently delete this listing? This cannot be undone.')) return;
+    try {
+      await deletePropertyPermanently(propertyId);
+      loadDashboardData();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to delete. Please try again.');
+    }
   };
 
   if (authLoading || loading) {
@@ -141,7 +174,7 @@ const Dashboard = () => {
             className={`tab ${activeTab === 'my-properties' ? 'active' : ''}`}
             onClick={() => setActiveTab('my-properties')}
           >
-            My Properties ({myProperties.length})
+            My Properties ({activeList.length})
           </button>
           <button
             className={`tab ${activeTab === 'favorites' ? 'active' : ''}`}
@@ -162,7 +195,7 @@ const Dashboard = () => {
             <div className="dashboard-section">
               <div className="section-header">
                 <h2>My Properties</h2>
-                {myProperties.length === 0 && (
+                {activeList.length === 0 && archivedList.length === 0 && (
                   <p className="empty-message">
                     You haven't listed any properties yet.{' '}
                     <Link to="/list-property" state={{ startFresh: true }}>List your first property</Link>
@@ -170,34 +203,50 @@ const Dashboard = () => {
                 )}
               </div>
 
-              {myProperties.length > 0 && (
+              {activeList.length > 0 && (
                 <div className="properties-list">
-                  {myProperties.map((property) => (
+                  {activeList.map((property) => (
                     <div key={property.id} className="property-item">
                       <Link to={`/property/${property.id}`} className="property-link">
                         <PropertyCard property={property} />
                       </Link>
                       <div className="property-actions">
-                        {getStatusBadge(property.status)}
+                        {getStatusBadge(property)}
                         <div className="action-buttons">
-                          <Link
-                            to={`/property/${property.id}`}
-                            className="btn btn-small btn-secondary"
-                          >
-                            View
-                          </Link>
+                          <Link to={`/property/${property.id}`} className="btn btn-small btn-secondary">View</Link>
                           {property.status === 'active' && (
-                            <Link
-                              to={`/property/${property.id}/edit`}
-                              className="btn btn-small btn-outline"
-                            >
-                              Edit
-                            </Link>
+                            <Link to={`/property/${property.id}/edit`} className="btn btn-small btn-outline">Edit</Link>
                           )}
+                          <button type="button" className="btn btn-small btn-outline" onClick={() => handleArchive(property.id)}>Archive</button>
+                          <button type="button" className="btn btn-small btn-danger" onClick={() => handleDeletePermanently(property.id)}>Delete</button>
                         </div>
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {archivedList.length > 0 && (
+                <div className="archived-section">
+                  <h3>Archived ({archivedList.length})</h3>
+                  <p className="form-hint">Archived listings are hidden from browse. Restore to make them visible again.</p>
+                  <div className="properties-list">
+                    {archivedList.map((property) => (
+                      <div key={property.id} className="property-item property-item-archived">
+                        <Link to={`/property/${property.id}`} className="property-link">
+                          <PropertyCard property={property} />
+                        </Link>
+                        <div className="property-actions">
+                          {getStatusBadge(property)}
+                          <div className="action-buttons">
+                            <Link to={`/property/${property.id}`} className="btn btn-small btn-secondary">View</Link>
+                            <button type="button" className="btn btn-small btn-outline" onClick={() => handleRestore(property.id)}>Restore</button>
+                            <button type="button" className="btn btn-small btn-danger" onClick={() => handleDeletePermanently(property.id)}>Delete</button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

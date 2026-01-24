@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { getPropertyById } from '../services/propertyService';
+import { getPropertyById, archiveProperty, restoreProperty, deletePropertyPermanently } from '../services/propertyService';
 import { addToFavorites, removeFromFavorites, isFavorited, getFavoriteCountForProperty } from '../services/favoritesService';
 import './PropertyDetail.css';
 
@@ -116,6 +116,50 @@ const PropertyDetail = () => {
     );
   }
 
+  if (property.archived && !isOwner) {
+    return (
+      <div className="property-detail-page">
+        <div className="error-state">
+          <p>This listing is no longer available.</p>
+          <button onClick={() => navigate('/browse')} className="btn btn-primary">
+            Browse Properties
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const handleArchive = async () => {
+    try {
+      await archiveProperty(property.id);
+      loadProperty();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to archive. Please try again.');
+    }
+  };
+
+  const handleRestore = async () => {
+    try {
+      await restoreProperty(property.id);
+      loadProperty();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to restore. Please try again.');
+    }
+  };
+
+  const handleDeletePermanently = async () => {
+    if (!window.confirm('Permanently delete this listing? This cannot be undone.')) return;
+    try {
+      await deletePropertyPermanently(property.id);
+      navigate('/dashboard');
+    } catch (err) {
+      console.error(err);
+      alert('Failed to delete. Please try again.');
+    }
+  };
+
   return (
     <div className="property-detail-page">
       <div className="property-detail-container">
@@ -228,9 +272,26 @@ const PropertyDetail = () => {
                       : `${favoriteCount} ${favoriteCount === 1 ? 'favorite' : 'favorites'}`
                     : '—'}
                 </p>
-                <Link to={`/property/${property.id}/edit`} className="btn btn-primary btn-large">
-                  Edit Property
-                </Link>
+                {property.archived && (
+                  <p className="owner-archived-note">This listing is archived and hidden from browse.</p>
+                )}
+                {!property.archived && (
+                  <Link to={`/property/${property.id}/edit`} className="btn btn-primary btn-large">
+                    Edit Property
+                  </Link>
+                )}
+                {property.archived ? (
+                  <button type="button" className="btn btn-outline btn-large" onClick={handleRestore}>
+                    Restore
+                  </button>
+                ) : (
+                  <button type="button" className="btn btn-outline btn-large" onClick={handleArchive}>
+                    Archive
+                  </button>
+                )}
+                <button type="button" className="btn btn-danger btn-large" onClick={handleDeletePermanently}>
+                  Delete Permanently
+                </button>
               </div>
             ) : (
               <div className="property-actions">
@@ -280,7 +341,9 @@ const PropertyDetail = () => {
               <div className="detail-row">
                 <span className="detail-label">Status</span>
                 <span className="detail-value">
-                  {property.status === 'active'
+                  {property.archived
+                    ? 'Archived'
+                    : property.status === 'active'
                     ? 'Active'
                     : property.status === 'under_contract'
                     ? 'Under Contract'
