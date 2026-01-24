@@ -22,19 +22,14 @@
   opacity: 0.9;
 }
 
+.home-filters-bar {
+  /* Wrapper for top SearchFilters; bar styles in SearchFilters.css */
+}
+
 .home-container {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 40px 20px;
-  display: grid;
-  grid-template-columns: 300px 1fr;
-  gap: 32px;
-}
-
-.home-sidebar {
-  position: sticky;
-  top: 20px;
-  height: fit-content;
+  padding: 24px 20px 40px;
 }
 
 .home-main {
@@ -141,15 +136,6 @@
   box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
 }
 
-@media (max-width: 1024px) {
-  .home-container {
-    grid-template-columns: 1fr;
-  }
-
-  .home-sidebar {
-    position: static;
-  }
-}
 
 @media (max-width: 768px) {
   .home-hero h1 {

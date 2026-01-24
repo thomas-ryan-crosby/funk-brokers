@@ -15,7 +15,8 @@ const Home = () => {
   const [viewMode, setViewMode] = useState('list'); // 'map' | 'list'
 
   useEffect(() => {
-    if (Object.keys(filters).length > 0) {
+    const hasFilters = Object.keys(filters).length > 0 && Object.values(filters).some((v) => v != null && v !== '');
+    if (hasFilters) {
       loadPropertiesWithFilters();
     } else {
       loadProperties();
@@ -61,11 +62,11 @@ const Home = () => {
         <p>Buy and sell residential properties directly, without brokers</p>
       </div>
 
-      <div className="home-container">
-        <div className="home-sidebar">
-          <SearchFilters onFilterChange={handleFilterChange} initialFilters={filters} />
-        </div>
+      <div className="home-filters-bar">
+        <SearchFilters onFilterChange={handleFilterChange} initialFilters={filters} />
+      </div>
 
+      <div className="home-container">
         <div className="home-main">
           {loading && (
             <div className="loading-state">

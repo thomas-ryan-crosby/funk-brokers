@@ -7,8 +7,6 @@ import {
   doc,
   query,
   where,
-  orderBy,
-  limit,
   updateDoc,
   deleteDoc,
 } from 'firebase/firestore';
@@ -125,79 +123,79 @@ export const getPropertyById = async (propertyId) => {
 
 /**
  * Search properties with filters
- * Note: Firestore has limitations on compound queries. For complex filters,
- * we fetch all active properties and filter client-side.
- * For production, consider using Algolia or similar search service.
+ * Fetches all active properties, then filters and sorts client-side to avoid
+ * Firestore composite index requirements. For production, consider Algolia or similar.
  */
 export const searchProperties = async (filters = {}) => {
   try {
-    // Start with base query for active properties
-    let q = query(
+    const q = query(
       collection(db, PROPERTIES_COLLECTION),
       where('status', '==', 'active')
     );
-
-    // Apply simple filters that work with single where clause
-    // For complex queries, we'll filter client-side
-    const orderByField = filters.orderBy || 'createdAt';
-    const orderDirection = filters.orderDirection || 'desc';
-    
-    // Only add orderBy if it's not a range query on the same field
-    if (orderByField !== 'price' || (!filters.minPrice && !filters.maxPrice)) {
-      q = query(q, orderBy(orderByField, orderDirection));
-    }
-
-    // Limit results
-    if (filters.limit) {
-      q = query(q, limit(filters.limit));
-    }
-
     const querySnapshot = await getDocs(q);
     let properties = [];
     querySnapshot.forEach((doc) => {
-      properties.push({
-        id: doc.id,
-        ...doc.data(),
-      });
+      properties.push({ id: doc.id, ...doc.data() });
     });
 
-    // Apply client-side filtering for complex queries
+    // Exclude archived
+    properties = properties.filter((p) => p.archived !== true);
+
+    // Client-side: query (substring on address, city, state, zipCode)
+    if (filters.query && String(filters.query).trim()) {
+      const q = String(filters.query).toLowerCase().trim();
+      properties = properties.filter(
+        (p) =>
+          (p.address || '').toLowerCase().includes(q) ||
+          (p.city || '').toLowerCase().includes(q) ||
+          (p.state || '').toLowerCase().includes(q) ||
+          (p.zipCode || '').toLowerCase().includes(q)
+      );
+    }
     if (filters.minPrice) {
-      properties = properties.filter((p) => p.price >= parseFloat(filters.minPrice));
+      properties = properties.filter((p) => (p.price ?? 0) >= parseFloat(filters.minPrice));
     }
     if (filters.maxPrice) {
-      properties = properties.filter((p) => p.price <= parseFloat(filters.maxPrice));
+      properties = properties.filter((p) => (p.price ?? 0) <= parseFloat(filters.maxPrice));
     }
     if (filters.propertyType) {
       properties = properties.filter((p) => p.propertyType === filters.propertyType);
     }
     if (filters.bedrooms) {
-      properties = properties.filter((p) => p.bedrooms >= parseInt(filters.bedrooms));
+      properties = properties.filter((p) => (p.bedrooms ?? 0) >= parseInt(filters.bedrooms, 10));
     }
     if (filters.bathrooms) {
-      properties = properties.filter((p) => p.bathrooms >= parseFloat(filters.bathrooms));
+      properties = properties.filter((p) => (p.bathrooms ?? 0) >= parseFloat(filters.bathrooms));
     }
     if (filters.city) {
       properties = properties.filter(
-        (p) => p.city?.toLowerCase() === filters.city.toLowerCase()
+        (p) => (p.city || '').toLowerCase() === String(filters.city).toLowerCase()
       );
     }
     if (filters.state) {
       properties = properties.filter(
-        (p) => p.state?.toUpperCase() === filters.state.toUpperCase()
+        (p) => (p.state || '').toUpperCase() === String(filters.state).toUpperCase()
       );
     }
 
-    // Exclude archived from search
-    properties = properties.filter((p) => p.archived !== true);
-
-    // Sort client-side if needed (for price with range filters)
-    if (orderByField === 'price' && (filters.minPrice || filters.maxPrice)) {
-      properties.sort((a, b) => {
-        const aVal = a[orderByField] || 0;
-        const bVal = b[orderByField] || 0;
+    // Sort client-side
+    const orderByField = filters.orderBy || 'createdAt';
+    const orderDirection = filters.orderDirection || 'desc';
+    properties.sort((a, b) => {
+      let aVal = a[orderByField];
+      let bVal = b[orderByField];
+      if (orderByField === 'createdAt') {
+        aVal = aVal?.toDate ? aVal.toDate() : new Date(aVal || 0);
+        bVal = bVal?.toDate ? bVal.toDate() : new Date(bVal || 0);
         return orderDirection === 'asc' ? aVal - bVal : bVal - aVal;
-      });
+      }
+      aVal = aVal ?? 0;
+      bVal = bVal ?? 0;
+      return orderDirection === 'asc' ? aVal - bVal : bVal - aVal;
+    });
+
+    if (filters.limit) {
+      properties = properties.slice(0, parseInt(filters.limit, 10));
     }
 
     return properties;
