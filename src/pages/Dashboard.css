@@ -173,30 +173,38 @@
 }
 
 .property-actions {
-  padding: 16px 18px;
+  padding: 10px 14px;
   border-top: 1px solid #e2e8f0;
   background: #fff;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
 .action-buttons {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  flex-wrap: nowrap;
+  gap: 6px;
   align-items: center;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.action-buttons::-webkit-scrollbar {
+  display: none;
 }
 
 .status-badge {
-  padding: 5px 14px;
+  padding: 3px 10px;
   border-radius: 9999px;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.04em;
+  flex-shrink: 0;
 }
 
 .status-active {
@@ -269,7 +277,7 @@
   gap: 8px;
 }
 
-/* Pill-style buttons — modern, balanced proportions */
+/* Base buttons */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -282,7 +290,7 @@
   text-decoration: none;
   border: 1.5px solid transparent;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s, border-color 0.2s, transform 0.15s;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
   font-family: inherit;
 }
 
@@ -295,47 +303,90 @@
 .btn-primary:hover {
   background: #2563eb;
   border-color: #2563eb;
-  transform: translateY(-0.5px);
 }
 
 .btn-secondary {
-  background: #f1f5f9;
+  background: #f8fafc;
   color: #475569;
-  border-color: #e2e8f0;
+  border: 1px solid #e2e8f0;
 }
 
 .btn-secondary:hover {
-  background: #e2e8f0;
+  background: #f1f5f9;
   color: #334155;
   border-color: #cbd5e1;
 }
 
 .btn-outline {
   background: transparent;
-  color: #3b82f6;
-  border-color: #94a3b8;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
 }
 
 .btn-outline:hover {
-  background: #eff6ff;
-  color: #2563eb;
-  border-color: #3b82f6;
+  background: #f8fafc;
+  color: #3b82f6;
+  border-color: #cbd5e1;
 }
 
+/* Compact row: all actions in one line, minimal modern chips */
 .btn-small {
-  padding: 8px 16px;
-  font-size: 13px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  border: 1px solid transparent;
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
+.btn-small.btn-secondary {
+  background: #f8fafc;
+  color: #475569;
+  border-color: #e2e8f0;
+}
+
+.btn-small.btn-secondary:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.btn-small.btn-outline {
+  background: transparent;
+  color: #64748b;
+  border-color: #e2e8f0;
+}
+
+.btn-small.btn-outline:hover {
+  background: #f8fafc;
+  color: #3b82f6;
+  border-color: #cbd5e1;
+}
+
+.btn-small.btn-primary {
+  padding: 4px 10px;
+  font-size: 11px;
+}
+
+.btn-small.btn-danger {
+  background: transparent;
+  color: #b91c1c;
+  border-color: transparent;
+}
+
+.btn-small.btn-danger:hover {
+  background: #fef2f2;
+  border-color: #fecaca;
 }
 
 .btn-danger {
   background: transparent;
   color: #dc2626;
-  border-color: #fca5a5;
+  border: 1px solid #fecaca;
 }
 
 .btn-danger:hover {
   background: #fef2f2;
-  color: #b91c1c;
   border-color: #dc2626;
 }
 
@@ -403,15 +454,8 @@
   }
 
   .property-actions {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .action-buttons {
-    width: 100%;
-  }
-
-  .action-buttons .btn {
-    flex: 1;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
   }
 }
