@@ -15,8 +15,15 @@
 
 .list-property-container h1 {
   font-size: 32px;
-  margin: 0 0 32px 0;
+  margin: 0 0 8px 0;
   color: #1a1a1a;
+}
+
+.list-property-disclaimer {
+  margin: 0 0 24px 0;
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.5;
 }
 
 .step-indicator {

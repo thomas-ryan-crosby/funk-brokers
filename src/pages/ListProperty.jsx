@@ -246,10 +246,13 @@ const ListProperty = () => {
     <div className="list-property-page">
       <div className="list-property-container">
         <h1>List Your Property</h1>
+        <p className="list-property-disclaimer">
+          This is just an initial workflow to create a verified listing. Additional workflow steps will be taken later on.
+        </p>
         <div className="step-indicator">
           <div className={`step ${step >= 1 ? 'active' : ''}`}>1. Address</div>
           <div className={`step ${step >= 2 ? 'active' : ''}`}>2. About the Home</div>
-          <div className={`step ${step >= 3 ? 'active' : ''}`}>3. Price</div>
+          <div className={`step ${step >= 3 ? 'active' : ''}`}>3. Initial Pricing Info</div>
           <div className={`step ${step >= 4 ? 'active' : ''}`}>4. Photos & Documents</div>
         </div>
 
@@ -262,7 +265,7 @@ const ListProperty = () => {
               {saleProfile ? (
                 <>
                   <p className="form-note form-note--sale-profile">
-                    We've used your address from Begin Sale.
+                    Prefilled from a previous step.
                   </p>
                   <div className="form-group">
                     <label>Address</label>
@@ -289,7 +292,7 @@ const ListProperty = () => {
 
           {step === 2 && (
             <div className="form-step">
-              <h2>Tell us about the home</h2>
+              <h2>About the home</h2>
               <p className="form-note">Beds, baths, size, and features.</p>
               <div className="form-grid">
                 <div className="form-group">
@@ -410,7 +413,7 @@ const ListProperty = () => {
 
           {step === 3 && (
             <div className="form-step">
-              <h2>Price the home</h2>
+              <h2>Initial Pricing Info</h2>
               <p className="form-note">Set your asking price. You can update it later.</p>
               <div className="form-group" style={{ maxWidth: 320 }}>
                 <label>Asking Price ($) *</label>
@@ -430,7 +433,7 @@ const ListProperty = () => {
 
           {step === 4 && (
             <div className="form-step">
-              <h2>Detailed home information</h2>
+              <h2>Photos and additional documents</h2>
               <p className="form-note">Photos, description, and documents (deed, disclosures, etc.).</p>
 
               <div className="form-group">
