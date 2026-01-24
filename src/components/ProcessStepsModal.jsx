@@ -43,7 +43,7 @@ const ProcessStepsModal = ({ steps, isOpen, onClose, startIndex = 0, theme = 'se
             Step {currentIndex + 1} of {steps.length}
           </span>
           <button type="button" className="process-steps-modal-close" onClick={onClose} aria-label="Close">
-            ×
+            <span aria-hidden="true">×</span>
           </button>
         </div>
 
@@ -66,7 +66,14 @@ const ProcessStepsModal = ({ steps, isOpen, onClose, startIndex = 0, theme = 'se
           </div>
 
           <div className={`process-steps-modal-why ${step.isDone ? 'process-steps-modal-why--done' : ''}`}>
-            {step.isDone ? step.whyMatters : <><strong>Why this matters:</strong> {step.whyMatters}</>}
+            {step.isDone ? (
+              step.whyMatters
+            ) : (
+              <>
+                <span className="process-steps-modal-why-label">Why it matters</span>
+                <span className="process-steps-modal-why-text">{step.whyMatters}</span>
+              </>
+            )}
           </div>
         </div>
 
