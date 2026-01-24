@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getPurchaseProfile, setPurchaseProfile, addSavedSearch } from '../services/profileService';
 import { BUYING_STEPS } from '../data/processSteps';
@@ -16,6 +16,7 @@ const WHEN_TO_BUY_OPTIONS = [
 const BeginPurchase = () => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -44,6 +45,10 @@ const BeginPurchase = () => {
 
   useEffect(() => {
     if (isAuthenticated && user) {
+      if (location.state?.startFresh) {
+        setLoading(false);
+        return;
+      }
       loadProfile();
     }
   }, [isAuthenticated, user]);

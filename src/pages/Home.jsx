@@ -1,18 +1,16 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { getAllProperties, searchProperties } from '../services/propertyService';
 import PropertyCard from '../components/PropertyCard';
 import SearchFilters from '../components/SearchFilters';
 import './Home.css';
 
 const Home = () => {
+  const location = useLocation();
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [filters, setFilters] = useState({});
-
-  useEffect(() => {
-    loadProperties();
-  }, []);
+  const [filters, setFilters] = useState(() => location.state?.filters || {});
 
   useEffect(() => {
     if (Object.keys(filters).length > 0) {
@@ -63,7 +61,7 @@ const Home = () => {
 
       <div className="home-container">
         <div className="home-sidebar">
-          <SearchFilters onFilterChange={handleFilterChange} initialFilters={location.state?.filters || {}} />
+          <SearchFilters onFilterChange={handleFilterChange} initialFilters={filters} />
         </div>
 
         <div className="home-main">

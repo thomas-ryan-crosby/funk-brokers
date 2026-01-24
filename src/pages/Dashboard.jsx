@@ -126,7 +126,7 @@ const Dashboard = () => {
         </div>
 
         <div className="dashboard-process-ctas">
-          <Link to="/begin-purchase" className="btn btn-process btn-process-buy">
+          <Link to="/begin-purchase" state={{ startFresh: true }} className="btn btn-process btn-process-buy">
             Begin home purchase process
           </Link>
           <Link to="/begin-sale" className="btn btn-process btn-process-sell">
