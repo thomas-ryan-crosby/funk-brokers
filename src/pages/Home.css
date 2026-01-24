@@ -41,12 +41,61 @@
   min-height: 400px;
 }
 
+.home-view-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  margin-bottom: 20px;
+}
+
+.home-view-count {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.home-view-toggle {
+  display: flex;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+}
+
+.home-view-toggle button {
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.home-view-toggle button:hover {
+  color: #1e293b;
+  background: #f1f5f9;
+}
+
+.home-view-toggle button.active {
+  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+  color: #fff;
+}
+
 .home-map-wrap {
   margin-bottom: 24px;
 }
 
 .home-map-wrap .property-map {
   min-height: 320px;
+}
+
+.home-map-wrap--full .property-map {
+  min-height: 420px;
 }
 
 .properties-header {
@@ -109,6 +158,15 @@
 
   .home-hero p {
     font-size: 16px;
+  }
+
+  .home-view-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .home-view-toggle {
+    align-self: flex-start;
   }
 
   .properties-grid {

@@ -12,6 +12,7 @@ const Home = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState(() => location.state?.filters || {});
+  const [viewMode, setViewMode] = useState('list'); // 'map' | 'list'
 
   useEffect(() => {
     if (Object.keys(filters).length > 0) {
@@ -81,25 +82,45 @@ const Home = () => {
 
           {!loading && !error && (
             <>
-              <div className="home-map-wrap">
-                <PropertyMap properties={properties} />
+              <div className="home-view-bar">
+                <h2 className="home-view-count">{properties.length} Properties Found</h2>
+                <div className="home-view-toggle" role="tablist" aria-label="View mode">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={viewMode === 'list'}
+                    className={viewMode === 'list' ? 'active' : ''}
+                    onClick={() => setViewMode('list')}
+                  >
+                    List
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={viewMode === 'map'}
+                    className={viewMode === 'map' ? 'active' : ''}
+                    onClick={() => setViewMode('map')}
+                  >
+                    Map
+                  </button>
+                </div>
               </div>
-              {properties.length === 0 && (
+              {viewMode === 'map' && (
+                <div className={`home-map-wrap ${viewMode === 'map' ? 'home-map-wrap--full' : ''}`}>
+                  <PropertyMap properties={properties} />
+                </div>
+              )}
+              {viewMode === 'list' && properties.length === 0 && (
                 <div className="empty-state">
                   <p>No properties found. Try adjusting your filters.</p>
                 </div>
               )}
-              {properties.length > 0 && (
-                <>
-                  <div className="properties-header">
-                    <h2>{properties.length} Properties Found</h2>
-                  </div>
-                  <div className="properties-grid">
-                    {properties.map((property) => (
-                      <PropertyCard key={property.id} property={property} />
-                    ))}
-                  </div>
-                </>
+              {viewMode === 'list' && properties.length > 0 && (
+                <div className="properties-grid">
+                  {properties.map((property) => (
+                    <PropertyCard key={property.id} property={property} />
+                  ))}
+                </div>
               )}
             </>
           )}
