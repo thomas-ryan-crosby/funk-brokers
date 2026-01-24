@@ -116,39 +116,33 @@ const HowBuyingWorks = () => {
     <div className="how-buying-works-page">
       <div className="hbw-container">
         <header className="hbw-header">
-          <h1>How Buying a Home Works</h1>
+          <h1 className="hbw-process-title">Our 11-step process to buying a home</h1>
           <p className="hbw-tagline">
-            Buying a home doesn’t have to feel overwhelming. We guide you step by step.
+            Click Start or any step to walk through each one. Use Previous and Next inside each step to move through the process.
           </p>
         </header>
 
-        <div className="hbw-intro">
-          <p>
-            Our platform breaks the home-buying process into clear, manageable steps.
-            You always know:
-          </p>
-          <ul>
-            <li>where you are in the process,</li>
-            <li>what you need to do (if anything),</li>
-            <li>and what happens next.</li>
-          </ul>
-          <p className="hbw-intro-close">No jargon. No pressure. No guessing.</p>
+        <div className="hbw-start-wrap">
+          <button type="button" className="hbw-start-btn" onClick={() => openStep(0)}>
+            Start
+          </button>
         </div>
 
-        <section className="hbw-overview">
-          <h2 className="hbw-overview-title">The steps</h2>
-          <div className="hbw-step-cards">
+        <section className="hbw-step-nav-section">
+          <div className="hbw-step-nav" role="navigation" aria-label="Process steps">
             {BUYING_STEPS.map((s, i) => (
               <button
                 key={i}
                 type="button"
-                className="hbw-step-card"
+                className="hbw-step-node"
                 onClick={() => openStep(i)}
+                aria-label={`Step ${i + 1}: ${s.title}`}
               >
-                <span className="hbw-step-card-num">{i + 1}</span>
-                <h3 className="hbw-step-card-title">{s.title}</h3>
-                <p className="hbw-step-card-lead">{s.lead}</p>
-                <span className="hbw-step-card-link">Learn more →</span>
+                <span className="hbw-step-node-diamond">
+                  <span className="hbw-step-node-num">{String(i + 1).padStart(2, '0')}</span>
+                </span>
+                <span className="hbw-step-node-title">{s.title}</span>
+                {i < BUYING_STEPS.length - 1 && <span className="hbw-step-node-connector" aria-hidden="true" />}
               </button>
             ))}
           </div>

@@ -114,39 +114,33 @@ const HowSellingWorks = () => {
     <div className="how-selling-works-page">
       <div className="hsw-container">
         <header className="hsw-header">
-          <h1>How Selling Your Home Works</h1>
+          <h1 className="hsw-process-title">Our 10-step process to selling your home</h1>
           <p className="hsw-tagline">
-            Selling a home doesn’t have to be complicated. We guide you step by step.
+            Click Start or any step to walk through each one. Use Previous and Next inside each step to move through the process.
           </p>
         </header>
 
-        <div className="hsw-intro">
-          <p>
-            Our platform breaks the sale of your home into a small number of clear steps.
-            You always know:
-          </p>
-          <ul>
-            <li>what’s happening,</li>
-            <li>what you need to do (if anything), and</li>
-            <li>what comes next.</li>
-          </ul>
-          <p className="hsw-intro-close">No real-estate jargon. No guessing. No pressure.</p>
+        <div className="hsw-start-wrap">
+          <button type="button" className="hsw-start-btn" onClick={() => openStep(0)}>
+            Start
+          </button>
         </div>
 
-        <section className="hsw-overview">
-          <h2 className="hsw-overview-title">The steps</h2>
-          <div className="hsw-step-cards">
+        <section className="hsw-step-nav-section">
+          <div className="hsw-step-nav" role="navigation" aria-label="Process steps">
             {SELLING_STEPS.map((s, i) => (
               <button
                 key={i}
                 type="button"
-                className="hsw-step-card"
+                className="hsw-step-node"
                 onClick={() => openStep(i)}
+                aria-label={`Step ${i + 1}: ${s.title}`}
               >
-                <span className="hsw-step-card-num">{i + 1}</span>
-                <h3 className="hsw-step-card-title">{s.title}</h3>
-                <p className="hsw-step-card-lead">{s.lead}</p>
-                <span className="hsw-step-card-link">Learn more →</span>
+                <span className="hsw-step-node-diamond">
+                  <span className="hsw-step-node-num">{String(i + 1).padStart(2, '0')}</span>
+                </span>
+                <span className="hsw-step-node-title">{s.title}</span>
+                {i < SELLING_STEPS.length - 1 && <span className="hsw-step-node-connector" aria-hidden="true" />}
               </button>
             ))}
           </div>

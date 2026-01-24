@@ -12,124 +12,145 @@
 
 /* Header */
 .hbw-header {
-  margin-bottom: 40px;
-  padding-bottom: 32px;
+  margin-bottom: 32px;
+  padding-bottom: 24px;
   border-bottom: 2px solid #e2e8f0;
+  text-align: center;
 }
 
-.hbw-header h1 {
-  font-size: clamp(32px, 4vw, 44px);
+.hbw-process-title {
+  font-size: clamp(28px, 4vw, 40px);
   font-weight: 700;
   color: #1e293b;
-  margin: 0 0 16px 0;
+  margin: 0 0 12px 0;
   letter-spacing: -0.02em;
   line-height: 1.2;
 }
 
 .hbw-tagline {
-  font-size: 20px;
+  font-size: 17px;
   color: #64748b;
   margin: 0;
   line-height: 1.5;
+  max-width: 520px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
-/* Intro */
-.hbw-intro {
-  margin-bottom: 48px;
+/* Start button */
+.hbw-start-wrap {
+  text-align: center;
+  margin-bottom: 40px;
 }
 
-.hbw-intro p,
-.hbw-intro ul {
-  font-size: 17px;
-  line-height: 1.7;
-  color: #475569;
-  margin: 0 0 12px 0;
-}
-
-.hbw-intro ul {
-  margin-left: 1.5em;
-  margin-bottom: 16px;
-}
-
-.hbw-intro-close {
-  font-size: 18px;
-  font-weight: 600;
-  color: #1e293b;
-}
-
-/* Overview / step cards */
-.hbw-overview {
-  margin-bottom: 48px;
-}
-
-.hbw-overview-title {
-  font-size: 20px;
-  font-weight: 700;
-  color: #1e293b;
-  margin: 0 0 20px 0;
-}
-
-.hbw-step-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 16px;
-}
-
-.hbw-step-card {
-  display: block;
-  width: 100%;
-  text-align: left;
-  background: white;
-  border: 2px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 20px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-family: inherit;
-}
-
-.hbw-step-card:hover {
-  border-color: #10b981;
-  box-shadow: 0 8px 20px rgba(5, 150, 105, 0.15);
-}
-
-.hbw-step-card-num {
+.hbw-start-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 28px;
-  height: 28px;
-  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  padding: 16px 48px;
+  font-size: 18px;
+  font-weight: 700;
+  font-family: inherit;
   color: white;
-  font-size: 13px;
-  font-weight: 700;
-  border-radius: 8px;
-  margin-bottom: 12px;
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(5, 150, 105, 0.35);
+  transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.hbw-step-card-title {
-  font-size: 17px;
-  font-weight: 700;
-  color: #1e293b;
-  margin: 0 0 8px 0;
-  line-height: 1.3;
+.hbw-start-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(5, 150, 105, 0.45);
 }
 
-.hbw-step-card-lead {
+/* Step navigator */
+.hbw-step-nav-section {
+  margin-bottom: 48px;
+}
+
+.hbw-step-nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0 8px;
+  padding: 24px 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.hbw-step-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  padding: 8px;
+  position: relative;
+}
+
+.hbw-step-node-diamond {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  transform: rotate(45deg);
+  margin-bottom: 10px;
+}
+
+.hbw-step-node-num {
+  transform: rotate(-45deg);
   font-size: 14px;
-  line-height: 1.5;
-  color: #64748b;
-  margin: 0 0 12px 0;
-}
-
-.hbw-step-card-link {
-  font-size: 14px;
-  font-weight: 600;
+  font-weight: 800;
   color: #059669;
 }
 
-.hbw-step-card:hover .hbw-step-card-link {
-  text-decoration: underline;
+.hbw-step-node:hover .hbw-step-node-diamond {
+  border-color: #10b981;
+  box-shadow: 0 6px 24px rgba(5, 150, 105, 0.2);
+}
+
+.hbw-step-node:hover .hbw-step-node-num {
+  color: #047857;
+}
+
+.hbw-step-node-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  text-align: center;
+  max-width: 100px;
+  line-height: 1.3;
+}
+
+.hbw-step-node-connector {
+  position: absolute;
+  right: -12px;
+  top: 36px;
+  width: 16px;
+  height: 2px;
+  border-top: 2px dashed #cbd5e1;
+}
+
+@media (min-width: 900px) {
+  .hbw-step-node-connector {
+    display: block;
+  }
+}
+
+@media (max-width: 899px) {
+  .hbw-step-node-connector {
+    display: none;
+  }
 }
 
 /* What You Can Expect */
@@ -263,8 +284,10 @@
     padding: 32px 0 60px;
   }
 
-  .hbw-step-cards {
-    grid-template-columns: 1fr;
+  .hbw-step-nav {
+    justify-content: flex-start;
+    padding-left: 16px;
+    padding-right: 16px;
   }
 
   .hbw-ctas {
