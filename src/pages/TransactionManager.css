@@ -41,8 +41,17 @@
   margin-bottom: 32px;
 }
 
+.tm-vendors {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 32px;
+}
+
 .tm-deal-summary h2,
-.tm-steps h2 {
+.tm-steps h2,
+.tm-vendors h2 {
   font-size: 18px;
   font-weight: 600;
   color: #475569;
@@ -77,6 +86,211 @@
 
 .tm-link:hover {
   text-decoration: underline;
+}
+
+.tm-vendor-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  padding: 12px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.tm-vendor-row:last-of-type {
+  border-bottom: none;
+}
+
+.tm-vendor-role {
+  font-size: 14px;
+  font-weight: 600;
+  color: #475569;
+  min-width: 140px;
+}
+
+.tm-vendor-assigned {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.tm-vendor-name {
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.tm-vendor-company {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.tm-vendor-contact {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.tm-vendor-contact a {
+  color: #3b82f6;
+  text-decoration: none;
+}
+
+.tm-vendor-contact a:hover {
+  text-decoration: underline;
+}
+
+.tm-vendor-actions {
+  display: flex;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.tm-vendor-actions .btn-link {
+  font-size: 13px;
+  color: #3b82f6;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.tm-vendor-actions .btn-link:hover {
+  text-decoration: underline;
+}
+
+.tm-manage-link {
+  margin: 16px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
+  font-size: 14px;
+  color: #64748b;
+}
+
+.tm-manage-link .btn-link {
+  color: #3b82f6;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  font-size: inherit;
+}
+
+.tm-manage-link .btn-link:hover {
+  text-decoration: underline;
+}
+
+.tm-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.tm-modal {
+  background: #fff;
+  border-radius: 8px;
+  padding: 24px;
+  max-width: 420px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.tm-modal-wide {
+  max-width: 520px;
+}
+
+.tm-modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 0 0 20px 0;
+}
+
+.tm-form-group {
+  margin-bottom: 16px;
+}
+
+.tm-form-group label {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  margin-bottom: 6px;
+}
+
+.tm-form-group input,
+.tm-form-group select,
+.tm-vendor-select {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #fff;
+}
+
+.tm-vendor-select {
+  min-width: 0;
+}
+
+.tm-modal-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+.tm-modal-actions-end {
+  margin-top: 16px;
+  justify-content: flex-end;
+}
+
+.tm-manage-list {
+  margin-bottom: 20px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.tm-manage-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid #e2e8f0;
+  font-size: 14px;
+}
+
+.tm-manage-row:last-child {
+  border-bottom: none;
+}
+
+.tm-manage-type {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.tm-manage-form {
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.tm-manage-form h4 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #475569;
+  margin: 0 0 12px 0;
+}
+
+.tm-btn-sm {
+  padding: 6px 12px;
+  font-size: 13px;
 }
 
 .tm-steps {

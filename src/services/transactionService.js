@@ -213,3 +213,18 @@ export const updateStepComplete = async (transactionId, stepId, completed) => {
   const ref = doc(db, TRANSACTIONS_COLLECTION, transactionId);
   await updateDoc(ref, { steps, updatedAt: new Date() });
 };
+
+/**
+ * Assign or unassign a vendor to a transaction role.
+ * @param {string} transactionId
+ * @param {string} role - title_company | inspection_company | mortgage_services | other
+ * @param {string|null} vendorId - null to unassign
+ */
+export const setAssignedVendor = async (transactionId, role, vendorId) => {
+  const t = await getTransactionById(transactionId);
+  if (!t) throw new Error('Transaction not found');
+  const list = (t.assignedVendors || []).filter((a) => a.role !== role);
+  if (vendorId) list.push({ vendorId, role });
+  const ref = doc(db, TRANSACTIONS_COLLECTION, transactionId);
+  await updateDoc(ref, { assignedVendors: list, updatedAt: new Date() });
+};
