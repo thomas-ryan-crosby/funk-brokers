@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getPropertyById, updateProperty } from '../services/propertyService';
-import { uploadFile } from '../services/storageService';
+import { uploadFile, uploadMultipleFiles } from '../services/storageService';
 import './GetVerified.css';
 
 const GetVerified = () => {
@@ -38,6 +38,9 @@ const GetVerified = () => {
   const [readyForShowings, setReadyForShowings] = useState('');
   const [readyForShowingsDate, setReadyForShowingsDate] = useState('');
   const [inspectionFile, setInspectionFile] = useState(null);
+  const [photoFiles, setPhotoFiles] = useState([]);
+  const [photoPreviews, setPhotoPreviews] = useState([]);
+  const [savedMessage, setSavedMessage] = useState('');
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -66,12 +69,66 @@ const GetVerified = () => {
       }
       setProperty(p);
       setHoaFee(p.hoaFee != null ? String(p.hoaFee) : '');
+      if (p.taxesCurrent === true) setTaxesCurrent('yes');
+      else if (p.taxesCurrent === false) setTaxesCurrent('no');
+      if (p.hasHOA === true) setHasHOA('yes');
+      else if (p.hasHOA === false) setHasHOA('no');
+      if (p.hasMortgage === true) setHasMortgage('yes');
+      else if (p.hasMortgage === false) setHasMortgage('no');
+      if (p.hasLiens === true) setHasLiens('yes');
+      else if (p.hasLiens === false) setHasLiens('no');
+      if (p.lienDetails != null) setLienDetails(String(p.lienDetails));
+      if (p.hasMajorDefects === true) setHasMajorDefects('yes');
+      else if (p.hasMajorDefects === false) setHasMajorDefects('no');
+      if (p.majorDefectsNote != null) setMajorDefectsNote(String(p.majorDefectsNote));
+      if (p.readyForShowings === true) setReadyForShowings('yes');
+      else if (p.readyForShowings === false) setReadyForShowings('no');
+      if (p.readyForShowingsDate != null) setReadyForShowingsDate(String(p.readyForShowingsDate));
     } catch (err) {
       setError('Property not found or failed to load.');
       console.error(err);
     } finally {
       setLoading(false);
     }
+  };
+
+  const totalPhotoCount = (property?.photos?.length ?? 0) + (photoFiles?.length ?? 0);
+
+  const getVerificationProgress = () => {
+    let completed = 0;
+    let total = 0;
+    const inc = (cond) => { total++; if (cond) completed++; };
+
+    inc(!!(property?.deedUrl || deedFile));
+    inc(!!(property?.propertyTaxRecordUrl || propertyTaxFile));
+    inc(!!(taxesCurrent === 'yes' || taxesCurrent === 'no'));
+    inc(!!(property?.disclosureFormsUrl || disclosureFile));
+    inc(!!(hasHOA === 'yes' || hasHOA === 'no'));
+    if (hasHOA === 'yes') {
+      inc(!!(property?.hoaDocsUrl || hoaDocsFile));
+      inc(!isNaN(parseFloat(hoaFee)) && parseFloat(hoaFee) >= 0);
+    }
+    inc(!!(hasMortgage === 'yes' || hasMortgage === 'no'));
+    inc(!!(hasLiens === 'yes' || hasLiens === 'no'));
+    if (hasMortgage === 'yes' || hasLiens === 'yes') {
+      inc(!!(property?.payoffOrLienReleaseUrl || payoffFile));
+    }
+    if (hasLiens === 'yes') inc(!!lienDetails?.trim());
+    inc(!!(property?.valuationDocUrl || valuationFile));
+    inc(!!(hasMajorDefects === 'yes' || hasMajorDefects === 'no'));
+    if (hasMajorDefects === 'yes') inc(!!majorDefectsNote?.trim());
+    inc(totalPhotoCount >= 5);
+    inc(!!(readyForShowings === 'yes' || readyForShowings === 'no'));
+    if (readyForShowings === 'no') inc(!!readyForShowingsDate?.trim());
+
+    const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+    return { completed, total, percentage };
+  };
+
+  const handlePhotoFilesChange = (e) => {
+    const files = Array.from(e.target.files || []);
+    setPhotoFiles(files);
+    setPhotoPreviews(files.map((f) => URL.createObjectURL(f)));
   };
 
   const validateAndCollect = () => {
@@ -103,10 +160,89 @@ const GetVerified = () => {
     if (hasMajorDefects === 'yes' && !majorDefectsNote.trim()) errs.push('Description of major defects');
     if (!readyForShowings) errs.push('Ready for showings (Yes/No)');
     if (readyForShowings === 'no' && !readyForShowingsDate.trim()) errs.push('Date when ready for showings');
-    const photoCount = property.photos?.length ?? 0;
-    if (photoCount < 5) errs.push('At least 5 property photos (add in Edit Property)');
+    if (totalPhotoCount < 5) errs.push('At least 5 property photos (add below)');
 
     return errs;
+  };
+
+  const handleSaveProgress = async (e) => {
+    e.preventDefault();
+    setSaving(true);
+    setError(null);
+    setSavedMessage('');
+    try {
+      const prefix = `properties/${id}/verification`;
+      const ext = (f) => (f?.name?.split('.').pop() || 'pdf');
+      const updates = {};
+
+      if (deedFile) {
+        const url = await uploadFile(deedFile, `${prefix}/deed_${Date.now()}.${ext(deedFile)}`);
+        updates.deedUrl = url;
+        setDeedFile(null);
+      }
+      if (propertyTaxFile) {
+        const url = await uploadFile(propertyTaxFile, `${prefix}/propertyTax_${Date.now()}.${ext(propertyTaxFile)}`);
+        updates.propertyTaxRecordUrl = url;
+        setPropertyTaxFile(null);
+      }
+      if (disclosureFile) {
+        const url = await uploadFile(disclosureFile, `${prefix}/disclosure_${Date.now()}.${ext(disclosureFile)}`);
+        updates.disclosureFormsUrl = url;
+        setDisclosureFile(null);
+      }
+      if (hasHOA === 'yes') {
+        if (hoaDocsFile) {
+          const url = await uploadFile(hoaDocsFile, `${prefix}/hoa_${Date.now()}.${ext(hoaDocsFile)}`);
+          updates.hoaDocsUrl = url;
+          setHoaDocsFile(null);
+        }
+        const fee = parseFloat(hoaFee);
+        if (!isNaN(fee) && fee >= 0) updates.hoaFee = fee;
+      }
+      if ((hasMortgage === 'yes' || hasLiens === 'yes') && payoffFile) {
+        const url = await uploadFile(payoffFile, `${prefix}/payoffOrLien_${Date.now()}.${ext(payoffFile)}`);
+        updates.payoffOrLienReleaseUrl = url;
+        setPayoffFile(null);
+      }
+      if (valuationFile) {
+        const url = await uploadFile(valuationFile, `${prefix}/valuation_${Date.now()}.${ext(valuationFile)}`);
+        updates.valuationDocUrl = url;
+        setValuationFile(null);
+      }
+      if (inspectionFile) {
+        const url = await uploadFile(inspectionFile, `${prefix}/inspection_${Date.now()}.${ext(inspectionFile)}`);
+        updates.inspectionReportUrl = url;
+        setInspectionFile(null);
+      }
+      if (photoFiles.length > 0) {
+        const urls = await uploadMultipleFiles(photoFiles, `properties/${id}/photos`);
+        updates.photos = [...(property.photos || []), ...urls];
+        setPhotoFiles([]);
+        setPhotoPreviews([]);
+      }
+
+      if (taxesCurrent === 'yes' || taxesCurrent === 'no') updates.taxesCurrent = taxesCurrent === 'yes';
+      if (hasHOA === 'yes' || hasHOA === 'no') updates.hasHOA = hasHOA === 'yes';
+      if (hasMortgage === 'yes' || hasMortgage === 'no') updates.hasMortgage = hasMortgage === 'yes';
+      if (hasLiens === 'yes' || hasLiens === 'no') updates.hasLiens = hasLiens === 'yes';
+      if (hasLiens === 'yes') updates.lienDetails = lienDetails?.trim() || null;
+      if (hasMajorDefects === 'yes' || hasMajorDefects === 'no') updates.hasMajorDefects = hasMajorDefects === 'yes';
+      if (hasMajorDefects === 'yes') updates.majorDefectsNote = majorDefectsNote?.trim() || null;
+      if (readyForShowings === 'yes' || readyForShowings === 'no') updates.readyForShowings = readyForShowings === 'yes';
+      if (readyForShowings === 'no') updates.readyForShowingsDate = readyForShowingsDate?.trim() || null;
+
+      if (Object.keys(updates).length > 0) {
+        await updateProperty(id, updates);
+        await loadProperty();
+        setSavedMessage('Progress saved');
+        setTimeout(() => setSavedMessage(''), 3000);
+      }
+    } catch (err) {
+      setError('Failed to save progress. Please try again.');
+      console.error(err);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -165,6 +301,7 @@ const GetVerified = () => {
         readyForShowingsDate: readyForShowings === 'no' ? readyForShowingsDate.trim() : null,
         valuationDocUrl,
         payoffOrLienReleaseUrl: hasMortgage === 'yes' || hasLiens === 'yes' ? payoffOrLienReleaseUrl : null,
+        photos,
       };
       if (deedFile) updates.deedUrl = deedUrl;
       if (propertyTaxFile) updates.propertyTaxRecordUrl = propertyTaxRecordUrl;
@@ -216,7 +353,7 @@ const GetVerified = () => {
   }
   if (!property) return null;
 
-  const photoCount = property.photos?.length ?? 0;
+  const { percentage } = getVerificationProgress();
 
   return (
     <div className="get-verified-page">
@@ -225,12 +362,19 @@ const GetVerified = () => {
         <p className="get-verified-intro">
           Complete the steps below so buyers see a Verified badge. Existing documents on your listing are reused when possible.
         </p>
+        <div className="verification-progress">
+          <div className="verification-progress-bar">
+            <div className="verification-progress-fill" style={{ width: `${percentage}%` }} />
+          </div>
+          <span className="verification-progress-text">{percentage}% complete</span>
+        </div>
         <div className="step-indicator">
           <div className={`step ${step >= 1 ? 'active' : ''}`}>1. Confirm the home</div>
           <div className={`step ${step >= 2 ? 'active' : ''}`}>2. Price the home</div>
           <div className={`step ${step >= 3 ? 'active' : ''}`}>3. Home readiness</div>
         </div>
         {error && <div className="error-message">{error}</div>}
+        {savedMessage && <div className="saved-message">{savedMessage}</div>}
         <form onSubmit={handleSubmit}>
           {step === 1 && (
             <div className="form-step">
@@ -369,11 +513,27 @@ const GetVerified = () => {
                 </div>
               )}
               <div className="form-group">
-                <label>Photos</label>
-                {photoCount >= 5 ? (
-                  <p className="on-file">✓ {photoCount} photos (5+ required)</p>
-                ) : (
-                  <p className="form-hint form-hint--warn">You have {photoCount} photos. At least 5 are required. <Link to={`/property/${id}/edit`}>Add photos in Edit Property</Link>.</p>
+                <label>Photos *</label>
+                <p className="form-hint">At least 5 photos required. Add or upload below.</p>
+                <p className={totalPhotoCount >= 5 ? 'on-file' : 'form-hint form-hint--warn'}>
+                  {totalPhotoCount >= 5 ? `✓ ${totalPhotoCount} photos` : `${totalPhotoCount} of 5 photos`}
+                </p>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handlePhotoFilesChange}
+                  className="input-file"
+                />
+                {((property?.photos?.length ?? 0) > 0 || photoPreviews.length > 0) && (
+                  <div className="photo-previews">
+                    {property?.photos?.map((url, i) => (
+                      <div key={`ex-${i}`} className="photo-preview"><img src={url} alt={`Photo ${i + 1}`} /></div>
+                    ))}
+                    {photoPreviews.map((url, i) => (
+                      <div key={`new-${i}`} className="photo-preview"><img src={url} alt={`New ${i + 1}`} /></div>
+                    ))}
+                  </div>
                 )}
               </div>
               <div className="form-group">
@@ -408,10 +568,13 @@ const GetVerified = () => {
             {step < 3 ? (
               <button type="button" onClick={() => setStep((s) => s + 1)} className="btn-primary">Next</button>
             ) : (
-              <button type="submit" disabled={saving || photoCount < 5} className="btn-primary">
+              <button type="submit" disabled={saving || totalPhotoCount < 5} className="btn-primary">
                 {saving ? 'Completing...' : 'Complete verification'}
               </button>
             )}
+            <button type="button" onClick={handleSaveProgress} disabled={saving} className="btn-secondary">
+              Save progress
+            </button>
           </div>
         </form>
       </div>
