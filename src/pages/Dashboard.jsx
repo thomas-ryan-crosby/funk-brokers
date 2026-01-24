@@ -161,8 +161,8 @@ const Dashboard = () => {
         </div>
 
         <div className="dashboard-process-ctas">
-          <Link to="/begin-purchase" state={{ startFresh: true }} className="btn btn-process btn-process-buy">
-            Begin home purchase process
+          <Link to="/create-search" className="btn btn-process btn-process-buy">
+            Create a new search
           </Link>
           <Link to="/begin-sale" state={{ startFresh: true }} className="btn btn-process btn-process-sell">
             Begin home sale process
@@ -309,7 +309,7 @@ const Dashboard = () => {
                 <h2>My Searches</h2>
                 {mySearches.length === 0 && (
                   <p className="empty-message">
-                    Complete the <Link to="/begin-purchase">Begin home purchase process</Link> and click Find Homes to save searches here.
+                    <Link to="/create-search">Create a new search</Link> and click Browse to save it here.
                   </p>
                 )}
               </div>

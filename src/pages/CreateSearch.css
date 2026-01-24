@@ -1,0 +1,96 @@
+.create-search-page {
+  min-height: 100vh;
+  background: #f5f5f5;
+  padding: 40px 20px;
+}
+
+.create-search-container {
+  max-width: 640px;
+  margin: 0 auto;
+  background: white;
+  padding: 40px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.create-search-container h1 {
+  font-size: 28px;
+  margin: 0 0 8px 0;
+  color: #1a1a1a;
+}
+
+.create-search-lead {
+  color: #64748b;
+  margin: 0 0 24px 0;
+  line-height: 1.5;
+}
+
+.create-search-error {
+  background: #fef2f2;
+  color: #b91c1c;
+  padding: 12px;
+  border-radius: 6px;
+  margin-bottom: 20px;
+  border: 1px solid #fecaca;
+}
+
+.create-search-form .form-row-multi {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.create-search-form .form-group {
+  margin-bottom: 16px;
+}
+
+.create-search-form label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 6px;
+}
+
+.create-search-form input[type="text"],
+.create-search-form input[type="number"],
+.create-search-form select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 15px;
+}
+
+.create-search-form input:focus,
+.create-search-form select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.create-search-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.create-search-loading {
+  text-align: center;
+  padding: 48px;
+  color: #64748b;
+}
+
+@media (max-width: 640px) {
+  .create-search-form .form-row-multi {
+    grid-template-columns: 1fr;
+  }
+
+  .create-search-container {
+    padding: 24px;
+  }
+}

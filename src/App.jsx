@@ -12,7 +12,7 @@ import HowSellingWorks from './pages/HowSellingWorks';
 import HowBuyingWorks from './pages/HowBuyingWorks';
 import HowItWorks from './pages/HowItWorks';
 import BeginSale from './pages/BeginSale';
-import BeginPurchase from './pages/BeginPurchase';
+import CreateSearch from './pages/CreateSearch';
 import EditProperty from './pages/EditProperty';
 import GetVerified from './pages/GetVerified';
 import VerifyBuyer from './pages/VerifyBuyer';
@@ -74,7 +74,7 @@ function AppContent() {
             <Route path="/how-selling-works" element={<HowSellingWorks />} />
             <Route path="/how-buying-works" element={<HowBuyingWorks />} />
             <Route path="/begin-sale" element={<BeginSale />} />
-            <Route path="/begin-purchase" element={<BeginPurchase />} />
+            <Route path="/create-search" element={<CreateSearch />} />
           </Routes>
         </main>
 
