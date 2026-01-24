@@ -7,7 +7,6 @@ import {
   doc,
   query,
   where,
-  orderBy,
   updateDoc,
   deleteDoc,
 } from 'firebase/firestore';
@@ -34,22 +33,24 @@ export const createOffer = async (offerData) => {
 };
 
 /**
- * Get all offers for a property
+ * Get all offers for a property.
+ * Uses where-only query (no orderBy) to avoid composite index; sorts by createdAt client-side.
  */
 export const getOffersByProperty = async (propertyId) => {
   try {
     const q = query(
       collection(db, OFFERS_COLLECTION),
-      where('propertyId', '==', propertyId),
-      orderBy('createdAt', 'desc')
+      where('propertyId', '==', propertyId)
     );
     const querySnapshot = await getDocs(q);
     const offers = [];
-    querySnapshot.forEach((doc) => {
-      offers.push({
-        id: doc.id,
-        ...doc.data(),
-      });
+    querySnapshot.forEach((d) => {
+      offers.push({ id: d.id, ...d.data() });
+    });
+    offers.sort((a, b) => {
+      const aDate = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+      const bDate = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+      return bDate - aDate;
     });
     return offers;
   } catch (error) {
@@ -59,22 +60,24 @@ export const getOffersByProperty = async (propertyId) => {
 };
 
 /**
- * Get all offers by a buyer
+ * Get all offers by a buyer.
+ * Uses where-only query (no orderBy) to avoid composite index; sorts by createdAt client-side.
  */
 export const getOffersByBuyer = async (buyerId) => {
   try {
     const q = query(
       collection(db, OFFERS_COLLECTION),
-      where('buyerId', '==', buyerId),
-      orderBy('createdAt', 'desc')
+      where('buyerId', '==', buyerId)
     );
     const querySnapshot = await getDocs(q);
     const offers = [];
-    querySnapshot.forEach((doc) => {
-      offers.push({
-        id: doc.id,
-        ...doc.data(),
-      });
+    querySnapshot.forEach((d) => {
+      offers.push({ id: d.id, ...d.data() });
+    });
+    offers.sort((a, b) => {
+      const aDate = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+      const bDate = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+      return bDate - aDate;
     });
     return offers;
   } catch (error) {
