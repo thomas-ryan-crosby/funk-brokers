@@ -4,9 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { createProperty } from '../services/propertyService';
 import { uploadMultipleFiles } from '../services/storageService';
 import PreListingChecklist from '../components/PreListingChecklist';
-import ListPropertyModal from '../components/ListPropertyModal';
 import AddressAutocomplete from '../components/AddressAutocomplete';
-import '../components/ListPropertyModal.css';
 import './ListProperty.css';
 
 const ListProperty = () => {
@@ -29,8 +27,7 @@ const ListProperty = () => {
     } catch (e) {}
     return undefined;
   });
-  const [showQuickModal, setShowQuickModal] = useState(!saleProfile);
-  const [showChecklist, setShowChecklist] = useState(false);
+  const [showChecklist, setShowChecklist] = useState(!saleProfile);
   const [checklistData, setChecklistData] = useState(null);
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -130,14 +127,7 @@ const ListProperty = () => {
 
   const validateStep = (stepNum) => {
     if (stepNum === 1) {
-      return (
-        formData.address &&
-        formData.city &&
-        formData.state &&
-        formData.zipCode &&
-        formData.propertyType &&
-        formData.price
-      );
+      return formData.address && formData.propertyType && formData.price;
     }
     if (stepNum === 2) {
       return formData.bedrooms && formData.bathrooms;
@@ -159,32 +149,9 @@ const ListProperty = () => {
     setError(null);
   };
 
-  const handleQuickModalContinue = (data) => {
-    setFormData((prev) => ({
-      ...prev,
-      propertyType: data.propertyType,
-      yearBuilt: data.yearBuilt,
-      bedrooms: data.bedrooms,
-      bathrooms: data.bathrooms,
-      squareFeet: data.squareFeet,
-      lotSize: data.lotSize,
-    }));
-    setShowQuickModal(false);
-    setShowChecklist(true);
-  };
-
-  const handleQuickModalCancel = () => {
-    navigate('/dashboard');
-  };
-
   const handleChecklistComplete = (data) => {
     setChecklistData(data);
     setShowChecklist(false);
-    // Use photos from checklist if available
-    if (data.photos && data.photos.length > 0) {
-      setPhotoPreviews(data.photos);
-      // Note: We'll use the URLs directly from checklist
-    }
   };
 
   const handleSubmit = async (e) => {
@@ -192,18 +159,18 @@ const ListProperty = () => {
     setLoading(true);
     setError(null);
 
+    if (photoFiles.length < 1) {
+      setError('Please add at least one property photo.');
+      setLoading(false);
+      return;
+    }
+
     try {
-      // Use photos from checklist or upload new ones
-      let photoUrls = [];
-      if (checklistData && checklistData.photos && checklistData.photos.length > 0) {
-        photoUrls = checklistData.photos;
-      } else if (photoFiles.length > 0) {
-        const propertyId = `temp_${Date.now()}`;
-        photoUrls = await uploadMultipleFiles(
-          photoFiles,
-          `properties/${propertyId}/photos`
-        );
-      }
+      const propertyId = `temp_${Date.now()}`;
+      const photoUrls = await uploadMultipleFiles(
+        photoFiles,
+        `properties/${propertyId}/photos`
+      );
 
       // Prepare property data
       const propertyData = {
@@ -266,15 +233,6 @@ const ListProperty = () => {
     );
   }
 
-  if (showQuickModal) {
-    return (
-      <ListPropertyModal
-        onContinue={handleQuickModalContinue}
-        onCancel={handleQuickModalCancel}
-      />
-    );
-  }
-
   if (showChecklist) {
     return (
       <div className="list-property-page">
@@ -301,59 +259,32 @@ const ListProperty = () => {
           {step === 1 && (
             <div className="form-step">
               <h2>Basic Information</h2>
-              {saleProfile && (
-                <p className="form-note form-note--sale-profile">
-                  We've filled in your address and target price from your sale profile. Please select the property type to continue.
-                </p>
-              )}
-              <div className="form-grid">
-                <div className="form-group full-width">
-                  <label>Street Address *</label>
+              {saleProfile ? (
+                <>
+                  <p className="form-note form-note--sale-profile">
+                    We've used your address and target price from Begin Sale. Confirm or edit below, then select property type.
+                  </p>
+                  <div className="form-group">
+                    <label>Address</label>
+                    <p className="read-only-address">
+                      {[formData.address, formData.city, formData.state, formData.zipCode].filter(Boolean).join(', ') || '—'}
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <div className="form-group">
+                  <label>Address *</label>
                   <AddressAutocomplete
                     name="address"
                     value={formData.address}
                     onAddressChange={(v) => setFormData((prev) => ({ ...prev, address: v }))}
                     onAddressSelect={(obj) => setFormData((prev) => ({ ...prev, ...obj }))}
-                    placeholder="Start typing an address"
+                    placeholder="Start typing an address (e.g. 123 Main St, City, State)"
                     required
                   />
                 </div>
-
-                <div className="form-group">
-                  <label>City *</label>
-                  <input
-                    type="text"
-                    name="city"
-                    value={formData.city}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>State *</label>
-                  <input
-                    type="text"
-                    name="state"
-                    value={formData.state}
-                    onChange={handleInputChange}
-                    maxLength="2"
-                    placeholder="CA"
-                    required
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Zip Code *</label>
-                  <input
-                    type="text"
-                    name="zipCode"
-                    value={formData.zipCode}
-                    onChange={handleInputChange}
-                    required
-                  />
-                </div>
-
+              )}
+              <div className="form-grid">
                 <div className="form-group">
                   <label>Property Type *</label>
                   <select
@@ -496,7 +427,8 @@ const ListProperty = () => {
               <h2>Photos & Description</h2>
 
               <div className="form-group">
-                <label>Property Photos</label>
+                <label>Property Photos *</label>
+                <p className="form-note">Add at least one photo; 5+ recommended for best results.</p>
                 <input
                   type="file"
                   accept="image/*"
@@ -538,7 +470,12 @@ const ListProperty = () => {
                 Next
               </button>
             ) : (
-              <button type="submit" disabled={loading} className="btn-primary">
+              <button
+                type="submit"
+                disabled={loading || photoFiles.length < 1}
+                className="btn-primary"
+                title={photoFiles.length < 1 ? 'Add at least one photo' : ''}
+              >
                 {loading ? 'Creating Listing...' : 'Create Listing'}
               </button>
             )}

@@ -9,7 +9,6 @@ const PreListingChecklist = ({ onComplete }) => {
     hoaDocuments: { completed: false, file: null, url: null },
     disclosureForms: { completed: false, file: null, url: null },
     inspectionReport: { completed: false, file: null, url: null },
-    photos: { completed: false, files: [], urls: [] },
   });
 
   const [uploading, setUploading] = useState({});
@@ -78,42 +77,17 @@ const PreListingChecklist = ({ onComplete }) => {
     }
   };
 
-  const handlePhotoUpload = (e) => {
-    const files = Array.from(e.target.files);
-    files.forEach((file) => {
-      handleFileUpload('photos', file, true);
-    });
-  };
-
-  const removePhoto = (index) => {
-    setChecklist((prev) => ({
-      ...prev,
-      photos: {
-        completed: prev.photos.urls.length > 1,
-        files: prev.photos.files.filter((_, i) => i !== index),
-        urls: prev.photos.urls.filter((_, i) => i !== index),
-      },
-    }));
-  };
-
   const allRequiredComplete = () => {
     return (
       checklist.deed.completed &&
       checklist.propertyTax.completed &&
-      checklist.disclosureForms.completed &&
-      checklist.photos.completed &&
-      checklist.photos.urls.length >= 5
+      checklist.disclosureForms.completed
     );
   };
 
   const getCompletionPercentage = () => {
-    const required = ['deed', 'propertyTax', 'disclosureForms', 'photos'];
-    const completed = required.filter((key) => {
-      if (key === 'photos') {
-        return checklist[key].completed && checklist[key].urls.length >= 5;
-      }
-      return checklist[key].completed;
-    });
+    const required = ['deed', 'propertyTax', 'disclosureForms'];
+    const completed = required.filter((key) => checklist[key].completed);
     return Math.round((completed.length / required.length) * 100);
   };
 
@@ -125,7 +99,6 @@ const PreListingChecklist = ({ onComplete }) => {
         hoaDocuments: checklist.hoaDocuments.url,
         disclosureForms: checklist.disclosureForms.url,
         inspectionReport: checklist.inspectionReport.url,
-        photos: checklist.photos.urls,
         completedAt: new Date(),
       };
       onComplete(checklistData);
@@ -136,7 +109,7 @@ const PreListingChecklist = ({ onComplete }) => {
     <div className="pre-listing-checklist">
       <div className="checklist-header">
         <h2>Pre-Listing Checklist</h2>
-        <p>Complete the required items before listing your property</p>
+        <p>Upload required documents. You’ll add property photos and listing details in the next step.</p>
         <div className="completion-progress">
           <div className="progress-bar">
             <div
@@ -328,59 +301,6 @@ const PreListingChecklist = ({ onComplete }) => {
             </a>
           )}
         </div>
-
-        <div className="checklist-item">
-          <div className="item-header">
-            <label>
-              <input
-                type="checkbox"
-                checked={checklist.photos.completed && checklist.photos.urls.length >= 5}
-                readOnly
-              />
-              <span>Property Photos *</span>
-            </label>
-            {checklist.photos.completed && checklist.photos.urls.length >= 5 && (
-              <span className="item-status completed">
-                ✓ {checklist.photos.urls.length} Photos
-              </span>
-            )}
-          </div>
-          <p className="item-description">
-            Upload at least 5 property photos (minimum 5, maximum 30)
-          </p>
-          <div className="item-upload">
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handlePhotoUpload}
-              disabled={uploading.photos || checklist.photos.urls.length >= 30}
-            />
-            {uploading.photos && <span className="uploading">Uploading...</span>}
-            {errors.photos && <span className="error">{errors.photos}</span>}
-            {checklist.photos.urls.length > 0 && (
-              <div className="photo-count">
-                {checklist.photos.urls.length} / 30 photos uploaded
-              </div>
-            )}
-          </div>
-          {checklist.photos.urls.length > 0 && (
-            <div className="photo-preview-grid">
-              {checklist.photos.urls.map((url, index) => (
-                <div key={index} className="photo-preview">
-                  <img src={url} alt={`Photo ${index + 1}`} />
-                  <button
-                    type="button"
-                    onClick={() => removePhoto(index)}
-                    className="remove-photo"
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
       </div>
 
       <div className="checklist-actions">
@@ -394,7 +314,7 @@ const PreListingChecklist = ({ onComplete }) => {
         </button>
         {!allRequiredComplete() && (
           <p className="completion-note">
-            Please complete all required items (*) to continue
+            Please complete all required document uploads (*) to continue
           </p>
         )}
       </div>
