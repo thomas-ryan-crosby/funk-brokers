@@ -280,6 +280,11 @@ const PropertyDetail = () => {
                     Edit Property
                   </Link>
                 )}
+                {!property.verified && (
+                  <Link to={`/property/${property.id}/get-verified`} className="btn btn-outline btn-large">
+                    Get verified
+                  </Link>
+                )}
                 {property.archived ? (
                   <button type="button" className="btn btn-outline btn-large" onClick={handleRestore}>
                     Restore
@@ -350,6 +355,12 @@ const PropertyDetail = () => {
                     : property.status}
                 </span>
               </div>
+              {property.verified && (
+                <div className="detail-row">
+                  <span className="detail-label">Verification</span>
+                  <span className="detail-value detail-value--verified">✓ Verified</span>
+                </div>
+              )}
             </div>
           </div>
         </div>

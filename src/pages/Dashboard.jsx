@@ -217,6 +217,9 @@ const Dashboard = () => {
                           {property.status === 'active' && (
                             <Link to={`/property/${property.id}/edit`} className="btn btn-small btn-outline">Edit</Link>
                           )}
+                          {!property.verified && (
+                            <Link to={`/property/${property.id}/get-verified`} className="btn btn-small btn-outline">Get verified</Link>
+                          )}
                           <button type="button" className="btn btn-small btn-outline" onClick={() => handleArchive(property.id)}>Archive</button>
                           <button type="button" className="btn btn-small btn-danger" onClick={() => handleDeletePermanently(property.id)}>Delete</button>
                         </div>
@@ -240,6 +243,9 @@ const Dashboard = () => {
                           {getStatusBadge(property)}
                           <div className="action-buttons">
                             <Link to={`/property/${property.id}`} className="btn btn-small btn-secondary">View</Link>
+                            {!property.verified && (
+                              <Link to={`/property/${property.id}/get-verified`} className="btn btn-small btn-outline">Get verified</Link>
+                            )}
                             <button type="button" className="btn btn-small btn-outline" onClick={() => handleRestore(property.id)}>Restore</button>
                             <button type="button" className="btn btn-small btn-danger" onClick={() => handleDeletePermanently(property.id)}>Delete</button>
                           </div>

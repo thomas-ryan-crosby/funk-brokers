@@ -296,6 +296,10 @@
   color: #1a1a1a;
 }
 
+.detail-value--verified {
+  color: #059669;
+}
+
 .loading-state,
 .error-state {
   text-align: center;

@@ -53,6 +53,12 @@
   box-shadow: 0 2px 8px rgba(251, 191, 36, 0.3);
 }
 
+.property-card-badge--verified {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  color: white;
+  box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3);
+}
+
 .property-card-content {
   padding: 16px;
 }

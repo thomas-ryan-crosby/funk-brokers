@@ -26,6 +26,9 @@ const PropertyCard = ({ property }) => {
         {property.status === 'under_contract' && (
           <div className="property-card-badge">Under Contract</div>
         )}
+        {property.verified && property.status !== 'under_contract' && (
+          <div className="property-card-badge property-card-badge--verified">Verified</div>
+        )}
       </div>
       <div className="property-card-content">
         <div className="property-card-price">{formatPrice(property.price)}</div>
