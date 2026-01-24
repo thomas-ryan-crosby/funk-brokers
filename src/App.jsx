@@ -8,6 +8,7 @@ import SubmitOffer from './pages/SubmitOffer';
 import SignUp from './pages/SignUp';
 import SignIn from './pages/SignIn';
 import Dashboard from './pages/Dashboard';
+import HowSellingWorks from './pages/HowSellingWorks';
 import { logout } from './services/authService';
 import './App.css';
 
@@ -61,6 +62,7 @@ function AppContent() {
             <Route path="/submit-offer/:propertyId" element={<SubmitOffer />} />
             <Route path="/sign-up" element={<SignUp />} />
             <Route path="/sign-in" element={<SignIn />} />
+            <Route path="/how-selling-works" element={<HowSellingWorks />} />
           </Routes>
         </main>
 

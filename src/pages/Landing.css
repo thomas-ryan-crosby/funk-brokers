@@ -323,6 +323,46 @@
   margin: 0;
 }
 
+/* Learn About Our Process */
+.learn-process-section {
+  padding: 100px 0;
+  background: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+
+.learn-process-content {
+  text-align: center;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.learn-process-title {
+  font-size: clamp(28px, 3.5vw, 40px);
+  font-weight: 700;
+  margin: 0 0 20px 0;
+  color: #1e293b;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+}
+
+.learn-process-subtitle {
+  font-size: 18px;
+  line-height: 1.7;
+  color: #64748b;
+  margin: 0 0 32px 0;
+}
+
+.learn-process-cta {
+  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  color: white;
+  border: none;
+  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35);
+}
+
+.learn-process-cta:hover {
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.45);
+}
+
 /* CTA Section */
 .cta-section {
   padding: 100px 0;
@@ -372,6 +412,7 @@
 
   .features-section,
   .how-it-works-section,
+  .learn-process-section,
   .cta-section {
     padding: 60px 0;
   }
