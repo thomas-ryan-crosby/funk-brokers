@@ -4,7 +4,8 @@ import { useAuth } from '../contexts/AuthContext';
 import { getPropertiesBySeller, archiveProperty, restoreProperty, deletePropertyPermanently } from '../services/propertyService';
 import { getUserFavoriteIds, removeFromFavorites } from '../services/favoritesService';
 import { getAllProperties } from '../services/propertyService';
-import { getSavedSearches, removeSavedSearch, getPurchaseProfile } from '../services/profileService';
+import { getSavedSearches, removeSavedSearch, getPurchaseProfile, setPurchaseProfile } from '../services/profileService';
+import { uploadFile } from '../services/storageService';
 import PropertyCard from '../components/PropertyCard';
 import './Dashboard.css';
 
@@ -15,9 +16,12 @@ const Dashboard = () => {
   const [myProperties, setMyProperties] = useState([]);
   const [favoriteProperties, setFavoriteProperties] = useState([]);
   const [mySearches, setMySearches] = useState([]);
-  const [purchaseProfile, setPurchaseProfile] = useState(null);
+  const [purchaseProfile, setPurchaseProfileState] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [editingBuyingPower, setEditingBuyingPower] = useState(false);
+  const [buyingPowerForm, setBuyingPowerForm] = useState('');
+  const [uploadingDoc, setUploadingDoc] = useState(null);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -57,7 +61,7 @@ const Dashboard = () => {
 
       // Load purchase profile for verified-buyer status
       const profile = await getPurchaseProfile(user.uid);
-      setPurchaseProfile(profile);
+      setPurchaseProfileState(profile);
     } catch (err) {
       setError('Failed to load dashboard data. Please try again.');
       console.error(err);
@@ -138,6 +142,56 @@ const Dashboard = () => {
     }
   };
 
+  const formatCurrency = (n) =>
+    n != null && Number.isFinite(n)
+      ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n)
+      : '—';
+
+  const handleSaveBuyingPower = async () => {
+    const parsed = buyingPowerForm.trim() === '' ? null : parseFloat(buyingPowerForm.replace(/,/g, ''));
+    if (buyingPowerForm.trim() !== '' && !Number.isFinite(parsed)) {
+      alert('Please enter a valid number for buying power.');
+      return;
+    }
+    try {
+      await setPurchaseProfile(user.uid, { buyingPower: parsed ?? null });
+      setPurchaseProfileState((p) => (p ? { ...p, buyingPower: parsed ?? null } : null));
+      setEditingBuyingPower(false);
+      setBuyingPowerForm('');
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save. Please try again.');
+    }
+  };
+
+  const handleReplaceDocument = async (field, file) => {
+    if (!file) return;
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      alert('File must be under 10MB.');
+      return;
+    }
+    const allowed = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+    if (!allowed.includes(file.type)) {
+      alert('File must be PDF, JPG, or PNG.');
+      return;
+    }
+    setUploadingDoc(field);
+    try {
+      const ext = file.name.split('.').pop();
+      const path = `buyer-verification/${user.uid}/${Date.now()}_${field}.${ext}`;
+      const url = await uploadFile(file, path);
+      const docs = { ...(purchaseProfile?.verificationDocuments || {}), [field]: url };
+      await setPurchaseProfile(user.uid, { verificationDocuments: docs });
+      setPurchaseProfileState((p) => (p ? { ...p, verificationDocuments: docs } : null));
+    } catch (err) {
+      console.error(err);
+      alert('Failed to upload. Please try again.');
+    } finally {
+      setUploadingDoc(null);
+    }
+  };
+
   if (authLoading || loading) {
     return (
       <div className="dashboard-page">
@@ -197,6 +251,14 @@ const Dashboard = () => {
           >
             My Searches ({mySearches.length})
           </button>
+          {purchaseProfile?.buyerVerified && (
+            <button
+              className={`tab ${activeTab === 'buying-power' ? 'active' : ''}`}
+              onClick={() => setActiveTab('buying-power')}
+            >
+              Buying Power
+            </button>
+          )}
         </div>
 
         <div className="dashboard-content">
@@ -346,6 +408,92 @@ const Dashboard = () => {
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {activeTab === 'buying-power' && purchaseProfile?.buyerVerified && (
+            <div className="dashboard-section buying-power-section">
+              <div className="section-header">
+                <h2>Buying Power</h2>
+                <p className="form-hint">Your verified buying power and the documents that support it. You can update these at any time.</p>
+              </div>
+
+              <div className="buying-power-card">
+                <h3>Buying power</h3>
+                {editingBuyingPower ? (
+                  <div className="buying-power-edit">
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="e.g. 500000"
+                      value={buyingPowerForm}
+                      onChange={(e) => setBuyingPowerForm(e.target.value)}
+                      className="buying-power-input"
+                    />
+                    <div className="buying-power-edit-actions">
+                      <button type="button" className="btn btn-primary" onClick={handleSaveBuyingPower}>
+                        Save
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-outline"
+                        onClick={() => {
+                          setEditingBuyingPower(false);
+                          setBuyingPowerForm('');
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="buying-power-display">
+                    <span className="buying-power-amount">{formatCurrency(purchaseProfile?.buyingPower)}</span>
+                    <button type="button" className="btn btn-outline btn-small" onClick={() => { setEditingBuyingPower(true); setBuyingPowerForm(purchaseProfile?.buyingPower != null ? String(purchaseProfile.buyingPower) : ''); }}>
+                      Edit
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <div className="buying-power-docs">
+                <h3>Supporting documents</h3>
+                {[
+                  { key: 'proofOfFunds', label: 'Proof of Funds' },
+                  { key: 'preApprovalLetter', label: 'Pre-Approval Letter' },
+                  { key: 'bankLetter', label: 'Bank Letter' },
+                  { key: 'governmentId', label: 'Government ID' },
+                ].map(({ key, label }) => {
+                  const url = purchaseProfile?.verificationDocuments?.[key];
+                  const isUploading = uploadingDoc === key;
+                  return (
+                    <div key={key} className="doc-row">
+                      <div className="doc-row-label">{label}</div>
+                      <div className="doc-row-actions">
+                        {url && (
+                          <a href={url} target="_blank" rel="noopener noreferrer" className="doc-link">
+                            View
+                          </a>
+                        )}
+                        <label className="btn btn-outline btn-small doc-replace-btn">
+                          {isUploading ? 'Uploading…' : 'Replace'}
+                          <input
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            disabled={!!uploadingDoc}
+                            onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              if (f) handleReplaceDocument(key, f);
+                              e.target.value = '';
+                            }}
+                            hidden
+                          />
+                        </label>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>

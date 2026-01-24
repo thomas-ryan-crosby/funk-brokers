@@ -438,6 +438,119 @@
   color: #475569;
 }
 
+/* Buying Power tab (verified buyers) */
+.buying-power-section .section-header .form-hint {
+  margin: 8px 0 0 0;
+}
+
+.buying-power-card {
+  padding: 20px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.buying-power-card h3,
+.buying-power-docs h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  color: #475569;
+}
+
+.buying-power-docs h3 {
+  margin-bottom: 12px;
+}
+
+.buying-power-display {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.buying-power-amount {
+  font-size: 24px;
+  font-weight: 700;
+  color: #059669;
+}
+
+.buying-power-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 280px;
+}
+
+.buying-power-input {
+  padding: 10px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 16px;
+  font-family: inherit;
+}
+
+.buying-power-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.buying-power-edit-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.buying-power-docs {
+  padding-top: 8px;
+}
+
+.doc-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #e2e8f0;
+  gap: 12px;
+}
+
+.doc-row:last-child {
+  border-bottom: none;
+}
+
+.doc-row-label {
+  font-size: 15px;
+  font-weight: 500;
+  color: #334155;
+}
+
+.doc-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.doc-link {
+  color: #3b82f6;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.doc-link:hover {
+  text-decoration: underline;
+}
+
+.doc-replace-btn {
+  cursor: pointer;
+  margin: 0;
+}
+
+.doc-replace-btn:has(input:disabled) {
+  opacity: 0.7;
+  cursor: wait;
+}
+
 .loading-state {
   text-align: center;
   padding: 60px 20px;
