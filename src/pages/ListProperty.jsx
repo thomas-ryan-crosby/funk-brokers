@@ -133,7 +133,7 @@ const ListProperty = () => {
     if (stepNum === 1) return !!formData.address?.trim();
     if (stepNum === 2) return formData.propertyType && formData.bedrooms && formData.bathrooms;
     if (stepNum === 3) return !!formData.price?.trim();
-    if (stepNum === 4) return photoFiles.length >= 1;
+    if (stepNum === 4) return true; // photos optional
     return true;
   };
 
@@ -160,18 +160,11 @@ const ListProperty = () => {
     setLoading(true);
     setError(null);
 
-    if (photoFiles.length < 1) {
-      setError('Please add at least one property photo.');
-      setLoading(false);
-      return;
-    }
-
     try {
       const uploadPrefix = `temp_${Date.now()}`;
-      const photoUrls = await uploadMultipleFiles(
-        photoFiles,
-        `properties/${uploadPrefix}/photos`
-      );
+      const photoUrls = photoFiles.length > 0
+        ? await uploadMultipleFiles(photoFiles, `properties/${uploadPrefix}/photos`)
+        : [];
 
       const docUrls = {};
       for (const [field, file] of Object.entries(documentFiles)) {
@@ -437,8 +430,8 @@ const ListProperty = () => {
               <p className="form-note">Photos, description, and documents (deed, disclosures, etc.).</p>
 
               <div className="form-group">
-                <label>Property Photos *</label>
-                <p className="form-note">Add at least one photo; 5+ recommended.</p>
+                <label>Property Photos (optional)</label>
+                <p className="form-note">You can add photos now or later. 5+ recommended when you have them.</p>
                 <input
                   type="file"
                   accept="image/*"
@@ -512,12 +505,7 @@ const ListProperty = () => {
                 Next
               </button>
             ) : (
-              <button
-                type="submit"
-                disabled={loading || photoFiles.length < 1}
-                className="btn-primary"
-                title={photoFiles.length < 1 ? 'Add at least one photo' : ''}
-              >
+              <button type="submit" disabled={loading} className="btn-primary">
                 {loading ? 'Creating Listing...' : 'Create Listing'}
               </button>
             )}
