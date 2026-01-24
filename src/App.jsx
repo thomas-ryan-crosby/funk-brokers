@@ -1,4 +1,4 @@
-import { HashRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Landing from './pages/Landing';
 import Home from './pages/Home';
@@ -26,7 +26,7 @@ function AppContent() {
   };
 
   return (
-    <Router>
+    <Router basename="/funk-brokers">
       <div className="App">
         <nav className="app-nav">
           <div className="nav-container">
