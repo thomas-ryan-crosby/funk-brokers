@@ -1,8 +1,114 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import ProcessStepsModal from '../components/ProcessStepsModal';
+import '../components/ProcessStepsModal.css';
 import './HowSellingWorks.css';
+
+const SELLING_STEPS = [
+  {
+    title: 'Confirm the Home',
+    lead: 'We make sure everything is set up correctly before you list.',
+    body: [
+      { type: 'p', text: "You'll start by entering your home's address and confirming that you're the owner. We automatically check public records to confirm ownership and identify anything that could affect the sale, like:" },
+      { type: 'ul', items: ['a mortgage,', 'a homeowners association,', 'or multiple owners on title.'] },
+      { type: 'p', text: "If something needs attention, we'll explain it in plain language and tell you exactly what to do." },
+    ],
+    whyMatters: 'Catching issues early prevents delays later.',
+  },
+  {
+    title: 'Price the Home',
+    lead: 'We help you choose a price that makes sense.',
+    body: [
+      { type: 'p', text: "You'll answer a few simple questions about your home's condition and your goals. Then we analyze recent sales of similar homes nearby and show you:" },
+      { type: 'ul', items: ['a realistic price range,', 'how long homes at that price usually take to sell,', 'and what pricing higher or lower typically means.'] },
+      { type: 'p', text: "We'll recommend a price, but you're always in control." },
+    ],
+    whyMatters: 'Correct pricing attracts serious buyers and avoids long delays.',
+  },
+  {
+    title: 'Get the Home Ready',
+    lead: 'We help you focus on what actually matters.',
+    body: [
+      { type: 'p', text: "We'll give you a short, customized checklist to prepare your home. This might include cleaning, small touch-ups, or simple improvements that make a difference." },
+      { type: 'p', text: "You'll never be told to over-spend or renovate unnecessarily. We'll show you what's worth doing — and what isn't." },
+    ],
+    whyMatters: 'A well-presented home sells faster and for more money.',
+  },
+  {
+    title: 'List the Home',
+    lead: 'We handle the details.',
+    body: [
+      { type: 'p', text: "Once you're ready, we create your listing and publish it to the major home-search websites. We write the description, organize photos, and make your home visible to buyers." },
+      { type: 'p', text: "You'll also set your showing availability so buyers can schedule visits easily." },
+    ],
+    whyMatters: 'Maximum exposure brings more qualified buyers.',
+  },
+  {
+    title: 'Showings & Feedback',
+    lead: 'Buyers tour the home. You stay informed.',
+    body: [
+      { type: 'p', text: 'Buyers request showings through the platform. We coordinate scheduling and collect feedback automatically.' },
+      { type: 'p', text: "You'll see:" },
+      { type: 'ul', items: ['how many people viewed the home,', 'how many showings occurred,', 'and what buyers are saying.'] },
+    ],
+    whyMatters: 'Feedback helps confirm pricing and spot issues early.',
+  },
+  {
+    title: 'Review Offers',
+    lead: 'We make offers easy to understand.',
+    body: [
+      { type: 'p', text: "When offers come in, we present them side-by-side in clear terms: price, estimated money you'll receive, closing timeline, and overall risk. We highlight the strongest options and explain trade-offs, so you can choose confidently." },
+      { type: 'p', text: 'You decide whether to accept, counter, or decline.' },
+    ],
+    whyMatters: "The best offer isn't always the highest number.",
+  },
+  {
+    title: 'Under Contract',
+    lead: 'We track deadlines so nothing is missed.',
+    body: [
+      { type: 'p', text: 'Once you accept an offer, there are a few important steps that follow, like inspections and financing approval. We track all deadlines for you and notify you only when action is needed.' },
+      { type: 'p', text: "You'll never have to remember dates or follow up with multiple parties." },
+    ],
+    whyMatters: 'Missed deadlines can delay or derail a sale.',
+  },
+  {
+    title: 'Inspections & Requests',
+    lead: 'We help you respond calmly and confidently.',
+    body: [
+      { type: 'p', text: 'After inspections, buyers may request repairs or credits. We explain what\'s normal, what\'s optional, and what could create risk if ignored.' },
+      { type: 'p', text: 'You choose how to respond. We handle the paperwork.' },
+    ],
+    whyMatters: 'Clear decisions prevent deals from falling apart.',
+  },
+  {
+    title: 'Closing',
+    lead: 'We make closing simple and predictable.',
+    body: [
+      { type: 'p', text: 'Before closing, we review the final numbers with you so there are no surprises. We confirm payoff amounts, closing costs, and your expected proceeds.' },
+      { type: 'p', text: 'On closing day, you sign and hand over the keys. Funds are released, and the sale is complete.' },
+    ],
+    whyMatters: 'A smooth closing means peace of mind.',
+  },
+  {
+    title: "You're Done",
+    lead: 'Everything is wrapped up and saved.',
+    body: [
+      { type: 'p', text: "After closing, we store your documents securely and confirm the sale has officially recorded. You can access everything anytime." },
+    ],
+    whyMatters: 'Congratulations — your home is sold.',
+    isDone: true,
+  },
+];
 
 const HowSellingWorks = () => {
   const navigate = useNavigate();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalStep, setModalStep] = useState(0);
+
+  const openStep = (index) => {
+    setModalStep(index);
+    setModalOpen(true);
+  };
 
   return (
     <div className="how-selling-works-page">
@@ -27,133 +133,24 @@ const HowSellingWorks = () => {
           <p className="hsw-intro-close">No real-estate jargon. No guessing. No pressure.</p>
         </div>
 
-        <ol className="hsw-steps">
-          <li className="hsw-step">
-            <h2>Step 1: Confirm the Home</h2>
-            <p className="hsw-step-lead">We make sure everything is set up correctly before you list.</p>
-            <p>
-              You’ll start by entering your home’s address and confirming that you’re the owner.
-              We automatically check public records to confirm ownership and identify anything that could affect the sale, like:
-            </p>
-            <ul>
-              <li>a mortgage,</li>
-              <li>a homeowners association,</li>
-              <li>or multiple owners on title.</li>
-            </ul>
-            <p>
-              If something needs attention, we’ll explain it in plain language and tell you exactly what to do.
-            </p>
-            <p className="hsw-why"><strong>Why this matters:</strong> Catching issues early prevents delays later.</p>
-          </li>
-
-          <li className="hsw-step">
-            <h2>Step 2: Price the Home</h2>
-            <p className="hsw-step-lead">We help you choose a price that makes sense.</p>
-            <p>
-              You’ll answer a few simple questions about your home’s condition and your goals.
-              Then we analyze recent sales of similar homes nearby and show you:
-            </p>
-            <ul>
-              <li>a realistic price range,</li>
-              <li>how long homes at that price usually take to sell,</li>
-              <li>and what pricing higher or lower typically means.</li>
-            </ul>
-            <p>We’ll recommend a price, but you’re always in control.</p>
-            <p className="hsw-why"><strong>Why this matters:</strong> Correct pricing attracts serious buyers and avoids long delays.</p>
-          </li>
-
-          <li className="hsw-step">
-            <h2>Step 3: Get the Home Ready</h2>
-            <p className="hsw-step-lead">We help you focus on what actually matters.</p>
-            <p>
-              We’ll give you a short, customized checklist to prepare your home.
-              This might include cleaning, small touch-ups, or simple improvements that make a difference.
-            </p>
-            <p>
-              You’ll never be told to over-spend or renovate unnecessarily.
-              We’ll show you what’s worth doing — and what isn’t.
-            </p>
-            <p className="hsw-why"><strong>Why this matters:</strong> A well-presented home sells faster and for more money.</p>
-          </li>
-
-          <li className="hsw-step">
-            <h2>Step 4: List the Home</h2>
-            <p className="hsw-step-lead">We handle the details.</p>
-            <p>
-              Once you’re ready, we create your listing and publish it to the major home-search websites.
-              We write the description, organize photos, and make your home visible to buyers.
-            </p>
-            <p>You’ll also set your showing availability so buyers can schedule visits easily.</p>
-            <p className="hsw-why"><strong>Why this matters:</strong> Maximum exposure brings more qualified buyers.</p>
-          </li>
-
-          <li className="hsw-step">
-            <h2>Step 5: Showings & Feedback</h2>
-            <p className="hsw-step-lead">Buyers tour the home. You stay informed.</p>
-            <p>Buyers request showings through the platform. We coordinate scheduling and collect feedback automatically.</p>
-            <p>You’ll see:</p>
-            <ul>
-              <li>how many people viewed the home,</li>
-              <li>how many showings occurred,</li>
-              <li>and what buyers are saying.</li>
-            </ul>
-            <p className="hsw-why"><strong>Why this matters:</strong> Feedback helps confirm pricing and spot issues early.</p>
-          </li>
-
-          <li className="hsw-step">
-            <h2>Step 6: Review Offers</h2>
-            <p className="hsw-step-lead">We make offers easy to understand.</p>
-            <p>
-              When offers come in, we present them side-by-side in clear terms: price, estimated money you’ll receive, closing timeline, and overall risk.
-              We highlight the strongest options and explain trade-offs, so you can choose confidently.
-            </p>
-            <p>You decide whether to accept, counter, or decline.</p>
-            <p className="hsw-why"><strong>Why this matters:</strong> The best offer isn’t always the highest number.</p>
-          </li>
-
-          <li className="hsw-step">
-            <h2>Step 7: Under Contract</h2>
-            <p className="hsw-step-lead">We track deadlines so nothing is missed.</p>
-            <p>
-              Once you accept an offer, there are a few important steps that follow, like inspections and financing approval.
-              We track all deadlines for you and notify you only when action is needed.
-            </p>
-            <p>You’ll never have to remember dates or follow up with multiple parties.</p>
-            <p className="hsw-why"><strong>Why this matters:</strong> Missed deadlines can delay or derail a sale.</p>
-          </li>
-
-          <li className="hsw-step">
-            <h2>Step 8: Inspections & Requests</h2>
-            <p className="hsw-step-lead">We help you respond calmly and confidently.</p>
-            <p>
-              After inspections, buyers may request repairs or credits.
-              We explain what’s normal, what’s optional, and what could create risk if ignored.
-            </p>
-            <p>You choose how to respond. We handle the paperwork.</p>
-            <p className="hsw-why"><strong>Why this matters:</strong> Clear decisions prevent deals from falling apart.</p>
-          </li>
-
-          <li className="hsw-step">
-            <h2>Step 9: Closing</h2>
-            <p className="hsw-step-lead">We make closing simple and predictable.</p>
-            <p>
-              Before closing, we review the final numbers with you so there are no surprises.
-              We confirm payoff amounts, closing costs, and your expected proceeds.
-            </p>
-            <p>On closing day, you sign and hand over the keys. Funds are released, and the sale is complete.</p>
-            <p className="hsw-why"><strong>Why this matters:</strong> A smooth closing means peace of mind.</p>
-          </li>
-
-          <li className="hsw-step">
-            <h2>Step 10: You’re Done</h2>
-            <p className="hsw-step-lead">Everything is wrapped up and saved.</p>
-            <p>
-              After closing, we store your documents securely and confirm the sale has officially recorded.
-              You can access everything anytime.
-            </p>
-            <p className="hsw-why hsw-done">Congratulations — your home is sold.</p>
-          </li>
-        </ol>
+        <section className="hsw-overview">
+          <h2 className="hsw-overview-title">The steps</h2>
+          <div className="hsw-step-cards">
+            {SELLING_STEPS.map((s, i) => (
+              <button
+                key={i}
+                type="button"
+                className="hsw-step-card"
+                onClick={() => openStep(i)}
+              >
+                <span className="hsw-step-card-num">{i + 1}</span>
+                <h3 className="hsw-step-card-title">{s.title}</h3>
+                <p className="hsw-step-card-lead">{s.lead}</p>
+                <span className="hsw-step-card-link">Learn more →</span>
+              </button>
+            ))}
+          </div>
+        </section>
 
         <section className="hsw-expect">
           <h2>What You Can Expect From Us</h2>
@@ -164,9 +161,7 @@ const HowSellingWorks = () => {
             <li>No surprises</li>
             <li>Help only when you need it</li>
           </ul>
-          <p>
-            If at any point you feel unsure, the platform will tell you:
-          </p>
+          <p>If at any point you feel unsure, the platform will tell you:</p>
           <blockquote>“Here’s what’s happening, and here’s what to do next.”</blockquote>
         </section>
 
@@ -186,6 +181,14 @@ const HowSellingWorks = () => {
           </div>
         </div>
       </div>
+
+      <ProcessStepsModal
+        steps={SELLING_STEPS}
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        startIndex={modalStep}
+        theme="sell"
+      />
     </div>
   );
 };
