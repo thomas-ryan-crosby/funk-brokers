@@ -11,6 +11,8 @@ import Dashboard from './pages/Dashboard';
 import HowSellingWorks from './pages/HowSellingWorks';
 import HowBuyingWorks from './pages/HowBuyingWorks';
 import HowItWorks from './pages/HowItWorks';
+import BeginSale from './pages/BeginSale';
+import BeginPurchase from './pages/BeginPurchase';
 import { logout } from './services/authService';
 import './App.css';
 
@@ -67,6 +69,8 @@ function AppContent() {
             <Route path="/how-it-works" element={<HowItWorks />} />
             <Route path="/how-selling-works" element={<HowSellingWorks />} />
             <Route path="/how-buying-works" element={<HowBuyingWorks />} />
+            <Route path="/begin-sale" element={<BeginSale />} />
+            <Route path="/begin-purchase" element={<BeginPurchase />} />
           </Routes>
         </main>
 

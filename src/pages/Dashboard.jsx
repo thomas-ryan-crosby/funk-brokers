@@ -106,10 +106,10 @@ const Dashboard = () => {
         </div>
 
         <div className="dashboard-process-ctas">
-          <Link to="/how-buying-works" className="btn btn-process btn-process-buy">
+          <Link to="/begin-purchase" className="btn btn-process btn-process-buy">
             Begin home purchase process
           </Link>
-          <Link to="/how-selling-works" className="btn btn-process btn-process-sell">
+          <Link to="/begin-sale" className="btn btn-process btn-process-sell">
             Begin home sale process
           </Link>
         </div>

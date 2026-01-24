@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { createProperty } from '../services/propertyService';
 import { uploadMultipleFiles } from '../services/storageService';
@@ -11,7 +11,9 @@ import './ListProperty.css';
 const ListProperty = () => {
   const { user, userProfile, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [showQuickModal, setShowQuickModal] = useState(true);
+  const location = useLocation();
+  const saleProfile = location.state?.saleProfile;
+  const [showQuickModal, setShowQuickModal] = useState(!saleProfile);
   const [showChecklist, setShowChecklist] = useState(false);
   const [checklistData, setChecklistData] = useState(null);
   const [step, setStep] = useState(1);
@@ -26,25 +28,36 @@ const ListProperty = () => {
     }
   }, [isAuthenticated, authLoading, navigate]);
 
-  const [formData, setFormData] = useState({
-    // Basic Information
-    address: '',
-    city: '',
-    state: '',
-    zipCode: '',
-    propertyType: '',
-    price: '',
-    squareFeet: '',
-    lotSize: '',
-    yearBuilt: '',
-    bedrooms: '',
-    bathrooms: '',
-    description: '',
-    photos: [],
-    // Additional Details
-    features: [],
-    hoaFee: '',
-    propertyTax: '',
+  const [formData, setFormData] = useState(() => {
+    const base = {
+      address: '',
+      city: '',
+      state: '',
+      zipCode: '',
+      propertyType: '',
+      price: '',
+      squareFeet: '',
+      lotSize: '',
+      yearBuilt: '',
+      bedrooms: '',
+      bathrooms: '',
+      description: '',
+      photos: [],
+      features: [],
+      hoaFee: '',
+      propertyTax: '',
+    };
+    if (saleProfile) {
+      return {
+        ...base,
+        address: saleProfile.address ?? base.address,
+        city: saleProfile.city ?? base.city,
+        state: saleProfile.state ?? base.state,
+        zipCode: saleProfile.zipCode ?? base.zipCode,
+        price: saleProfile.targetPrice != null ? String(saleProfile.targetPrice) : (saleProfile.price != null ? String(saleProfile.price) : base.price),
+      };
+    }
+    return base;
   });
 
   const [photoFiles, setPhotoFiles] = useState([]);

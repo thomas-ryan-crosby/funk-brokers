@@ -63,7 +63,7 @@ const Home = () => {
 
       <div className="home-container">
         <div className="home-sidebar">
-          <SearchFilters onFilterChange={handleFilterChange} />
+          <SearchFilters onFilterChange={handleFilterChange} initialFilters={location.state?.filters || {}} />
         </div>
 
         <div className="home-main">
