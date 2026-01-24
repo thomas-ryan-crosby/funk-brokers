@@ -1,25 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { firebaseConfig } from '../config/firebase-config';
-
-// Use VITE_GOOGLE_MAPS_API_KEY if set; otherwise fallback to Firebase key (enable Maps JavaScript API + Places API in GCP).
-const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || firebaseConfig?.apiKey;
-
-let loadPromise = null;
-function loadGooglePlaces() {
-  if (typeof window !== 'undefined' && window.google?.maps?.places) return Promise.resolve();
-  if (!API_KEY) return Promise.reject(new Error('No Google Maps API key'));
-  if (loadPromise) return loadPromise;
-  loadPromise = new Promise((resolve, reject) => {
-    const s = document.createElement('script');
-    s.src = `https://maps.googleapis.com/maps/api/js?key=${API_KEY}&libraries=places`;
-    s.async = true;
-    s.defer = true;
-    s.onload = () => resolve();
-    s.onerror = () => reject(new Error('Failed to load Google Places'));
-    document.head.appendChild(s);
-  });
-  return loadPromise;
-}
+import { loadGooglePlaces, API_KEY } from '../utils/loadGooglePlaces';
 
 function parseAddressComponents(components) {
   let address = '';
@@ -61,10 +41,16 @@ const AddressAutocomplete = ({
 
   useEffect(() => {
     if (!ready || !inputRef.current || !window.google?.maps?.places) return;
-    const ac = new window.google.maps.places.Autocomplete(inputRef.current, {
-      types: ['address'],
-      componentRestrictions: { country: 'us' },
-    });
+    let ac;
+    try {
+      ac = new window.google.maps.places.Autocomplete(inputRef.current, {
+        types: ['address'],
+        componentRestrictions: { country: 'us' },
+      });
+    } catch (e) {
+      // ApiNotActivatedMapError etc.: APIs not enabled in GCP; keep plain input
+      return;
+    }
     const onPlace = () => {
       const place = ac.getPlace();
       if (!place?.address_components) return;
