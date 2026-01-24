@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { createProperty } from '../services/propertyService';
-import { uploadMultipleFiles } from '../services/storageService';
-import PreListingChecklist from '../components/PreListingChecklist';
+import { uploadFile, uploadMultipleFiles } from '../services/storageService';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import './ListProperty.css';
 
@@ -27,9 +26,14 @@ const ListProperty = () => {
     } catch (e) {}
     return undefined;
   });
-  const [showChecklist, setShowChecklist] = useState(!saleProfile);
-  const [checklistData, setChecklistData] = useState(null);
   const [step, setStep] = useState(1);
+  const [documentFiles, setDocumentFiles] = useState({
+    deed: null,
+    propertyTaxRecord: null,
+    hoaDocs: null,
+    disclosureForms: null,
+    inspectionReport: null,
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
@@ -126,12 +130,10 @@ const ListProperty = () => {
   };
 
   const validateStep = (stepNum) => {
-    if (stepNum === 1) {
-      return formData.address && formData.propertyType && formData.price;
-    }
-    if (stepNum === 2) {
-      return formData.bedrooms && formData.bathrooms;
-    }
+    if (stepNum === 1) return !!formData.address?.trim();
+    if (stepNum === 2) return formData.propertyType && formData.bedrooms && formData.bathrooms;
+    if (stepNum === 3) return !!formData.price?.trim();
+    if (stepNum === 4) return photoFiles.length >= 1;
     return true;
   };
 
@@ -149,9 +151,8 @@ const ListProperty = () => {
     setError(null);
   };
 
-  const handleChecklistComplete = (data) => {
-    setChecklistData(data);
-    setShowChecklist(false);
+  const handleDocumentFileChange = (field, file) => {
+    setDocumentFiles((prev) => ({ ...prev, [field]: file || null }));
   };
 
   const handleSubmit = async (e) => {
@@ -172,7 +173,15 @@ const ListProperty = () => {
         `properties/${uploadPrefix}/photos`
       );
 
-      // Prepare property data
+      const docUrls = {};
+      for (const [field, file] of Object.entries(documentFiles)) {
+        if (file) {
+          const ext = file.name.split('.').pop() || 'pdf';
+          const url = await uploadFile(file, `properties/${uploadPrefix}/docs/${field}_${Date.now()}.${ext}`);
+          docUrls[`${field}Url`] = url;
+        }
+      }
+
       const propertyData = {
         ...formData,
         price: parseFloat(formData.price),
@@ -184,12 +193,12 @@ const ListProperty = () => {
         hoaFee: formData.hoaFee ? parseFloat(formData.hoaFee) : null,
         propertyTax: formData.propertyTax ? parseFloat(formData.propertyTax) : null,
         photos: photoUrls,
+        ...docUrls,
         sellerId: user?.uid || '',
         sellerName: userProfile?.name || user?.displayName || '',
         sellerEmail: user?.email || '',
       };
 
-      // Create property in Firestore
       const propertyId = await createProperty(propertyData);
       setSuccess(true);
       console.log('Property created with ID:', propertyId);
@@ -233,24 +242,15 @@ const ListProperty = () => {
     );
   }
 
-  if (showChecklist) {
-    return (
-      <div className="list-property-page">
-        <div className="list-property-container">
-          <PreListingChecklist onComplete={handleChecklistComplete} />
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="list-property-page">
       <div className="list-property-container">
         <h1>List Your Property</h1>
         <div className="step-indicator">
-          <div className={`step ${step >= 1 ? 'active' : ''}`}>1. Basic Info</div>
-          <div className={`step ${step >= 2 ? 'active' : ''}`}>2. Details</div>
-          <div className={`step ${step >= 3 ? 'active' : ''}`}>3. Photos & Description</div>
+          <div className={`step ${step >= 1 ? 'active' : ''}`}>1. Address</div>
+          <div className={`step ${step >= 2 ? 'active' : ''}`}>2. About the Home</div>
+          <div className={`step ${step >= 3 ? 'active' : ''}`}>3. Price</div>
+          <div className={`step ${step >= 4 ? 'active' : ''}`}>4. Photos & Documents</div>
         </div>
 
         {error && <div className="error-message">{error}</div>}
@@ -258,11 +258,11 @@ const ListProperty = () => {
         <form onSubmit={handleSubmit}>
           {step === 1 && (
             <div className="form-step">
-              <h2>Basic Information</h2>
+              <h2>Address</h2>
               {saleProfile ? (
                 <>
                   <p className="form-note form-note--sale-profile">
-                    We've used your address and target price from Begin Sale. Confirm or edit below, then select property type.
+                    We've used your address from Begin Sale.
                   </p>
                   <div className="form-group">
                     <label>Address</label>
@@ -284,6 +284,13 @@ const ListProperty = () => {
                   />
                 </div>
               )}
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="form-step">
+              <h2>Tell us about the home</h2>
+              <p className="form-note">Beds, baths, size, and features.</p>
               <div className="form-grid">
                 <div className="form-group">
                   <label>Property Type *</label>
@@ -301,27 +308,6 @@ const ListProperty = () => {
                     ))}
                   </select>
                 </div>
-
-                <div className="form-group">
-                  <label>Asking Price ($) *</label>
-                  <input
-                    type="number"
-                    name="price"
-                    value={formData.price}
-                    onChange={handleInputChange}
-                    min="0"
-                    step="1000"
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-          )}
-
-          {step === 2 && (
-            <div className="form-step">
-              <h2>Property Details</h2>
-              <div className="form-grid">
                 <div className="form-group">
                   <label>Bedrooms *</label>
                   <input
@@ -424,11 +410,32 @@ const ListProperty = () => {
 
           {step === 3 && (
             <div className="form-step">
-              <h2>Photos & Description</h2>
+              <h2>Price the home</h2>
+              <p className="form-note">Set your asking price. You can update it later.</p>
+              <div className="form-group" style={{ maxWidth: 320 }}>
+                <label>Asking Price ($) *</label>
+                <input
+                  type="number"
+                  name="price"
+                  value={formData.price}
+                  onChange={handleInputChange}
+                  min="0"
+                  step="1000"
+                  placeholder="e.g. 450000"
+                  required
+                />
+              </div>
+            </div>
+          )}
+
+          {step === 4 && (
+            <div className="form-step">
+              <h2>Detailed home information</h2>
+              <p className="form-note">Photos, description, and documents (deed, disclosures, etc.).</p>
 
               <div className="form-group">
                 <label>Property Photos *</label>
-                <p className="form-note">Add at least one photo; 5+ recommended for best results.</p>
+                <p className="form-note">Add at least one photo; 5+ recommended.</p>
                 <input
                   type="file"
                   accept="image/*"
@@ -452,9 +459,41 @@ const ListProperty = () => {
                   name="description"
                   value={formData.description}
                   onChange={handleInputChange}
-                  rows="8"
-                  placeholder="Describe your property, its features, neighborhood, and what makes it special..."
+                  rows="5"
+                  placeholder="Describe your property, neighborhood, and what makes it special..."
                 />
+              </div>
+
+              <div className="form-group" style={{ marginTop: 24 }}>
+                <label>Documents</label>
+                <p className="form-note">Upload deed, tax records, disclosures, and inspection if you have them.</p>
+                <div className="document-uploads">
+                  <div className="doc-row">
+                    <label className="doc-label">Deed</label>
+                    <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => handleDocumentFileChange('deed', e.target.files?.[0] || null)} />
+                    {documentFiles.deed && <span className="doc-filename">✓ {documentFiles.deed.name}</span>}
+                  </div>
+                  <div className="doc-row">
+                    <label className="doc-label">Property tax record</label>
+                    <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => handleDocumentFileChange('propertyTaxRecord', e.target.files?.[0] || null)} />
+                    {documentFiles.propertyTaxRecord && <span className="doc-filename">✓ {documentFiles.propertyTaxRecord.name}</span>}
+                  </div>
+                  <div className="doc-row">
+                    <label className="doc-label">HOA documents (if applicable)</label>
+                    <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => handleDocumentFileChange('hoaDocs', e.target.files?.[0] || null)} />
+                    {documentFiles.hoaDocs && <span className="doc-filename">✓ {documentFiles.hoaDocs.name}</span>}
+                  </div>
+                  <div className="doc-row">
+                    <label className="doc-label">Disclosure forms</label>
+                    <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => handleDocumentFileChange('disclosureForms', e.target.files?.[0] || null)} />
+                    {documentFiles.disclosureForms && <span className="doc-filename">✓ {documentFiles.disclosureForms.name}</span>}
+                  </div>
+                  <div className="doc-row">
+                    <label className="doc-label">Inspection report</label>
+                    <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => handleDocumentFileChange('inspectionReport', e.target.files?.[0] || null)} />
+                    {documentFiles.inspectionReport && <span className="doc-filename">✓ {documentFiles.inspectionReport.name}</span>}
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -465,7 +504,7 @@ const ListProperty = () => {
                 Back
               </button>
             )}
-            {step < 3 ? (
+            {step < 4 ? (
               <button type="button" onClick={handleNext} className="btn-primary">
                 Next
               </button>

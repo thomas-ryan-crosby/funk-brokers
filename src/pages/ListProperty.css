@@ -90,6 +90,38 @@
   font-size: 15px;
 }
 
+.document-uploads {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.doc-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.doc-label {
+  min-width: 180px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+}
+
+.doc-row input[type="file"] {
+  flex: 1;
+  min-width: 200px;
+  padding: 8px;
+  font-size: 14px;
+}
+
+.doc-filename {
+  font-size: 13px;
+  color: #059669;
+}
+
 .form-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
