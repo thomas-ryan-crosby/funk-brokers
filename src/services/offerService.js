@@ -131,12 +131,15 @@ export const acceptOffer = async (offerId) => {
   try {
     // Update offer status
     await updateOfferStatus(offerId, 'accepted');
-    
-    // Update property status to under_contract
+
     const offer = await getOfferById(offerId);
     if (offer.propertyId) {
-      const { updateProperty } = await import('./propertyService');
+      const { updateProperty, getPropertyById } = await import('./propertyService');
       await updateProperty(offer.propertyId, { status: 'under_contract' });
+      // Create transaction and contractual steps for the deal
+      const property = await getPropertyById(offer.propertyId).catch(() => null);
+      const { createTransaction } = await import('./transactionService');
+      await createTransaction(offer, property || {});
     }
   } catch (error) {
     console.error('Error accepting offer:', error);

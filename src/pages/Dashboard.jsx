@@ -6,6 +6,7 @@ import { getUserFavoriteIds, removeFromFavorites } from '../services/favoritesSe
 import { getAllProperties } from '../services/propertyService';
 import { getSavedSearches, removeSavedSearch, getPurchaseProfile, setPurchaseProfile } from '../services/profileService';
 import { getOffersByProperty, getOffersByBuyer, acceptOffer, rejectOffer, withdrawOffer } from '../services/offerService';
+import { getTransactionsByUser } from '../services/transactionService';
 import { uploadFile } from '../services/storageService';
 import PropertyCard from '../components/PropertyCard';
 import './Dashboard.css';
@@ -25,6 +26,7 @@ const Dashboard = () => {
   const [uploadingDoc, setUploadingDoc] = useState(null);
   const [offersByProperty, setOffersByProperty] = useState({});
   const [sentOffers, setSentOffers] = useState([]);
+  const [transactions, setTransactions] = useState([]);
   const [dealCenterActionOfferId, setDealCenterActionOfferId] = useState(null);
 
   useEffect(() => {
@@ -87,6 +89,10 @@ const Dashboard = () => {
       // Load purchase profile for verified-buyer status
       const profile = await getPurchaseProfile(user.uid);
       setPurchaseProfileState(profile);
+
+      // Load transactions (Transaction Manager)
+      const tx = await getTransactionsByUser(user.uid).catch(() => []);
+      setTransactions(tx);
     } catch (err) {
       setError('Failed to load dashboard data. Please try again.');
       console.error(err);
@@ -335,6 +341,12 @@ const Dashboard = () => {
             onClick={() => setActiveTab('deal-center')}
           >
             Deal Center
+          </button>
+          <button
+            className={`tab ${activeTab === 'transactions' ? 'active' : ''}`}
+            onClick={() => setActiveTab('transactions')}
+          >
+            Transactions ({transactions.length})
           </button>
           {purchaseProfile?.buyerVerified && (
             <button
@@ -605,6 +617,39 @@ const Dashboard = () => {
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'transactions' && (
+            <div className="dashboard-section transactions-section">
+              <div className="section-header">
+                <h2>Transaction Manager</h2>
+                <p className="form-hint">Contractual steps for deals under contract. Complete each step by the due date.</p>
+              </div>
+              {transactions.length === 0 ? (
+                <p className="empty-message">
+                  You don&apos;t have any transactions yet. When an offer is accepted, it will appear here with steps like earnest money, inspections, and closing.
+                </p>
+              ) : (
+                <div className="transactions-list">
+                  {transactions.map((t) => {
+                    const counterparty = t.buyerId === user.uid ? 'Seller' : (t.buyerName || 'Buyer');
+                    return (
+                      <div key={t.id} className="transaction-card">
+                        <div className="transaction-card-main">
+                          <Link to={`/transaction/${t.id}`} className="transaction-card-title">
+                            Deal · {formatCurrency(t.offerAmount)} · With {counterparty}
+                          </Link>
+                          <span className="transaction-card-meta">
+                            Accepted {formatDate(t.acceptedAt)} · <Link to={`/property/${t.propertyId}`}>View property</Link>
+                          </span>
+                        </div>
+                        <Link to={`/transaction/${t.id}`} className="btn btn-primary btn-small">Manage</Link>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>

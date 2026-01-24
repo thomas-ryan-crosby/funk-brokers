@@ -723,6 +723,61 @@
   }
 }
 
+/* Transaction Manager (Dashboard list) */
+.transactions-section .section-header .form-hint {
+  margin: 8px 0 0 0;
+}
+
+.transactions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.transaction-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.transaction-card-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.transaction-card-title {
+  font-weight: 600;
+  color: #1e293b;
+  text-decoration: none;
+  font-size: 15px;
+}
+
+.transaction-card-title:hover {
+  color: #3b82f6;
+  text-decoration: underline;
+}
+
+.transaction-card-meta {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.transaction-card-meta a {
+  color: #3b82f6;
+  text-decoration: none;
+}
+
+.transaction-card-meta a:hover {
+  text-decoration: underline;
+}
+
 .loading-state {
   text-align: center;
   padding: 60px 20px;
