@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { uploadFile } from '../services/storageService';
 import './BuyerVerificationChecklist.css';
 
-const BuyerVerificationChecklist = ({ onComplete }) => {
+const BuyerVerificationChecklist = ({ onComplete, continueLabel = 'Continue to Submit Offer' }) => {
   const [checklist, setChecklist] = useState({
     proofOfFunds: { completed: false, file: null, url: null },
     preApprovalLetter: { completed: false, file: null, url: null },
@@ -299,7 +299,7 @@ const BuyerVerificationChecklist = ({ onComplete }) => {
           disabled={!allRequiredComplete()}
           className="btn-primary btn-large"
         >
-          Continue to Submit Offer
+          {continueLabel}
         </button>
         {!allRequiredComplete() && (
           <p className="completion-note">

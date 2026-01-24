@@ -73,6 +73,17 @@
   transform: translateY(-0.5px);
 }
 
+.dashboard-verified-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #065f46;
+  background: #d1fae5;
+}
+
 .dashboard-error {
   background: #fee;
   color: #c33;

@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { getPropertiesBySeller, archiveProperty, restoreProperty, deletePropertyPermanently } from '../services/propertyService';
 import { getUserFavoriteIds, removeFromFavorites } from '../services/favoritesService';
 import { getAllProperties } from '../services/propertyService';
-import { getSavedSearches, removeSavedSearch } from '../services/profileService';
+import { getSavedSearches, removeSavedSearch, getPurchaseProfile } from '../services/profileService';
 import PropertyCard from '../components/PropertyCard';
 import './Dashboard.css';
 
@@ -15,6 +15,7 @@ const Dashboard = () => {
   const [myProperties, setMyProperties] = useState([]);
   const [favoriteProperties, setFavoriteProperties] = useState([]);
   const [mySearches, setMySearches] = useState([]);
+  const [purchaseProfile, setPurchaseProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -53,6 +54,10 @@ const Dashboard = () => {
       // Load saved searches
       const searches = await getSavedSearches(user.uid);
       setMySearches(searches);
+
+      // Load purchase profile for verified-buyer status
+      const profile = await getPurchaseProfile(user.uid);
+      setPurchaseProfile(profile);
     } catch (err) {
       setError('Failed to load dashboard data. Please try again.');
       console.error(err);
@@ -162,6 +167,13 @@ const Dashboard = () => {
           <Link to="/begin-sale" state={{ startFresh: true }} className="btn btn-process btn-process-sell">
             Begin home sale process
           </Link>
+          {purchaseProfile?.buyerVerified ? (
+            <span className="dashboard-verified-badge">✓ Verified buyer</span>
+          ) : (
+            <Link to="/verify-buyer" className="btn btn-outline">
+              Become a verified buyer
+            </Link>
+          )}
         </div>
 
         {error && <div className="dashboard-error">{error}</div>}

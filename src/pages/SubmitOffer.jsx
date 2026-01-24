@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { getPropertyById } from '../services/propertyService';
+import { getPurchaseProfile } from '../services/profileService';
 import { createOffer } from '../services/offerService';
-import BuyerVerificationChecklist from '../components/BuyerVerificationChecklist';
 import './SubmitOffer.css';
 
 const SubmitOffer = () => {
   const { propertyId } = useParams();
   const navigate = useNavigate();
-  const [showChecklist, setShowChecklist] = useState(true);
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [verificationData, setVerificationData] = useState(null);
   const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -31,16 +32,36 @@ const SubmitOffer = () => {
   });
 
   useEffect(() => {
-    loadProperty();
-  }, [propertyId]);
+    if (authLoading) return;
+    if (!isAuthenticated) {
+      navigate(`/sign-in?redirect=${encodeURIComponent(`/submit-offer/${propertyId}`)}`);
+      return;
+    }
+    if (!user?.uid || !propertyId) return;
+    load();
+  }, [propertyId, isAuthenticated, authLoading, user?.uid, navigate]);
 
-  const loadProperty = async () => {
+  const load = async () => {
     try {
       setLoading(true);
-      const data = await getPropertyById(propertyId);
+      setError(null);
+      const [data, profile] = await Promise.all([
+        getPropertyById(propertyId),
+        getPurchaseProfile(user.uid),
+      ]);
+      if (!profile?.buyerVerified || !profile?.buyerInfo) {
+        navigate(`/verify-buyer?redirect=${encodeURIComponent(`/submit-offer/${propertyId}`)}`);
+        return;
+      }
       setProperty(data);
-      // Pre-fill offer amount slightly below asking price
-      if (data.price) {
+      setVerificationData({
+        proofOfFunds: profile.verificationDocuments?.proofOfFunds,
+        preApprovalLetter: profile.verificationDocuments?.preApprovalLetter,
+        bankLetter: profile.verificationDocuments?.bankLetter,
+        governmentId: profile.verificationDocuments?.governmentId,
+        buyerInfo: profile.buyerInfo,
+      });
+      if (data?.price) {
         setOfferData((prev) => ({
           ...prev,
           offerAmount: (data.price * 0.95).toFixed(0),
@@ -48,16 +69,11 @@ const SubmitOffer = () => {
         }));
       }
     } catch (err) {
-      setError('Failed to load property. Please try again.');
+      setError('Failed to load. Please try again.');
       console.error(err);
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleChecklistComplete = (data) => {
-    setVerificationData(data);
-    setShowChecklist(false);
   };
 
   const handleInputChange = (e) => {
@@ -84,7 +100,7 @@ const SubmitOffer = () => {
     try {
       const offer = {
         propertyId,
-        buyerId: 'temp-buyer-id', // TODO: Replace with actual user ID when auth is added
+        buyerId: user.uid,
         buyerName: verificationData.buyerInfo.name,
         buyerEmail: verificationData.buyerInfo.email,
         buyerPhone: verificationData.buyerInfo.phone,
@@ -168,12 +184,10 @@ const SubmitOffer = () => {
     );
   }
 
-  if (showChecklist) {
+  if (!property || !verificationData) {
     return (
       <div className="submit-offer-page">
-        <div className="submit-offer-container">
-          <BuyerVerificationChecklist onComplete={handleChecklistComplete} />
-        </div>
+        <div className="loading-state">Loading...</div>
       </div>
     );
   }
