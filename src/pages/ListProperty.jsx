@@ -152,8 +152,10 @@ const ListProperty = () => {
 
   const handleNext = () => {
     if (validateStep(step)) {
-      setStep(step + 1);
+      const next = step + 1;
+      setStep(next);
       setError(null);
+      if (next === 4) setStep4UnlockAt(Date.now() + 500);
     } else {
       setError('Please fill in all required fields.');
     }
@@ -170,6 +172,7 @@ const ListProperty = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (step < 4) { handleNext(); return; }
     setLoading(true);
     setError(null);
 

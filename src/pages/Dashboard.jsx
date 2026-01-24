@@ -153,9 +153,6 @@ const Dashboard = () => {
             <h1>Welcome back, {userProfile?.name || user?.displayName || 'User'}!</h1>
             <p>Manage your properties and favorites</p>
           </div>
-          <Link to="/list-property" state={{ startFresh: true }} className="btn btn-primary">
-            + List New Property
-          </Link>
         </div>
 
         <div className="dashboard-process-ctas">
@@ -198,7 +195,7 @@ const Dashboard = () => {
                 {activeList.length === 0 && archivedList.length === 0 && (
                   <p className="empty-message">
                     You haven't listed any properties yet.{' '}
-                    <Link to="/list-property" state={{ startFresh: true }}>List your first property</Link>
+                    <Link to="/begin-sale" state={{ startFresh: true }}>Begin home sale process</Link>
                   </p>
                 )}
               </div>

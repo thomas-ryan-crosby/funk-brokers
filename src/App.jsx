@@ -42,7 +42,6 @@ function AppContent() {
               {isAuthenticated ? (
                 <>
                   <Link to="/dashboard">Dashboard</Link>
-                  <Link to="/list-property" state={{ startFresh: true }}>List Property</Link>
                   <span className="nav-user">Hi, {user?.displayName || 'User'}</span>
                   <button onClick={handleLogout} className="nav-logout">
                     Sign Out
@@ -50,7 +49,6 @@ function AppContent() {
                 </>
               ) : (
                 <>
-                  <Link to="/list-property" state={{ startFresh: true }}>List Property</Link>
                   <Link to="/sign-in" className="nav-signin">Sign In</Link>
                 </>
               )}

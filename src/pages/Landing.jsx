@@ -9,7 +9,7 @@ const Landing = () => {
   };
 
   const handleListClick = () => {
-    navigate('/list-property');
+    navigate('/begin-sale');
   };
 
   const handleLearnProcessClick = () => {

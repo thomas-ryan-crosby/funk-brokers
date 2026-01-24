@@ -68,8 +68,8 @@ const HowSellingWorks = () => {
           <p className="hsw-close-main">Selling really can be this simple.</p>
           <p className="hsw-close-sub">And we’re here the whole way.</p>
           <div className="hsw-ctas">
-            <button onClick={() => navigate('/list-property')} className="btn btn-primary btn-large">
-              List Your Property
+            <button onClick={() => navigate('/begin-sale')} className="btn btn-primary btn-large">
+              Begin home sale process
             </button>
             <button onClick={() => navigate('/how-buying-works')} className="btn btn-outline-secondary btn-large">
               How buying works
