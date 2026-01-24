@@ -551,6 +551,149 @@
   cursor: wait;
 }
 
+/* Deal Center */
+.deal-center-section .section-header .form-hint {
+  margin: 8px 0 0 0;
+}
+
+.deal-center-list {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.deal-property-block {
+  padding: 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.deal-property-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.deal-property-title {
+  font-weight: 600;
+  color: #1e293b;
+  text-decoration: none;
+  font-size: 15px;
+}
+
+.deal-property-title:hover {
+  color: #3b82f6;
+  text-decoration: underline;
+}
+
+.deal-no-offers {
+  color: #64748b;
+  font-size: 14px;
+  margin: 0;
+}
+
+.deal-offers {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.deal-offer-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+
+.deal-offer-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.deal-offer-buyer {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 15px;
+}
+
+.deal-offer-amount {
+  font-size: 18px;
+  font-weight: 700;
+  color: #059669;
+}
+
+.deal-offer-meta,
+.deal-offer-received {
+  font-size: 13px;
+  color: #64748b;
+}
+
+.deal-offer-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.offer-status-badge {
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.offer-pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.offer-accepted {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.offer-rejected {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.offer-countered {
+  background: #e0e7ff;
+  color: #3730a3;
+}
+
+.offer-withdrawn {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.offer-default {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+@media (max-width: 768px) {
+  .deal-offer-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .deal-offer-actions {
+    width: 100%;
+  }
+}
+
 .loading-state {
   text-align: center;
   padding: 60px 20px;

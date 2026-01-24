@@ -5,6 +5,7 @@ import { getPropertiesBySeller, archiveProperty, restoreProperty, deleteProperty
 import { getUserFavoriteIds, removeFromFavorites } from '../services/favoritesService';
 import { getAllProperties } from '../services/propertyService';
 import { getSavedSearches, removeSavedSearch, getPurchaseProfile, setPurchaseProfile } from '../services/profileService';
+import { getOffersByProperty, acceptOffer, rejectOffer } from '../services/offerService';
 import { uploadFile } from '../services/storageService';
 import PropertyCard from '../components/PropertyCard';
 import './Dashboard.css';
@@ -22,6 +23,8 @@ const Dashboard = () => {
   const [editingBuyingPower, setEditingBuyingPower] = useState(false);
   const [buyingPowerForm, setBuyingPowerForm] = useState('');
   const [uploadingDoc, setUploadingDoc] = useState(null);
+  const [offersByProperty, setOffersByProperty] = useState({});
+  const [dealCenterActionOfferId, setDealCenterActionOfferId] = useState(null);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -43,6 +46,14 @@ const Dashboard = () => {
       // Load user's properties
       const properties = await getPropertiesBySeller(user.uid);
       setMyProperties(properties);
+
+      // Load offers for each property (Deal Center)
+      const offerArrays = await Promise.all(
+        properties.map((p) => getOffersByProperty(p.id).catch(() => []))
+      );
+      setOffersByProperty(
+        Object.fromEntries(properties.map((p, i) => [p.id, offerArrays[i] || []]))
+      );
 
       // Load favorite properties
       const favoriteIds = await getUserFavoriteIds(user.uid);
@@ -192,6 +203,46 @@ const Dashboard = () => {
     }
   };
 
+  const formatDate = (v) => {
+    if (!v) return '—';
+    const d = v?.toDate ? v.toDate() : new Date(v);
+    return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  };
+
+  const handleAcceptOffer = async (offerId) => {
+    if (!window.confirm('Accept this offer? The property will be marked Under Contract.')) return;
+    setDealCenterActionOfferId(offerId);
+    try {
+      await acceptOffer(offerId);
+      await loadDashboardData();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to accept offer. Please try again.');
+    } finally {
+      setDealCenterActionOfferId(null);
+    }
+  };
+
+  const handleRejectOffer = async (offerId) => {
+    if (!window.confirm('Reject this offer? The buyer will no longer see it as pending.')) return;
+    setDealCenterActionOfferId(offerId);
+    try {
+      await rejectOffer(offerId);
+      await loadDashboardData();
+    } catch (err) {
+      console.error(err);
+      alert('Failed to reject offer. Please try again.');
+    } finally {
+      setDealCenterActionOfferId(null);
+    }
+  };
+
+  const getOfferStatusBadge = (status) => {
+    const c = { pending: 'offer-pending', accepted: 'offer-accepted', rejected: 'offer-rejected', countered: 'offer-countered', withdrawn: 'offer-withdrawn' }[status || 'pending'] || 'offer-default';
+    const l = (status || 'pending').replace(/_/g, ' ');
+    return <span className={`offer-status-badge ${c}`}>{l}</span>;
+  };
+
   if (authLoading || loading) {
     return (
       <div className="dashboard-page">
@@ -250,6 +301,12 @@ const Dashboard = () => {
             onClick={() => setActiveTab('my-searches')}
           >
             My Searches ({mySearches.length})
+          </button>
+          <button
+            className={`tab ${activeTab === 'deal-center' ? 'active' : ''}`}
+            onClick={() => setActiveTab('deal-center')}
+          >
+            Deal Center
           </button>
           {purchaseProfile?.buyerVerified && (
             <button
@@ -406,6 +463,80 @@ const Dashboard = () => {
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'deal-center' && (
+            <div className="dashboard-section deal-center-section">
+              <div className="section-header">
+                <h2>Deal Center</h2>
+                <p className="form-hint">Offers on your listings. Accept or reject pending offers.</p>
+              </div>
+              {activeList.length === 0 ? (
+                <p className="empty-message">
+                  You don&apos;t have any active listings.{' '}
+                  <Link to="/begin-sale" state={{ startFresh: true }}>Begin home sale process</Link> to list a property and receive offers.
+                </p>
+              ) : (
+                <div className="deal-center-list">
+                  {activeList.map((property) => {
+                    const offers = offersByProperty[property.id] || [];
+                    return (
+                      <div key={property.id} className="deal-property-block">
+                        <div className="deal-property-header">
+                          <Link to={`/property/${property.id}`} className="deal-property-title">
+                            {[property.address, property.city, property.state].filter(Boolean).join(', ') || 'Property'} — {formatCurrency(property.price)}
+                          </Link>
+                          <Link to={`/property/${property.id}`} className="btn btn-outline btn-small">
+                            View
+                          </Link>
+                        </div>
+                        {offers.length === 0 ? (
+                          <p className="deal-no-offers">No offers yet.</p>
+                        ) : (
+                          <div className="deal-offers">
+                            {offers.map((offer) => (
+                              <div key={offer.id} className="deal-offer-row">
+                                <div className="deal-offer-main">
+                                  <span className="deal-offer-buyer">{offer.buyerName || 'Buyer'}</span>
+                                  <span className="deal-offer-amount">{formatCurrency(offer.offerAmount)}</span>
+                                  <span className="deal-offer-meta">
+                                    {['Earnest ' + formatCurrency(offer.earnestMoney), 'Closing ' + formatDate(offer.proposedClosingDate), (offer.financingType || '').replace(/-/g, ' ')].filter(Boolean).join(' · ')}
+                                  </span>
+                                  <span className="deal-offer-received">Received {formatDate(offer.createdAt)}</span>
+                                </div>
+                                <div className="deal-offer-actions">
+                                  {getOfferStatusBadge(offer.status)}
+                                  {offer.status === 'pending' && (
+                                    <>
+                                      <button
+                                        type="button"
+                                        className="btn btn-primary btn-small"
+                                        disabled={dealCenterActionOfferId != null}
+                                        onClick={() => handleAcceptOffer(offer.id)}
+                                      >
+                                        Accept
+                                      </button>
+                                      <button
+                                        type="button"
+                                        className="btn btn-outline btn-small"
+                                        disabled={dealCenterActionOfferId != null}
+                                        onClick={() => handleRejectOffer(offer.id)}
+                                      >
+                                        Reject
+                                      </button>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
             </div>
