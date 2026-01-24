@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getPurchaseProfile, setPurchaseProfile, addSavedSearch } from '../services/profileService';
 import { BUYING_STEPS } from '../data/processSteps';
+import CityStateAutocomplete from '../components/CityStateAutocomplete';
 import './BeginPurchase.css';
 
 const TOTAL_STEPS = 3;
@@ -241,7 +242,12 @@ const BeginPurchase = () => {
             <div className="form-row-multi">
               <div className="form-group">
                 <label>City</label>
-                <input type="text" value={form.city} onChange={(e) => handleChange('city', e.target.value)} placeholder="Any city" />
+                <CityStateAutocomplete
+                  value={form.city}
+                  onCityChange={(v) => handleChange('city', v)}
+                  onCityStateSelect={({ city, state }) => setForm((prev) => ({ ...prev, city, state }))}
+                  placeholder="Start typing city or area"
+                />
               </div>
               <div className="form-group">
                 <label>State</label>

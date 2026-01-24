@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getSaleProfile, setSaleProfile } from '../services/profileService';
 import { SELLING_STEPS } from '../data/processSteps';
+import AddressAutocomplete from '../components/AddressAutocomplete';
 import './BeginSale.css';
 
 const TOTAL_STEPS = 4;
@@ -215,11 +216,12 @@ const BeginSale = () => {
             <div className="form-row">
               <div className="form-group full">
                 <label>Street address *</label>
-                <input
-                  type="text"
+<AddressAutocomplete
                   value={form.address}
-                  onChange={(e) => handleChange('address', e.target.value)}
-                  placeholder="e.g. 123 Main St"
+                  onAddressChange={(v) => handleChange('address', v)}
+                  onAddressSelect={(obj) => setForm((prev) => ({ ...prev, ...obj }))}
+                  placeholder="Start typing an address (e.g. 123 Main St)"
+                  required
                 />
               </div>
             </div>

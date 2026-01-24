@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import CityStateAutocomplete from './CityStateAutocomplete';
 import './SearchFilters.css';
 
 const SearchFilters = ({ onFilterChange, initialFilters = {} }) => {
@@ -108,11 +109,15 @@ const SearchFilters = ({ onFilterChange, initialFilters = {} }) => {
 
         <div className="filter-group">
           <label>City</label>
-          <input
-            type="text"
+          <CityStateAutocomplete
             value={filters.city}
-            onChange={(e) => handleChange('city', e.target.value)}
-            placeholder="Any city"
+            onCityChange={(v) => handleChange('city', v)}
+            onCityStateSelect={({ city, state }) => {
+              const next = { ...filters, city, state };
+              setFilters(next);
+              onFilterChange(next);
+            }}
+            placeholder="Start typing city or area"
           />
         </div>
 

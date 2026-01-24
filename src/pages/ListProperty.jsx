@@ -5,6 +5,7 @@ import { createProperty } from '../services/propertyService';
 import { uploadMultipleFiles } from '../services/storageService';
 import PreListingChecklist from '../components/PreListingChecklist';
 import ListPropertyModal from '../components/ListPropertyModal';
+import AddressAutocomplete from '../components/AddressAutocomplete';
 import '../components/ListPropertyModal.css';
 import './ListProperty.css';
 
@@ -308,11 +309,12 @@ const ListProperty = () => {
               <div className="form-grid">
                 <div className="form-group full-width">
                   <label>Street Address *</label>
-                  <input
-                    type="text"
+                  <AddressAutocomplete
                     name="address"
                     value={formData.address}
-                    onChange={handleInputChange}
+                    onAddressChange={(v) => setFormData((prev) => ({ ...prev, address: v }))}
+                    onAddressSelect={(obj) => setFormData((prev) => ({ ...prev, ...obj }))}
+                    placeholder="Start typing an address"
                     required
                   />
                 </div>

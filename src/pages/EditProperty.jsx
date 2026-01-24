@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getPropertyById, updateProperty } from '../services/propertyService';
 import { uploadMultipleFiles } from '../services/storageService';
+import AddressAutocomplete from '../components/AddressAutocomplete';
 import './ListProperty.css';
 
 const propertyTypes = ['Single Family', 'Condo', 'Townhouse', 'Multi-Family', 'Land'];
@@ -182,7 +183,14 @@ const EditProperty = () => {
               <div className="form-grid">
                 <div className="form-group full-width">
                   <label>Street Address *</label>
-                  <input type="text" name="address" value={formData.address} onChange={handleInputChange} required />
+                  <AddressAutocomplete
+                  name="address"
+                  value={formData.address}
+                  onAddressChange={(v) => handleInputChange({ target: { name: 'address', value: v } })}
+                  onAddressSelect={(obj) => setFormData((prev) => (prev ? { ...prev, ...obj } : prev))}
+                  placeholder="Start typing an address"
+                  required
+                />
                 </div>
                 <div className="form-group"><label>City *</label><input type="text" name="city" value={formData.city} onChange={handleInputChange} required /></div>
                 <div className="form-group"><label>State *</label><input type="text" name="state" value={formData.state} onChange={handleInputChange} maxLength="2" placeholder="CA" required /></div>
