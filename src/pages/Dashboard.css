@@ -186,10 +186,26 @@
 .action-buttons {
   display: flex;
   flex-wrap: nowrap;
-  gap: 4px;
+  gap: 6px;
   align-items: center;
   flex: 1;
-  justify-content: flex-end;
+  justify-content: space-evenly;
+}
+
+/* Circular action buttons: fixed size, evenly spaced, all visible in card */
+.property-actions .action-buttons .action-btn {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  min-height: 28px;
+  padding: 0 !important;
+  border-radius: 50%;
+  font-size: 9px;
+  line-height: 1;
+  flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .status-badge {

@@ -208,15 +208,15 @@ const Dashboard = () => {
                       <div className="property-actions">
                         {getStatusBadge(property)}
                         <div className="action-buttons">
-                          <Link to={`/property/${property.id}`} className="btn btn-small btn-secondary">View</Link>
+                          <Link to={`/property/${property.id}`} className="action-btn btn btn-secondary" title="View">View</Link>
                           {property.status === 'active' && (
-                            <Link to={`/property/${property.id}/edit`} className="btn btn-small btn-outline">Edit</Link>
+                            <Link to={`/property/${property.id}/edit`} className="action-btn btn btn-outline" title="Edit">Edit</Link>
                           )}
                           {!property.verified && (
-                            <Link to={`/property/${property.id}/get-verified`} className="btn btn-small btn-outline">Verify</Link>
+                            <Link to={`/property/${property.id}/get-verified`} className="action-btn btn btn-outline" title="Verify">Verify</Link>
                           )}
-                          <button type="button" className="btn btn-small btn-outline" onClick={() => handleArchive(property.id)}>Archive</button>
-                          <button type="button" className="btn btn-small btn-danger" onClick={() => handleDeletePermanently(property.id)}>Delete</button>
+                          <button type="button" className="action-btn btn btn-outline" title="Archive" onClick={() => handleArchive(property.id)}>Arch</button>
+                          <button type="button" className="action-btn btn btn-danger" title="Delete" onClick={() => handleDeletePermanently(property.id)}>Del</button>
                         </div>
                       </div>
                     </div>
@@ -235,12 +235,12 @@ const Dashboard = () => {
                         <div className="property-actions">
                           {getStatusBadge(property)}
                           <div className="action-buttons">
-                            <Link to={`/property/${property.id}`} className="btn btn-small btn-secondary">View</Link>
+                            <Link to={`/property/${property.id}`} className="action-btn btn btn-secondary" title="View">View</Link>
                             {!property.verified && (
-                              <Link to={`/property/${property.id}/get-verified`} className="btn btn-small btn-outline">Get verified</Link>
+                              <Link to={`/property/${property.id}/get-verified`} className="action-btn btn btn-outline" title="Verify">Verify</Link>
                             )}
-                            <button type="button" className="btn btn-small btn-outline" onClick={() => handleRestore(property.id)}>Restore</button>
-                            <button type="button" className="btn btn-small btn-danger" onClick={() => handleDeletePermanently(property.id)}>Delete</button>
+                            <button type="button" className="action-btn btn btn-outline" title="Restore" onClick={() => handleRestore(property.id)}>Rest</button>
+                            <button type="button" className="action-btn btn btn-danger" title="Delete" onClick={() => handleDeletePermanently(property.id)}>Del</button>
                           </div>
                         </div>
                       </div>
@@ -269,19 +269,20 @@ const Dashboard = () => {
                     <div key={property.id} className="property-item">
                       <PropertyCard property={property} embedded />
                       <div className="property-actions">
-                        <button
-                          type="button"
-                          className="btn btn-small btn-outline"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handleRemoveFavorite(property.id);
-                          }}
-                        >
-                          Remove
-                        </button>
-                        <Link to={`/property/${property.id}`} className="btn btn-small btn-primary">
-                          View
-                        </Link>
+                        <div className="action-buttons">
+                          <button
+                            type="button"
+                            className="action-btn btn btn-outline"
+                            title="Remove"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleRemoveFavorite(property.id);
+                            }}
+                          >
+                            Rmv
+                          </button>
+                          <Link to={`/property/${property.id}`} className="action-btn btn btn-primary" title="View">View</Link>
+                        </div>
                       </div>
                     </div>
                   ))}
