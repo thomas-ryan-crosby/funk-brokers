@@ -38,6 +38,9 @@ const Landing = () => {
                 List Your Property
               </button>
             </div>
+            <button onClick={handleLearnProcessClick} className="hero-learn-more">
+              Learn more about our process
+            </button>
             <div className="hero-stats">
               <div className="stat">
                 <span className="stat-value">$0</span>
