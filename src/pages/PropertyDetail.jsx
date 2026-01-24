@@ -15,6 +15,9 @@ const PropertyDetail = () => {
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState(0);
   const [favorited, setFavorited] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
+  const [favoriteCount, setFavoriteCount] = useState(null);
+
+  const isOwner = !!(property && user && property.sellerId === user.uid);
 
   useEffect(() => {
     loadProperty();

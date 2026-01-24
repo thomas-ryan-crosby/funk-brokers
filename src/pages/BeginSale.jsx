@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getSaleProfile, setSaleProfile } from '../services/profileService';
 import { SELLING_STEPS } from '../data/processSteps';
@@ -29,6 +29,7 @@ const CONDITION_OPTIONS = [
 const BeginSale = () => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -62,6 +63,10 @@ const BeginSale = () => {
   const loadProfile = async () => {
     try {
       setLoading(true);
+      if (location.state?.startFresh) {
+        setLoading(false);
+        return;
+      }
       const profile = await getSaleProfile(user.uid);
       if (profile) {
         setForm((prev) => ({

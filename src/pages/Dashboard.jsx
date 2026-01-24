@@ -129,7 +129,7 @@ const Dashboard = () => {
           <Link to="/begin-purchase" state={{ startFresh: true }} className="btn btn-process btn-process-buy">
             Begin home purchase process
           </Link>
-          <Link to="/begin-sale" className="btn btn-process btn-process-sell">
+          <Link to="/begin-sale" state={{ startFresh: true }} className="btn btn-process btn-process-sell">
             Begin home sale process
           </Link>
         </div>
