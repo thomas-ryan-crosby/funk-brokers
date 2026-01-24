@@ -32,6 +32,10 @@ const AddressAutocomplete = ({
 }) => {
   const inputRef = useRef(null);
   const [ready, setReady] = useState(false);
+  const onAddressSelectRef = useRef(onAddressSelect);
+  const onAddressChangeRef = useRef(onAddressChange);
+  onAddressSelectRef.current = onAddressSelect;
+  onAddressChangeRef.current = onAddressChange;
 
   useEffect(() => {
     if (!API_KEY) return;
@@ -63,7 +67,12 @@ const AddressAutocomplete = ({
           parsed.state = '';
           parsed.zipCode = '';
         }
-        onAddressSelect?.(parsed);
+        onAddressSelectRef.current?.(parsed);
+      };
+
+      // Update input immediately when we'll do async work so the first click feels responsive
+      const showImmediate = (txt) => {
+        if (txt) onAddressChangeRef.current?.(txt);
       };
 
       const tryGeocoder = (addr) => {
@@ -98,6 +107,7 @@ const AddressAutocomplete = ({
 
       // 2) place_id → Place Details (single-click often has place_id only; getDetails returns full data)
       if (place.place_id && window.google?.maps?.places?.PlacesService) {
+        showImmediate(place.formatted_address || '');
         try {
           const svc = new window.google.maps.places.PlacesService(document.createElement('div'));
           svc.getDetails(
@@ -123,7 +133,8 @@ const AddressAutocomplete = ({
         return;
       }
 
-      // 3) Geocoder on formatted_address
+      // 3) Geocoder on formatted_address (async)
+      showImmediate(place.formatted_address || '');
       tryGeocoder(place.formatted_address);
     };
     ac.addListener('place_changed', onPlace);
@@ -132,7 +143,7 @@ const AddressAutocomplete = ({
         if (window.google?.maps?.event?.clearInstanceListeners) window.google.maps.event.clearInstanceListeners(ac);
       } catch (_) {}
     };
-  }, [ready, onAddressSelect]);
+  }, [ready]);
 
   return (
     <input

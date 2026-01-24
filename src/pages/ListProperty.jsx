@@ -27,6 +27,7 @@ const ListProperty = () => {
     return undefined;
   });
   const [step, setStep] = useState(1);
+  const [step4UnlockAt, setStep4UnlockAt] = useState(0);
   const [documentFiles, setDocumentFiles] = useState({
     deed: null,
     propertyTaxRecord: null,
@@ -44,6 +45,14 @@ const ListProperty = () => {
       navigate('/sign-up?redirect=/list-property');
     }
   }, [isAuthenticated, authLoading, navigate]);
+
+  // Unlock "Create Listing" after a short delay to avoid double-click on "Next" submitting before photos
+  useEffect(() => {
+    if (step !== 4 || step4UnlockAt <= 0) return;
+    const ms = Math.max(0, step4UnlockAt - Date.now());
+    const t = setTimeout(() => setStep4UnlockAt(0), ms);
+    return () => clearTimeout(t);
+  }, [step, step4UnlockAt]);
 
   const [formData, setFormData] = useState(() => {
     const base = {
@@ -518,8 +527,12 @@ const ListProperty = () => {
                 Next
               </button>
             ) : (
-              <button type="submit" disabled={loading} className="btn-primary">
-                {loading ? 'Creating Listing...' : 'Create Listing'}
+              <button
+                type="submit"
+                disabled={loading || (step4UnlockAt > 0 && Date.now() < step4UnlockAt)}
+                className="btn-primary"
+              >
+                {loading ? 'Creating Listing...' : (step4UnlockAt > 0 && Date.now() < step4UnlockAt) ? 'One moment...' : 'Create Listing'}
               </button>
             )}
           </div>
