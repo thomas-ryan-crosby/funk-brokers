@@ -286,6 +286,7 @@ A comprehensive web application that serves as:
 **Priority:** P0 (Critical)
 
 **Requirements:**
+- **Process entry points:** Two primary actions: **Begin home purchase process** and **Begin home sale process**. These link to the canonical 11-step (buying) and 10-step (selling) process guides. Users can start either journey from the dashboard.
 - Separate dashboards for buyers and sellers
 - Transaction status overview
 - Timeline view of transaction phases
@@ -423,11 +424,43 @@ A comprehensive web application that serves as:
 
 ### 5.5 Educational Resources Hub
 
+#### 5.5.0 Core Process Step Architecture
+**Priority:** P0 (Critical)
+
+The platform defines two canonical process step models as the single source of truth. They are implemented in `src/data/processSteps.js` and drive the How Buying Works and How Selling Works education UI, process modals, and (in the future) transaction state and workflows.
+
+**11-Step Home Purchase Process (BUYING_STEPS):**
+1. Get Ready to Buy  
+2. Define What You're Looking For  
+3. Find Homes  
+4. Tour Homes  
+5. Make an Offer  
+6. Negotiate  
+7. Under Contract  
+8. Inspections  
+9. Final Approval & Walkthrough  
+10. Closing  
+11. Welcome Home  
+
+**10-Step Home Sale Process (SELLING_STEPS):**
+1. Confirm the Home  
+2. Price the Home  
+3. Get the Home Ready  
+4. List the Home  
+5. Showings & Feedback  
+6. Review Offers  
+7. Under Contract  
+8. Inspections & Requests  
+9. Closing  
+10. You're Done  
+
+Each step has: `title`, `lead`, `body` (paragraphs and lists), `whyMatters`, and optionally `isDone` for the final step. The dashboard exposes **Begin home purchase process** and **Begin home sale process** linking to these flows.
+
 #### 5.5.1 Transaction Guide
 **Priority:** P1 (High)
 
 **Requirements:**
-- Comprehensive 9-step guide:
+- Comprehensive 9-step guide (supplemented by the canonical 11-step buying and 10-step selling process architecture in 5.5.0):
   - **Step 1: The General Hunt**
     - How to search for properties
     - Understanding property listings

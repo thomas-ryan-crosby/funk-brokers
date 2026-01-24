@@ -105,6 +105,15 @@ const Dashboard = () => {
           </Link>
         </div>
 
+        <div className="dashboard-process-ctas">
+          <Link to="/how-buying-works" className="btn btn-process btn-process-buy">
+            Begin home purchase process
+          </Link>
+          <Link to="/how-selling-works" className="btn btn-process btn-process-sell">
+            Begin home sale process
+          </Link>
+        </div>
+
         {error && <div className="dashboard-error">{error}</div>}
 
         <div className="dashboard-tabs">
