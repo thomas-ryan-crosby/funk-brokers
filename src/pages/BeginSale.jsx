@@ -147,7 +147,7 @@ const BeginSale = () => {
 
   const canProceed = () => {
     if (step === 1) {
-      return form.address?.trim() && form.city?.trim() && form.state?.trim() && form.zipCode?.trim() && form.ownershipConfirmed;
+      return form.address?.trim() && form.ownershipConfirmed;
     }
     if (step === 2) {
       return form.condition && form.targetPrice?.trim();
@@ -215,34 +215,14 @@ const BeginSale = () => {
           <div className="begin-sale-form">
             <div className="form-row">
               <div className="form-group full">
-                <label>Street address *</label>
-<AddressAutocomplete
+                <label>Address *</label>
+                <AddressAutocomplete
                   value={form.address}
                   onAddressChange={(v) => handleChange('address', v)}
                   onAddressSelect={(obj) => setForm((prev) => ({ ...prev, ...obj }))}
-                  placeholder="Start typing an address (e.g. 123 Main St)"
+                  placeholder="Start typing an address (e.g. 123 Main St, City, State)"
                   required
                 />
-              </div>
-            </div>
-            <div className="form-row form-row-multi">
-              <div className="form-group">
-                <label>City *</label>
-                <input type="text" value={form.city} onChange={(e) => handleChange('city', e.target.value)} />
-              </div>
-              <div className="form-group">
-                <label>State *</label>
-                <input
-                  type="text"
-                  value={form.state}
-                  onChange={(e) => handleChange('state', e.target.value.toUpperCase())}
-                  placeholder="e.g. CA"
-                  maxLength={2}
-                />
-              </div>
-              <div className="form-group">
-                <label>ZIP code *</label>
-                <input type="text" value={form.zipCode} onChange={(e) => handleChange('zipCode', e.target.value)} />
               </div>
             </div>
             <div className="form-group">
