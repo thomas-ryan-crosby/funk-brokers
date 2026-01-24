@@ -4,12 +4,15 @@ import { useAuth } from '../contexts/AuthContext';
 import { createProperty } from '../services/propertyService';
 import { uploadMultipleFiles } from '../services/storageService';
 import PreListingChecklist from '../components/PreListingChecklist';
+import ListPropertyModal from '../components/ListPropertyModal';
+import '../components/ListPropertyModal.css';
 import './ListProperty.css';
 
 const ListProperty = () => {
   const { user, userProfile, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [showChecklist, setShowChecklist] = useState(true);
+  const [showQuickModal, setShowQuickModal] = useState(true);
+  const [showChecklist, setShowChecklist] = useState(false);
   const [checklistData, setChecklistData] = useState(null);
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -127,6 +130,24 @@ const ListProperty = () => {
     setError(null);
   };
 
+  const handleQuickModalContinue = (data) => {
+    setFormData((prev) => ({
+      ...prev,
+      propertyType: data.propertyType,
+      yearBuilt: data.yearBuilt,
+      bedrooms: data.bedrooms,
+      bathrooms: data.bathrooms,
+      squareFeet: data.squareFeet,
+      lotSize: data.lotSize,
+    }));
+    setShowQuickModal(false);
+    setShowChecklist(true);
+  };
+
+  const handleQuickModalCancel = () => {
+    navigate('/dashboard');
+  };
+
   const handleChecklistComplete = (data) => {
     setChecklistData(data);
     setShowChecklist(false);
@@ -213,6 +234,15 @@ const ListProperty = () => {
           </button>
         </div>
       </div>
+    );
+  }
+
+  if (showQuickModal) {
+    return (
+      <ListPropertyModal
+        onContinue={handleQuickModalContinue}
+        onCancel={handleQuickModalCancel}
+      />
     );
   }
 
