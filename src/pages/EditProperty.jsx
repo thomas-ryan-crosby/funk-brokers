@@ -24,6 +24,7 @@ const EditProperty = () => {
   const [existingPhotos, setExistingPhotos] = useState([]);
   const [newPhotoFiles, setNewPhotoFiles] = useState([]);
   const [newPhotoPreviews, setNewPhotoPreviews] = useState([]);
+  const [addressInputValue, setAddressInputValue] = useState('');
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -62,6 +63,7 @@ const EditProperty = () => {
         hoaFee: p.hoaFee != null ? String(p.hoaFee) : '',
         propertyTax: p.propertyTax != null ? String(p.propertyTax) : '',
       });
+      setAddressInputValue([p.address, p.city, p.state, p.zipCode].filter(Boolean).join(', '));
       setExistingPhotos(Array.isArray(p.photos) ? [...p.photos] : []);
     } catch (err) {
       setError('Property not found or failed to load.');
@@ -184,13 +186,19 @@ const EditProperty = () => {
                 <div className="form-group full-width">
                   <label>Street Address *</label>
                   <AddressAutocomplete
-                  name="address"
-                  value={formData.address}
-                  onAddressChange={(v) => handleInputChange({ target: { name: 'address', value: v } })}
-                  onAddressSelect={(obj) => setFormData((prev) => (prev ? { ...prev, ...obj } : prev))}
-                  placeholder="Start typing an address"
-                  required
-                />
+                    name="address"
+                    value={addressInputValue}
+                    onAddressChange={(v) => {
+                      setAddressInputValue(v);
+                      if (!v.trim()) setFormData((prev) => (prev ? { ...prev, address: '' } : prev));
+                    }}
+                    onAddressSelect={(obj) => {
+                      setFormData((prev) => (prev ? { ...prev, ...obj } : prev));
+                      setAddressInputValue([obj.address, obj.city, obj.state, obj.zipCode].filter(Boolean).join(', '));
+                    }}
+                    placeholder="Select an address from the list (start typing to search)"
+                    required
+                  />
                 </div>
                 <div className="form-group"><label>City *</label><input type="text" name="city" value={formData.city} onChange={handleInputChange} required /></div>
                 <div className="form-group"><label>State *</label><input type="text" name="state" value={formData.state} onChange={handleInputChange} maxLength="2" placeholder="CA" required /></div>

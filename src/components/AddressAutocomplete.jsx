@@ -57,7 +57,12 @@ const AddressAutocomplete = ({
       if (!place) return;
 
       const done = (parsed) => {
-        if (!parsed.address && place.formatted_address) parsed.address = place.formatted_address;
+        if (!parsed.address && place.formatted_address) {
+          parsed.address = place.formatted_address;
+          parsed.city = '';
+          parsed.state = '';
+          parsed.zipCode = '';
+        }
         onAddressSelect?.(parsed);
       };
 
@@ -69,7 +74,12 @@ const AddressAutocomplete = ({
         new window.google.maps.Geocoder().geocode({ address: addr }, (results, status) => {
           if (status === 'OK' && results?.[0]?.address_components) {
             const p = parseAddressComponents(results[0].address_components);
-            p.address = addr;
+            if (!p.address) {
+              p.address = addr;
+              p.city = '';
+              p.state = '';
+              p.zipCode = '';
+            }
             done(p);
           } else {
             done({ address: addr, city: '', state: '', zipCode: '' });

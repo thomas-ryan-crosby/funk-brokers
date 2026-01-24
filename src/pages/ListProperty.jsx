@@ -79,6 +79,7 @@ const ListProperty = () => {
 
   const [photoFiles, setPhotoFiles] = useState([]);
   const [photoPreviews, setPhotoPreviews] = useState([]);
+  const [addressInputValue, setAddressInputValue] = useState('');
 
   const propertyTypes = [
     'Single Family',
@@ -130,7 +131,10 @@ const ListProperty = () => {
   };
 
   const validateStep = (stepNum) => {
-    if (stepNum === 1) return !!formData.address?.trim();
+    if (stepNum === 1) {
+      // Require a selection from the autocomplete (address from API), not raw typing
+      return !!formData.address?.trim() && (!!formData.city?.trim() || !!formData.state?.trim() || !!formData.zipCode?.trim());
+    }
     if (stepNum === 2) return formData.propertyType && formData.bedrooms && formData.bathrooms;
     if (stepNum === 3) return !!formData.price?.trim();
     if (stepNum === 4) return true; // photos optional
@@ -272,12 +276,21 @@ const ListProperty = () => {
                   <label>Address *</label>
                   <AddressAutocomplete
                     name="address"
-                    value={formData.address}
-                    onAddressChange={(v) => setFormData((prev) => ({ ...prev, address: v }))}
-                    onAddressSelect={(obj) => setFormData((prev) => ({ ...prev, ...obj }))}
-                    placeholder="Start typing an address (e.g. 123 Main St, City, State)"
+                    value={addressInputValue}
+                    onAddressChange={(v) => {
+                      setAddressInputValue(v);
+                      if (!v.trim()) setFormData((prev) => ({ ...prev, address: '', city: '', state: '', zipCode: '' }));
+                    }}
+                    onAddressSelect={(obj) => {
+                      setFormData((prev) => ({ ...prev, ...obj }));
+                      setAddressInputValue([obj.address, obj.city, obj.state, obj.zipCode].filter(Boolean).join(', '));
+                    }}
+                    placeholder="Select an address from the list (start typing to search)"
                     required
                   />
+                  {formData.address && (formData.city || formData.zipCode) && (
+                    <p className="form-hint">✓ Address verified from selection</p>
+                  )}
                 </div>
               )}
             </div>
