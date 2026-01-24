@@ -166,10 +166,10 @@ const ListProperty = () => {
     }
 
     try {
-      const propertyId = `temp_${Date.now()}`;
+      const uploadPrefix = `temp_${Date.now()}`;
       const photoUrls = await uploadMultipleFiles(
         photoFiles,
-        `properties/${propertyId}/photos`
+        `properties/${uploadPrefix}/photos`
       );
 
       // Prepare property data
