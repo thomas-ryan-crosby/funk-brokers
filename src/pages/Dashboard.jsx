@@ -6,7 +6,7 @@ import { getUserFavoriteIds, removeFromFavorites } from '../services/favoritesSe
 import { getAllProperties } from '../services/propertyService';
 import { getSavedSearches, removeSavedSearch, getPurchaseProfile, setPurchaseProfile } from '../services/profileService';
 import { getOffersByProperty, getOffersByBuyer, acceptOffer, rejectOffer, withdrawOffer } from '../services/offerService';
-import { getTransactionsByUser } from '../services/transactionService';
+import { getTransactionsByUser, getTransactionByOfferId, createTransaction } from '../services/transactionService';
 import { uploadFile } from '../services/storageService';
 import PropertyCard from '../components/PropertyCard';
 import './Dashboard.css';
@@ -54,9 +54,8 @@ const Dashboard = () => {
       const offerArrays = await Promise.all(
         properties.map((p) => getOffersByProperty(p.id).catch(() => []))
       );
-      setOffersByProperty(
-        Object.fromEntries(properties.map((p, i) => [p.id, offerArrays[i] || []]))
-      );
+      const offersByPropertyMap = Object.fromEntries(properties.map((p, i) => [p.id, offerArrays[i] || []]));
+      setOffersByProperty(offersByPropertyMap);
 
       // Load offers sent by user (Deal Center – sent) with property details
       const sent = await getOffersByBuyer(user.uid).catch(() => []);
@@ -89,6 +88,26 @@ const Dashboard = () => {
       // Load purchase profile for verified-buyer status
       const profile = await getPurchaseProfile(user.uid);
       setPurchaseProfileState(profile);
+
+      // Backfill: create transactions for accepted offers that predate Transaction Manager
+      const parseDt = (v) => { if (!v) return null; const d = v?.toDate ? v.toDate() : new Date(v); return Number.isNaN(d?.getTime()) ? null : d; };
+      for (const p of properties) {
+        const list = offersByPropertyMap[p.id] || [];
+        for (const o of list) {
+          if (o.status !== 'accepted') continue;
+          try {
+            const ex = await getTransactionByOfferId(o.id);
+            if (!ex) await createTransaction(o, p, { acceptedAt: parseDt(o.updatedAt) || parseDt(o.createdAt) });
+          } catch (_) {}
+        }
+      }
+      for (const { offer: o, property: p } of sentWithProperty) {
+        if (o.status !== 'accepted') continue;
+        try {
+          const ex = await getTransactionByOfferId(o.id);
+          if (!ex) await createTransaction(o, p || {}, { acceptedAt: parseDt(o.updatedAt) || parseDt(o.createdAt) });
+        } catch (_) {}
+      }
 
       // Load transactions (Transaction Manager)
       const tx = await getTransactionsByUser(user.uid).catch(() => []);

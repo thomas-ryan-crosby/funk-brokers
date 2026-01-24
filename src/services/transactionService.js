@@ -109,13 +109,18 @@ function buildSteps(offer, acceptedAt) {
  * Create a transaction when an offer is accepted. Idempotent: skips if one exists for offerId.
  * @param {object} offer - full offer (from getOfferById)
  * @param {object} property - full property (from getPropertyById) for sellerId
+ * @param {object} [opts] - optional: { acceptedAt: Date|Timestamp } for backfill (default: now)
  * @returns {Promise<string|null>} transaction id or null if skipped (duplicate)
  */
-export const createTransaction = async (offer, property) => {
+export const createTransaction = async (offer, property, opts = {}) => {
   const existing = await getTransactionByOfferId(offer.id);
   if (existing) return null;
 
-  const acceptedAt = new Date();
+  let acceptedAt = new Date();
+  if (opts.acceptedAt) {
+    const d = opts.acceptedAt?.toDate ? opts.acceptedAt.toDate() : new Date(opts.acceptedAt);
+    if (!Number.isNaN(d.getTime())) acceptedAt = d;
+  }
   const buyerId = offer.buyerId;
   const sellerId = property?.sellerId || null;
   const parties = [buyerId, sellerId].filter(Boolean);
