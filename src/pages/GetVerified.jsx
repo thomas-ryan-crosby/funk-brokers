@@ -286,6 +286,11 @@ const GetVerified = () => {
       if (!inspectionReportUrl && inspectionFile) {
         inspectionReportUrl = await uploadFile(inspectionFile, `${prefix}/inspection_${Date.now()}.${ext(inspectionFile)}`);
       }
+      let photos = property.photos || [];
+      if (photoFiles.length > 0) {
+        const urls = await uploadMultipleFiles(photoFiles, `properties/${id}/photos`);
+        photos = [...photos, ...urls];
+      }
 
       const updates = {
         verified: true,
