@@ -8,39 +8,20 @@ const BeginSale = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
+    if (authLoading) return;
+    if (!isAuthenticated) {
       navigate('/sign-in?redirect=/begin-sale');
+      return;
     }
-  }, [isAuthenticated, authLoading, navigate]);
-
-  const handleContinue = () => {
-    navigate('/list-property', { state: { startFresh: true } });
-  };
-
-  if (authLoading) {
-    return (
-      <div className="begin-sale-page">
-        <div className="begin-sale-container">
-          <div className="begin-sale-loading">Loading...</div>
-        </div>
-      </div>
-    );
-  }
-  if (!isAuthenticated) return null;
+    navigate('/list-property', { state: { startFresh: true }, replace: true });
+  }, [authLoading, isAuthenticated, navigate]);
 
   return (
     <div className="begin-sale-page">
       <div className="begin-sale-container">
-        <h1>Begin your home sale</h1>
-        <p className="begin-sale-disclaimer">
-          This is just an initial workflow to create a verified listing. Additional workflow steps will be taken later on.
-        </p>
-        <p className="begin-sale-cta-copy">
-          When you're ready, continue to create your listing with your address, property details, pricing, and photos.
-        </p>
-        <button type="button" className="btn btn-primary btn-large" onClick={handleContinue}>
-          Continue to List Property
-        </button>
+        <div className="begin-sale-loading">
+          {authLoading ? 'Loading...' : 'Redirecting...'}
+        </div>
       </div>
     </div>
   );
