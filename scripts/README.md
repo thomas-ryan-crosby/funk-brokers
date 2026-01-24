@@ -63,3 +63,35 @@ The script will:
 - Go to Firebase Console → Firestore Database
 - Create database if it doesn't exist
 - Make sure it's in production mode (or update security rules)
+
+---
+
+## Backfill Property Coordinates
+
+Adds `latitude` and `longitude` to existing properties that have an address but no coordinates, using the Google Geocoding API. Used for map search.
+
+### Prerequisites
+
+- `firebase/serviceAccountKey.json` (same as populate-data)
+- **Google Geocoding API** enabled in Google Cloud (same project as Maps/Places)
+- API key with Geocoding allowed. Set `GOOGLE_MAPS_API_KEY` or `VITE_GOOGLE_MAPS_API_KEY`
+
+### Run
+
+```bash
+GOOGLE_MAPS_API_KEY=your_key npm run backfill-coordinates
+```
+
+Or (Windows PowerShell):
+
+```powershell
+$env:GOOGLE_MAPS_API_KEY="your_key"; npm run backfill-coordinates
+```
+
+### Behavior
+
+- Reads all documents in the `properties` collection
+- Skips properties that already have `latitude` and `longitude`
+- For others: builds an address from `address`, `city`, `state`, `zipCode`; if empty, skips
+- Calls Geocoding API, then writes `latitude`, `longitude`, and `updatedAt`
+- Waits ~250ms between requests to reduce rate-limit risk

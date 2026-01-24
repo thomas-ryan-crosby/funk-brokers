@@ -75,31 +75,47 @@ const AddressAutocomplete = ({
         if (txt) onAddressChangeRef.current?.(txt);
       };
 
-      const tryGeocoder = (addr) => {
+      // baseParsed: if provided, merge lat/lng only from geocode into it; otherwise build from geocode result.
+      const tryGeocoder = (addr, baseParsed = null) => {
         if (!addr || !window.google?.maps?.Geocoder) {
-          done({ address: addr || '', city: '', state: '', zipCode: '' });
+          done(baseParsed || { address: addr || '', city: '', state: '', zipCode: '' });
           return;
         }
         new window.google.maps.Geocoder().geocode({ address: addr }, (results, status) => {
-          if (status === 'OK' && results?.[0]?.address_components) {
-            const p = parseAddressComponents(results[0].address_components);
-            if (!p.address) {
-              p.address = addr;
-              p.city = '';
-              p.state = '';
-              p.zipCode = '';
+          if (status === 'OK' && results?.[0]) {
+            const p = baseParsed
+              ? { ...baseParsed }
+              : parseAddressComponents(results[0].address_components || []);
+            if (!p.address) p.address = results[0].formatted_address || addr;
+            const loc = results[0].geometry?.location;
+            if (loc) {
+              p.latitude = typeof loc.lat === 'function' ? loc.lat() : loc.lat;
+              p.longitude = typeof loc.lng === 'function' ? loc.lng() : loc.lng;
             }
             done(p);
           } else {
-            done({ address: addr, city: '', state: '', zipCode: '' });
+            done(baseParsed || { address: addr, city: '', state: '', zipCode: '' });
           }
         });
       };
 
-      // 1) address_components with city/state/zip → done
+      // 1) address_components with city/state/zip → done (include lat/lng from place.geometry or geocode)
       if (place.address_components?.length) {
         const parsed = parseAddressComponents(place.address_components);
+        if (!parsed.address && place.formatted_address) parsed.address = place.formatted_address;
         if (parsed.city && parsed.state && parsed.zipCode) {
+          if (place.geometry?.location) {
+            const loc = place.geometry.location;
+            parsed.latitude = typeof loc.lat === 'function' ? loc.lat() : loc.lat;
+            parsed.longitude = typeof loc.lng === 'function' ? loc.lng() : loc.lng;
+            done(parsed);
+            return;
+          }
+          const fullAddr = [parsed.address, parsed.city, parsed.state, parsed.zipCode].filter(Boolean).join(', ');
+          if (fullAddr) {
+            tryGeocoder(fullAddr, parsed);
+            return;
+          }
           done(parsed);
           return;
         }
@@ -111,14 +127,21 @@ const AddressAutocomplete = ({
         try {
           const svc = new window.google.maps.places.PlacesService(document.createElement('div'));
           svc.getDetails(
-            { placeId: place.place_id, fields: ['address_components', 'formatted_address'] },
+            { placeId: place.place_id, fields: ['address_components', 'formatted_address', 'geometry'] },
             (details, status) => {
               if (status === 'OK' && details) {
                 const fa = details.formatted_address || place.formatted_address || '';
                 if (details.address_components?.length) {
                   const p = parseAddressComponents(details.address_components);
                   p.address = p.address || fa;
-                  done(p);
+                  if (details.geometry?.location) {
+                    const loc = details.geometry.location;
+                    p.latitude = typeof loc.lat === 'function' ? loc.lat() : loc.lat;
+                    p.longitude = typeof loc.lng === 'function' ? loc.lng() : loc.lng;
+                    done(p);
+                  } else {
+                    tryGeocoder(fa, p);
+                  }
                 } else {
                   tryGeocoder(fa);
                 }

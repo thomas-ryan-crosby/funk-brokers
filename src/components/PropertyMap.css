@@ -1,0 +1,60 @@
+.property-map {
+  position: relative;
+  width: 100%;
+  min-height: 280px;
+  background: #e2e8f0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.property-map-canvas {
+  width: 100%;
+  height: 100%;
+  min-height: 280px;
+}
+
+.property-map-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #64748b;
+  font-size: 14px;
+}
+
+.property-map--error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #b91c1c;
+  font-size: 14px;
+}
+
+/* InfoWindow content (Google injects into the map) */
+.property-map-info {
+  padding: 4px 0;
+  font-size: 13px;
+  line-height: 1.4;
+  min-width: 180px;
+}
+
+.property-map-info strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #1e293b;
+}
+
+.property-map-info p {
+  margin: 4px 0;
+  color: #475569;
+}
+
+.property-map-info a {
+  color: #3b82f6;
+  text-decoration: none;
+  font-size: 12px;
+}
+
+.property-map-info a:hover {
+  text-decoration: underline;
+}

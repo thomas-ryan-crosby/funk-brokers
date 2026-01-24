@@ -41,6 +41,14 @@
   min-height: 400px;
 }
 
+.home-map-wrap {
+  margin-bottom: 24px;
+}
+
+.home-map-wrap .property-map {
+  min-height: 320px;
+}
+
 .properties-header {
   margin-bottom: 24px;
 }

@@ -59,6 +59,8 @@ const EditProperty = () => {
         city: p.city || '',
         state: p.state || '',
         zipCode: p.zipCode || '',
+        latitude: p.latitude,
+        longitude: p.longitude,
         propertyType: p.propertyType || '',
         price: p.price != null ? String(p.price) : '',
         squareFeet: p.squareFeet != null ? String(p.squareFeet) : '',
@@ -148,7 +150,7 @@ const EditProperty = () => {
         }
       }
 
-      await updateProperty(id, {
+      const updates = {
         address: formData.address,
         city: formData.city,
         state: formData.state,
@@ -166,7 +168,12 @@ const EditProperty = () => {
         propertyTax: formData.propertyTax ? parseFloat(formData.propertyTax) : null,
         photos,
         ...docUrls,
-      });
+      };
+      if (typeof formData.latitude === 'number' && !Number.isNaN(formData.latitude) && typeof formData.longitude === 'number' && !Number.isNaN(formData.longitude)) {
+        updates.latitude = formData.latitude;
+        updates.longitude = formData.longitude;
+      }
+      await updateProperty(id, updates);
       navigate(`/property/${id}`);
     } catch (err) {
       setError('Failed to update. Please try again.');
@@ -209,7 +216,7 @@ const EditProperty = () => {
                 value={addressInputValue}
                 onAddressChange={(v) => {
                   setAddressInputValue(v);
-                  if (!v.trim()) setFormData((prev) => (prev ? { ...prev, address: '', city: '', state: '', zipCode: '' } : prev));
+                  if (!v.trim()) setFormData((prev) => (prev ? { ...prev, address: '', city: '', state: '', zipCode: '', latitude: undefined, longitude: undefined } : prev));
                 }}
                 onAddressSelect={(obj) => {
                   setFormData((prev) => (prev ? { ...prev, ...obj } : prev));

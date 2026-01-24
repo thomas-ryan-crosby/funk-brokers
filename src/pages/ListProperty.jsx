@@ -207,6 +207,13 @@ const ListProperty = () => {
         sellerName: userProfile?.name || user?.displayName || '',
         sellerEmail: user?.email || '',
       };
+      if (typeof formData.latitude === 'number' && !Number.isNaN(formData.latitude) && typeof formData.longitude === 'number' && !Number.isNaN(formData.longitude)) {
+        propertyData.latitude = formData.latitude;
+        propertyData.longitude = formData.longitude;
+      } else {
+        delete propertyData.latitude;
+        delete propertyData.longitude;
+      }
 
       const propertyId = await createProperty(propertyData);
       setSuccess(true);
@@ -291,7 +298,7 @@ const ListProperty = () => {
                     value={addressInputValue}
                     onAddressChange={(v) => {
                       setAddressInputValue(v);
-                      if (!v.trim()) setFormData((prev) => ({ ...prev, address: '', city: '', state: '', zipCode: '' }));
+                      if (!v.trim()) setFormData((prev) => ({ ...prev, address: '', city: '', state: '', zipCode: '', latitude: undefined, longitude: undefined }));
                     }}
                     onAddressSelect={(obj) => {
                       setFormData((prev) => ({ ...prev, ...obj }));
