@@ -9,6 +9,8 @@ import SignUp from './pages/SignUp';
 import SignIn from './pages/SignIn';
 import Dashboard from './pages/Dashboard';
 import HowSellingWorks from './pages/HowSellingWorks';
+import HowBuyingWorks from './pages/HowBuyingWorks';
+import HowItWorks from './pages/HowItWorks';
 import { logout } from './services/authService';
 import './App.css';
 
@@ -62,7 +64,9 @@ function AppContent() {
             <Route path="/submit-offer/:propertyId" element={<SubmitOffer />} />
             <Route path="/sign-up" element={<SignUp />} />
             <Route path="/sign-in" element={<SignIn />} />
+            <Route path="/how-it-works" element={<HowItWorks />} />
             <Route path="/how-selling-works" element={<HowSellingWorks />} />
+            <Route path="/how-buying-works" element={<HowBuyingWorks />} />
           </Routes>
         </main>
 

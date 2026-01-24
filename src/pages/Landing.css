@@ -67,7 +67,28 @@
   gap: 16px;
   justify-content: center;
   flex-wrap: wrap;
-  margin-bottom: 60px;
+  margin-bottom: 16px;
+}
+
+.hero-learn-more {
+  display: block;
+  width: 100%;
+  text-align: center;
+  margin: 0 0 44px 0;
+  padding: 0;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.95);
+  font-size: 16px;
+  font-family: inherit;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.hero-learn-more:hover {
+  color: #fbbf24;
 }
 
 .hero-stats {
@@ -412,7 +433,6 @@
 
   .features-section,
   .how-it-works-section,
-  .learn-process-section,
   .cta-section {
     padding: 60px 0;
   }

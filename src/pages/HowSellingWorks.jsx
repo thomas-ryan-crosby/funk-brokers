@@ -177,6 +177,9 @@ const HowSellingWorks = () => {
             <button onClick={() => navigate('/list-property')} className="btn btn-primary btn-large">
               List Your Property
             </button>
+            <button onClick={() => navigate('/how-buying-works')} className="btn btn-outline-secondary btn-large">
+              How buying works
+            </button>
             <button onClick={() => navigate('/')} className="btn btn-outline-secondary btn-large">
               Back to Home
             </button>

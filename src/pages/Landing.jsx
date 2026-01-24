@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import './Landing.css';
 
 const Landing = () => {
@@ -13,7 +13,7 @@ const Landing = () => {
   };
 
   const handleLearnProcessClick = () => {
-    navigate('/how-selling-works');
+    navigate('/how-it-works');
   };
 
   return (
@@ -163,21 +163,6 @@ const Landing = () => {
                 <p>Our platform guides you through due diligence, inspections, negotiations, and closing—every step of the way.</p>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Learn About Our Process */}
-      <section className="learn-process-section">
-        <div className="container">
-          <div className="learn-process-content">
-            <h2 className="learn-process-title">Buying or selling a home is so simple, anyone can do it.</h2>
-            <p className="learn-process-subtitle">
-              No jargon, no guesswork, no pressure. We guide you step by step so you always know what’s happening, what to do, and what comes next.
-            </p>
-            <button onClick={handleLearnProcessClick} className="btn btn-primary btn-large learn-process-cta">
-              Learn about our sales process
-            </button>
           </div>
         </div>
       </section>

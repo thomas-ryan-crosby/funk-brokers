@@ -1,0 +1,298 @@
+.how-buying-works-page {
+  min-height: 100vh;
+  background: #fff;
+  padding: 48px 0 80px;
+}
+
+.hbw-container {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+/* Header */
+.hbw-header {
+  margin-bottom: 40px;
+  padding-bottom: 32px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.hbw-header h1 {
+  font-size: clamp(32px, 4vw, 44px);
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 16px 0;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.hbw-tagline {
+  font-size: 20px;
+  color: #64748b;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* Intro */
+.hbw-intro {
+  margin-bottom: 48px;
+}
+
+.hbw-intro p,
+.hbw-intro ul {
+  font-size: 17px;
+  line-height: 1.7;
+  color: #475569;
+  margin: 0 0 12px 0;
+}
+
+.hbw-intro ul {
+  margin-left: 1.5em;
+  margin-bottom: 16px;
+}
+
+.hbw-intro-close {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* Steps */
+.hbw-steps {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 56px 0;
+  counter-reset: hbw;
+}
+
+.hbw-step {
+  counter-increment: hbw;
+  padding: 32px 0;
+  border-bottom: 1px solid #e2e8f0;
+  position: relative;
+  padding-left: 0;
+}
+
+.hbw-step:last-of-type {
+  border-bottom: none;
+}
+
+.hbw-step h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 12px 0;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.hbw-step h2::before {
+  content: counter(hbw);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.hbw-step-lead {
+  font-size: 17px;
+  font-weight: 600;
+  color: #334155;
+  margin: 0 0 12px 0;
+  line-height: 1.5;
+}
+
+.hbw-step p,
+.hbw-step ul {
+  font-size: 16px;
+  line-height: 1.75;
+  color: #475569;
+  margin: 0 0 12px 0;
+}
+
+.hbw-step ul {
+  margin-left: 1.5em;
+  margin-bottom: 12px;
+}
+
+.hbw-why {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: #f0fdf4;
+  border-left: 4px solid #10b981;
+  border-radius: 0 8px 8px 0;
+  font-size: 15px;
+  color: #166534;
+}
+
+.hbw-why strong {
+  color: #14532d;
+}
+
+.hbw-done {
+  font-weight: 600;
+  background: #f0fdf4;
+  border-left-color: #22c55e;
+  color: #166534;
+}
+
+.hbw-done strong {
+  color: #166534;
+}
+
+/* What You Can Expect */
+.hbw-expect {
+  padding: 40px 32px;
+  margin-bottom: 40px;
+  background: #f8fafc;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+}
+
+.hbw-expect h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 20px 0;
+}
+
+.hbw-expect-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 24px 0;
+}
+
+.hbw-expect-list li {
+  position: relative;
+  padding-left: 28px;
+  margin-bottom: 10px;
+  font-size: 17px;
+  color: #334155;
+  line-height: 1.5;
+}
+
+.hbw-expect-list li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: #22c55e;
+  font-weight: 700;
+}
+
+.hbw-expect p {
+  font-size: 16px;
+  color: #475569;
+  margin: 0 0 8px 0;
+  line-height: 1.6;
+}
+
+.hbw-expect blockquote {
+  margin: 16px 0 0 0;
+  padding: 16px 20px;
+  background: white;
+  border-left: 4px solid #10b981;
+  border-radius: 0 8px 8px 0;
+  font-size: 17px;
+  font-style: italic;
+  color: #334155;
+}
+
+/* Close + CTAs */
+.hbw-close {
+  text-align: center;
+  padding-top: 24px;
+  border-top: 2px solid #e2e8f0;
+}
+
+.hbw-close-main {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 8px 0;
+}
+
+.hbw-close-sub {
+  font-size: 18px;
+  color: #64748b;
+  margin: 0 0 32px 0;
+}
+
+.hbw-ctas {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.hbw-ctas .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 32px;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.hbw-ctas .btn-large {
+  padding: 16px 40px;
+  font-size: 18px;
+}
+
+.hbw-ctas .btn-primary {
+  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
+  color: white;
+  box-shadow: 0 4px 14px rgba(5, 150, 105, 0.3);
+}
+
+.hbw-ctas .btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(5, 150, 105, 0.4);
+}
+
+.hbw-ctas .btn-outline-secondary {
+  background: transparent;
+  color: #475569;
+  border-color: #cbd5e1;
+}
+
+.hbw-ctas .btn-outline-secondary:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  transform: translateY(-2px);
+}
+
+@media (max-width: 640px) {
+  .how-buying-works-page {
+    padding: 32px 0 60px;
+  }
+
+  .hbw-step {
+    padding: 24px 0;
+  }
+
+  .hbw-step h2 {
+    font-size: 18px;
+    flex-wrap: wrap;
+  }
+
+  .hbw-ctas {
+    flex-direction: column;
+  }
+
+  .hbw-ctas .btn {
+    width: 100%;
+  }
+}
