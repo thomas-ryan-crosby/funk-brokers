@@ -213,7 +213,7 @@ const Dashboard = () => {
                             <Link to={`/property/${property.id}/edit`} className="btn btn-small btn-outline">Edit</Link>
                           )}
                           {!property.verified && (
-                            <Link to={`/property/${property.id}/get-verified`} className="btn btn-small btn-outline">Get verified</Link>
+                            <Link to={`/property/${property.id}/get-verified`} className="btn btn-small btn-outline">Verify</Link>
                           )}
                           <button type="button" className="btn btn-small btn-outline" onClick={() => handleArchive(property.id)}>Archive</button>
                           <button type="button" className="btn btn-small btn-danger" onClick={() => handleDeletePermanently(property.id)}>Delete</button>
@@ -277,10 +277,10 @@ const Dashboard = () => {
                             handleRemoveFavorite(property.id);
                           }}
                         >
-                          Remove from Favorites
+                          Remove
                         </button>
                         <Link to={`/property/${property.id}`} className="btn btn-small btn-primary">
-                          View Details
+                          View
                         </Link>
                       </div>
                     </div>
