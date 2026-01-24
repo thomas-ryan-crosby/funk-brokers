@@ -556,6 +556,17 @@
   margin: 8px 0 0 0;
 }
 
+.deal-subsection-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #475569;
+  margin: 24px 0 12px 0;
+}
+
+.deal-subsection-title:first-of-type {
+  margin-top: 0;
+}
+
 .deal-center-list {
   display: flex;
   flex-direction: column;
@@ -594,6 +605,24 @@
   color: #64748b;
   font-size: 14px;
   margin: 0;
+}
+
+.deal-sent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.deal-offer-property {
+  font-weight: 600;
+  color: #1e293b;
+  text-decoration: none;
+  font-size: 15px;
+}
+
+.deal-offer-property:hover {
+  color: #3b82f6;
+  text-decoration: underline;
 }
 
 .deal-offers {
