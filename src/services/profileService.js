@@ -1,9 +1,10 @@
 // Profile Service - Firestore operations for sale and purchase profiles
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, addDoc, getDocs, query, where, deleteDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
 const SALE_PROFILES = 'saleProfiles';
 const PURCHASE_PROFILES = 'purchaseProfiles';
+const SAVED_SEARCHES = 'savedSearches';
 
 /**
  * Get the sale profile for a user
@@ -73,6 +74,71 @@ export const setPurchaseProfile = async (userId, data) => {
     await setDoc(ref, { ...data, updatedAt: new Date() }, { merge: true });
   } catch (err) {
     console.error('Error saving purchase profile:', err);
+    throw err;
+  }
+};
+
+/**
+ * Get all saved searches for a user (newest first)
+ * @param {string} userId
+ * @returns {Promise<Array<{ id: string, name: string, filters: object, createdAt: Date }>>}
+ */
+export const getSavedSearches = async (userId) => {
+  if (!userId) return [];
+  try {
+    const q = query(
+      collection(db, SAVED_SEARCHES),
+      where('userId', '==', userId)
+    );
+    const snap = await getDocs(q);
+    const list = [];
+    snap.forEach((d) => {
+      list.push({
+        id: d.id,
+        ...d.data(),
+        createdAt: d.data().createdAt?.toDate?.() || d.data().createdAt,
+      });
+    });
+    list.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    return list;
+  } catch (err) {
+    console.error('Error fetching saved searches:', err);
+    throw err;
+  }
+};
+
+/**
+ * Add a saved search for a user
+ * @param {string} userId
+ * @param {object} params - { name: string, filters: object }
+ * @returns {Promise<string>} document id
+ */
+export const addSavedSearch = async (userId, { name, filters }) => {
+  if (!userId) throw new Error('userId is required');
+  try {
+    const ref = await addDoc(collection(db, SAVED_SEARCHES), {
+      userId,
+      name: name || 'My search',
+      filters: filters || {},
+      createdAt: new Date(),
+    });
+    return ref.id;
+  } catch (err) {
+    console.error('Error saving search:', err);
+    throw err;
+  }
+};
+
+/**
+ * Remove a saved search (caller must ensure the search belongs to the user; enforce via Firestore rules)
+ * @param {string} searchId
+ */
+export const removeSavedSearch = async (searchId) => {
+  if (!searchId) throw new Error('searchId is required');
+  try {
+    await deleteDoc(doc(db, SAVED_SEARCHES, searchId));
+  } catch (err) {
+    console.error('Error removing saved search:', err);
     throw err;
   }
 };

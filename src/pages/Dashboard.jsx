@@ -4,15 +4,17 @@ import { useAuth } from '../contexts/AuthContext';
 import { getPropertiesBySeller } from '../services/propertyService';
 import { getUserFavoriteIds, removeFromFavorites } from '../services/favoritesService';
 import { getAllProperties } from '../services/propertyService';
+import { getSavedSearches, removeSavedSearch } from '../services/profileService';
 import PropertyCard from '../components/PropertyCard';
 import './Dashboard.css';
 
 const Dashboard = () => {
   const { user, userProfile, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('my-properties'); // 'my-properties' or 'favorites'
+  const [activeTab, setActiveTab] = useState('my-properties'); // 'my-properties' | 'favorites' | 'my-searches'
   const [myProperties, setMyProperties] = useState([]);
   const [favoriteProperties, setFavoriteProperties] = useState([]);
+  const [mySearches, setMySearches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -47,6 +49,10 @@ const Dashboard = () => {
       } else {
         setFavoriteProperties([]);
       }
+
+      // Load saved searches
+      const searches = await getSavedSearches(user.uid);
+      setMySearches(searches);
     } catch (err) {
       setError('Failed to load dashboard data. Please try again.');
       console.error(err);
@@ -63,6 +69,20 @@ const Dashboard = () => {
       console.error('Error removing favorite:', err);
       alert('Failed to remove favorite. Please try again.');
     }
+  };
+
+  const handleRemoveSearch = async (searchId) => {
+    try {
+      await removeSavedSearch(searchId);
+      setMySearches((prev) => prev.filter((s) => s.id !== searchId));
+    } catch (err) {
+      console.error('Error removing search:', err);
+      alert('Failed to remove search. Please try again.');
+    }
+  };
+
+  const handleBrowseSearch = (filters) => {
+    navigate('/browse', { state: { filters } });
   };
 
   const getStatusBadge = (status) => {
@@ -128,6 +148,12 @@ const Dashboard = () => {
             onClick={() => setActiveTab('favorites')}
           >
             Favorites ({favoriteProperties.length})
+          </button>
+          <button
+            className={`tab ${activeTab === 'my-searches' ? 'active' : ''}`}
+            onClick={() => setActiveTab('my-searches')}
+          >
+            My Searches ({mySearches.length})
           </button>
         </div>
 
@@ -216,6 +242,52 @@ const Dashboard = () => {
                         >
                           View Details
                         </Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'my-searches' && (
+            <div className="dashboard-section">
+              <div className="section-header">
+                <h2>My Searches</h2>
+                {mySearches.length === 0 && (
+                  <p className="empty-message">
+                    Complete the <Link to="/begin-purchase">Begin home purchase process</Link> and click Find Homes to save searches here.
+                  </p>
+                )}
+              </div>
+
+              {mySearches.length > 0 && (
+                <div className="searches-list">
+                  {mySearches.map((s) => (
+                    <div key={s.id} className="search-item">
+                      <div className="search-item-main">
+                        <span className="search-item-name">{s.name || 'My search'}</span>
+                        {s.createdAt && (
+                          <span className="search-item-date">
+                            Saved {s.createdAt instanceof Date ? s.createdAt.toLocaleDateString() : new Date(s.createdAt).toLocaleDateString()}
+                          </span>
+                        )}
+                      </div>
+                      <div className="search-item-actions">
+                        <button
+                          type="button"
+                          className="btn btn-small btn-primary"
+                          onClick={() => handleBrowseSearch(s.filters || {})}
+                        >
+                          Browse
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-small btn-outline"
+                          onClick={() => handleRemoveSearch(s.id)}
+                        >
+                          Remove
+                        </button>
                       </div>
                     </div>
                   ))}

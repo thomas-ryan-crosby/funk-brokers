@@ -86,6 +86,12 @@ As you add more complex queries, you may need additional indexes:
    - Collection: `offers`
    - Fields: `propertyId` (ASC), `createdAt` (DESC)
 
+## savedSearches Collection
+
+The `savedSearches` collection stores user search criteria (from the Begin Purchase workflow). The app queries by `userId` only and sorts by `createdAt` in memory, so **no composite index is required**.
+
+**Firestore rules** (in Firebase Console → Firestore → Rules): ensure users can read/write/delete only their own saved searches, e.g. `resource.data.userId == request.auth.uid` for read/delete and `request.resource.data.userId == request.auth.uid` for create.
+
 ## Current Status
 
 ✅ Code updated to work without index (client-side sorting)  

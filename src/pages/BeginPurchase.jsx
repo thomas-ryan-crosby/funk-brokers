@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { getPurchaseProfile, setPurchaseProfile } from '../services/profileService';
+import { getPurchaseProfile, setPurchaseProfile, addSavedSearch } from '../services/profileService';
 import { BUYING_STEPS } from '../data/processSteps';
 import './BeginPurchase.css';
 
@@ -148,8 +148,33 @@ const BeginPurchase = () => {
     return f;
   };
 
-  const handleFindHomes = () => {
-    navigate('/browse', { state: { filters: buildFilters() } });
+  const buildSearchName = (filters) => {
+    const parts = [];
+    if (filters.city && filters.state) parts.push(`${filters.city}, ${filters.state.toUpperCase()}`);
+    else if (filters.city) parts.push(filters.city);
+    else if (filters.state) parts.push(filters.state.toUpperCase());
+    if (filters.minPrice || filters.maxPrice) {
+      const lo = filters.minPrice ? `$${Number(filters.minPrice).toLocaleString()}` : 'Any';
+      const hi = filters.maxPrice ? `$${Number(filters.maxPrice).toLocaleString()}` : 'Any';
+      parts.push(`${lo} – ${hi}`);
+    }
+    if (filters.bedrooms) parts.push(`${filters.bedrooms}+ beds`);
+    if (filters.bathrooms) parts.push(`${filters.bathrooms}+ baths`);
+    if (filters.propertyType) {
+      const labels = { 'single-family': 'Single Family', condo: 'Condo', townhouse: 'Townhouse', 'multi-family': 'Multi-Family', land: 'Land' };
+      parts.push(labels[filters.propertyType] || filters.propertyType);
+    }
+    return parts.length ? parts.join(' • ') : 'My search';
+  };
+
+  const handleFindHomes = async () => {
+    const filters = buildFilters();
+    try {
+      await addSavedSearch(user.uid, { name: buildSearchName(filters), filters });
+    } catch (e) {
+      console.warn('Could not save search:', e);
+    }
+    navigate('/browse', { state: { filters } });
   };
 
   if (authLoading || loading) {
