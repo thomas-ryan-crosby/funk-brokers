@@ -74,10 +74,8 @@
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 0 8px;
+  gap: 8px 12px;
   padding: 24px 0;
-  overflow-x: auto;
-  overflow-y: hidden;
 }
 
 .hbw-step-node {
@@ -285,9 +283,7 @@
   }
 
   .hbw-step-nav {
-    justify-content: flex-start;
-    padding-left: 16px;
-    padding-right: 16px;
+    justify-content: center;
   }
 
   .hbw-ctas {
