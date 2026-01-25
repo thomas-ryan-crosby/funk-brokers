@@ -364,6 +364,9 @@ const Dashboard = () => {
     return <span className={`offer-status-badge ${c}`}>{l}</span>;
   };
 
+  /** True if the current user sent this offer or counter; they can only View or Rescind, not Counter/Accept/Reject. */
+  const iSentThisOffer = (o) => o?.createdBy === user?.uid;
+
   /** Event badges for Deal Center: "You have received an offer", "You have received a counter", "You sent an offer", "You sent a counter" */
   /** Each row = one offer/contract. Badge describes what THIS offer is from the user's POV. */
   const getOfferEventBadge = (offer, { isReceived }) => {
@@ -651,7 +654,7 @@ const Dashboard = () => {
             <div className="dashboard-section deal-center-section">
               <div className="section-header">
                 <h2>Deal Center</h2>
-                <p className="form-hint">Offers on your listings and offers you&apos;ve sent. Accept, reject, counter, or withdraw as needed.</p>
+                <p className="form-hint">If you received an offer or counter, you can accept, reject, or counter. If you sent it, you can only view or rescind.</p>
               </div>
 
               <div className="deal-center-subtabs">
@@ -720,7 +723,17 @@ const Dashboard = () => {
                                     View Offer
                                   </button>
                                   {getOfferStatusBadge(offer.status)}
-                                  {offer.status === 'pending' && (
+                                  {offer.status === 'pending' && iSentThisOffer(offer) && (
+                                    <button
+                                      type="button"
+                                      className="btn btn-outline btn-small"
+                                      disabled={dealCenterActionOfferId != null}
+                                      onClick={() => handleWithdrawOffer(offer.id)}
+                                    >
+                                      Rescind
+                                    </button>
+                                  )}
+                                  {offer.status === 'pending' && !iSentThisOffer(offer) && (
                                     <>
                                       <button
                                         type="button"
@@ -806,17 +819,17 @@ const Dashboard = () => {
                                   View Offer
                                 </button>
                                 {getOfferStatusBadge(offer.status)}
-                                {offer.status === 'pending' && !offer.createdBy && (
+                                {offer.status === 'pending' && iSentThisOffer(offer) && (
                                   <button
                                     type="button"
                                     className="btn btn-outline btn-small"
                                     disabled={dealCenterActionOfferId != null}
                                     onClick={() => handleWithdrawOffer(offer.id)}
                                   >
-                                    Withdraw
+                                    Rescind
                                   </button>
                                 )}
-                                {offer.status === 'pending' && offer.createdBy && (
+                                {offer.status === 'pending' && !iSentThisOffer(offer) && (
                                   <>
                                     <button
                                       type="button"
@@ -833,6 +846,14 @@ const Dashboard = () => {
                                       onClick={() => setCounterOfferFor({ offer, property: prop || null })}
                                     >
                                       Counter
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="btn btn-outline btn-small"
+                                      disabled={dealCenterActionOfferId != null}
+                                      onClick={() => handleRejectOffer(offer.id)}
+                                    >
+                                      Reject
                                     </button>
                                   </>
                                 )}

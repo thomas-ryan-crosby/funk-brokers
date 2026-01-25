@@ -155,6 +155,7 @@ const SubmitOffer = () => {
         bankLetter: verificationData.bankLetter,
         governmentId: verificationData.governmentId,
       },
+      createdBy: user.uid,
     };
   };
 
