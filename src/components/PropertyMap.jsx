@@ -58,7 +58,16 @@ const PropertyMap = ({ properties = [], onPropertiesInView }) => {
 
   const handleClaimUnlisted = (parcel) => {
     setSelectedUnlistedParcel(null);
-    navigate('/list-property', { state: { claimAddress: parcel?.address, claimLat: parcel?.latitude, claimLng: parcel?.longitude } });
+    const state = {
+      claimAddress: parcel?.address,
+      claimLat: parcel?.latitude,
+      claimLng: parcel?.longitude,
+    };
+    if (parcel?.beds != null && Number.isFinite(Number(parcel.beds))) state.claimBeds = Number(parcel.beds);
+    if (parcel?.baths != null && Number.isFinite(Number(parcel.baths))) state.claimBaths = Number(parcel.baths);
+    if (parcel?.squareFeet != null && Number.isFinite(Number(parcel.squareFeet))) state.claimSquareFeet = Number(parcel.squareFeet);
+    if (parcel?.estimate != null && Number.isFinite(Number(parcel.estimate))) state.claimEstimate = Number(parcel.estimate);
+    navigate('/list-property', { state });
   };
 
   useEffect(() => {

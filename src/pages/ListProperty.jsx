@@ -88,11 +88,17 @@ const ListProperty = () => {
       const lat = location.state.claimLat;
       const lng = location.state.claimLng;
       const hasCoords = typeof lat === 'number' && !Number.isNaN(lat) && typeof lng === 'number' && !Number.isNaN(lng);
-      return {
+      const claimData = {
         ...base,
         address: String(location.state.claimAddress).trim(),
         ...(hasCoords && { latitude: lat, longitude: lng }),
       };
+      const n = (v) => (v != null && Number.isFinite(Number(v)) ? String(Number(v)) : undefined);
+      if (location.state.claimBeds != null) { const s = n(location.state.claimBeds); if (s) claimData.bedrooms = s; }
+      if (location.state.claimBaths != null) { const s = n(location.state.claimBaths); if (s) claimData.bathrooms = s; }
+      if (location.state.claimSquareFeet != null) { const s = n(location.state.claimSquareFeet); if (s) claimData.squareFeet = s; }
+      if (location.state.claimEstimate != null) { const s = n(location.state.claimEstimate); if (s) claimData.price = s; }
+      return claimData;
     }
     return base;
   });
