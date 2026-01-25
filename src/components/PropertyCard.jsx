@@ -62,8 +62,13 @@ const PropertyCard = ({ property, embedded, compact, listingTier, isListed }) =>
       </div>
 
       <div className="property-card__body">
-        <div className="property-card__price">{formatPrice(property.price)}</div>
-        <div className="property-card__address">{formatAddress(property)}</div>
+        <div className="property-card__head">
+          <span className="property-card__price">{formatPrice(property.price)}</span>
+          {property.propertyType && (
+            <span className="property-card__type">{formatPropertyType(property.propertyType)}</span>
+          )}
+        </div>
+        <p className="property-card__address">{formatAddress(property)}</p>
         <div className="property-card__meta">
           <span className="property-card__meta-item">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
@@ -89,18 +94,17 @@ const PropertyCard = ({ property, embedded, compact, listingTier, isListed }) =>
             </span>
           ) : null}
         </div>
-        {property.propertyType && (
-          <span className="property-card__type">{formatPropertyType(property.propertyType)}</span>
-        )}
-        {listingTier != null && (
-          <span className={`property-card__listing-tier property-card__listing-tier--${listingTier}`}>
-            {getListingTierLabel(listingTier)}
-            {isListed != null && ` · ${isListed ? 'Listed' : 'Unlisted'}`}
+        <div className="property-card__tags">
+          {listingTier != null && (
+            <span className={`property-card__tag property-card__tag--tier property-card__tag--${listingTier}`}>
+              {getListingTierLabel(listingTier)}
+              {isListed != null && ` · ${isListed ? 'Listed' : 'Unlisted'}`}
+            </span>
+          )}
+          <span className={`property-card__tag property-card__tag--comms property-card__tag--comms-${property.acceptingCommunications !== false ? 'accepting' : 'not-accepting'}`}>
+            {property.acceptingCommunications !== false ? 'Accepting comms' : 'Not accepting'}
           </span>
-        )}
-        <span className={`property-card__comms property-card__comms--${property.acceptingCommunications !== false ? 'accepting' : 'not-accepting'}`}>
-          {property.acceptingCommunications !== false ? 'Accepting communications' : 'Not accepting communications'}
-        </span>
+        </div>
       </div>
     </Link>
   );

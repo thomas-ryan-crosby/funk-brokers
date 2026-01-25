@@ -281,11 +281,6 @@ const PropertyDetail = () => {
                     Edit Property
                   </Link>
                 )}
-                {!property.verified && (
-                  <Link to={`/property/${property.id}/get-verified`} className="btn btn-outline btn-large">
-                    Get verified
-                  </Link>
-                )}
                 {property.archived ? (
                   <button type="button" className="btn btn-outline btn-large" onClick={handleRestore}>
                     Restore
@@ -399,6 +394,11 @@ const PropertyDetail = () => {
                             ))}
                           </ul>
                         </div>
+                      )}
+                      {isOwner && (
+                        <Link to={`/property/${property.id}/get-verified`} className="tier-advance-btn btn btn-outline">
+                          Advance to next status
+                        </Link>
                       )}
                     </>
                   )}
