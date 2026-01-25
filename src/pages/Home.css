@@ -3,25 +3,6 @@
   background: #f5f5f5;
 }
 
-.home-hero {
-  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 50%, #60a5fa 100%);
-  color: white;
-  padding: 60px 20px;
-  text-align: center;
-}
-
-.home-hero h1 {
-  font-size: 48px;
-  margin: 0 0 16px 0;
-  font-weight: 700;
-}
-
-.home-hero p {
-  font-size: 20px;
-  margin: 0;
-  opacity: 0.9;
-}
-
 .home-filters-bar {
   /* Wrapper for top SearchFilters; bar styles in SearchFilters.css */
 }
@@ -29,7 +10,7 @@
 .home-container {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 24px 20px 40px;
+  padding: 16px 20px 40px;
 }
 
 .home-main {
@@ -196,14 +177,6 @@
 
 
 @media (max-width: 768px) {
-  .home-hero h1 {
-    font-size: 32px;
-  }
-
-  .home-hero p {
-    font-size: 16px;
-  }
-
   .home-view-bar {
     flex-direction: column;
     align-items: stretch;

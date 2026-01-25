@@ -5,10 +5,11 @@ import { getPropertiesBySeller, getPropertyById, archiveProperty, restorePropert
 import { getUserFavoriteIds, removeFromFavorites } from '../services/favoritesService';
 import { getAllProperties } from '../services/propertyService';
 import { getSavedSearches, removeSavedSearch, getPurchaseProfile, setPurchaseProfile } from '../services/profileService';
-import { getOffersByProperty, getOffersByBuyer, acceptOffer, rejectOffer, withdrawOffer } from '../services/offerService';
+import { getOffersByProperty, getOffersByBuyer, acceptOffer, rejectOffer, withdrawOffer, counterOffer } from '../services/offerService';
 import { getTransactionsByUser, getTransactionByOfferId, createTransaction } from '../services/transactionService';
 import { uploadFile } from '../services/storageService';
 import PropertyCard from '../components/PropertyCard';
+import CounterOfferModal from '../components/CounterOfferModal';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -28,6 +29,7 @@ const Dashboard = () => {
   const [sentOffers, setSentOffers] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [dealCenterActionOfferId, setDealCenterActionOfferId] = useState(null);
+  const [counterOfferFor, setCounterOfferFor] = useState(null); // { offer, property } or null
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -290,6 +292,12 @@ const Dashboard = () => {
     }
   };
 
+  const handleCounterSubmit = async (formData) => {
+    if (!counterOfferFor?.offer?.id) return;
+    await counterOffer(counterOfferFor.offer.id, formData, { userId: user.uid });
+    await loadDashboardData();
+  };
+
   const getOfferStatusBadge = (status) => {
     const c = { pending: 'offer-pending', accepted: 'offer-accepted', rejected: 'offer-rejected', countered: 'offer-countered', withdrawn: 'offer-withdrawn' }[status || 'pending'] || 'offer-default';
     const l = (status || 'pending').replace(/_/g, ' ');
@@ -531,7 +539,7 @@ const Dashboard = () => {
             <div className="dashboard-section deal-center-section">
               <div className="section-header">
                 <h2>Deal Center</h2>
-                <p className="form-hint">Offers on your listings and offers you&apos;ve sent. Accept, reject, or withdraw as needed.</p>
+                <p className="form-hint">Offers on your listings and offers you&apos;ve sent. Accept, reject, counter, or withdraw as needed.</p>
               </div>
 
               <h3 className="deal-subsection-title">Offers on your listings</h3>
@@ -584,6 +592,14 @@ const Dashboard = () => {
                                         type="button"
                                         className="btn btn-outline btn-small"
                                         disabled={dealCenterActionOfferId != null}
+                                        onClick={() => setCounterOfferFor({ offer, property })}
+                                      >
+                                        Counter
+                                      </button>
+                                      <button
+                                        type="button"
+                                        className="btn btn-outline btn-small"
+                                        disabled={dealCenterActionOfferId != null}
                                         onClick={() => handleRejectOffer(offer.id)}
                                       >
                                         Reject
@@ -623,7 +639,7 @@ const Dashboard = () => {
                       </div>
                       <div className="deal-offer-actions">
                         {getOfferStatusBadge(offer.status)}
-                        {offer.status === 'pending' && (
+                        {offer.status === 'pending' && !offer.createdBy && (
                           <button
                             type="button"
                             className="btn btn-outline btn-small"
@@ -632,6 +648,26 @@ const Dashboard = () => {
                           >
                             Withdraw
                           </button>
+                        )}
+                        {offer.status === 'pending' && offer.createdBy && (
+                          <>
+                            <button
+                              type="button"
+                              className="btn btn-primary btn-small"
+                              disabled={dealCenterActionOfferId != null}
+                              onClick={() => handleAcceptOffer(offer.id)}
+                            >
+                              Accept
+                            </button>
+                            <button
+                              type="button"
+                              className="btn btn-outline btn-small"
+                              disabled={dealCenterActionOfferId != null}
+                              onClick={() => setCounterOfferFor({ offer, property: property || null })}
+                            >
+                              Counter
+                            </button>
+                          </>
                         )}
                       </div>
                     </div>
@@ -761,6 +797,16 @@ const Dashboard = () => {
           )}
         </div>
       </div>
+
+      {counterOfferFor && (
+        <CounterOfferModal
+          offer={counterOfferFor.offer}
+          property={counterOfferFor.property}
+          onClose={() => setCounterOfferFor(null)}
+          onSubmit={handleCounterSubmit}
+          formatCurrency={formatCurrency}
+        />
+      )}
     </div>
   );
 };

@@ -58,11 +58,6 @@ const Home = () => {
 
   return (
     <div className="home-page">
-      <div className="home-hero">
-        <h1>Find Your Dream Home</h1>
-        <p>Buy and sell residential properties directly, without brokers</p>
-      </div>
-
       <div className="home-filters-bar">
         <SearchFilters onFilterChange={handleFilterChange} initialFilters={filters} />
       </div>
