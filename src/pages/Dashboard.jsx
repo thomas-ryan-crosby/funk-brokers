@@ -307,17 +307,21 @@ const Dashboard = () => {
   };
 
   /** Event badges for Deal Center: "You have received an offer", "You have received a counter", "You sent an offer", "You sent a counter" */
+  /** Each row = one offer/contract. Badge describes what THIS offer is from the user's POV. */
   const getOfferEventBadge = (offer, { isReceived }) => {
     if (!offer || !user?.uid) return null;
     const uid = user.uid;
-    // Seller / offers on your listings
+    // Seller / offers on your listings (each row is one offer document)
     if (isReceived) {
-      if (offer.counteredByOfferId) return { label: 'You sent a counter', type: 'sent-counter' };
+      // This row is the counter we wrote (we created it)
       if (offer.counterToOfferId && offer.createdBy === uid) return { label: 'You sent a counter', type: 'sent-counter' };
+      // This row is the buyer's counter to our counter
       if (offer.counterToOfferId && offer.createdBy !== uid) return { label: 'You have received a counter', type: 'received-counter' };
+      // counteredByOfferId = we received this offer and countered it; the counter is a different row. This row = received offer.
+      if (offer.counteredByOfferId) return { label: 'You have received an offer', type: 'received-offer' };
       return { label: 'You have received an offer', type: 'received-offer' };
     }
-    // Buyer / offers you've sent
+    // Buyer / offers you've sent (each row is one offer document)
     if (offer.counterToOfferId && offer.createdBy === uid) return { label: 'You sent a counter', type: 'sent-counter' };
     if (offer.counteredByOfferId) return { label: 'You have received a counter', type: 'received-counter' };
     return { label: 'You sent an offer', type: 'sent-offer' };
