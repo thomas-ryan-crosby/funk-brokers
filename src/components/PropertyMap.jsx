@@ -1,8 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { loadGooglePlaces } from '../utils/loadGooglePlaces';
 import { getParcelsInViewport } from '../services/parcelService';
 import UnlistedPropertyModal from './UnlistedPropertyModal';
 import './PropertyMap.css';
+
+const LISTED_COLOR = '#059669';
+const UNLISTED_COLOR = '#64748b';
 
 const DEFAULT_CENTER = { lat: 39.5, lng: -98.5 };
 const DEFAULT_ZOOM = 4;
@@ -41,6 +45,7 @@ const unlistedTooltipContent = (p) => `
 `;
 
 const PropertyMap = ({ properties = [], onPropertiesInView }) => {
+  const navigate = useNavigate();
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
@@ -50,6 +55,11 @@ const PropertyMap = ({ properties = [], onPropertiesInView }) => {
   const [error, setError] = useState(null);
   const [unlistedParcels, setUnlistedParcels] = useState([]);
   const [selectedUnlistedParcel, setSelectedUnlistedParcel] = useState(null);
+
+  const handleClaimUnlisted = (parcel) => {
+    setSelectedUnlistedParcel(null);
+    navigate('/list-property', { state: { claimAddress: parcel?.address, claimLat: parcel?.latitude, claimLng: parcel?.longitude } });
+  };
 
   useEffect(() => {
     loadGooglePlaces()
@@ -80,7 +90,20 @@ const PropertyMap = ({ properties = [], onPropertiesInView }) => {
 
     withCoords.forEach((p) => {
       const pos = { lat: p.latitude, lng: p.longitude };
-      const marker = new window.google.maps.Marker({ position: pos, map, property: p, zIndex: 2 });
+      const marker = new window.google.maps.Marker({
+        position: pos,
+        map,
+        property: p,
+        zIndex: 2,
+        icon: {
+          path: window.google.maps.SymbolPath.CIRCLE,
+          scale: 7,
+          fillColor: LISTED_COLOR,
+          fillOpacity: 1,
+          strokeColor: '#fff',
+          strokeWeight: 1.5
+        }
+      });
       bounds.extend(pos);
 
       const info = new window.google.maps.InfoWindow({
@@ -205,7 +228,7 @@ const PropertyMap = ({ properties = [], onPropertiesInView }) => {
     <div className="property-map">
       <div ref={mapRef} className="property-map-canvas" aria-label="Property map" />
       {!ready && <div className="property-map-loading">Loading map…</div>}
-      <UnlistedPropertyModal parcel={selectedUnlistedParcel} onClose={() => setSelectedUnlistedParcel(null)} />
+      <UnlistedPropertyModal parcel={selectedUnlistedParcel} onClose={() => setSelectedUnlistedParcel(null)} onClaim={handleClaimUnlisted} />
     </div>
   );
 };

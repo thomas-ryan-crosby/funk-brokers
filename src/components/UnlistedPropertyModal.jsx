@@ -24,13 +24,18 @@ const formatLastSale = (date, price) => {
 };
 
 /**
- * @param {{ parcel: { address?, estimate?, lastSaleDate?, lastSalePrice?, beds?, baths?, squareFeet? } | null, onClose: () => void }}
+ * @param {{ parcel: { address?, estimate?, lastSaleDate?, lastSalePrice?, beds?, baths?, squareFeet? } | null, onClose: () => void, onClaim?: (parcel) => void }}
  */
-const UnlistedPropertyModal = ({ parcel, onClose }) => {
+const UnlistedPropertyModal = ({ parcel, onClose, onClaim }) => {
   if (!parcel) return null;
 
   const { address, estimate, lastSaleDate, lastSalePrice, beds, baths, squareFeet } = parcel;
   const hasDetails = [beds, baths, squareFeet].some((v) => v != null && v !== '');
+
+  const handleClaim = () => {
+    if (typeof onClaim === 'function') onClaim(parcel);
+    onClose();
+  };
 
   return (
     <div className="unlisted-property-overlay" onClick={onClose} role="presentation">
@@ -60,6 +65,12 @@ const UnlistedPropertyModal = ({ parcel, onClose }) => {
           )}
 
           <p className="unlisted-property-disclaimer">Funk Estimate and last sale are from public records. Not an appraisal.</p>
+        </div>
+
+        <div className="unlisted-property-footer">
+          <button type="button" className="unlisted-property-claim-btn" onClick={handleClaim}>
+            Claim property
+          </button>
         </div>
       </div>
     </div>

@@ -124,7 +124,7 @@
 /* Min height so ~4 cards (2×2) show at once; rest scroll. Cards don't squish. */
 .home-map-split__list .property-card {
   height: auto;
-  min-height: 175px;
+  min-height: 210px;
 }
 
 .home-map-split__empty {
