@@ -98,6 +98,9 @@ const PropertyCard = ({ property, embedded, compact, listingTier, isListed }) =>
             {isListed != null && ` · ${isListed ? 'Listed' : 'Unlisted'}`}
           </span>
         )}
+        <span className={`property-card__comms property-card__comms--${property.acceptingCommunications !== false ? 'accepting' : 'not-accepting'}`}>
+          {property.acceptingCommunications !== false ? 'Accepting communications' : 'Not accepting communications'}
+        </span>
       </div>
     </Link>
   );

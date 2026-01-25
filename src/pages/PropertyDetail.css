@@ -262,6 +262,17 @@
   background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
 }
 
+.property-comms-closed {
+  padding: 14px 20px;
+  background: #fef3c7;
+  color: #92400e;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 500;
+  margin: 0 0 12px 0;
+  border: 1px solid #fde68a;
+}
+
 .property-details-card {
   background: #f5f5f5;
   padding: 24px;
@@ -298,6 +309,112 @@
 
 .detail-value--verified {
   color: #059669;
+}
+
+.detail-value--comms-accepting {
+  color: #065f46;
+}
+
+.detail-value--comms-not-accepting {
+  color: #92400e;
+}
+
+/* Listing tier progress (Generic → Verified → Premium) */
+.property-tier-progress-card {
+  margin-top: 20px;
+  padding: 20px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.property-tier-progress-card h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 12px 0;
+  color: #475569;
+}
+
+.tier-current {
+  margin-bottom: 12px;
+}
+
+.tier-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.tier-badge--generic {
+  color: #64748b;
+  background: #f1f5f9;
+}
+
+.tier-badge--verified {
+  color: #065f46;
+  background: #d1fae5;
+}
+
+.tier-badge--premium {
+  color: #1e40af;
+  background: #dbeafe;
+}
+
+.tier-progress-row {
+  margin-bottom: 8px;
+}
+
+.tier-progress-label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 4px;
+}
+
+.tier-progress-track {
+  height: 8px;
+  background: #e2e8f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.tier-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #10b981);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.tier-missing {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.tier-missing-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  display: block;
+  margin-bottom: 6px;
+}
+
+.tier-missing-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+  color: #475569;
+  line-height: 1.5;
+}
+
+.tier-complete {
+  font-size: 13px;
+  color: #065f46;
+  margin: 8px 0 0 0;
 }
 
 .loading-state,

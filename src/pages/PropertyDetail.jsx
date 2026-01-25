@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getPropertyById, archiveProperty, restoreProperty, deletePropertyPermanently } from '../services/propertyService';
 import { addToFavorites, removeFromFavorites, isFavorited, getFavoriteCountForProperty } from '../services/favoritesService';
+import { getListingTierProgress, getListingTierLabel } from '../utils/verificationScores';
 import './PropertyDetail.css';
 
 const PropertyDetail = () => {
@@ -300,9 +301,13 @@ const PropertyDetail = () => {
               </div>
             ) : (
               <div className="property-actions">
-                <Link to={`/submit-offer/${property.id}`} className="btn btn-primary btn-large">
-                  Submit Offer
-                </Link>
+                {property.acceptingCommunications !== false ? (
+                  <Link to={`/submit-offer/${property.id}`} className="btn btn-primary btn-large">
+                    Submit Offer
+                  </Link>
+                ) : (
+                  <p className="property-comms-closed">This seller is not accepting offers or inquiries at this time.</p>
+                )}
                 <button 
                   className="btn btn-secondary btn-large"
                   onClick={() => {
@@ -355,6 +360,12 @@ const PropertyDetail = () => {
                     : property.status}
                 </span>
               </div>
+              <div className="detail-row">
+                <span className="detail-label">Communications</span>
+                <span className={`detail-value detail-value--comms-${property.acceptingCommunications !== false ? 'accepting' : 'not-accepting'}`}>
+                  {property.acceptingCommunications !== false ? 'Accepting communications' : 'Not accepting communications'}
+                </span>
+              </div>
               {property.verified && (
                 <div className="detail-row">
                   <span className="detail-label">Verification</span>
@@ -362,6 +373,39 @@ const PropertyDetail = () => {
                 </div>
               )}
             </div>
+
+            {(() => {
+              const prog = getListingTierProgress(property);
+              return (
+                <div className="property-tier-progress-card">
+                  <h3>Listing tier</h3>
+                  <div className="tier-current">
+                    <span className={`tier-badge tier-badge--${prog.tier}`}>{getListingTierLabel(prog.tier)}</span>
+                  </div>
+                  {prog.nextTier && (
+                    <>
+                      <div className="tier-progress-row">
+                        <span className="tier-progress-label">{prog.percentage}% to {prog.nextTier}</span>
+                        <div className="tier-progress-track">
+                          <div className="tier-progress-fill" style={{ width: `${prog.percentage}%` }} />
+                        </div>
+                      </div>
+                      {prog.missingItems.length > 0 && (
+                        <div className="tier-missing">
+                          <span className="tier-missing-title">Missing to reach {prog.nextTier}:</span>
+                          <ul className="tier-missing-list">
+                            {prog.missingItems.map((item, i) => (
+                              <li key={i}>{item}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </>
+                  )}
+                  {!prog.nextTier && <p className="tier-complete">All requirements for Premium are met.</p>}
+                </div>
+              );
+            })()}
           </div>
         </div>
       </div>

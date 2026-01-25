@@ -72,6 +72,7 @@ const EditProperty = () => {
         features: Array.isArray(p.features) ? p.features : [],
         hoaFee: p.hoaFee != null ? String(p.hoaFee) : '',
         propertyTax: p.propertyTax != null ? String(p.propertyTax) : '',
+        acceptingCommunications: p.acceptingCommunications !== false,
       });
       setAddressInputValue([p.address, p.city, p.state, p.zipCode].filter(Boolean).join(', '));
       setExistingPhotos(Array.isArray(p.photos) ? [...p.photos] : []);
@@ -168,6 +169,7 @@ const EditProperty = () => {
         propertyTax: formData.propertyTax ? parseFloat(formData.propertyTax) : null,
         photos,
         ...docUrls,
+        acceptingCommunications: !!formData.acceptingCommunications,
       };
       if (typeof formData.latitude === 'number' && !Number.isNaN(formData.latitude) && typeof formData.longitude === 'number' && !Number.isNaN(formData.longitude)) {
         updates.latitude = formData.latitude;
@@ -299,6 +301,18 @@ const EditProperty = () => {
           <div className="form-step">
             <h2>Photos and additional documents</h2>
             <p className="form-note">Photos, description, and documents (deed, disclosures, etc.).</p>
+
+            <div className="form-group">
+              <label className="feature-checkbox" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <input
+                  type="checkbox"
+                  checked={!!formData.acceptingCommunications}
+                  onChange={(e) => setFormData((prev) => prev ? { ...prev, acceptingCommunications: e.target.checked } : prev)}
+                />
+                <span>Accepting communications from buyers</span>
+              </label>
+              <p className="form-hint">When unchecked, buyers will see that you are not accepting offers or inquiries at this time.</p>
+            </div>
 
             <div className="form-group">
               <label>Existing photos</label>

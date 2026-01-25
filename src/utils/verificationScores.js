@@ -83,3 +83,57 @@ export function getListingTierLabel(tier) {
   const map = { generic: 'Generic', verified: 'Verified', premium: 'Premium' };
   return map[tier] || 'Generic';
 }
+
+/**
+ * Progress toward the next listing tier. For use on Property Detail.
+ * @param {object} p - property
+ * @returns {{ tier: 'generic'|'verified'|'premium', nextTier: string|null, percentage: number, missingItems: string[] }}
+ */
+export function getListingTierProgress(p) {
+  const tier = getListingTier(p);
+  const photoCount = p?.photos?.length ?? 0;
+  const hasDeed = !!p?.deedUrl;
+  const hasEnoughPhotos = photoCount >= 5;
+
+  if (tier === 'generic') {
+    const steps = [
+      { done: hasDeed, label: 'Deed (confirmed ownership)' },
+      { done: hasEnoughPhotos, label: `Photos (${photoCount}/5 minimum)` },
+    ];
+    const completed = steps.filter((s) => s.done).length;
+    const missingItems = steps.filter((s) => !s.done).map((s) => s.label);
+    return {
+      tier: 'generic',
+      nextTier: 'Verified',
+      percentage: Math.round((completed / 2) * 100),
+      missingItems,
+    };
+  }
+
+  if (tier === 'verified') {
+    const advanced = [
+      { has: !!p?.inspectionReportUrl, label: 'Inspection report' },
+      { has: !!p?.valuationDocUrl, label: 'Valuation / CMA' },
+      { has: !!p?.matterportTourUrl, label: 'Matterport tour' },
+      { has: !!p?.floorPlanUrl, label: 'Floor plan' },
+      { has: !!p?.compReportUrl, label: 'Comp report' },
+      { has: p?.professionalPhotos === true, label: 'Professional photos' },
+    ];
+    const hasAny = advanced.some((a) => a.has);
+    const missingItems = advanced.filter((a) => !a.has).map((a) => a.label);
+    const completed = advanced.filter((a) => a.has).length;
+    return {
+      tier: 'verified',
+      nextTier: 'Premium',
+      percentage: hasAny ? 100 : Math.round((completed / 6) * 100),
+      missingItems: hasAny ? [] : missingItems,
+    };
+  }
+
+  return {
+    tier: 'premium',
+    nextTier: null,
+    percentage: 100,
+    missingItems: [],
+  };
+}

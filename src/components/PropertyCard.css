@@ -242,3 +242,26 @@
   color: #1e40af;
   background: #dbeafe;
 }
+
+/* Communications: Accepting | Not accepting */
+.property-card__comms {
+  display: inline-flex;
+  align-self: flex-start;
+  margin-top: 4px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.property-card__comms--accepting {
+  color: #065f46;
+  background: #d1fae5;
+}
+
+.property-card__comms--not-accepting {
+  color: #92400e;
+  background: #fef3c7;
+}
