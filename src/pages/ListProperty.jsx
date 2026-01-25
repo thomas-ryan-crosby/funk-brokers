@@ -269,10 +269,10 @@ const ListProperty = () => {
     return (
       <div className="list-property-page">
         <div className="success-message">
-          <h2>Property Listed Successfully!</h2>
-          <p>Your property has been added to the marketplace.</p>
-          <button onClick={() => navigate('/browse')} className="btn btn-primary btn-large">
-            View All Properties
+          <h2>Property Added</h2>
+          <p>Your property has been added to the platform. Take the next steps to list it for sale when you&apos;re ready.</p>
+          <button onClick={() => navigate('/dashboard')} className="btn btn-primary btn-large">
+            Go to Dashboard
           </button>
         </div>
       </div>
@@ -282,9 +282,9 @@ const ListProperty = () => {
   return (
     <div className="list-property-page">
       <div className="list-property-container">
-        <h1>List Your Property</h1>
+        <h1>Add Property to Platform</h1>
         <p className="list-property-disclaimer">
-          This is just an initial workflow to create a verified listing. Additional workflow steps will be taken later on.
+          This does NOT list your property for sale. You will need to take additional steps to list your property for sale on the platform.
         </p>
         <div className="step-indicator">
           <div className={`step ${step >= 1 ? 'active' : ''}`}>1. Address</div>
@@ -566,7 +566,7 @@ const ListProperty = () => {
                 disabled={loading || (step4UnlockAt > 0 && Date.now() < step4UnlockAt)}
                 className="btn-primary"
               >
-                {loading ? 'Creating Listing...' : (step4UnlockAt > 0 && Date.now() < step4UnlockAt) ? 'One moment...' : 'Create Listing'}
+                {loading ? 'Adding...' : (step4UnlockAt > 0 && Date.now() < step4UnlockAt) ? 'One moment...' : 'Add Property'}
               </button>
             )}
           </div>

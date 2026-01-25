@@ -18,6 +18,7 @@ const PropertyDetail = () => {
   const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [favoriteCount, setFavoriteCount] = useState(null);
   const [commsUpdating, setCommsUpdating] = useState(false);
+  const [availableForSaleUpdating, setAvailableForSaleUpdating] = useState(false);
 
   const isOwner = !!(property && user && property.sellerId === user.uid);
 
@@ -96,6 +97,21 @@ const PropertyDetail = () => {
       alert('Failed to update. Please try again.');
     } finally {
       setCommsUpdating(false);
+    }
+  };
+
+  const handleAvailableForSaleToggle = async () => {
+    if (!property || !isOwner || availableForSaleUpdating) return;
+    const next = !(property.availableForSale !== false);
+    setAvailableForSaleUpdating(true);
+    try {
+      await updateProperty(property.id, { availableForSale: next });
+      setProperty((p) => (p ? { ...p, availableForSale: next } : p));
+    } catch (err) {
+      console.error(err);
+      alert('Failed to update. Please try again.');
+    } finally {
+      setAvailableForSaleUpdating(false);
     }
   };
 
@@ -312,28 +328,34 @@ const PropertyDetail = () => {
               </div>
             ) : (
               <div className="property-actions">
-                {property.acceptingCommunications !== false ? (
-                  <Link to={`/submit-offer/${property.id}`} className="btn btn-primary btn-large">
-                    Submit Offer
-                  </Link>
+                {property.availableForSale === false ? (
+                  <p className="property-comms-closed">This property is not currently listed for sale.</p>
                 ) : (
-                  <p className="property-comms-closed">This seller is not accepting offers or inquiries at this time.</p>
+                  <>
+                    {property.acceptingCommunications !== false ? (
+                      <Link to={`/submit-offer/${property.id}`} className="btn btn-primary btn-large">
+                        Submit Offer
+                      </Link>
+                    ) : (
+                      <p className="property-comms-closed">This seller is not accepting offers or inquiries at this time.</p>
+                    )}
+                    <button 
+                      className="btn btn-secondary btn-large"
+                      onClick={() => {
+                        alert('Tour scheduling coming soon! For now, please contact the seller directly.');
+                      }}
+                    >
+                      Schedule Tour
+                    </button>
+                    <button
+                      className={`btn btn-outline btn-large ${favorited ? 'favorited' : ''}`}
+                      onClick={handleFavoriteToggle}
+                      disabled={favoriteLoading}
+                    >
+                      {favoriteLoading ? '...' : favorited ? '★ Favorited' : '☆ Add to Favorites'}
+                    </button>
+                  </>
                 )}
-                <button 
-                  className="btn btn-secondary btn-large"
-                  onClick={() => {
-                    alert('Tour scheduling coming soon! For now, please contact the seller directly.');
-                  }}
-                >
-                  Schedule Tour
-                </button>
-                <button
-                  className={`btn btn-outline btn-large ${favorited ? 'favorited' : ''}`}
-                  onClick={handleFavoriteToggle}
-                  disabled={favoriteLoading}
-                >
-                  {favoriteLoading ? '...' : favorited ? '★ Favorited' : '☆ Add to Favorites'}
-                </button>
               </div>
             )}
 
@@ -370,6 +392,30 @@ const PropertyDetail = () => {
                     ? 'Under Contract'
                     : property.status}
                 </span>
+              </div>
+              <div className={`detail-row ${isOwner ? 'detail-row--comms' : ''}`}>
+                <span className="detail-label">Available for sale</span>
+                {isOwner ? (
+                  <label className="comms-toggle-wrap">
+                    <span className="toggle-switch">
+                      <input
+                        type="checkbox"
+                        checked={property.availableForSale !== false}
+                        onChange={handleAvailableForSaleToggle}
+                        disabled={availableForSaleUpdating}
+                        aria-label="Listed for sale on the platform"
+                      />
+                      <span className="toggle-switch__track" aria-hidden />
+                    </span>
+                    <span className={`comms-toggle-label detail-value--comms-${property.availableForSale !== false ? 'accepting' : 'not-accepting'}`}>
+                      {property.availableForSale !== false ? 'Yes' : 'No'}
+                    </span>
+                  </label>
+                ) : (
+                  <span className="detail-value">
+                    {property.availableForSale !== false ? 'Listed for sale' : 'Not currently for sale'}
+                  </span>
+                )}
               </div>
               <div className={`detail-row ${isOwner ? 'detail-row--comms' : ''}`}>
                 <span className="detail-label">Communications</span>

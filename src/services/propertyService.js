@@ -24,6 +24,7 @@ export const createProperty = async (propertyData) => {
       createdAt: new Date(),
       updatedAt: new Date(),
       status: 'active', // active, under_contract, sold, withdrawn
+      availableForSale: false, // adding to platform does not list for sale; owner turns on when ready
     });
     return docRef.id;
   } catch (error) {
@@ -60,8 +61,8 @@ export const getAllProperties = async () => {
       return bDate - aDate; // Descending order
     });
 
-    // Exclude archived from browse
-    return properties.filter((p) => p.archived !== true);
+    // Exclude archived and not-available-for-sale from browse (missing availableForSale treated as true for backward compat)
+    return properties.filter((p) => p.archived !== true && p.availableForSale !== false);
   } catch (error) {
     console.error('Error fetching properties:', error);
     throw error;
@@ -138,8 +139,8 @@ export const searchProperties = async (filters = {}) => {
       properties.push({ id: doc.id, ...doc.data() });
     });
 
-    // Exclude archived
-    properties = properties.filter((p) => p.archived !== true);
+    // Exclude archived and not-available-for-sale (missing availableForSale treated as true for backward compat)
+    properties = properties.filter((p) => p.archived !== true && p.availableForSale !== false);
 
     // Client-side: query (substring on address, city, state, zipCode)
     if (filters.query && String(filters.query).trim()) {
