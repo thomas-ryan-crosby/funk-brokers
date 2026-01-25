@@ -401,9 +401,16 @@ const Dashboard = () => {
     await loadDashboardData();
   };
 
-  const getOfferStatusBadge = (status) => {
-    const c = { pending: 'offer-pending', accepted: 'offer-accepted', rejected: 'offer-rejected', countered: 'offer-countered', withdrawn: 'offer-withdrawn' }[status || 'pending'] || 'offer-default';
-    const l = (status || 'pending').replace(/_/g, ' ');
+  /** True when the offer has an expiration and it has passed; treat like rejected (view only). */
+  const isOfferExpired = (o) => {
+    const ms = getExpiryMs(o);
+    return ms != null && ms <= countdownNow;
+  };
+
+  const getOfferStatusBadge = (status, offer) => {
+    const expired = status === 'pending' && offer && isOfferExpired(offer);
+    const c = expired ? 'offer-expired' : { pending: 'offer-pending', accepted: 'offer-accepted', rejected: 'offer-rejected', countered: 'offer-countered', withdrawn: 'offer-withdrawn' }[status || 'pending'] || 'offer-default';
+    const l = expired ? 'Expired' : (status || 'pending').replace(/_/g, ' ');
     return <span className={`offer-status-badge ${c}`}>{l}</span>;
   };
 
@@ -777,8 +784,17 @@ const Dashboard = () => {
                                   >
                                     View Offer
                                   </button>
-                                  {getOfferStatusBadge(offer.status)}
-                                  {offer.status === 'pending' && iSentThisOffer(offer) && (
+                                  {offer.buyerId && (
+                                    <Link
+                                      to={`/messages?to=${encodeURIComponent(offer.buyerId)}&propertyId=${encodeURIComponent(offer.propertyId || property?.id || '')}`}
+                                      state={{ otherUserName: offer.buyerName || 'Buyer', propertyAddress: [property?.address, property?.city, property?.state].filter(Boolean).join(', ') || null }}
+                                      className="btn btn-outline btn-small"
+                                    >
+                                      Message
+                                    </Link>
+                                  )}
+                                  {getOfferStatusBadge(offer.status, offer)}
+                                  {offer.status === 'pending' && !isOfferExpired(offer) && iSentThisOffer(offer) && (
                                     <button
                                       type="button"
                                       className="btn btn-outline btn-small"
@@ -788,7 +804,7 @@ const Dashboard = () => {
                                       Rescind
                                     </button>
                                   )}
-                                  {offer.status === 'pending' && !iSentThisOffer(offer) && (
+                                  {offer.status === 'pending' && !isOfferExpired(offer) && !iSentThisOffer(offer) && (
                                     <>
                                       <button
                                         type="button"
@@ -885,8 +901,17 @@ const Dashboard = () => {
                                 >
                                   View Offer
                                 </button>
-                                {getOfferStatusBadge(offer.status)}
-                                {offer.status === 'pending' && iSentThisOffer(offer) && (
+                                {prop?.sellerId && (
+                                  <Link
+                                    to={`/messages?to=${encodeURIComponent(prop.sellerId)}&propertyId=${encodeURIComponent(offer.propertyId || propertyId || '')}`}
+                                    state={{ otherUserName: prop?.sellerName || 'Seller', propertyAddress: [prop?.address, prop?.city, prop?.state].filter(Boolean).join(', ') || null }}
+                                    className="btn btn-outline btn-small"
+                                  >
+                                    Message
+                                  </Link>
+                                )}
+                                {getOfferStatusBadge(offer.status, offer)}
+                                {offer.status === 'pending' && !isOfferExpired(offer) && iSentThisOffer(offer) && (
                                   <button
                                     type="button"
                                     className="btn btn-outline btn-small"
@@ -896,7 +921,7 @@ const Dashboard = () => {
                                     Rescind
                                   </button>
                                 )}
-                                {offer.status === 'pending' && !iSentThisOffer(offer) && (
+                                {offer.status === 'pending' && !isOfferExpired(offer) && !iSentThisOffer(offer) && (
                                   <>
                                     <button
                                       type="button"

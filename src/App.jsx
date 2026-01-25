@@ -17,6 +17,7 @@ import EditProperty from './pages/EditProperty';
 import GetVerified from './pages/GetVerified';
 import VerifyBuyer from './pages/VerifyBuyer';
 import TransactionManager from './pages/TransactionManager';
+import Messages from './pages/Messages';
 import { logout } from './services/authService';
 import './App.css';
 
@@ -69,6 +70,7 @@ function AppContent() {
             <Route path="/property/:id/get-verified" element={<GetVerified />} />
             <Route path="/verify-buyer" element={<VerifyBuyer />} />
             <Route path="/transaction/:id" element={<TransactionManager />} />
+            <Route path="/messages" element={<Messages />} />
             <Route path="/submit-offer/:propertyId" element={<SubmitOffer />} />
             <Route path="/sign-up" element={<SignUp />} />
             <Route path="/sign-in" element={<SignIn />} />

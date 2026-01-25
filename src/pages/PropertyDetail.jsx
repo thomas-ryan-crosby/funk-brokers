@@ -347,6 +347,15 @@ const PropertyDetail = () => {
                     >
                       Schedule Tour
                     </button>
+                    {property.sellerId && (
+                      <Link
+                        to={`/messages?to=${encodeURIComponent(property.sellerId)}&propertyId=${encodeURIComponent(property.id)}`}
+                        state={{ otherUserName: property.sellerName || 'Seller', propertyAddress: formatAddress(property) }}
+                        className="btn btn-outline btn-large"
+                      >
+                        Message seller
+                      </Link>
+                    )}
                     <button
                       className={`btn btn-outline btn-large ${favorited ? 'favorited' : ''}`}
                       onClick={handleFavoriteToggle}
