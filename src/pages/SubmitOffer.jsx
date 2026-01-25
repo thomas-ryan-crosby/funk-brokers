@@ -17,6 +17,8 @@ const SubmitOffer = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
 
+  const [step, setStep] = useState('attention'); // 'attention' | 'form' | 'review'
+  const [signatureName, setSignatureName] = useState('');
   const [offerData, setOfferData] = useState({
     offerAmount: '',
     earnestMoney: '',
@@ -92,48 +94,63 @@ const SubmitOffer = () => {
     }).format(price);
   };
 
-  const handleSubmit = async (e) => {
+  const ATTENTION_MSG =
+    'Attention: By submitting an offer, you are entering into a legally binding agreement. If the seller accepts your offer, you may be obligated to purchase this property under the terms you specify. Do you wish to proceed?';
+
+  const buildOffer = () => ({
+    propertyId,
+    buyerId: user.uid,
+    buyerName: verificationData.buyerInfo.name,
+    buyerEmail: verificationData.buyerInfo.email,
+    buyerPhone: verificationData.buyerInfo.phone,
+    offerAmount: parseFloat(offerData.offerAmount),
+    earnestMoney: parseFloat(offerData.earnestMoney),
+    proposedClosingDate: new Date(offerData.closingDate),
+    financingType: offerData.financingType,
+    contingencies: {
+      inspection: { included: offerData.inspectionContingency, days: offerData.inspectionContingency ? parseInt(offerData.inspectionDays) : null },
+      financing: { included: offerData.financingContingency, days: offerData.financingContingency ? parseInt(offerData.financingDays) : null },
+      appraisal: { included: offerData.appraisalContingency },
+      homeSale: { included: offerData.homeSaleContingency },
+    },
+    message: offerData.message,
+    verificationDocuments: {
+      proofOfFunds: verificationData.proofOfFunds,
+      preApprovalLetter: verificationData.preApprovalLetter,
+      bankLetter: verificationData.bankLetter,
+      governmentId: verificationData.governmentId,
+    },
+  });
+
+  const handleReviewOffer = (e) => {
     e.preventDefault();
+    if (!e.target.checkValidity()) {
+      e.target.reportValidity();
+      return;
+    }
+    setError(null);
+    setSignatureName('');
+    setStep('review');
+  };
+
+  const handleFinalSubmit = async () => {
+    const expected = (verificationData.buyerInfo.name || '').trim().toLowerCase();
+    const signed = signatureName.trim().toLowerCase();
+    if (expected && signed !== expected) {
+      setError('Please type your full legal name exactly as it appears on your verified buyer profile.');
+      return;
+    }
+    if (!signed) {
+      setError('Please type your full legal name to sign and confirm this offer.');
+      return;
+    }
+    const confirmed = window.confirm(ATTENTION_MSG);
+    if (!confirmed) return;
+
     setSubmitting(true);
     setError(null);
-
     try {
-      const offer = {
-        propertyId,
-        buyerId: user.uid,
-        buyerName: verificationData.buyerInfo.name,
-        buyerEmail: verificationData.buyerInfo.email,
-        buyerPhone: verificationData.buyerInfo.phone,
-        offerAmount: parseFloat(offerData.offerAmount),
-        earnestMoney: parseFloat(offerData.earnestMoney),
-        proposedClosingDate: new Date(offerData.closingDate),
-        financingType: offerData.financingType,
-        contingencies: {
-          inspection: {
-            included: offerData.inspectionContingency,
-            days: offerData.inspectionContingency ? parseInt(offerData.inspectionDays) : null,
-          },
-          financing: {
-            included: offerData.financingContingency,
-            days: offerData.financingContingency ? parseInt(offerData.financingDays) : null,
-          },
-          appraisal: {
-            included: offerData.appraisalContingency,
-          },
-          homeSale: {
-            included: offerData.homeSaleContingency,
-          },
-        },
-        message: offerData.message,
-        verificationDocuments: {
-          proofOfFunds: verificationData.proofOfFunds,
-          preApprovalLetter: verificationData.preApprovalLetter,
-          bankLetter: verificationData.bankLetter,
-          governmentId: verificationData.governmentId,
-        },
-      };
-
-      const offerId = await createOffer(offer);
+      const offerId = await createOffer(buildOffer());
       setSuccess(true);
       console.log('Offer created with ID:', offerId);
     } catch (err) {
@@ -142,6 +159,17 @@ const SubmitOffer = () => {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const formatFinancing = (v) => {
+    const map = { cash: 'Cash', conventional: 'Conventional', fha: 'FHA', va: 'VA', usda: 'USDA' };
+    return map[v] || (v || '').replace(/-/g, ' ');
+  };
+
+  const formatDate = (d) => {
+    if (!d) return '—';
+    const x = typeof d === 'string' ? new Date(d) : (d?.toDate ? d.toDate() : d);
+    return Number.isNaN(x?.getTime()) ? '—' : x.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   };
 
   if (loading) {
@@ -209,7 +237,20 @@ const SubmitOffer = () => {
 
         {error && <div className="error-message">{error}</div>}
 
-        <form onSubmit={handleSubmit} className="offer-form">
+        {step === 'attention' && (
+          <div className="offer-attention">
+            <h2 className="offer-attention-title">Important Notice</h2>
+            <p className="offer-attention-text">
+              By submitting an offer, you are entering into a <strong>legally binding agreement</strong>. If the seller accepts your offer, you may be obligated to purchase this property under the terms you specify. Please ensure you have reviewed all details carefully before proceeding.
+            </p>
+            <button type="button" className="btn-primary" onClick={() => setStep('form')}>
+              I Understand — Continue
+            </button>
+          </div>
+        )}
+
+        {step === 'form' && (
+        <form onSubmit={handleReviewOffer} className="offer-form">
           <div className="form-section">
             <h2>Offer Details</h2>
             <div className="form-grid">
@@ -386,11 +427,76 @@ const SubmitOffer = () => {
             >
               Cancel
             </button>
-            <button type="submit" disabled={submitting} className="btn-primary">
-              {submitting ? 'Submitting Offer...' : 'Submit Offer'}
+            <button type="submit" className="btn-primary">
+              Review Offer
             </button>
           </div>
         </form>
+        )}
+
+        {step === 'review' && (
+          <div className="offer-review">
+            <h2 className="offer-review-title">Review Your Offer</h2>
+            <p className="offer-review-hint">Please confirm all terms below. Type your full legal name to sign and submit.</p>
+
+            <div className="offer-review-section">
+              <h3>Property</h3>
+              <p>{[property?.address, property?.city, property?.state].filter(Boolean).join(', ')}</p>
+              <p>Asking: {formatPrice(property?.price)}</p>
+            </div>
+            <div className="offer-review-section">
+              <h3>Offer Terms</h3>
+              <ul className="offer-review-list">
+                <li>Offer amount: {formatPrice(parseFloat(offerData.offerAmount))}</li>
+                <li>Earnest money: {formatPrice(parseFloat(offerData.earnestMoney))}</li>
+                <li>Closing date: {formatDate(offerData.closingDate)}</li>
+                <li>Financing: {formatFinancing(offerData.financingType)}</li>
+              </ul>
+            </div>
+            <div className="offer-review-section">
+              <h3>Contingencies</h3>
+              <ul className="offer-review-list">
+                <li>Inspection: {offerData.inspectionContingency ? `Yes (${offerData.inspectionDays} days)` : 'No'}</li>
+                <li>Financing: {offerData.financingContingency ? `Yes (${offerData.financingDays} days)` : 'No'}</li>
+                <li>Appraisal: {offerData.appraisalContingency ? 'Yes' : 'No'}</li>
+                <li>Home sale: {offerData.homeSaleContingency ? 'Yes' : 'No'}</li>
+              </ul>
+            </div>
+            {offerData.message?.trim() && (
+              <div className="offer-review-section">
+                <h3>Message to Seller</h3>
+                <p className="offer-review-message">{offerData.message}</p>
+              </div>
+            )}
+
+            <div className="offer-review-sign">
+              <label htmlFor="offer-signature">Type your full legal name to confirm and sign</label>
+              <input
+                id="offer-signature"
+                type="text"
+                value={signatureName}
+                onChange={(e) => setSignatureName(e.target.value)}
+                placeholder={verificationData?.buyerInfo?.name || 'Your full legal name'}
+                className="offer-review-sign-input"
+                autoComplete="name"
+              />
+            </div>
+
+            <div className="form-actions">
+              <button type="button" className="btn-secondary" onClick={() => { setError(null); setStep('form'); }}>
+                Back
+              </button>
+              <button
+                type="button"
+                className="btn-primary"
+                disabled={submitting}
+                onClick={handleFinalSubmit}
+              >
+                {submitting ? 'Submitting Offer...' : 'Submit Offer'}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

@@ -51,6 +51,107 @@
   border: 1px solid #fcc;
 }
 
+.offer-attention {
+  padding: 32px 24px;
+  background: #fff8e6;
+  border: 1px solid #f59e0b;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.offer-attention-title {
+  margin: 0 0 16px 0;
+  font-size: 20px;
+  color: #92400e;
+}
+
+.offer-attention-text {
+  margin: 0 0 24px 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: #78350f;
+}
+
+.offer-review {
+  margin-top: 8px;
+}
+
+.offer-review-title {
+  margin: 0 0 8px 0;
+  font-size: 22px;
+  color: #1a1a1a;
+}
+
+.offer-review-hint {
+  margin: 0 0 24px 0;
+  font-size: 14px;
+  color: #666;
+}
+
+.offer-review-section {
+  margin-bottom: 20px;
+  padding: 16px;
+  background: #f8f9ff;
+  border-radius: 8px;
+}
+
+.offer-review-section h3 {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  color: #333;
+}
+
+.offer-review-section p {
+  margin: 0;
+  font-size: 14px;
+  color: #555;
+}
+
+.offer-review-list {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 14px;
+  color: #555;
+  line-height: 1.6;
+}
+
+.offer-review-message {
+  white-space: pre-wrap;
+  font-size: 14px;
+  color: #555;
+}
+
+.offer-review-sign {
+  margin: 24px 0;
+  padding: 20px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.offer-review-sign label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 8px;
+}
+
+.offer-review-sign-input {
+  width: 100%;
+  max-width: 360px;
+  padding: 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 16px;
+}
+
+.offer-review-sign-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
 .offer-form {
   display: flex;
   flex-direction: column;

@@ -331,7 +331,7 @@ const Dashboard = () => {
             Create a new search
           </Link>
           <Link to="/begin-sale" state={{ startFresh: true }} className="btn btn-process btn-process-sell">
-            Begin home sale process
+            Add my property
           </Link>
           {purchaseProfile?.buyerVerified ? (
             <span className="dashboard-verified-badge">✓ Verified buyer</span>
@@ -393,7 +393,7 @@ const Dashboard = () => {
                 {activeList.length === 0 && archivedList.length === 0 && (
                   <p className="empty-message">
                     You haven't listed any properties yet.{' '}
-                    <Link to="/begin-sale" state={{ startFresh: true }}>Begin home sale process</Link>
+                    <Link to="/begin-sale" state={{ startFresh: true }}>Add my property</Link>
                   </p>
                 )}
               </div>
@@ -546,7 +546,7 @@ const Dashboard = () => {
               {activeList.length === 0 ? (
                 <p className="empty-message">
                   You don&apos;t have any active listings.{' '}
-                  <Link to="/begin-sale" state={{ startFresh: true }}>Begin home sale process</Link> to list a property and receive offers.
+                  <Link to="/begin-sale" state={{ startFresh: true }}>Add my property</Link> to list a property and receive offers.
                 </p>
               ) : (
                 <div className="deal-center-list">
