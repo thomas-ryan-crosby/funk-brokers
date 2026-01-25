@@ -110,15 +110,15 @@
   overflow-x: hidden;
   padding: 12px 14px;
   background: #f8fafc;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  align-items: stretch;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  align-content: start;
 }
 
-/* Keep card height natural so list scrolls instead of squishing */
+/* Cards keep natural height; grid scrolls when needed */
 .home-map-split__list > * {
-  flex-shrink: 0;
+  min-width: 0;
 }
 
 .home-map-split__list .property-card {
@@ -130,6 +130,7 @@
   font-size: 14px;
   margin: 0;
   padding: 24px 0;
+  grid-column: 1 / -1;
 }
 
 .properties-header {
@@ -206,5 +207,6 @@
     flex: 1 1 auto;
     min-height: 200px;
     max-height: 50vh;
+    grid-template-columns: 1fr;
   }
 }
