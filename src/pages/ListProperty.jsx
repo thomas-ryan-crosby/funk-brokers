@@ -83,12 +83,23 @@ const ListProperty = () => {
         price: saleProfile.targetPrice != null ? String(saleProfile.targetPrice) : (saleProfile.price != null ? String(saleProfile.price) : base.price),
       };
     }
+    const claim = location.state?.claimAddress != null && String(location.state.claimAddress).trim() !== '';
+    if (claim) {
+      const lat = location.state.claimLat;
+      const lng = location.state.claimLng;
+      const hasCoords = typeof lat === 'number' && !Number.isNaN(lat) && typeof lng === 'number' && !Number.isNaN(lng);
+      return {
+        ...base,
+        address: String(location.state.claimAddress).trim(),
+        ...(hasCoords && { latitude: lat, longitude: lng }),
+      };
+    }
     return base;
   });
 
   const [photoFiles, setPhotoFiles] = useState([]);
   const [photoPreviews, setPhotoPreviews] = useState([]);
-  const [addressInputValue, setAddressInputValue] = useState('');
+  const [addressInputValue, setAddressInputValue] = useState(() => String(location.state?.claimAddress ?? '').trim());
 
   const propertyTypes = [
     'Single Family',
@@ -141,8 +152,11 @@ const ListProperty = () => {
 
   const validateStep = (stepNum) => {
     if (stepNum === 1) {
-      // Require a selection from the autocomplete (address from API), not raw typing
-      return !!formData.address?.trim() && (!!formData.city?.trim() || !!formData.state?.trim() || !!formData.zipCode?.trim());
+      // Require address + (city|state|zip) from autocomplete, OR address + lat/lng (e.g. from Claim property)
+      const hasAddress = !!formData.address?.trim();
+      const hasCityStateZip = !!formData.city?.trim() || !!formData.state?.trim() || !!formData.zipCode?.trim();
+      const hasCoords = typeof formData.latitude === 'number' && !Number.isNaN(formData.latitude) && typeof formData.longitude === 'number' && !Number.isNaN(formData.longitude);
+      return hasAddress && (hasCityStateZip || hasCoords);
     }
     if (stepNum === 2) return formData.propertyType && formData.bedrooms && formData.bathrooms;
     if (stepNum === 3) return !!formData.price?.trim();
@@ -294,6 +308,9 @@ const ListProperty = () => {
               ) : (
                 <div className="form-group">
                   <label>Address *</label>
+                  {location.state?.claimAddress && (
+                    <p className="form-note form-note--claim">Address prefilled from claimed property.</p>
+                  )}
                   <AddressAutocomplete
                     name="address"
                     value={addressInputValue}
