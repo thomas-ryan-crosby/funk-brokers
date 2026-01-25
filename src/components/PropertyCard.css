@@ -212,3 +212,33 @@
   color: var(--color-text-secondary, #64748b);
   background: var(--color-bg-secondary, #f1f5f9);
 }
+
+/* Listing tier: Generic | Verified | Premium · Listed | Unlisted */
+.property-card__listing-tier {
+  display: inline-flex;
+  align-self: flex-start;
+  margin-top: 4px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: #475569;
+  background: #f1f5f9;
+}
+
+.property-card__listing-tier--generic {
+  color: #64748b;
+  background: #f1f5f9;
+}
+
+.property-card__listing-tier--verified {
+  color: #065f46;
+  background: #d1fae5;
+}
+
+.property-card__listing-tier--premium {
+  color: #1e40af;
+  background: #dbeafe;
+}

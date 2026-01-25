@@ -8,6 +8,7 @@ import { getSavedSearches, removeSavedSearch, getPurchaseProfile, setPurchasePro
 import { getOffersByProperty, getOffersByBuyer, acceptOffer, rejectOffer, withdrawOffer, counterOffer } from '../services/offerService';
 import { getTransactionsByUser, getTransactionByOfferId, createTransaction } from '../services/transactionService';
 import { uploadFile } from '../services/storageService';
+import { getVerifiedBuyerScore, getListingTier, isListed, getListingTierLabel } from '../utils/verificationScores';
 import PropertyCard from '../components/PropertyCard';
 import CounterOfferModal from '../components/CounterOfferModal';
 import ViewOfferModal from '../components/ViewOfferModal';
@@ -30,6 +31,7 @@ const Dashboard = () => {
   const [sentOffers, setSentOffers] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [dealCenterActionOfferId, setDealCenterActionOfferId] = useState(null);
+  const [dealCenterSubTab, setDealCenterSubTab] = useState('received'); // 'received' | 'sent'
   const [counterOfferFor, setCounterOfferFor] = useState(null); // { offer, property } or null
   const [viewOfferFor, setViewOfferFor] = useState(null); // { offer, property } or null
 
@@ -367,20 +369,32 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="dashboard-process-ctas">
-          <Link to="/create-search" className="btn btn-process btn-process-buy">
-            Create a new search
-          </Link>
-          <Link to="/begin-sale" state={{ startFresh: true }} className="btn btn-process btn-process-sell">
-            Add my property
-          </Link>
-          {purchaseProfile?.buyerVerified ? (
-            <span className="dashboard-verified-badge">✓ Verified buyer</span>
-          ) : (
-            <Link to="/verify-buyer" className="btn btn-outline">
-              Become a verified buyer
+        <div className="dashboard-scores-and-ctas">
+          <div className="dashboard-buyer-score">
+            <span className="dashboard-buyer-score-label">Verified buyer score</span>
+            <span className="dashboard-buyer-score-value">
+              {getVerifiedBuyerScore(purchaseProfile).score}
+              {getVerifiedBuyerScore(purchaseProfile).score < 100 && '%'}
+            </span>
+            {getVerifiedBuyerScore(purchaseProfile).score < 100 && (
+              <Link to="/verify-buyer" className="dashboard-buyer-score-link">Complete verification</Link>
+            )}
+          </div>
+          <div className="dashboard-process-ctas">
+            <Link to="/create-search" className="btn btn-process btn-process-buy">
+              Create a new search
             </Link>
-          )}
+            <Link to="/begin-sale" state={{ startFresh: true }} className="btn btn-process btn-process-sell">
+              Add my property
+            </Link>
+            {purchaseProfile?.buyerVerified ? (
+              <span className="dashboard-verified-badge">✓ Verified buyer</span>
+            ) : (
+              <Link to="/verify-buyer" className="btn btn-outline">
+                Become a verified buyer
+              </Link>
+            )}
+          </div>
         </div>
 
         {error && <div className="dashboard-error">{error}</div>}
@@ -443,7 +457,7 @@ const Dashboard = () => {
                 <div className="properties-list">
                   {activeList.map((property) => (
                     <div key={property.id} className="property-item">
-                      <PropertyCard property={property} embedded />
+                      <PropertyCard property={property} embedded listingTier={getListingTier(property)} isListed={isListed(property)} />
                       <div className="property-actions">
                         {getStatusBadge(property)}
                         <div className="action-buttons">
@@ -470,7 +484,7 @@ const Dashboard = () => {
                   <div className="properties-list">
                     {archivedList.map((property) => (
                       <div key={property.id} className="property-item property-item-archived">
-                        <PropertyCard property={property} embedded />
+                        <PropertyCard property={property} embedded listingTier={getListingTier(property)} isListed={isListed(property)} />
                         <div className="property-actions">
                           {getStatusBadge(property)}
                           <div className="action-buttons">
@@ -506,7 +520,7 @@ const Dashboard = () => {
                 <div className="properties-list">
                   {favoriteProperties.map((property) => (
                     <div key={property.id} className="property-item">
-                      <PropertyCard property={property} embedded />
+                      <PropertyCard property={property} embedded listingTier={getListingTier(property)} isListed={isListed(property)} />
                       <div className="property-actions">
                         <div className="action-buttons">
                           <button
@@ -583,7 +597,25 @@ const Dashboard = () => {
                 <p className="form-hint">Offers on your listings and offers you&apos;ve sent. Accept, reject, counter, or withdraw as needed.</p>
               </div>
 
-              <h3 className="deal-subsection-title">Offers on your listings</h3>
+              <div className="deal-center-subtabs">
+                <button
+                  type="button"
+                  className={`deal-center-subtab ${dealCenterSubTab === 'received' ? 'active' : ''}`}
+                  onClick={() => setDealCenterSubTab('received')}
+                >
+                  Deals on your properties
+                </button>
+                <button
+                  type="button"
+                  className={`deal-center-subtab ${dealCenterSubTab === 'sent' ? 'active' : ''}`}
+                  onClick={() => setDealCenterSubTab('sent')}
+                >
+                  Offers sent
+                </button>
+              </div>
+
+              {dealCenterSubTab === 'received' && (
+                <>
               {activeList.length === 0 ? (
                 <p className="empty-message">
                   You don&apos;t have any active listings.{' '}
@@ -670,8 +702,11 @@ const Dashboard = () => {
                   })}
                 </div>
               )}
+                </>
+              )}
 
-              <h3 className="deal-subsection-title">Offers you&apos;ve sent</h3>
+              {dealCenterSubTab === 'sent' && (
+              <>
               {sentOffers.length === 0 ? (
                 <p className="empty-message">
                   You haven&apos;t sent any offers yet.{' '}
@@ -752,6 +787,8 @@ const Dashboard = () => {
                     </div>
                   ))}
                 </div>
+              )}
+              </>
               )}
             </div>
           )}

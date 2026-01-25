@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { getListingTierLabel } from '../utils/verificationScores';
 import './PropertyCard.css';
 
-const PropertyCard = ({ property, embedded, compact }) => {
+const PropertyCard = ({ property, embedded, compact, listingTier, isListed }) => {
   const [imgError, setImgError] = useState(false);
   const photoUrl = property.photos?.[0];
 
@@ -90,6 +91,12 @@ const PropertyCard = ({ property, embedded, compact }) => {
         </div>
         {property.propertyType && (
           <span className="property-card__type">{formatPropertyType(property.propertyType)}</span>
+        )}
+        {listingTier != null && (
+          <span className={`property-card__listing-tier property-card__listing-tier--${listingTier}`}>
+            {getListingTierLabel(listingTier)}
+            {isListed != null && ` · ${isListed ? 'Listed' : 'Unlisted'}`}
+          </span>
         )}
       </div>
     </Link>
