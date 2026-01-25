@@ -71,11 +71,11 @@ https://us-central1-funk-brokers-production.cloudfunctions.net/getParcelsInViewp
 ## 4. How It’s Used
 
 - **Input:** `n`, `s`, `e`, `w` (viewport in degrees, query or JSON body).
-- **Behavior:** The function converts the bbox to a center + radius (0.25–20 mi), calls ATTOM `allevents/snapshot`, and maps the response to:
+- **Behavior:** The function converts the bbox to a center + radius (0.25–20 mi), calls ATTOM `allevents/snapshot` with `latitude`, `longitude`, and `radius` only. (ATTOM’s `radius` is always miles; do **not** send `radiusunit`—the API rejects it.) Maps the response to:
   - `address`, `latitude`, `longitude`, `estimate`, `lastSaleDate`, `lastSalePrice`, `attomId`, `beds`, `baths`, `squareFeet`.
 - **Output:** `{ parcels: [...] }` with CORS enabled.
 
-The frontend calls this on map `idle` when zoom ≥ 10 and shows unlisted parcels as circle markers with a hover tooltip (Unlisted, Funk Estimate, Last sale).
+The frontend calls this on map `idle` only when zoom ≥ 19 (~5 acres or less on screen) and shows unlisted parcels as circle markers with a hover tooltip (Unlisted, Funk Estimate, Last sale).
 
 ---
 
@@ -102,7 +102,7 @@ If your ATTOM product uses different field names, update `functions/index.js` in
 ## 6. Rate Limits and Quota
 
 - The function uses a **radius** (max 20 mi) and ATTOM’s limit (e.g. 100 records) per request.
-- The app only requests parcels when the map is **idle** and **zoom ≥ 10** to limit calls.
+- The app only requests parcels when the map is **idle** and **zoom ≥ 19** (~5 acres or less on screen) to limit calls.
 - Check your ATTOM plan for rate limits and adjust zoom threshold or caching (e.g. Firestore `parcelCache`) if needed.
 
 ---
@@ -114,4 +114,5 @@ If your ATTOM product uses different field names, update `functions/index.js` in
 | `ATTOM API key not configured` | `firebase functions:config:get` and/or `process.env.ATTOM_API_KEY` in the function. |
 | `Upstream API error` / 4xx from ATTOM | ATTOM dashboard: key active, correct product, `allevents/snapshot` (or equivalent) allowed. |
 | Empty `parcels` | Response shape may differ; inspect `data` in `functions/index.js` and adjust `mapAttomToParcel` / `data.property` vs `data.properties`. |
+| `Invalid Parameter(s) - RADIUSUNIT` | Do not send `radiusunit`; ATTOM’s `radius` is always in miles. Remove it from the request URL. |
 | CORS errors from the web app | Function sets `Access-Control-Allow-Origin: *`; if you restrict origins, add your app’s (e.g. GitHub Pages) domain. |

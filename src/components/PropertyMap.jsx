@@ -116,7 +116,8 @@ const PropertyMap = ({ properties = [], onPropertiesInView }) => {
         }
       }
       const zoom = map.getZoom();
-      if (zoom != null && zoom < 10) {
+      // Unlisted parcels only when very zoomed in (~5 acres or less on screen). Zoom 19 ≈ 3–5 acres.
+      if (zoom == null || zoom < 19) {
         setUnlistedParcels([]);
         return;
       }

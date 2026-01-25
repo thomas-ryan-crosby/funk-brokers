@@ -99,7 +99,8 @@ const getParcelsInViewport = functions.https.onRequest(async (req, res) => {
   const centerLng = (e + w) / 2;
   const radius = radiusFromBbox(n, s, e, w);
 
-  const url = `${ATTOM_BASE}?latitude=${centerLat}&longitude=${centerLng}&radius=${radius}&radiusunit=miles`;
+  // ATTOM radius is always in miles; radiusunit is not a valid parameter.
+  const url = `${ATTOM_BASE}?latitude=${centerLat}&longitude=${centerLng}&radius=${radius}`;
   let data;
   try {
     const r = await fetch(url, {
