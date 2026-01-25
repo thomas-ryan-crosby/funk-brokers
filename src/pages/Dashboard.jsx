@@ -14,6 +14,43 @@ import CounterOfferModal from '../components/CounterOfferModal';
 import ViewOfferModal from '../components/ViewOfferModal';
 import './Dashboard.css';
 
+function getExpiryMs(offer) {
+  const raw = offer?.offerExpirationDate;
+  if (!raw) return null;
+  const d = raw?.toDate ? raw.toDate() : new Date(raw);
+  if (Number.isNaN(d.getTime())) return null;
+  const t = (offer?.offerExpirationTime || '').trim();
+  if (t) {
+    const m = t.match(/(\d{1,2}):(\d{2})\s*(a\.?m\.?|p\.?m\.?)?/i);
+    if (m) {
+      let h = parseInt(m[1], 10);
+      const min = parseInt(m[2], 10);
+      const ampm = (m[3] || '').toLowerCase();
+      if (/p\.?m\.?/.test(ampm) && h < 12) h += 12;
+      if (/a\.?m\.?/.test(ampm) && h === 12) h = 0;
+      d.setHours(h, min, 0, 0);
+    } else {
+      d.setHours(23, 59, 59, 999);
+    }
+  } else {
+    d.setHours(23, 59, 59, 999);
+  }
+  return d.getTime();
+}
+
+function formatCountdown(expiryMs, now) {
+  if (expiryMs == null) return null;
+  const diff = expiryMs - now;
+  if (diff <= 0) return { text: 'Expired', expired: true };
+  const d = Math.floor(diff / 86400000);
+  const h = Math.floor((diff % 86400000) / 3600000);
+  const m = Math.floor((diff % 3600000) / 60000);
+  if (d > 0) return { text: `${d}d ${h}h ${m}m`, expired: false };
+  if (h > 0) return { text: `${h}h ${m}m`, expired: false };
+  if (m > 0) return { text: `${m}m`, expired: false };
+  return { text: '< 1 min', expired: false };
+}
+
 const Dashboard = () => {
   const { user, userProfile, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -36,12 +73,18 @@ const Dashboard = () => {
   const [dealCenterSubTab, setDealCenterSubTab] = useState('received'); // 'received' | 'sent'
   const [counterOfferFor, setCounterOfferFor] = useState(null); // { offer, property } or null
   const [viewOfferFor, setViewOfferFor] = useState(null); // { offer, property } or null
+  const [countdownNow, setCountdownNow] = useState(() => Date.now());
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       navigate('/sign-in');
     }
   }, [isAuthenticated, authLoading, navigate]);
+
+  useEffect(() => {
+    const t = setInterval(() => setCountdownNow(Date.now()), 60_000);
+    return () => clearInterval(t);
+  }, []);
 
   useEffect(() => {
     if (isAuthenticated && user) {
@@ -714,6 +757,18 @@ const Dashboard = () => {
                                   </span>
                                   <span className="deal-offer-received">Received {formatDate(offer.createdAt)}</span>
                                 </div>
+                                {(() => {
+                                  const ms = getExpiryMs(offer);
+                                  if (ms == null) return null;
+                                  const c = formatCountdown(ms, countdownNow);
+                                  const byStr = formatDate(offer.offerExpirationDate) + (offer.offerExpirationTime ? ` ${offer.offerExpirationTime}` : '');
+                                  return (
+                                    <div className="deal-offer-expiry">
+                                      <span className={`deal-offer-expiry-countdown ${c.expired ? 'deal-offer-expiry--expired' : ''}`}>{c.text}</span>
+                                      <span className="deal-offer-expiry-by">{c.expired ? 'Was ' : 'By '}{byStr}</span>
+                                    </div>
+                                  );
+                                })()}
                                 <div className="deal-offer-actions">
                                   <button
                                     type="button"
@@ -810,6 +865,18 @@ const Dashboard = () => {
                                 </span>
                                 <span className="deal-offer-received">Sent {formatDate(offer.createdAt)}</span>
                               </div>
+                              {(() => {
+                                const ms = getExpiryMs(offer);
+                                if (ms == null) return null;
+                                const c = formatCountdown(ms, countdownNow);
+                                const byStr = formatDate(offer.offerExpirationDate) + (offer.offerExpirationTime ? ` ${offer.offerExpirationTime}` : '');
+                                return (
+                                  <div className="deal-offer-expiry">
+                                    <span className={`deal-offer-expiry-countdown ${c.expired ? 'deal-offer-expiry--expired' : ''}`}>{c.text}</span>
+                                    <span className="deal-offer-expiry-by">{c.expired ? 'Was ' : 'By '}{byStr}</span>
+                                  </div>
+                                );
+                              })()}
                               <div className="deal-offer-actions">
                                 <button
                                   type="button"
