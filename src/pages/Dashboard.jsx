@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getPropertiesBySeller, getPropertyById, archiveProperty, restoreProperty, deletePropertyPermanently } from '../services/propertyService';
@@ -326,6 +326,24 @@ const Dashboard = () => {
     if (offer.counteredByOfferId) return { label: 'You have received a counter', type: 'received-counter' };
     return { label: 'You sent an offer', type: 'sent-offer' };
   };
+
+  const sentByProperty = useMemo(() => {
+    const byId = {};
+    for (const { offer, property } of sentOffers) {
+      const id = offer.propertyId;
+      if (!id) continue;
+      if (!byId[id]) byId[id] = { propertyId: id, property: null, items: [] };
+      if (property) byId[id].property = byId[id].property || property;
+      byId[id].items.push({ offer, property });
+    }
+    return Object.values(byId).sort((a, b) => {
+      const latest = (g) => Math.max(0, ...g.items.map(({ offer: o }) => {
+        const d = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt || 0);
+        return d.getTime();
+      }));
+      return latest(b) - latest(a);
+    });
+  }, [sentOffers]);
 
   if (authLoading || loading) {
     return (
@@ -660,67 +678,79 @@ const Dashboard = () => {
                   <Link to="/browse">Browse properties</Link> to submit an offer.
                 </p>
               ) : (
-                <div className="deal-sent-list">
-                  {sentOffers.map(({ offer, property }) => {
-                    const evt = getOfferEventBadge(offer, { isReceived: false });
-                    return (
-                    <div key={offer.id} className="deal-offer-row">
-                      <div className="deal-offer-main">
-                        {evt && (
-                          <span className={`offer-event-badge offer-event-badge--${evt.type}`}>{evt.label}</span>
-                        )}
-                        <Link to={`/property/${offer.propertyId}`} className="deal-offer-property">
+                <div className="deal-center-list">
+                  {sentByProperty.map(({ propertyId, property, items }) => (
+                    <div key={propertyId} className="deal-property-block">
+                      <div className="deal-property-header">
+                        <Link to={`/property/${propertyId}`} className="deal-property-title">
                           {[property?.address, property?.city, property?.state].filter(Boolean).join(', ') || 'Property'}
+                          {property?.price != null ? ` — ${formatCurrency(property.price)}` : ''}
                         </Link>
-                        <span className="deal-offer-amount">{formatCurrency(offer.offerAmount)}</span>
-                        <span className="deal-offer-meta">
-                          {['Earnest ' + formatCurrency(offer.earnestMoney), 'Closing ' + formatDate(offer.proposedClosingDate), (offer.financingType || '').replace(/-/g, ' ')].filter(Boolean).join(' · ')}
-                        </span>
-                        <span className="deal-offer-received">Sent {formatDate(offer.createdAt)}</span>
+                        <Link to={`/property/${propertyId}`} className="btn btn-outline btn-small">
+                          View
+                        </Link>
                       </div>
-                      <div className="deal-offer-actions">
-                        <button
-                          type="button"
-                          className="btn btn-outline btn-small"
-                          onClick={() => setViewOfferFor({ offer, property: property || null })}
-                        >
-                          View Offer
-                        </button>
-                        {getOfferStatusBadge(offer.status)}
-                        {offer.status === 'pending' && !offer.createdBy && (
-                          <button
-                            type="button"
-                            className="btn btn-outline btn-small"
-                            disabled={dealCenterActionOfferId != null}
-                            onClick={() => handleWithdrawOffer(offer.id)}
-                          >
-                            Withdraw
-                          </button>
-                        )}
-                        {offer.status === 'pending' && offer.createdBy && (
-                          <>
-                            <button
-                              type="button"
-                              className="btn btn-primary btn-small"
-                              disabled={dealCenterActionOfferId != null}
-                              onClick={() => handleAcceptOffer(offer.id)}
-                            >
-                              Accept
-                            </button>
-                            <button
-                              type="button"
-                              className="btn btn-outline btn-small"
-                              disabled={dealCenterActionOfferId != null}
-                              onClick={() => setCounterOfferFor({ offer, property: property || null })}
-                            >
-                              Counter
-                            </button>
-                          </>
-                        )}
+                      <div className="deal-offers">
+                        {items.map(({ offer, property: prop }) => {
+                          const evt = getOfferEventBadge(offer, { isReceived: false });
+                          return (
+                            <div key={offer.id} className="deal-offer-row">
+                              <div className="deal-offer-main">
+                                {evt && (
+                                  <span className={`offer-event-badge offer-event-badge--${evt.type}`}>{evt.label}</span>
+                                )}
+                                <span className="deal-offer-amount">{formatCurrency(offer.offerAmount)}</span>
+                                <span className="deal-offer-meta">
+                                  {['Earnest ' + formatCurrency(offer.earnestMoney), 'Closing ' + formatDate(offer.proposedClosingDate), (offer.financingType || '').replace(/-/g, ' ')].filter(Boolean).join(' · ')}
+                                </span>
+                                <span className="deal-offer-received">Sent {formatDate(offer.createdAt)}</span>
+                              </div>
+                              <div className="deal-offer-actions">
+                                <button
+                                  type="button"
+                                  className="btn btn-outline btn-small"
+                                  onClick={() => setViewOfferFor({ offer, property: prop || null })}
+                                >
+                                  View Offer
+                                </button>
+                                {getOfferStatusBadge(offer.status)}
+                                {offer.status === 'pending' && !offer.createdBy && (
+                                  <button
+                                    type="button"
+                                    className="btn btn-outline btn-small"
+                                    disabled={dealCenterActionOfferId != null}
+                                    onClick={() => handleWithdrawOffer(offer.id)}
+                                  >
+                                    Withdraw
+                                  </button>
+                                )}
+                                {offer.status === 'pending' && offer.createdBy && (
+                                  <>
+                                    <button
+                                      type="button"
+                                      className="btn btn-primary btn-small"
+                                      disabled={dealCenterActionOfferId != null}
+                                      onClick={() => handleAcceptOffer(offer.id)}
+                                    >
+                                      Accept
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="btn btn-outline btn-small"
+                                      disabled={dealCenterActionOfferId != null}
+                                      onClick={() => setCounterOfferFor({ offer, property: prop || null })}
+                                    >
+                                      Counter
+                                    </button>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
-                    );
-                  })}
+                  ))}
                 </div>
               )}
             </div>
