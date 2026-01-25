@@ -75,7 +75,7 @@ https://us-central1-funk-brokers-production.cloudfunctions.net/getParcelsInViewp
   - `address`, `latitude`, `longitude`, `estimate`, `lastSaleDate`, `lastSalePrice`, `attomId`, `beds`, `baths`, `squareFeet`.
 - **Output:** `{ parcels: [...] }` with CORS enabled.
 
-The frontend calls this on map `idle` only when zoom ≥ 19 (~5 acres or less on screen) and shows unlisted parcels as circle markers with a hover tooltip (Unlisted, Funk Estimate, Last sale).
+The frontend calls this on map `idle` only when zoom ≥ 18 and shows unlisted parcels as circle markers with a hover tooltip (Unlisted, Funk Estimate, Last sale).
 
 ---
 
@@ -102,7 +102,7 @@ If your ATTOM product uses different field names, update `functions/index.js` in
 ## 6. Rate Limits and Quota
 
 - The function uses a **radius** (max 20 mi) and ATTOM’s limit (e.g. 100 records) per request.
-- The app only requests parcels when the map is **idle** and **zoom ≥ 19** (~5 acres or less on screen) to limit calls.
+- The app only requests parcels when the map is **idle** and **zoom ≥ 18** to limit calls.
 - Check your ATTOM plan for rate limits and adjust zoom threshold or caching (e.g. Firestore `parcelCache`) if needed.
 
 ---

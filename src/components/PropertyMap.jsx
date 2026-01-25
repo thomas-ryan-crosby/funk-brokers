@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { loadGooglePlaces } from '../utils/loadGooglePlaces';
 import { getParcelsInViewport } from '../services/parcelService';
+import UnlistedPropertyModal from './UnlistedPropertyModal';
 import './PropertyMap.css';
 
 const DEFAULT_CENTER = { lat: 39.5, lng: -98.5 };
@@ -48,6 +49,7 @@ const PropertyMap = ({ properties = [], onPropertiesInView }) => {
   const [ready, setReady] = useState(false);
   const [error, setError] = useState(null);
   const [unlistedParcels, setUnlistedParcels] = useState([]);
+  const [selectedUnlistedParcel, setSelectedUnlistedParcel] = useState(null);
 
   useEffect(() => {
     loadGooglePlaces()
@@ -116,8 +118,8 @@ const PropertyMap = ({ properties = [], onPropertiesInView }) => {
         }
       }
       const zoom = map.getZoom();
-      // Unlisted parcels only when very zoomed in (~5 acres or less on screen). Zoom 19 ≈ 3–5 acres.
-      if (zoom == null || zoom < 19) {
+      // Unlisted parcels when zoomed in (~10–20 acres on screen). Zoom 18 shows sooner than 19.
+      if (zoom == null || zoom < 18) {
         setUnlistedParcels([]);
         return;
       }
@@ -183,6 +185,10 @@ const PropertyMap = ({ properties = [], onPropertiesInView }) => {
       marker.addListener('mouseout', () => {
         tip.close();
       });
+      marker.addListener('click', () => {
+        tip.close();
+        setSelectedUnlistedParcel(p);
+      });
       unlistedMarkersRef.current.push(marker);
     });
   }, [ready, properties, unlistedParcels]);
@@ -199,6 +205,7 @@ const PropertyMap = ({ properties = [], onPropertiesInView }) => {
     <div className="property-map">
       <div ref={mapRef} className="property-map-canvas" aria-label="Property map" />
       {!ready && <div className="property-map-loading">Loading map…</div>}
+      <UnlistedPropertyModal parcel={selectedUnlistedParcel} onClose={() => setSelectedUnlistedParcel(null)} />
     </div>
   );
 };
