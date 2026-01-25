@@ -1,21 +1,53 @@
 import { useEffect, useRef, useState } from 'react';
 import { loadGooglePlaces } from '../utils/loadGooglePlaces';
+import { getParcelsInViewport } from '../services/parcelService';
 import './PropertyMap.css';
 
 const DEFAULT_CENTER = { lat: 39.5, lng: -98.5 };
 const DEFAULT_ZOOM = 4;
+const DEDUP_DEG = 0.0001;
 
 const formatPrice = (n) =>
   n != null && Number.isFinite(n)
     ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n)
     : '—';
 
+const formatLastSaleDate = (s) => {
+  if (!s || typeof s !== 'string') return '';
+  const m = s.match(/^(\d{4})-(\d{2})/);
+  if (m) {
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return `${months[parseInt(m[2], 10) - 1]} ${m[1]}`;
+  }
+  return String(s).slice(0, 10);
+};
+
+const formatLastSale = (date, price) => {
+  const d = date ? formatLastSaleDate(date) : '';
+  const p = price != null && Number.isFinite(price) ? formatPrice(price) : '';
+  if (!d && !p) return '—';
+  if (d && p) return `${d} · ${p}`;
+  return d || p;
+};
+
+const unlistedTooltipContent = (p) => `
+  <div class="property-map-unlisted-tooltip">
+    <div class="property-map-unlisted-tooltip__address">${(p.address || 'Address unknown').replace(/</g, '&lt;')}</div>
+    <div class="property-map-unlisted-tooltip__badge">Unlisted</div>
+    <div class="property-map-unlisted-tooltip__row">Funk Estimate: ${formatPrice(p.estimate)}</div>
+    <div class="property-map-unlisted-tooltip__row">Last sale: ${formatLastSale(p.lastSaleDate, p.lastSalePrice)}</div>
+  </div>
+`;
+
 const PropertyMap = ({ properties = [], onPropertiesInView }) => {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
+  const unlistedMarkersRef = useRef([]);
+  const unlistedTooltipRef = useRef(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState(null);
+  const [unlistedParcels, setUnlistedParcels] = useState([]);
 
   useEffect(() => {
     loadGooglePlaces()
@@ -46,7 +78,7 @@ const PropertyMap = ({ properties = [], onPropertiesInView }) => {
 
     withCoords.forEach((p) => {
       const pos = { lat: p.latitude, lng: p.longitude };
-      const marker = new window.google.maps.Marker({ position: pos, map, property: p });
+      const marker = new window.google.maps.Marker({ position: pos, map, property: p, zIndex: 2 });
       bounds.extend(pos);
 
       const info = new window.google.maps.InfoWindow({
@@ -76,14 +108,27 @@ const PropertyMap = ({ properties = [], onPropertiesInView }) => {
     }
 
     const updatePropertiesInView = () => {
-      if (typeof onPropertiesInView !== 'function') return;
+      if (typeof onPropertiesInView === 'function') {
+        const b = map.getBounds();
+        if (b) {
+          const inView = withCoords.filter((p) => b.contains({ lat: p.latitude, lng: p.longitude }));
+          onPropertiesInView(inView);
+        }
+      }
+      const zoom = map.getZoom();
+      if (zoom != null && zoom < 10) {
+        setUnlistedParcels([]);
+        return;
+      }
       const b = map.getBounds();
       if (!b) return;
-      const inView = withCoords.filter((p) => b.contains({ lat: p.latitude, lng: p.longitude }));
-      onPropertiesInView(inView);
+      getParcelsInViewport(b)
+        .then(({ parcels }) => setUnlistedParcels(parcels || []))
+        .catch(() => setUnlistedParcels([]));
     };
 
     const idleListener = map.addListener('idle', updatePropertiesInView);
+    updatePropertiesInView();
 
     return () => {
       if (idleListener && window.google?.maps?.event?.removeListener) {
@@ -91,6 +136,55 @@ const PropertyMap = ({ properties = [], onPropertiesInView }) => {
       }
     };
   }, [ready, properties, onPropertiesInView]);
+
+  // Unlisted markers (circle) + hover tooltip; dedup against listed
+  useEffect(() => {
+    if (!ready || !mapInstanceRef.current || !window.google?.maps) return;
+    const map = mapInstanceRef.current;
+
+    unlistedMarkersRef.current.forEach((m) => m.setMap(null));
+    unlistedMarkersRef.current = [];
+
+    const withCoords = (properties || []).filter(
+      (p) => typeof p.latitude === 'number' && typeof p.longitude === 'number'
+    );
+    const isListed = (lat, lng) =>
+      withCoords.some(
+        (c) => Math.abs(c.latitude - lat) < DEDUP_DEG && Math.abs(c.longitude - lng) < DEDUP_DEG
+      );
+    const parcels = (unlistedParcels || []).filter((p) => !isListed(p.latitude, p.longitude));
+
+    if (!unlistedTooltipRef.current) {
+      unlistedTooltipRef.current = new window.google.maps.InfoWindow();
+    }
+    const tip = unlistedTooltipRef.current;
+
+    parcels.forEach((p) => {
+      const marker = new window.google.maps.Marker({
+        position: { lat: p.latitude, lng: p.longitude },
+        map,
+        icon: {
+          path: window.google.maps.SymbolPath.CIRCLE,
+          scale: 6,
+          fillColor: '#64748b',
+          fillOpacity: 1,
+          strokeColor: '#fff',
+          strokeWeight: 1
+        },
+        zIndex: 1
+      });
+      marker.parcel = p;
+
+      marker.addListener('mouseover', () => {
+        tip.setContent(unlistedTooltipContent(p));
+        tip.open(map, marker);
+      });
+      marker.addListener('mouseout', () => {
+        tip.close();
+      });
+      unlistedMarkersRef.current.push(marker);
+    });
+  }, [ready, properties, unlistedParcels]);
 
   if (error) {
     return (

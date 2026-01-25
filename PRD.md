@@ -744,6 +744,7 @@ Each step has: `title`, `lead`, `body` (paragraphs and lists), `whyMatters`, and
 ## 10. Future Enhancements (Post-MVP)
 
 ### 10.1 Advanced Features
+- **All-properties map (Zillow-like):** Show all properties on the map (not only listings). Unlisted properties display an estimated value (“Funk Estimate”), last sale when available, and “Unlisted” state. See **`docs/PRD_ALL_PROPERTIES_PLAN.md`** for the full plan and PRD.
 - AI-powered property valuation
 - Virtual property tours (3D/VR)
 - Mortgage calculator and pre-qualification tools

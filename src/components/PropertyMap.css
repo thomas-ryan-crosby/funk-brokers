@@ -58,3 +58,28 @@
 .property-map-info a:hover {
   text-decoration: underline;
 }
+
+/* Unlisted parcel hover tooltip */
+.property-map-unlisted-tooltip {
+  padding: 6px 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  min-width: 200px;
+}
+
+.property-map-unlisted-tooltip__address {
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 4px;
+}
+
+.property-map-unlisted-tooltip__badge {
+  font-size: 11px;
+  color: #64748b;
+  margin-bottom: 6px;
+}
+
+.property-map-unlisted-tooltip__row {
+  color: #475569;
+  margin: 2px 0;
+}
