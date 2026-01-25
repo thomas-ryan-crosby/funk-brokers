@@ -13,6 +13,7 @@ const Home = () => {
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState(() => location.state?.filters || {});
   const [viewMode, setViewMode] = useState('list'); // 'map' | 'list'
+  const [propertiesInMapView, setPropertiesInMapView] = useState([]);
 
   useEffect(() => {
     const hasFilters = Object.keys(filters).length > 0 && Object.values(filters).some((v) => v != null && v !== '');
@@ -84,7 +85,9 @@ const Home = () => {
           {!loading && !error && (
             <>
               <div className="home-view-bar">
-                <h2 className="home-view-count">{properties.length} Properties Found</h2>
+                <h2 className="home-view-count">
+                  {viewMode === 'map' ? `${propertiesInMapView.length} in view` : `${properties.length} Properties Found`}
+                </h2>
                 <div className="home-view-toggle" role="tablist" aria-label="View mode">
                   <button
                     type="button"
@@ -107,8 +110,18 @@ const Home = () => {
                 </div>
               </div>
               {viewMode === 'map' && (
-                <div className={`home-map-wrap ${viewMode === 'map' ? 'home-map-wrap--full' : ''}`}>
-                  <PropertyMap properties={properties} />
+                <div className="home-map-split">
+                  <div className="home-map-split__map">
+                    <PropertyMap properties={properties} onPropertiesInView={setPropertiesInMapView} />
+                  </div>
+                  <div className="home-map-split__list">
+                    {propertiesInMapView.length === 0 && (
+                      <p className="home-map-split__empty">Pan or zoom the map to see properties in view.</p>
+                    )}
+                    {propertiesInMapView.map((property) => (
+                      <PropertyCard key={property.id} property={property} />
+                    ))}
+                  </div>
                 </div>
               )}
               {viewMode === 'list' && properties.length === 0 && (

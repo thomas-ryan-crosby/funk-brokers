@@ -10,7 +10,7 @@ const formatPrice = (n) =>
     ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n)
     : '—';
 
-const PropertyMap = ({ properties = [] }) => {
+const PropertyMap = ({ properties = [], onPropertiesInView }) => {
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
@@ -74,7 +74,23 @@ const PropertyMap = ({ properties = [] }) => {
       map.setCenter(DEFAULT_CENTER);
       map.setZoom(DEFAULT_ZOOM);
     }
-  }, [ready, properties]);
+
+    const updatePropertiesInView = () => {
+      if (typeof onPropertiesInView !== 'function') return;
+      const b = map.getBounds();
+      if (!b) return;
+      const inView = withCoords.filter((p) => b.contains({ lat: p.latitude, lng: p.longitude }));
+      onPropertiesInView(inView);
+    };
+
+    const idleListener = map.addListener('idle', updatePropertiesInView);
+
+    return () => {
+      if (idleListener && window.google?.maps?.event?.removeListener) {
+        window.google.maps.event.removeListener(idleListener);
+      }
+    };
+  }, [ready, properties, onPropertiesInView]);
 
   if (error) {
     return (
