@@ -62,6 +62,7 @@ const ListProperty = () => {
       zipCode: '',
       propertyType: '',
       price: '',
+      imGonePrice: '',
       squareFeet: '',
       lotSize: '',
       yearBuilt: '',
@@ -463,9 +464,10 @@ const ListProperty = () => {
           {step === 3 && (
             <div className="form-step">
               <h2>Initial Pricing Info</h2>
-              <p className="form-note">Set your asking price. You can update it later.</p>
+              <p className="form-note">What do you think your property is worth in fair market conditions? This is just a reasonable approximation and will NOT be used as your listed price if you want to list your home via the platform in the future.</p>
+              <p className="form-note">If you choose to list your property on the platform, you will set a displayed list price in a separate step.</p>
               <div className="form-group" style={{ maxWidth: 320 }}>
-                <label>Asking Price ($) *</label>
+                <label>Your estimate ($) *</label>
                 <input
                   type="number"
                   name="price"
@@ -476,6 +478,19 @@ const ListProperty = () => {
                   placeholder="e.g. 450000"
                   required
                 />
+              </div>
+              <div className="form-group" style={{ maxWidth: 320 }}>
+                <label>I&apos;m gone price ($)</label>
+                <input
+                  type="number"
+                  name="imGonePrice"
+                  value={formData.imGonePrice}
+                  onChange={handleInputChange}
+                  min="0"
+                  step="1000"
+                  placeholder="e.g. 420000"
+                />
+                <p className="form-hint">The price at which you&apos;d sell. For your reference only.</p>
               </div>
             </div>
           )}
