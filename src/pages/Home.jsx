@@ -119,7 +119,7 @@ const Home = () => {
                       <p className="home-map-split__empty">Pan or zoom the map to see properties in view.</p>
                     )}
                     {propertiesInMapView.map((property) => (
-                      <PropertyCard key={property.id} property={property} />
+                      <PropertyCard key={property.id} property={property} compact />
                     ))}
                   </div>
                 </div>

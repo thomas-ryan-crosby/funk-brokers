@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import './PropertyCard.css';
 
-const PropertyCard = ({ property, embedded }) => {
+const PropertyCard = ({ property, embedded, compact }) => {
   const [imgError, setImgError] = useState(false);
   const photoUrl = property.photos?.[0];
 
@@ -33,7 +33,7 @@ const PropertyCard = ({ property, embedded }) => {
   return (
     <Link
       to={`/property/${property.id}`}
-      className={`property-card ${embedded ? 'property-card--embedded' : ''}`}
+      className={`property-card ${embedded ? 'property-card--embedded' : ''} ${compact ? 'property-card--compact' : ''}`}
     >
       <div className="property-card__media">
         {showImage ? (

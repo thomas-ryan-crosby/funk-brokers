@@ -126,12 +126,22 @@
   flex: 1 1 50%;
   min-width: 320px;
   overflow-y: auto;
+  overflow-x: hidden;
   padding: 16px;
   background: #f8fafc;
   display: flex;
   flex-direction: column;
   gap: 16px;
   align-items: stretch;
+}
+
+/* Keep card height natural so list scrolls instead of squishing */
+.home-map-split__list > * {
+  flex-shrink: 0;
+}
+
+.home-map-split__list .property-card {
+  height: auto;
 }
 
 .home-map-split__empty {

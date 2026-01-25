@@ -33,6 +33,41 @@
   border: none;
 }
 
+/* Slightly smaller variant for map-view sidebar (same structure as list cards) */
+.property-card--compact .property-card__media {
+  aspect-ratio: 16 / 10;
+  min-height: 110px;
+}
+
+.property-card--compact .property-card__body {
+  padding: 12px;
+  gap: 4px;
+}
+
+.property-card--compact .property-card__price {
+  font-size: 1.15rem;
+}
+
+.property-card--compact .property-card__address {
+  font-size: 13px;
+}
+
+.property-card--compact .property-card__meta {
+  font-size: 12px;
+  gap: 10px;
+}
+
+.property-card--compact .property-card__meta-item svg {
+  width: 12px;
+  height: 12px;
+}
+
+.property-card--compact .property-card__type {
+  font-size: 10px;
+  padding: 2px 6px;
+  margin-top: 2px;
+}
+
 /* ——— Media ——— */
 
 .property-card__media {
