@@ -1,0 +1,148 @@
+.view-offer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  padding: 20px;
+}
+
+.view-offer-modal {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  max-width: 520px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.view-offer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.view-offer-header h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.view-offer-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  line-height: 1;
+  color: #64748b;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.view-offer-close:hover {
+  color: #1e293b;
+}
+
+.view-offer-body {
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.view-offer-section {
+  margin-bottom: 20px;
+}
+
+.view-offer-section:last-of-type {
+  margin-bottom: 0;
+}
+
+.view-offer-section h3 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.view-offer-section p {
+  margin: 0 0 4px 0;
+  font-size: 15px;
+  color: #334155;
+}
+
+.view-offer-section p:last-child {
+  margin-bottom: 0;
+}
+
+.view-offer-address {
+  font-weight: 500;
+  color: #1e293b;
+}
+
+.view-offer-section a {
+  color: #3b82f6;
+  text-decoration: none;
+}
+
+.view-offer-section a:hover {
+  text-decoration: underline;
+}
+
+.view-offer-dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 4px 24px;
+  font-size: 14px;
+}
+
+.view-offer-dl dt {
+  margin: 0;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.view-offer-dl dd {
+  margin: 0;
+  color: #1e293b;
+  text-align: right;
+}
+
+.view-offer-message {
+  white-space: pre-wrap;
+  font-size: 14px;
+  color: #475569;
+  line-height: 1.5;
+}
+
+.view-offer-meta {
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.view-offer-meta strong {
+  text-transform: capitalize;
+  color: #334155;
+}
+
+.view-offer-footer {
+  padding: 16px 20px;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.view-offer-footer .btn {
+  padding: 8px 16px;
+  font-size: 14px;
+}

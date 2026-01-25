@@ -325,6 +325,7 @@ const SubmitOffer = () => {
 
           <div className="form-section">
             <h2>Contingencies</h2>
+            <p className="contingencies-intro">Contingencies let you cancel the deal or renegotiate under certain conditions. Including them can protect you but may make your offer less attractive to sellers.</p>
             <div className="contingencies-list">
               <div className="contingency-item">
                 <label className="contingency-checkbox">
@@ -336,6 +337,7 @@ const SubmitOffer = () => {
                   />
                   <span>Inspection Contingency</span>
                 </label>
+                <p className="contingency-desc">Lets you back out or negotiate repairs if a professional home inspection finds significant issues.</p>
                 {offerData.inspectionContingency && (
                   <div className="contingency-details">
                     <label>
@@ -363,6 +365,7 @@ const SubmitOffer = () => {
                   />
                   <span>Financing Contingency</span>
                 </label>
+                <p className="contingency-desc">Protects you if your mortgage or loan is not approved; you can cancel without losing earnest money.</p>
                 {offerData.financingContingency && (
                   <div className="contingency-details">
                     <label>
@@ -390,6 +393,7 @@ const SubmitOffer = () => {
                   />
                   <span>Appraisal Contingency</span>
                 </label>
+                <p className="contingency-desc">If the home appraises for less than the purchase price, you can renegotiate or walk away.</p>
               </div>
 
               <div className="contingency-item">
@@ -402,6 +406,7 @@ const SubmitOffer = () => {
                   />
                   <span>Home Sale Contingency</span>
                 </label>
+                <p className="contingency-desc">Your purchase depends on selling your current home first; the deal can fall through if your home doesn’t sell in time.</p>
               </div>
             </div>
           </div>

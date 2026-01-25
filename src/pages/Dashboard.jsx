@@ -10,6 +10,7 @@ import { getTransactionsByUser, getTransactionByOfferId, createTransaction } fro
 import { uploadFile } from '../services/storageService';
 import PropertyCard from '../components/PropertyCard';
 import CounterOfferModal from '../components/CounterOfferModal';
+import ViewOfferModal from '../components/ViewOfferModal';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -30,6 +31,7 @@ const Dashboard = () => {
   const [transactions, setTransactions] = useState([]);
   const [dealCenterActionOfferId, setDealCenterActionOfferId] = useState(null);
   const [counterOfferFor, setCounterOfferFor] = useState(null); // { offer, property } or null
+  const [viewOfferFor, setViewOfferFor] = useState(null); // { offer, property } or null
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -577,6 +579,13 @@ const Dashboard = () => {
                                   <span className="deal-offer-received">Received {formatDate(offer.createdAt)}</span>
                                 </div>
                                 <div className="deal-offer-actions">
+                                  <button
+                                    type="button"
+                                    className="btn btn-outline btn-small"
+                                    onClick={() => setViewOfferFor({ offer, property })}
+                                  >
+                                    View Offer
+                                  </button>
                                   {getOfferStatusBadge(offer.status)}
                                   {offer.status === 'pending' && (
                                     <>
@@ -638,6 +647,13 @@ const Dashboard = () => {
                         <span className="deal-offer-received">Sent {formatDate(offer.createdAt)}</span>
                       </div>
                       <div className="deal-offer-actions">
+                        <button
+                          type="button"
+                          className="btn btn-outline btn-small"
+                          onClick={() => setViewOfferFor({ offer, property: property || null })}
+                        >
+                          View Offer
+                        </button>
                         {getOfferStatusBadge(offer.status)}
                         {offer.status === 'pending' && !offer.createdBy && (
                           <button
@@ -804,6 +820,15 @@ const Dashboard = () => {
           property={counterOfferFor.property}
           onClose={() => setCounterOfferFor(null)}
           onSubmit={handleCounterSubmit}
+          formatCurrency={formatCurrency}
+        />
+      )}
+
+      {viewOfferFor && (
+        <ViewOfferModal
+          offer={viewOfferFor.offer}
+          property={viewOfferFor.property}
+          onClose={() => setViewOfferFor(null)}
           formatCurrency={formatCurrency}
         />
       )}
