@@ -205,6 +205,7 @@ export const counterOffer = async (originalOfferId, counterData, { userId }) => 
 
   const closing = counterData.closingDate ? new Date(counterData.closingDate) : (original.proposedClosingDate?.toDate ? original.proposedClosingDate.toDate() : new Date(original.proposedClosingDate || Date.now()));
 
+  const finType = counterData.financingType || original.financingType || 'conventional';
   const newOffer = {
     propertyId: original.propertyId,
     buyerId: original.buyerId,
@@ -214,9 +215,13 @@ export const counterOffer = async (originalOfferId, counterData, { userId }) => 
     verificationDocuments: original.verificationDocuments || {},
     offerAmount: parseFloat(counterData.offerAmount) || original.offerAmount,
     earnestMoney: parseFloat(counterData.earnestMoney) != null && !Number.isNaN(parseFloat(counterData.earnestMoney)) ? parseFloat(counterData.earnestMoney) : original.earnestMoney,
+    earnestMoneyDue: counterData.earnestMoneyDue ?? original.earnestMoneyDue ?? null,
     proposedClosingDate: closing,
-    financingType: counterData.financingType || original.financingType || 'conventional',
+    financingType: finType,
+    downPayment: finType === 'cash' ? null : (counterData.downPayment !== undefined && counterData.downPayment !== '' && Number.isFinite(parseFloat(counterData.downPayment)) ? parseFloat(counterData.downPayment) : (original.downPayment ?? null)),
+    possession: counterData.possession || original.possession || null,
     contingencies: toContingencies(counterData),
+    inclusions: counterData.inclusions != null ? (String(counterData.inclusions).trim() || null) : (original.inclusions || null),
     message: counterData.message != null ? String(counterData.message) : (original.message || ''),
     counterToOfferId: originalOfferId,
     createdBy: userId,

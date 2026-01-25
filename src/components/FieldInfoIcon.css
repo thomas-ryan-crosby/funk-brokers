@@ -1,0 +1,69 @@
+.field-info-wrap {
+  position: relative;
+  display: inline-flex;
+  vertical-align: middle;
+  margin-left: 4px;
+}
+
+.field-info-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: #64748b;
+  cursor: pointer;
+  border-radius: 50%;
+}
+
+.field-info-icon:hover {
+  color: #3b82f6;
+}
+
+.field-info-icon:focus {
+  outline: none;
+  color: #3b82f6;
+}
+
+.field-info-popover {
+  position: absolute;
+  left: 0;
+  top: 100%;
+  margin-top: 6px;
+  width: 280px;
+  max-width: 90vw;
+  padding: 10px 12px;
+  background: #1e293b;
+  color: #f1f5f9;
+  font-size: 13px;
+  line-height: 1.45;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  z-index: 100;
+}
+
+.field-info-popover::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 12px;
+  border: 6px solid transparent;
+  border-bottom-color: #1e293b;
+}
+
+.field-info-desc {
+  margin: 0 0 6px 0;
+}
+
+.field-info-common {
+  margin: 0;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.field-info-common strong {
+  color: #cbd5e1;
+}

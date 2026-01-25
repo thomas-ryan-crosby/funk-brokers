@@ -11,6 +11,16 @@ const formatFinancing = (v) => {
   return map[v] || (v || '').replace(/-/g, ' ') || '—';
 };
 
+const formatEarnestDue = (v) => {
+  const map = { upon_acceptance: 'Upon acceptance', within_3_business_days: 'Within 3 business days of acceptance', within_5_business_days: 'Within 5 business days of acceptance', at_closing: 'At closing' };
+  return map[v] || v || '—';
+};
+
+const formatPossession = (v) => {
+  const map = { at_closing: 'At closing', upon_recording: 'Upon recording', other: 'Other (see message)' };
+  return map[v] || v || '—';
+};
+
 const ViewOfferModal = ({ offer, property, onClose, formatCurrency }) => {
   if (!offer) return null;
 
@@ -45,9 +55,10 @@ const ViewOfferModal = ({ offer, property, onClose, formatCurrency }) => {
             <h3>Offer Terms</h3>
             <dl className="view-offer-dl">
               <dt>Offer amount</dt><dd>{fmt(offer.offerAmount)}</dd>
-              <dt>Earnest money</dt><dd>{fmt(offer.earnestMoney)}</dd>
+              <dt>Earnest money</dt><dd>{fmt(offer.earnestMoney)}{offer.earnestMoneyDue ? ` — due ${formatEarnestDue(offer.earnestMoneyDue)}` : ''}</dd>
               <dt>Proposed closing date</dt><dd>{formatDate(offer.proposedClosingDate)}</dd>
-              <dt>Financing type</dt><dd>{formatFinancing(offer.financingType)}</dd>
+              <dt>Financing type</dt><dd>{formatFinancing(offer.financingType)}{offer.downPayment != null && offer.financingType !== 'cash' ? `, ${offer.downPayment}% down` : ''}</dd>
+              {offer.possession && <><dt>Possession</dt><dd>{formatPossession(offer.possession)}</dd></>}
             </dl>
           </section>
 
@@ -64,6 +75,13 @@ const ViewOfferModal = ({ offer, property, onClose, formatCurrency }) => {
               <dd>{c.homeSale?.included ? 'Yes' : 'No'}</dd>
             </dl>
           </section>
+
+          {offer.inclusions?.trim() && (
+            <section className="view-offer-section">
+              <h3>Inclusions</h3>
+              <p className="view-offer-message">{offer.inclusions}</p>
+            </section>
+          )}
 
           {offer.message?.trim() && (
             <section className="view-offer-section">

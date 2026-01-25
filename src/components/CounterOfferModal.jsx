@@ -11,14 +11,18 @@ const CounterOfferModal = ({ offer, property, onClose, onSubmit, formatCurrency 
   const [form, setForm] = useState({
     offerAmount: '',
     earnestMoney: '',
+    earnestMoneyDue: 'within_3_business_days',
     closingDate: '',
     financingType: 'conventional',
+    downPayment: '',
+    possession: 'at_closing',
     inspectionContingency: true,
     inspectionDays: '10',
     financingContingency: true,
     financingDays: '30',
     appraisalContingency: true,
     homeSaleContingency: false,
+    inclusions: '',
     message: '',
   });
   const [submitting, setSubmitting] = useState(false);
@@ -30,14 +34,18 @@ const CounterOfferModal = ({ offer, property, onClose, onSubmit, formatCurrency 
     setForm({
       offerAmount: offer.offerAmount != null ? String(offer.offerAmount) : '',
       earnestMoney: offer.earnestMoney != null ? String(offer.earnestMoney) : '',
+      earnestMoneyDue: offer.earnestMoneyDue || 'within_3_business_days',
       closingDate: toDateStr(offer.proposedClosingDate) || '',
       financingType: offer.financingType || 'conventional',
+      downPayment: offer.downPayment != null ? String(offer.downPayment) : '',
+      possession: offer.possession || 'at_closing',
       inspectionContingency: c.inspection?.included !== false,
       inspectionDays: c.inspection?.days != null ? String(c.inspection.days) : '10',
       financingContingency: c.financing?.included !== false,
       financingDays: c.financing?.days != null ? String(c.financing.days) : '30',
       appraisalContingency: c.appraisal?.included !== false,
       homeSaleContingency: c.homeSale?.included === true,
+      inclusions: offer.inclusions || '',
       message: offer.message || '',
     });
   }, [offer]);
@@ -92,6 +100,15 @@ const CounterOfferModal = ({ offer, property, onClose, onSubmit, formatCurrency 
               <input type="number" name="earnestMoney" value={form.earnestMoney} onChange={handleChange} min="0" step="1000" required />
             </div>
             <div className="counter-offer-field">
+              <label>Earnest money due</label>
+              <select name="earnestMoneyDue" value={form.earnestMoneyDue} onChange={handleChange}>
+                <option value="upon_acceptance">Upon acceptance</option>
+                <option value="within_3_business_days">Within 3 business days</option>
+                <option value="within_5_business_days">Within 5 business days</option>
+                <option value="at_closing">At closing</option>
+              </select>
+            </div>
+            <div className="counter-offer-field">
               <label>Closing date *</label>
               <input type="date" name="closingDate" value={form.closingDate} onChange={handleChange} min={new Date().toISOString().slice(0, 10)} required />
             </div>
@@ -103,6 +120,20 @@ const CounterOfferModal = ({ offer, property, onClose, onSubmit, formatCurrency 
                 <option value="fha">FHA</option>
                 <option value="va">VA</option>
                 <option value="usda">USDA</option>
+              </select>
+            </div>
+            {form.financingType !== 'cash' && (
+              <div className="counter-offer-field">
+                <label>Down payment (%)</label>
+                <input type="number" name="downPayment" value={form.downPayment} onChange={handleChange} min="0" max="100" step="0.5" placeholder="e.g. 20" />
+              </div>
+            )}
+            <div className="counter-offer-field">
+              <label>Possession</label>
+              <select name="possession" value={form.possession} onChange={handleChange}>
+                <option value="at_closing">At closing</option>
+                <option value="upon_recording">Upon recording</option>
+                <option value="other">Other (state in message)</option>
               </select>
             </div>
           </div>
@@ -140,6 +171,10 @@ const CounterOfferModal = ({ offer, property, onClose, onSubmit, formatCurrency 
             </div>
           </div>
 
+          <div className="counter-offer-field">
+            <label>Inclusions</label>
+            <textarea name="inclusions" value={form.inclusions} onChange={handleChange} rows={2} placeholder="e.g. refrigerator, washer/dryer" />
+          </div>
           <div className="counter-offer-field">
             <label>Message to buyer</label>
             <textarea name="message" value={form.message} onChange={handleChange} rows={3} placeholder="Optional note for the buyer..." />
