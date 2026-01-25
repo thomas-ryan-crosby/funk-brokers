@@ -66,10 +66,22 @@
 }
 
 .offer-attention-text {
-  margin: 0 0 24px 0;
+  margin: 0 0 16px 0;
   font-size: 15px;
   line-height: 1.6;
   color: #78350f;
+}
+
+.offer-attention-checklist {
+  margin: 0 0 16px 0;
+  padding-left: 24px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #78350f;
+}
+
+.offer-attention-checklist li {
+  margin-bottom: 6px;
 }
 
 .offer-review {

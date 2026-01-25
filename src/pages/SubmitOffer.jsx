@@ -23,18 +23,25 @@ const SubmitOffer = () => {
   const [offerData, setOfferData] = useState({
     offerAmount: '',
     earnestMoney: '',
+    earnestMoneyForm: 'personal_check',
+    earnestMoneyDepositedWith: 'escrow_company',
     earnestMoneyDue: 'within_3_business_days',
     closingDate: '',
     financingType: 'conventional',
     downPayment: '',
+    sellerConcessionsPercent: '',
+    sellerConcessionsAmount: '',
     possession: 'at_closing',
     inspectionContingency: true,
     inspectionDays: '10',
     financingContingency: true,
     financingDays: '30',
     appraisalContingency: true,
+    appraisalPaidBy: 'buyer',
     homeSaleContingency: false,
     inclusions: '',
+    offerExpirationDate: '',
+    offerExpirationTime: '5:00 p.m.',
     message: '',
   });
 
@@ -68,12 +75,18 @@ const SubmitOffer = () => {
         governmentId: profile.verificationDocuments?.governmentId,
         buyerInfo: profile.buyerInfo,
       });
+      const d = new Date();
+      d.setDate(d.getDate() + 3);
+      const defaultExpiry = d.toISOString().slice(0, 10);
       if (data?.price) {
         setOfferData((prev) => ({
           ...prev,
           offerAmount: (data.price * 0.95).toFixed(0),
           earnestMoney: (data.price * 0.01).toFixed(0),
+          offerExpirationDate: prev.offerExpirationDate || defaultExpiry,
         }));
+      } else {
+        setOfferData((prev) => ({ ...prev, offerExpirationDate: prev.offerExpirationDate || defaultExpiry }));
       }
     } catch (err) {
       setError('Failed to load. Please try again.');
@@ -102,34 +115,48 @@ const SubmitOffer = () => {
   const ATTENTION_MSG =
     'Attention: By submitting an offer, you are entering into a legally binding agreement. If the seller accepts your offer, you may be obligated to purchase this property under the terms you specify. Do you wish to proceed?';
 
-  const buildOffer = () => ({
-    propertyId,
-    buyerId: user.uid,
-    buyerName: verificationData.buyerInfo.name,
-    buyerEmail: verificationData.buyerInfo.email,
-    buyerPhone: verificationData.buyerInfo.phone,
-    offerAmount: parseFloat(offerData.offerAmount),
-    earnestMoney: parseFloat(offerData.earnestMoney),
-    earnestMoneyDue: offerData.earnestMoneyDue || null,
-    proposedClosingDate: new Date(offerData.closingDate),
-    financingType: offerData.financingType,
-    downPayment: offerData.financingType === 'cash' ? null : (offerData.downPayment !== '' && Number.isFinite(parseFloat(offerData.downPayment)) ? parseFloat(offerData.downPayment) : null),
-    possession: offerData.possession || null,
-    contingencies: {
-      inspection: { included: offerData.inspectionContingency, days: offerData.inspectionContingency ? parseInt(offerData.inspectionDays) : null },
-      financing: { included: offerData.financingContingency, days: offerData.financingContingency ? parseInt(offerData.financingDays) : null },
-      appraisal: { included: offerData.appraisalContingency },
-      homeSale: { included: offerData.homeSaleContingency },
-    },
-    inclusions: (offerData.inclusions || '').trim() || null,
-    message: (offerData.message || '').trim() || null,
-    verificationDocuments: {
-      proofOfFunds: verificationData.proofOfFunds,
-      preApprovalLetter: verificationData.preApprovalLetter,
-      bankLetter: verificationData.bankLetter,
-      governmentId: verificationData.governmentId,
-    },
-  });
+  const buildOffer = () => {
+    const pct = offerData.sellerConcessionsPercent !== '' && Number.isFinite(parseFloat(offerData.sellerConcessionsPercent));
+    const amt = offerData.sellerConcessionsAmount !== '' && Number.isFinite(parseFloat(offerData.sellerConcessionsAmount));
+    const sellerConcessions = pct
+      ? { type: 'percent', value: parseFloat(offerData.sellerConcessionsPercent) }
+      : amt
+        ? { type: 'amount', value: parseFloat(offerData.sellerConcessionsAmount) }
+        : null;
+    return {
+      propertyId,
+      buyerId: user.uid,
+      buyerName: verificationData.buyerInfo.name,
+      buyerEmail: verificationData.buyerInfo.email,
+      buyerPhone: verificationData.buyerInfo.phone,
+      offerAmount: parseFloat(offerData.offerAmount),
+      earnestMoney: parseFloat(offerData.earnestMoney),
+      earnestMoneyForm: offerData.earnestMoneyForm || null,
+      earnestMoneyDepositedWith: offerData.earnestMoneyDepositedWith || null,
+      earnestMoneyDue: offerData.earnestMoneyDue || null,
+      proposedClosingDate: new Date(offerData.closingDate),
+      financingType: offerData.financingType,
+      downPayment: (offerData.financingType === 'cash' || ['assumption', 'seller_carryback'].includes(offerData.financingType)) ? null : (offerData.downPayment !== '' && Number.isFinite(parseFloat(offerData.downPayment)) ? parseFloat(offerData.downPayment) : null),
+      sellerConcessions,
+      possession: offerData.possession || null,
+      contingencies: {
+        inspection: { included: offerData.inspectionContingency, days: offerData.inspectionContingency ? parseInt(offerData.inspectionDays) : null },
+        financing: { included: offerData.financingContingency, days: offerData.financingContingency ? parseInt(offerData.financingDays) : null },
+        appraisal: { included: offerData.appraisalContingency, paidBy: offerData.appraisalContingency ? (offerData.appraisalPaidBy || 'buyer') : null },
+        homeSale: { included: offerData.homeSaleContingency },
+      },
+      inclusions: (offerData.inclusions || '').trim() || null,
+      offerExpirationDate: (offerData.offerExpirationDate || '').trim() || null,
+      offerExpirationTime: (offerData.offerExpirationTime || '').trim() || null,
+      message: (offerData.message || '').trim() || null,
+      verificationDocuments: {
+        proofOfFunds: verificationData.proofOfFunds,
+        preApprovalLetter: verificationData.preApprovalLetter,
+        bankLetter: verificationData.bankLetter,
+        governmentId: verificationData.governmentId,
+      },
+    };
+  };
 
   const handleReviewOffer = (e) => {
     e.preventDefault();
@@ -171,7 +198,7 @@ const SubmitOffer = () => {
   };
 
   const formatFinancing = (v) => {
-    const map = { cash: 'Cash', conventional: 'Conventional', fha: 'FHA', va: 'VA', usda: 'USDA' };
+    const map = { cash: 'Cash', conventional: 'Conventional', fha: 'FHA', va: 'VA', usda: 'USDA', assumption: 'Assumption', seller_carryback: 'Seller Carryback' };
     return map[v] || (v || '').replace(/-/g, ' ');
   };
 
@@ -180,8 +207,23 @@ const SubmitOffer = () => {
     return map[v] || v || '—';
   };
 
+  const formatEarnestForm = (v) => {
+    const map = { personal_check: 'Personal Check', wire_transfer: 'Wire Transfer', other: 'Other' };
+    return map[v] || v || '—';
+  };
+
+  const formatEarnestDepositedWith = (v) => {
+    const map = { escrow_company: 'Escrow Company', brokers_trust_account: "Broker's Trust Account" };
+    return map[v] || v || '—';
+  };
+
   const formatPossession = (v) => {
     const map = { at_closing: 'At closing', upon_recording: 'Upon recording', other: 'Other (see message)' };
+    return map[v] || v || '—';
+  };
+
+  const formatAppraisalPaidBy = (v) => {
+    const map = { buyer: 'Buyer', seller: 'Seller', other: 'Other' };
     return map[v] || v || '—';
   };
 
@@ -258,10 +300,18 @@ const SubmitOffer = () => {
 
         {step === 'attention' && (
           <div className="offer-attention">
-            <h2 className="offer-attention-title">Important Notice</h2>
+            <h2 className="offer-attention-title">Attention Buyer</h2>
             <p className="offer-attention-text">
-              By submitting an offer, you are entering into a <strong>legally binding agreement</strong>. If the seller accepts your offer, you may be obligated to purchase this property under the terms you specify. Please ensure you have reviewed all details carefully before proceeding.
+              You are entering into a <strong>legally binding agreement</strong>. If the seller accepts your offer, you may be obligated to purchase this property under the terms you specify.
             </p>
+            <ul className="offer-attention-checklist">
+              <li>Read the entire offer and all sections before you sign.</li>
+              <li>Review any seller disclosure(s) and investigate items important to you.</li>
+              <li>During the inspection period, conduct inspections (home, pest, etc.) and verify square footage, sewer/septic, and insurability.</li>
+              <li>Apply for your loan promptly if financing and provide your lender all requested information.</li>
+              <li>Confirm wiring instructions independently; beware of wire fraud.</li>
+            </ul>
+            <p className="offer-attention-text">Consult an attorney, inspector, or other professional as needed. Verify anything important to you.</p>
             <button type="button" className="btn-primary" onClick={() => setStep('form')}>
               I Understand — Continue
             </button>
@@ -271,14 +321,14 @@ const SubmitOffer = () => {
         {step === 'form' && (
         <form onSubmit={handleReviewOffer} className="offer-form">
           <div className="form-section">
-            <h2>Purchase Price &amp; Financing</h2>
+            <h2>1. Property &amp; Purchase Price</h2>
             <div className="form-grid">
               <div className="form-group">
                 <label className="form-label-with-info">
-                  Offer Amount / Purchase Price ($) *
+                  Full Purchase Price ($) *
                   <FieldInfoIcon
-                    description="The total price you are offering to pay for the property. This becomes the contract price if the seller accepts. In a PSA, this is the core term that defines the deal."
-                    common="Often at or slightly below asking in a balanced market; may go over in a competitive market. Sellers may counter with a higher number."
+                    description="The total price you are offering. This becomes the contract price if the seller accepts. The contract defines the deal as the Premises plus the personal property described herein."
+                    common="Often at or slightly below asking in a balanced market; may go over in a competitive market. Sellers may counter."
                   />
                 </label>
                 <input
@@ -304,10 +354,10 @@ const SubmitOffer = () => {
 
               <div className="form-group">
                 <label className="form-label-with-info">
-                  Earnest Money Deposit ($) *
+                  Earnest Money ($) *
                   <FieldInfoIcon
-                    description="A good-faith deposit that shows you are serious. It is held (usually in escrow) and typically applied to your down payment or closing costs at settlement. If you back out without a valid contingency, the seller may keep it."
-                    common="Usually 1–3% of the purchase price. Higher amounts can strengthen your offer; 1% is common, 2–3% in competitive markets."
+                    description="Good-faith deposit held in escrow or broker’s trust account, typically applied to down payment or closing costs. If you back out without a valid contingency, the seller may keep it."
+                    common="Usually 1–3% of the purchase price. 2–3% can strengthen an offer."
                   />
                 </label>
                 <input
@@ -319,22 +369,47 @@ const SubmitOffer = () => {
                   step="1000"
                   required
                 />
-                <span className="form-hint">Typically 1–3% of offer amount</span>
+                <span className="form-hint">Typically 1–3% of purchase price</span>
               </div>
 
               <div className="form-group">
                 <label className="form-label-with-info">
-                  Earnest Money Due
+                  Earnest Money form
                   <FieldInfoIcon
-                    description="When the earnest money must be delivered (e.g. to escrow or the seller’s agent). This is a standard PSA term; it commits you to a clear timeline."
-                    common="Within 3 business days of acceptance is very common. Upon acceptance or at closing are also used; 5 business days is a bit more time."
+                    description="Form of the earnest money payment. Upon acceptance, the earnest money will be deposited per the terms selected."
+                    common="Personal check and wire transfer are most common. Wire is often required for faster or larger deposits."
                   />
                 </label>
-                <select
-                  name="earnestMoneyDue"
-                  value={offerData.earnestMoneyDue}
-                  onChange={handleInputChange}
-                >
+                <select name="earnestMoneyForm" value={offerData.earnestMoneyForm} onChange={handleInputChange}>
+                  <option value="personal_check">Personal Check</option>
+                  <option value="wire_transfer">Wire Transfer</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label-with-info">
+                  Earnest Money deposited with
+                  <FieldInfoIcon
+                    description="Where the earnest money will be held upon acceptance: Escrow Company or Broker’s Trust Account."
+                    common="Escrow Company is typical. Broker’s Trust Account is used when the broker holds funds."
+                  />
+                </label>
+                <select name="earnestMoneyDepositedWith" value={offerData.earnestMoneyDepositedWith} onChange={handleInputChange}>
+                  <option value="escrow_company">Escrow Company</option>
+                  <option value="brokers_trust_account">Broker's Trust Account</option>
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label-with-info">
+                  Earnest Money due
+                  <FieldInfoIcon
+                    description="When the earnest money must be delivered to escrow or the broker. The contract may require delivery in sufficient time to allow COE on the COE Date."
+                    common="Within 3 business days of acceptance is very common. Upon acceptance or at closing are also used."
+                  />
+                </label>
+                <select name="earnestMoneyDue" value={offerData.earnestMoneyDue} onChange={handleInputChange}>
                   <option value="upon_acceptance">Upon acceptance</option>
                   <option value="within_3_business_days">Within 3 business days of acceptance</option>
                   <option value="within_5_business_days">Within 5 business days of acceptance</option>
@@ -344,10 +419,10 @@ const SubmitOffer = () => {
 
               <div className="form-group">
                 <label className="form-label-with-info">
-                  Proposed Closing Date *
+                  COE Date (Close of Escrow) *
                   <FieldInfoIcon
-                    description="The date when the sale is finalized: ownership transfers, funds are disbursed, and you receive the keys. In the PSA this is the target settlement date."
-                    common="Often 30–60 days from acceptance to allow for financing, inspections, and title work. Cash deals can close in 2–3 weeks."
+                    description="Close of Escrow (COE) is when the deed is recorded at the county recorder’s office. Buyer and Seller must perform all acts in sufficient time to allow COE to occur on this date."
+                    common="Often 30–60 days from acceptance for financing, inspections, and title. Cash deals can close in 2–3 weeks."
                   />
                 </label>
                 <input
@@ -362,73 +437,84 @@ const SubmitOffer = () => {
 
               <div className="form-group">
                 <label className="form-label-with-info">
-                  Financing Type *
-                  <FieldInfoIcon
-                    description="How you will pay for the property. This affects contract terms, contingencies, and the seller’s view of your offer (e.g. cash vs. loan)."
-                    common="Conventional is most common. Cash can make offers stronger. FHA/VA/USDA are government-backed and have specific rules and property requirements."
-                  />
-                </label>
-                <select
-                  name="financingType"
-                  value={offerData.financingType}
-                  onChange={handleInputChange}
-                  required
-                >
-                  <option value="cash">Cash</option>
-                  <option value="conventional">Conventional</option>
-                  <option value="fha">FHA</option>
-                  <option value="va">VA</option>
-                  <option value="usda">USDA</option>
-                </select>
-              </div>
-
-              {offerData.financingType !== 'cash' && (
-                <div className="form-group">
-                  <label className="form-label-with-info">
-                    Down Payment (%)
-                    <FieldInfoIcon
-                      description="The percentage of the purchase price you will pay upfront (not financed). Lenders use this to set loan terms and rates. In the PSA it clarifies your financing structure."
-                      common="Conventional: often 5%, 10%, or 20% (20% can avoid PMI). FHA: as low as 3.5%. VA/USDA: often 0%."
-                    />
-                  </label>
-                  <input
-                    type="number"
-                    name="downPayment"
-                    value={offerData.downPayment}
-                    onChange={handleInputChange}
-                    min="0"
-                    max="100"
-                    step="0.5"
-                    placeholder="e.g. 20"
-                  />
-                  <span className="form-hint">Leave blank if unsure; your lender can confirm.</span>
-                </div>
-              )}
-
-              <div className="form-group">
-                <label className="form-label-with-info">
                   Possession
                   <FieldInfoIcon
-                    description="When you receive the keys and can move in. In a PSA this is usually tied to closing or recording of the deed."
-                    common="At closing is most common. Upon recording means after the deed is filed. Other arrangements (e.g. rent-back) can be listed in your message."
+                    description="When Seller delivers possession, keys, mailbox, security system, and common area access to Buyer. Typically at COE or as otherwise agreed."
+                    common="At COE is most common. Other arrangements (e.g. rent-back) can be listed in Additional Terms."
                   />
                 </label>
-                <select
-                  name="possession"
-                  value={offerData.possession}
-                  onChange={handleInputChange}
-                >
-                  <option value="at_closing">At closing</option>
+                <select name="possession" value={offerData.possession} onChange={handleInputChange}>
+                  <option value="at_closing">At closing (COE)</option>
                   <option value="upon_recording">Upon recording</option>
-                  <option value="other">Other (state in message)</option>
+                  <option value="other">Other (state in Additional Terms)</option>
                 </select>
               </div>
             </div>
           </div>
 
           <div className="form-section">
-            <h2>Contingencies</h2>
-            <p className="contingencies-intro">Contingencies let you cancel the deal or renegotiate under certain conditions. Including them can protect you but may make your offer less attractive to sellers.</p>
+            <h2>2. Financing</h2>
+            <div className="form-grid">
+              <div className="form-group">
+                <label className="form-label-with-info">
+                  Type of Financing *
+                  <FieldInfoIcon
+                    description="How the purchase will be funded. Conventional, FHA, VA, USDA are new financing. Assumption and Seller Carryback use other arrangements; see addendum if applicable."
+                    common="Conventional is most common. Cash can strengthen offers. FHA/VA/USDA have specific rules. All-cash: attach proof of funds or letter of credit if required."
+                  />
+                </label>
+                <select name="financingType" value={offerData.financingType} onChange={handleInputChange} required>
+                  <option value="cash">Cash</option>
+                  <option value="conventional">Conventional</option>
+                  <option value="fha">FHA</option>
+                  <option value="va">VA</option>
+                  <option value="usda">USDA</option>
+                  <option value="assumption">Assumption</option>
+                  <option value="seller_carryback">Seller Carryback</option>
+                </select>
+              </div>
+
+              {!['cash', 'assumption', 'seller_carryback'].includes(offerData.financingType) && (
+                <div className="form-group">
+                  <label className="form-label-with-info">
+                    Down Payment (%)
+                    <FieldInfoIcon
+                      description="Percentage of the purchase price paid upfront (not financed). Lenders use this for loan terms. Failure to have necessary funds can affect loan approval and is not an unfulfilled loan contingency."
+                      common="Conventional: 5%, 10%, or 20%. FHA: as low as 3.5%. VA/USDA: often 0%."
+                    />
+                  </label>
+                  <input type="number" name="downPayment" value={offerData.downPayment} onChange={handleInputChange} min="0" max="100" step="0.5" placeholder="e.g. 20" />
+                  <span className="form-hint">Leave blank if unsure.</span>
+                </div>
+              )}
+
+              <div className="form-group">
+                <label className="form-label-with-info">
+                  Seller Concessions (% of purchase price)
+                  <FieldInfoIcon
+                    description="Credit from Seller to Buyer at closing, in addition to other costs Seller pays. May be used for Buyer fees, costs, or charges to the extent allowed by Buyer’s lender. Use either % or $, not both."
+                    common="Often 0. Leave blank if none. 1–3% is sometimes negotiated for closing cost assistance."
+                  />
+                </label>
+                <input type="number" name="sellerConcessionsPercent" value={offerData.sellerConcessionsPercent} onChange={handleInputChange} min="0" max="100" step="0.5" placeholder="e.g. 2" />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label-with-info">
+                  Seller Concessions ($)
+                  <FieldInfoIcon
+                    description="Credit from Seller to Buyer at closing as a dollar amount. Use either % or $, not both. If both are filled, % takes precedence."
+                    common="Leave blank if using % or if none. Sometimes used for a fixed contribution (e.g. $5,000)."
+                  />
+                </label>
+                <input type="number" name="sellerConcessionsAmount" value={offerData.sellerConcessionsAmount} onChange={handleInputChange} min="0" step="500" placeholder="e.g. 5000" />
+              </div>
+            </div>
+          </div>
+
+          <div className="form-section">
+            <h2>6. Due Diligence / Contingencies</h2>
+            <p className="contingencies-intro">Contingencies allow you to cancel or renegotiate under certain conditions. They protect you but may make your offer less attractive. Conduct inspections and investigations during the inspection period.</p>
             <div className="contingencies-list">
               <div className="contingency-item">
                 <label className="contingency-checkbox">
@@ -512,11 +598,27 @@ const SubmitOffer = () => {
                   />
                   <span>Appraisal Contingency</span>
                   <FieldInfoIcon
-                    description="If the lender’s appraisal comes in below the purchase price, you can renegotiate the price, bring more cash, or walk away without losing earnest money (subject to the contract)."
-                    common="Usually included when financing; lenders require an appraisal. Cash buyers sometimes waive it to strengthen an offer."
+                    description="Your obligation is contingent on an appraisal acceptable to the lender for at least the purchase price. If the Premises fail to appraise for the purchase price, you typically have a set period to cancel and receive earnest money back, or the contingency is waived."
+                    common="Usually included when financing. Cash buyers sometimes waive it. Initial appraisal fee is often paid by Buyer; can be negotiated."
                   />
                 </label>
-                <p className="contingency-desc">If the home appraises for less than the purchase price, you can renegotiate or walk away.</p>
+                <p className="contingency-desc">If the home appraises for less than the purchase price, you can renegotiate, bring more cash, or walk away (per contract terms).</p>
+                {offerData.appraisalContingency && (
+                  <div className="contingency-details">
+                    <label className="form-label-with-info">
+                      Appraisal fee paid by
+                      <FieldInfoIcon
+                        description="Who pays the initial appraisal fee at the time the lender requires it. Fee is non-refundable. If Seller pays, it may or may not apply against Seller Concessions at COE."
+                        common="Buyer pays in most cases. Seller sometimes pays to facilitate the sale."
+                      />
+                      <select name="appraisalPaidBy" value={offerData.appraisalPaidBy} onChange={handleInputChange}>
+                        <option value="buyer">Buyer</option>
+                        <option value="seller">Seller</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </label>
+                  </div>
+                )}
               </div>
 
               <div className="contingency-item">
@@ -539,13 +641,14 @@ const SubmitOffer = () => {
           </div>
 
           <div className="form-section">
-            <h2>Personal Property / Inclusions</h2>
+            <h2>1g. Fixtures &amp; Personal Property</h2>
+            <p className="contingencies-intro">Fixtures (built-in appliances, ceiling fans, floor coverings, light fixtures, etc.) convey. If owned by Seller, you may specify: refrigerator, washer, dryer, above-ground spa/hot tub, or other personal property to include. Leased items are not included.</p>
             <div className="form-group">
               <label className="form-label-with-info">
-                Items to include in the sale
+                Additional personal property included (description)
                 <FieldInfoIcon
-                  description="Specific items (beyond the real property itself) that will stay with the home. In a PSA, this avoids disputes over appliances, fixtures, or other personal property."
-                  common="Often: refrigerator, washer/dryer, window treatments, certain fixtures. Be specific (e.g. ‘Kitchen refrigerator, no garage fridge’)."
+                  description="List items beyond standard fixtures that will convey: e.g. refrigerator (description), washer, dryer, above-ground spa, window treatments, or other. Be specific. Items transfer with no monetary value and free of liens."
+                  common="Refrigerator, washer, dryer, spa, window treatments. Specify which if multiple (e.g. kitchen refrigerator only)."
                 />
               </label>
               <textarea
@@ -553,13 +656,53 @@ const SubmitOffer = () => {
                 value={offerData.inclusions}
                 onChange={handleInputChange}
                 rows="3"
-                placeholder="e.g. refrigerator, washer and dryer, window treatments, mounted TV in living room"
+                placeholder="e.g. refrigerator (kitchen), washer and dryer, above-ground spa and equipment, window coverings"
               />
             </div>
           </div>
 
           <div className="form-section">
-            <h2>Additional Terms &amp; Message</h2>
+            <h2>Terms of Acceptance</h2>
+            <p className="contingencies-intro">This offer will become a binding contract when acceptance is signed by Seller and a signed copy is delivered and received by the deadline below. If no signed acceptance is received by this date and time, this offer is deemed withdrawn and earnest money returned.</p>
+            <div className="form-grid">
+              <div className="form-group">
+                <label className="form-label-with-info">
+                  Offer expires (date) *
+                  <FieldInfoIcon
+                    description="Date and time by which Seller must sign and deliver acceptance. If no signed acceptance is received by then, the offer is deemed withdrawn and Buyer’s earnest money returned."
+                    common="Typically 2–5 days. Gives Seller time to respond without leaving the offer open indefinitely."
+                  />
+                </label>
+                <input
+                  type="date"
+                  name="offerExpirationDate"
+                  value={offerData.offerExpirationDate}
+                  onChange={handleInputChange}
+                  min={new Date().toISOString().split('T')[0]}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label-with-info">
+                  Offer expires (time)
+                  <FieldInfoIcon
+                    description="Time on the expiration date by which acceptance must be received (e.g. 5:00 p.m.). Often local time."
+                    common="5:00 p.m. is common. Leave default or adjust. Specify time zone if material."
+                  />
+                </label>
+                <input
+                  type="text"
+                  name="offerExpirationTime"
+                  value={offerData.offerExpirationTime}
+                  onChange={handleInputChange}
+                  placeholder="e.g. 5:00 p.m."
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="form-section">
+            <h2>8. Additional Terms &amp; Message</h2>
             <div className="form-group">
               <label className="form-label-with-info">
                 Additional terms, conditions, or message to the seller
@@ -604,22 +747,36 @@ const SubmitOffer = () => {
               <p>Asking: {formatPrice(property?.price)}</p>
             </div>
             <div className="offer-review-section">
-              <h3>Offer Terms</h3>
+              <h3>1. Property &amp; Purchase Price</h3>
               <ul className="offer-review-list">
-                <li>Offer amount: {formatPrice(parseFloat(offerData.offerAmount))}</li>
-                <li>Earnest money: {formatPrice(parseFloat(offerData.earnestMoney))} — due {formatEarnestDue(offerData.earnestMoneyDue)}</li>
-                <li>Closing date: {formatDate(offerData.closingDate)}</li>
-                <li>Financing: {formatFinancing(offerData.financingType)}{offerData.financingType !== 'cash' && offerData.downPayment !== '' ? `, ${offerData.downPayment}% down` : ''}</li>
+                <li>Full Purchase Price: {formatPrice(parseFloat(offerData.offerAmount))}</li>
+                <li>Earnest Money: {formatPrice(parseFloat(offerData.earnestMoney))} — {formatEarnestForm(offerData.earnestMoneyForm)}, deposited with {formatEarnestDepositedWith(offerData.earnestMoneyDepositedWith)}, due {formatEarnestDue(offerData.earnestMoneyDue)}</li>
+                <li>COE Date: {formatDate(offerData.closingDate)}</li>
                 <li>Possession: {formatPossession(offerData.possession)}</li>
               </ul>
             </div>
             <div className="offer-review-section">
-              <h3>Contingencies</h3>
+              <h3>2. Financing</h3>
+              <ul className="offer-review-list">
+                <li>Type: {formatFinancing(offerData.financingType)}{!['cash', 'assumption', 'seller_carryback'].includes(offerData.financingType) && offerData.downPayment !== '' ? `, ${offerData.downPayment}% down` : ''}</li>
+                {(offerData.sellerConcessionsPercent !== '' && Number.isFinite(parseFloat(offerData.sellerConcessionsPercent))) || (offerData.sellerConcessionsAmount !== '' && Number.isFinite(parseFloat(offerData.sellerConcessionsAmount))) ? (
+                  <li>Seller Concessions: {offerData.sellerConcessionsPercent !== '' && Number.isFinite(parseFloat(offerData.sellerConcessionsPercent)) ? `${offerData.sellerConcessionsPercent}% of purchase price` : formatPrice(parseFloat(offerData.sellerConcessionsAmount))}</li>
+                ) : null}
+              </ul>
+            </div>
+            <div className="offer-review-section">
+              <h3>6. Contingencies</h3>
               <ul className="offer-review-list">
                 <li>Inspection: {offerData.inspectionContingency ? `Yes (${offerData.inspectionDays} days)` : 'No'}</li>
                 <li>Financing: {offerData.financingContingency ? `Yes (${offerData.financingDays} days)` : 'No'}</li>
-                <li>Appraisal: {offerData.appraisalContingency ? 'Yes' : 'No'}</li>
+                <li>Appraisal: {offerData.appraisalContingency ? `Yes (fee paid by ${formatAppraisalPaidBy(offerData.appraisalPaidBy)})` : 'No'}</li>
                 <li>Home sale: {offerData.homeSaleContingency ? 'Yes' : 'No'}</li>
+              </ul>
+            </div>
+            <div className="offer-review-section">
+              <h3>Terms of Acceptance</h3>
+              <ul className="offer-review-list">
+                <li>Offer expires: {formatDate(offerData.offerExpirationDate)}{offerData.offerExpirationTime ? ` at ${offerData.offerExpirationTime}` : ''}</li>
               </ul>
             </div>
             {offerData.inclusions?.trim() && (

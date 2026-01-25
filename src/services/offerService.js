@@ -178,9 +178,15 @@ function toContingencies(form) {
   return {
     inspection: { included: !!form.inspectionContingency, days: form.inspectionContingency ? parseInt(form.inspectionDays, 10) || null : null },
     financing: { included: !!form.financingContingency, days: form.financingContingency ? parseInt(form.financingDays, 10) || null : null },
-    appraisal: { included: !!form.appraisalContingency },
+    appraisal: { included: !!form.appraisalContingency, paidBy: form.appraisalContingency ? (form.appraisalPaidBy || 'buyer') : null },
     homeSale: { included: !!form.homeSaleContingency },
   };
+}
+
+function toSellerConcessions(form) {
+  const pct = form.sellerConcessionsPercent !== '' && form.sellerConcessionsPercent != null && Number.isFinite(parseFloat(form.sellerConcessionsPercent));
+  const amt = form.sellerConcessionsAmount !== '' && form.sellerConcessionsAmount != null && Number.isFinite(parseFloat(form.sellerConcessionsAmount));
+  return pct ? { type: 'percent', value: parseFloat(form.sellerConcessionsPercent) } : amt ? { type: 'amount', value: parseFloat(form.sellerConcessionsAmount) } : null;
 }
 
 /**
@@ -206,6 +212,7 @@ export const counterOffer = async (originalOfferId, counterData, { userId }) => 
   const closing = counterData.closingDate ? new Date(counterData.closingDate) : (original.proposedClosingDate?.toDate ? original.proposedClosingDate.toDate() : new Date(original.proposedClosingDate || Date.now()));
 
   const finType = counterData.financingType || original.financingType || 'conventional';
+  const sellerConv = toSellerConcessions(counterData) ?? original.sellerConcessions ?? null;
   const newOffer = {
     propertyId: original.propertyId,
     buyerId: original.buyerId,
@@ -215,13 +222,18 @@ export const counterOffer = async (originalOfferId, counterData, { userId }) => 
     verificationDocuments: original.verificationDocuments || {},
     offerAmount: parseFloat(counterData.offerAmount) || original.offerAmount,
     earnestMoney: parseFloat(counterData.earnestMoney) != null && !Number.isNaN(parseFloat(counterData.earnestMoney)) ? parseFloat(counterData.earnestMoney) : original.earnestMoney,
+    earnestMoneyForm: counterData.earnestMoneyForm ?? original.earnestMoneyForm ?? null,
+    earnestMoneyDepositedWith: counterData.earnestMoneyDepositedWith ?? original.earnestMoneyDepositedWith ?? null,
     earnestMoneyDue: counterData.earnestMoneyDue ?? original.earnestMoneyDue ?? null,
     proposedClosingDate: closing,
     financingType: finType,
-    downPayment: finType === 'cash' ? null : (counterData.downPayment !== undefined && counterData.downPayment !== '' && Number.isFinite(parseFloat(counterData.downPayment)) ? parseFloat(counterData.downPayment) : (original.downPayment ?? null)),
+    downPayment: (finType === 'cash' || ['assumption', 'seller_carryback'].includes(finType)) ? null : (counterData.downPayment !== undefined && counterData.downPayment !== '' && Number.isFinite(parseFloat(counterData.downPayment)) ? parseFloat(counterData.downPayment) : (original.downPayment ?? null)),
+    sellerConcessions: sellerConv,
     possession: counterData.possession || original.possession || null,
     contingencies: toContingencies(counterData),
     inclusions: counterData.inclusions != null ? (String(counterData.inclusions).trim() || null) : (original.inclusions || null),
+    offerExpirationDate: (counterData.offerExpirationDate != null && String(counterData.offerExpirationDate).trim()) ? String(counterData.offerExpirationDate).trim() : (original.offerExpirationDate || null),
+    offerExpirationTime: (counterData.offerExpirationTime != null && String(counterData.offerExpirationTime).trim()) ? String(counterData.offerExpirationTime).trim() : (original.offerExpirationTime || null),
     message: counterData.message != null ? String(counterData.message) : (original.message || ''),
     counterToOfferId: originalOfferId,
     createdBy: userId,

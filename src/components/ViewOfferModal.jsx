@@ -7,7 +7,7 @@ const formatDate = (v) => {
 };
 
 const formatFinancing = (v) => {
-  const map = { cash: 'Cash', conventional: 'Conventional', fha: 'FHA', va: 'VA', usda: 'USDA' };
+  const map = { cash: 'Cash', conventional: 'Conventional', fha: 'FHA', va: 'VA', usda: 'USDA', assumption: 'Assumption', seller_carryback: 'Seller Carryback' };
   return map[v] || (v || '').replace(/-/g, ' ') || '—';
 };
 
@@ -16,9 +16,30 @@ const formatEarnestDue = (v) => {
   return map[v] || v || '—';
 };
 
+const formatEarnestForm = (v) => {
+  const map = { personal_check: 'Personal Check', wire_transfer: 'Wire Transfer', other: 'Other' };
+  return map[v] || v || '—';
+};
+
+const formatEarnestDepositedWith = (v) => {
+  const map = { escrow_company: 'Escrow Company', brokers_trust_account: "Broker's Trust Account" };
+  return map[v] || v || '—';
+};
+
 const formatPossession = (v) => {
   const map = { at_closing: 'At closing', upon_recording: 'Upon recording', other: 'Other (see message)' };
   return map[v] || v || '—';
+};
+
+const formatAppraisalPaidBy = (v) => {
+  const map = { buyer: 'Buyer', seller: 'Seller', other: 'Other' };
+  return map[v] || v || '—';
+};
+
+const toDateStr = (v) => {
+  if (!v) return '—';
+  const d = typeof v === 'string' ? new Date(v) : (v?.toDate ? v.toDate() : new Date(v));
+  return Number.isNaN(d?.getTime()) ? '—' : d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 };
 
 const ViewOfferModal = ({ offer, property, onClose, formatCurrency }) => {
@@ -52,29 +73,45 @@ const ViewOfferModal = ({ offer, property, onClose, formatCurrency }) => {
           </section>
 
           <section className="view-offer-section">
-            <h3>Offer Terms</h3>
+            <h3>1. Property &amp; Purchase Price</h3>
             <dl className="view-offer-dl">
-              <dt>Offer amount</dt><dd>{fmt(offer.offerAmount)}</dd>
-              <dt>Earnest money</dt><dd>{fmt(offer.earnestMoney)}{offer.earnestMoneyDue ? ` — due ${formatEarnestDue(offer.earnestMoneyDue)}` : ''}</dd>
-              <dt>Proposed closing date</dt><dd>{formatDate(offer.proposedClosingDate)}</dd>
-              <dt>Financing type</dt><dd>{formatFinancing(offer.financingType)}{offer.downPayment != null && offer.financingType !== 'cash' ? `, ${offer.downPayment}% down` : ''}</dd>
-              {offer.possession && <><dt>Possession</dt><dd>{formatPossession(offer.possession)}</dd></>}
+              <dt>Full purchase price</dt><dd>{fmt(offer.offerAmount)}</dd>
+              <dt>Earnest money</dt><dd>{fmt(offer.earnestMoney)}{offer.earnestMoneyForm ? ` — ${formatEarnestForm(offer.earnestMoneyForm)}` : ''}{offer.earnestMoneyDepositedWith ? `, deposited with ${formatEarnestDepositedWith(offer.earnestMoneyDepositedWith)}` : ''}{offer.earnestMoneyDue ? `, due ${formatEarnestDue(offer.earnestMoneyDue)}` : ''}</dd>
+              <dt>COE date</dt><dd>{formatDate(offer.proposedClosingDate)}</dd>
+              <dt>Possession</dt><dd>{formatPossession(offer.possession)}</dd>
             </dl>
           </section>
 
           <section className="view-offer-section">
-            <h3>Contingencies</h3>
+            <h3>2. Financing</h3>
+            <dl className="view-offer-dl">
+              <dt>Type</dt><dd>{formatFinancing(offer.financingType)}{offer.downPayment != null && !['cash', 'assumption', 'seller_carryback'].includes(offer.financingType) ? `, ${offer.downPayment}% down` : ''}</dd>
+              {offer.sellerConcessions && <><dt>Seller concessions</dt><dd>{offer.sellerConcessions.type === 'percent' ? `${offer.sellerConcessions.value}% of purchase price` : fmt(offer.sellerConcessions.value)}</dd></>}
+            </dl>
+          </section>
+
+          <section className="view-offer-section">
+            <h3>6. Contingencies</h3>
             <dl className="view-offer-dl">
               <dt>Inspection</dt>
               <dd>{c.inspection?.included ? `Yes (${c.inspection.days ?? '—'} days)` : 'No'}</dd>
               <dt>Financing</dt>
               <dd>{c.financing?.included ? `Yes (${c.financing.days ?? '—'} days)` : 'No'}</dd>
               <dt>Appraisal</dt>
-              <dd>{c.appraisal?.included ? 'Yes' : 'No'}</dd>
+              <dd>{c.appraisal?.included ? (c.appraisal.paidBy ? `Yes (fee paid by ${formatAppraisalPaidBy(c.appraisal.paidBy)})` : 'Yes') : 'No'}</dd>
               <dt>Home sale</dt>
               <dd>{c.homeSale?.included ? 'Yes' : 'No'}</dd>
             </dl>
           </section>
+
+          {(offer.offerExpirationDate || offer.offerExpirationTime) && (
+            <section className="view-offer-section">
+              <h3>Terms of Acceptance</h3>
+              <dl className="view-offer-dl">
+                <dt>Offer expires</dt><dd>{offer.offerExpirationDate ? toDateStr(offer.offerExpirationDate) : '—'}{offer.offerExpirationTime ? ` at ${offer.offerExpirationTime}` : ''}</dd>
+              </dl>
+            </section>
+          )}
 
           {offer.inclusions?.trim() && (
             <section className="view-offer-section">
