@@ -303,15 +303,19 @@ const EditProperty = () => {
             <p className="form-note">Photos, description, and documents (deed, disclosures, etc.).</p>
 
             <div className="form-group">
-              <label className="feature-checkbox" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <input
-                  type="checkbox"
-                  checked={!!formData.acceptingCommunications}
-                  onChange={(e) => setFormData((prev) => prev ? { ...prev, acceptingCommunications: e.target.checked } : prev)}
-                />
-                <span>Accepting communications from buyers</span>
-              </label>
-              <p className="form-hint">When unchecked, buyers will see that you are not accepting offers or inquiries at this time.</p>
+              <div className="toggle-row">
+                <label className="toggle-row__label">Accepting communications from buyers</label>
+                <label className="toggle-switch">
+                  <input
+                    type="checkbox"
+                    checked={!!formData.acceptingCommunications}
+                    onChange={(e) => setFormData((prev) => prev ? { ...prev, acceptingCommunications: e.target.checked } : prev)}
+                    aria-label="Accepting communications from buyers"
+                  />
+                  <span className="toggle-switch__track" aria-hidden />
+                </label>
+              </div>
+              <p className="form-hint">When off, buyers will see that you are not accepting offers or inquiries at this time.</p>
             </div>
 
             <div className="form-group">

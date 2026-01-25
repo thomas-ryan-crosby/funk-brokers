@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { getPropertyById, archiveProperty, restoreProperty, deletePropertyPermanently } from '../services/propertyService';
+import { getPropertyById, updateProperty, archiveProperty, restoreProperty, deletePropertyPermanently } from '../services/propertyService';
 import { addToFavorites, removeFromFavorites, isFavorited, getFavoriteCountForProperty } from '../services/favoritesService';
 import { getListingTierProgress, getListingTierLabel } from '../utils/verificationScores';
 import './PropertyDetail.css';
@@ -17,6 +17,7 @@ const PropertyDetail = () => {
   const [favorited, setFavorited] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [favoriteCount, setFavoriteCount] = useState(null);
+  const [commsUpdating, setCommsUpdating] = useState(false);
 
   const isOwner = !!(property && user && property.sellerId === user.uid);
 
@@ -80,6 +81,21 @@ const PropertyDetail = () => {
       console.error(err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCommsToggle = async () => {
+    if (!property || !isOwner || commsUpdating) return;
+    const next = !(property.acceptingCommunications !== false);
+    setCommsUpdating(true);
+    try {
+      await updateProperty(property.id, { acceptingCommunications: next });
+      setProperty((p) => (p ? { ...p, acceptingCommunications: next } : p));
+    } catch (err) {
+      console.error(err);
+      alert('Failed to update. Please try again.');
+    } finally {
+      setCommsUpdating(false);
     }
   };
 
@@ -355,11 +371,29 @@ const PropertyDetail = () => {
                     : property.status}
                 </span>
               </div>
-              <div className="detail-row">
+              <div className={`detail-row ${isOwner ? 'detail-row--comms' : ''}`}>
                 <span className="detail-label">Communications</span>
-                <span className={`detail-value detail-value--comms-${property.acceptingCommunications !== false ? 'accepting' : 'not-accepting'}`}>
-                  {property.acceptingCommunications !== false ? 'Accepting communications' : 'Not accepting communications'}
-                </span>
+                {isOwner ? (
+                  <label className="comms-toggle-wrap">
+                    <span className="toggle-switch">
+                      <input
+                        type="checkbox"
+                        checked={property.acceptingCommunications !== false}
+                        onChange={handleCommsToggle}
+                        disabled={commsUpdating}
+                        aria-label="Accepting communications from buyers"
+                      />
+                      <span className="toggle-switch__track" aria-hidden />
+                    </span>
+                    <span className={`comms-toggle-label detail-value--comms-${property.acceptingCommunications !== false ? 'accepting' : 'not-accepting'}`}>
+                      {property.acceptingCommunications !== false ? 'Accepting' : 'Not accepting'}
+                    </span>
+                  </label>
+                ) : (
+                  <span className={`detail-value detail-value--comms-${property.acceptingCommunications !== false ? 'accepting' : 'not-accepting'}`}>
+                    {property.acceptingCommunications !== false ? 'Accepting communications' : 'Not accepting communications'}
+                  </span>
+                )}
               </div>
               {property.verified && (
                 <div className="detail-row">
@@ -396,7 +430,7 @@ const PropertyDetail = () => {
                         </div>
                       )}
                       {isOwner && (
-                        <Link to={`/property/${property.id}/get-verified`} className="tier-advance-btn btn btn-outline">
+                        <Link to={`/property/${property.id}/get-verified`} className="tier-advance-btn">
                           Advance to next status
                         </Link>
                       )}

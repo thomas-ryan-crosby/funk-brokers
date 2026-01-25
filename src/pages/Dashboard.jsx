@@ -26,6 +26,8 @@ const Dashboard = () => {
   const [error, setError] = useState(null);
   const [editingBuyingPower, setEditingBuyingPower] = useState(false);
   const [buyingPowerForm, setBuyingPowerForm] = useState('');
+  const [editingBuyerInfo, setEditingBuyerInfo] = useState(false);
+  const [buyerInfoForm, setBuyerInfoForm] = useState({ name: '', email: '' });
   const [uploadingDoc, setUploadingDoc] = useState(null);
   const [offersByProperty, setOffersByProperty] = useState({});
   const [sentOffers, setSentOffers] = useState([]);
@@ -248,6 +250,60 @@ const Dashboard = () => {
     }
   };
 
+  const handleRemoveDocument = async (key) => {
+    if (!window.confirm(`Remove ${key === 'proofOfFunds' ? 'Proof of Funds' : key === 'preApprovalLetter' ? 'Pre-Approval Letter' : key === 'bankLetter' ? 'Bank Letter' : 'Government ID'}?`)) return;
+    const docs = { ...(purchaseProfile?.verificationDocuments || {}) };
+    delete docs[key];
+    try {
+      await setPurchaseProfile(user.uid, { verificationDocuments: docs });
+      setPurchaseProfileState((p) => (p ? { ...p, verificationDocuments: docs } : null));
+    } catch (err) {
+      console.error(err);
+      alert('Failed to remove. Please try again.');
+    }
+  };
+
+  const handleRemoveBuyingPower = async () => {
+    if (!window.confirm('Remove your buying power amount? You can add it again later.')) return;
+    try {
+      await setPurchaseProfile(user.uid, { buyingPower: null });
+      setPurchaseProfileState((p) => (p ? { ...p, buyingPower: null } : null));
+      setEditingBuyingPower(false);
+      setBuyingPowerForm('');
+    } catch (err) {
+      console.error(err);
+      alert('Failed to remove. Please try again.');
+    }
+  };
+
+  const handleRemoveBuyerInfo = async () => {
+    if (!window.confirm('Remove your buyer name and email? You may need to provide them again to submit offers.')) return;
+    try {
+      await setPurchaseProfile(user.uid, { buyerInfo: {} });
+      setPurchaseProfileState((p) => (p ? { ...p, buyerInfo: {} } : null));
+      setEditingBuyerInfo(false);
+      setBuyerInfoForm({ name: '', email: '' });
+    } catch (err) {
+      console.error(err);
+      alert('Failed to remove. Please try again.');
+    }
+  };
+
+  const handleSaveBuyerInfo = async () => {
+    const name = (buyerInfoForm.name || '').trim();
+    const email = (buyerInfoForm.email || '').trim();
+    const next = name || email ? { name: name || null, email: email || null } : {};
+    try {
+      await setPurchaseProfile(user.uid, { buyerInfo: next });
+      setPurchaseProfileState((p) => (p ? { ...p, buyerInfo: next } : null));
+      setEditingBuyerInfo(false);
+      setBuyerInfoForm({ name: '', email: '' });
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save. Please try again.');
+    }
+  };
+
   const formatDate = (v) => {
     if (!v) return '—';
     const d = v?.toDate ? v.toDate() : new Date(v);
@@ -370,14 +426,22 @@ const Dashboard = () => {
         </div>
 
         <div className="dashboard-scores-and-ctas">
-          <div className="dashboard-buyer-score">
-            <span className="dashboard-buyer-score-label">Verified buyer score</span>
-            <span className="dashboard-buyer-score-value">
-              {getVerifiedBuyerScore(purchaseProfile).score}
-              {getVerifiedBuyerScore(purchaseProfile).score < 100 && '%'}
-            </span>
-            {getVerifiedBuyerScore(purchaseProfile).score < 100 && (
-              <Link to="/verify-buyer" className="dashboard-buyer-score-link">Complete verification</Link>
+          <div className="dashboard-buyer-status">
+            {getVerifiedBuyerScore(purchaseProfile).score >= 100 ? (
+              <>
+                <span className="dashboard-buyer-status-badge">✓ Verified buyer</span>
+                <span className="dashboard-buyer-status-score">100%</span>
+              </>
+            ) : (
+              <>
+                <span className="dashboard-buyer-status-label">Verified buyer</span>
+                <span className="dashboard-buyer-status-value">
+                  {getVerifiedBuyerScore(purchaseProfile).score}%
+                </span>
+                <Link to="/verify-buyer" className="dashboard-buyer-status-link">
+                  {getVerifiedBuyerScore(purchaseProfile).score === 0 ? 'Become a verified buyer' : 'Complete verification'}
+                </Link>
+              </>
             )}
           </div>
           <div className="dashboard-process-ctas">
@@ -387,13 +451,6 @@ const Dashboard = () => {
             <Link to="/begin-sale" state={{ startFresh: true }} className="btn btn-process btn-process-sell">
               Add my property
             </Link>
-            {purchaseProfile?.buyerVerified ? (
-              <span className="dashboard-verified-badge">✓ Verified buyer</span>
-            ) : (
-              <Link to="/verify-buyer" className="btn btn-outline">
-                Become a verified buyer
-              </Link>
-            )}
           </div>
         </div>
 
@@ -864,9 +921,65 @@ const Dashboard = () => {
                 ) : (
                   <div className="buying-power-display">
                     <span className="buying-power-amount">{formatCurrency(purchaseProfile?.buyingPower)}</span>
-                    <button type="button" className="btn btn-outline btn-small" onClick={() => { setEditingBuyingPower(true); setBuyingPowerForm(purchaseProfile?.buyingPower != null ? String(purchaseProfile.buyingPower) : ''); }}>
-                      Edit
-                    </button>
+                    <div className="buying-power-actions">
+                      <button type="button" className="btn btn-outline btn-small" onClick={() => { setEditingBuyingPower(true); setBuyingPowerForm(purchaseProfile?.buyingPower != null ? String(purchaseProfile.buyingPower) : ''); }}>
+                        Edit
+                      </button>
+                      <button type="button" className="btn btn-outline btn-small doc-remove-btn" onClick={handleRemoveBuyingPower}>
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="buying-power-card buying-power-info-card">
+                <h3>Buyer information</h3>
+                {editingBuyerInfo ? (
+                  <div className="buyer-info-edit">
+                    <input
+                      type="text"
+                      placeholder="Full legal name"
+                      value={buyerInfoForm.name}
+                      onChange={(e) => setBuyerInfoForm((p) => ({ ...p, name: e.target.value }))}
+                      className="buying-power-input"
+                    />
+                    <input
+                      type="email"
+                      placeholder="Email"
+                      value={buyerInfoForm.email}
+                      onChange={(e) => setBuyerInfoForm((p) => ({ ...p, email: e.target.value }))}
+                      className="buying-power-input"
+                    />
+                    <div className="buying-power-edit-actions">
+                      <button type="button" className="btn btn-primary" onClick={handleSaveBuyerInfo}>
+                        Save
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-outline"
+                        onClick={() => { setEditingBuyerInfo(false); setBuyerInfoForm({ name: '', email: '' }); }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="buyer-info-display">
+                    <div className="buyer-info-fields">
+                      <span className="buyer-info-label">Name</span>
+                      <span className="buyer-info-value">{purchaseProfile?.buyerInfo?.name || '—'}</span>
+                      <span className="buyer-info-label">Email</span>
+                      <span className="buyer-info-value">{purchaseProfile?.buyerInfo?.email || '—'}</span>
+                    </div>
+                    <div className="buying-power-actions">
+                      <button type="button" className="btn btn-outline btn-small" onClick={() => { setEditingBuyerInfo(true); setBuyerInfoForm({ name: purchaseProfile?.buyerInfo?.name || '', email: purchaseProfile?.buyerInfo?.email || '' }); }}>
+                        Edit
+                      </button>
+                      <button type="button" className="btn btn-outline btn-small doc-remove-btn" onClick={handleRemoveBuyerInfo}>
+                        Remove
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -891,7 +1004,7 @@ const Dashboard = () => {
                           </a>
                         )}
                         <label className="btn btn-outline btn-small doc-replace-btn">
-                          {isUploading ? 'Uploading…' : 'Replace'}
+                          {isUploading ? 'Uploading…' : url ? 'Replace' : 'Add'}
                           <input
                             type="file"
                             accept=".pdf,.jpg,.jpeg,.png"
@@ -904,6 +1017,11 @@ const Dashboard = () => {
                             hidden
                           />
                         </label>
+                        {url && (
+                          <button type="button" className="btn btn-outline btn-small doc-remove-btn" onClick={() => handleRemoveDocument(key)}>
+                            Remove
+                          </button>
+                        )}
                       </div>
                     </div>
                   );

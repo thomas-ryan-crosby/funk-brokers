@@ -39,17 +39,31 @@
   margin-bottom: 24px;
 }
 
-.dashboard-buyer-score {
+/* Combined verified buyer + score */
+.dashboard-buyer-status {
   display: inline-flex;
-  flex-direction: column;
-  gap: 2px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
   padding: 10px 16px;
   background: #f1f5f9;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
 }
 
-.dashboard-buyer-score-label {
+.dashboard-buyer-status-badge {
+  font-size: 15px;
+  font-weight: 700;
+  color: #065f46;
+}
+
+.dashboard-buyer-status-score {
+  font-size: 13px;
+  font-weight: 600;
+  color: #059669;
+}
+
+.dashboard-buyer-status-label {
   font-size: 12px;
   font-weight: 600;
   text-transform: uppercase;
@@ -57,21 +71,20 @@
   color: #64748b;
 }
 
-.dashboard-buyer-score-value {
-  font-size: 20px;
+.dashboard-buyer-status-value {
+  font-size: 18px;
   font-weight: 700;
   color: #1e293b;
 }
 
-.dashboard-buyer-score-link {
-  font-size: 12px;
+.dashboard-buyer-status-link {
+  font-size: 13px;
   font-weight: 600;
   color: #3b82f6;
   text-decoration: none;
-  margin-top: 2px;
 }
 
-.dashboard-buyer-score-link:hover {
+.dashboard-buyer-status-link:hover {
   text-decoration: underline;
 }
 
@@ -114,17 +127,6 @@
 .btn-process-sell:hover {
   background: #1d4ed8;
   transform: translateY(-0.5px);
-}
-
-.dashboard-verified-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 8px 16px;
-  border-radius: 9999px;
-  font-size: 14px;
-  font-weight: 600;
-  color: #065f46;
-  background: #d1fae5;
 }
 
 .dashboard-error {
@@ -509,13 +511,32 @@
 .buying-power-display {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
   gap: 12px;
+}
+
+.buying-power-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .buying-power-amount {
   font-size: 24px;
   font-weight: 700;
   color: #059669;
+}
+
+.doc-remove-btn {
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+.doc-remove-btn:hover {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fca5a5;
 }
 
 .buying-power-edit {
@@ -542,6 +563,44 @@
 .buying-power-edit-actions {
   display: flex;
   gap: 8px;
+}
+
+.buying-power-info-card {
+  margin-bottom: 24px;
+}
+
+.buyer-info-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 320px;
+}
+
+.buyer-info-display {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.buyer-info-fields {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 16px;
+  align-items: baseline;
+}
+
+.buyer-info-label {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.buyer-info-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
 }
 
 .buying-power-docs {
