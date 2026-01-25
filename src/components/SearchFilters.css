@@ -154,6 +154,7 @@
   border-radius: 6px;
   background: transparent;
   font-size: 14px;
+  color: #334155;
   text-align: left;
   cursor: pointer;
   transition: background 0.2s;
@@ -167,6 +168,24 @@
   background: #eff6ff;
   color: #1e40af;
   font-weight: 500;
+}
+
+.search-filters-apply {
+  margin-top: 12px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  background: #3b82f6;
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.2s;
+}
+
+.search-filters-apply:hover {
+  background: #2563eb;
 }
 
 .search-filters-reset {

@@ -29,6 +29,7 @@ const defaultFilters = () => ({
 
 const SearchFilters = ({ onFilterChange, initialFilters = {} }) => {
   const [filters, setFilters] = useState(() => ({ ...defaultFilters(), ...initialFilters }));
+  const [draft, setDraft] = useState(() => ({ ...defaultFilters(), ...initialFilters }));
   const [locationInput, setLocationInput] = useState(initialFilters.query || '');
   const [openDropdown, setOpenDropdown] = useState(null);
   const barRef = useRef(null);
@@ -41,13 +42,21 @@ const SearchFilters = ({ onFilterChange, initialFilters = {} }) => {
     return () => document.removeEventListener('click', onDocClick);
   }, []);
 
+  useEffect(() => {
+    if (openDropdown) setDraft({ ...filters });
+  }, [openDropdown, filters]);
+
   const update = (next) => {
     setFilters(next);
     onFilterChange(next);
   };
 
-  const handleChange = (field, value) => {
-    update({ ...filters, [field]: value });
+  const updateDraft = (field, value) => setDraft((d) => ({ ...d, [field]: value }));
+  const updateDraftMulti = (obj) => setDraft((d) => ({ ...d, ...obj }));
+
+  const handleApply = () => {
+    update(draft);
+    setOpenDropdown(null);
   };
 
   const handleLocationSearch = () => {
@@ -58,6 +67,7 @@ const SearchFilters = ({ onFilterChange, initialFilters = {} }) => {
     setLocationInput('');
     const reset = defaultFilters();
     setFilters(reset);
+    setDraft(reset);
     onFilterChange(reset);
     setOpenDropdown(null);
   };
@@ -124,8 +134,8 @@ const SearchFilters = ({ onFilterChange, initialFilters = {} }) => {
                 <input
                   type="number"
                   placeholder="Any"
-                  value={filters.minPrice}
-                  onChange={(e) => handleChange('minPrice', e.target.value)}
+                  value={draft.minPrice}
+                  onChange={(e) => updateDraft('minPrice', e.target.value)}
                 />
               </div>
               <div className="search-filters-panel-row">
@@ -133,10 +143,13 @@ const SearchFilters = ({ onFilterChange, initialFilters = {} }) => {
                 <input
                   type="number"
                   placeholder="Any"
-                  value={filters.maxPrice}
-                  onChange={(e) => handleChange('maxPrice', e.target.value)}
+                  value={draft.maxPrice}
+                  onChange={(e) => updateDraft('maxPrice', e.target.value)}
                 />
               </div>
+              <button type="button" className="search-filters-apply" onClick={handleApply}>
+                Apply
+              </button>
             </div>
           )}
         </div>
@@ -154,7 +167,7 @@ const SearchFilters = ({ onFilterChange, initialFilters = {} }) => {
             <div className="search-filters-panel" onClick={(e) => e.stopPropagation()}>
               <div className="search-filters-panel-row">
                 <label>Beds</label>
-                <select value={filters.bedrooms} onChange={(e) => handleChange('bedrooms', e.target.value)}>
+                <select value={draft.bedrooms} onChange={(e) => updateDraft('bedrooms', e.target.value)}>
                   <option value="">Any</option>
                   {BEDS.filter(Boolean).map((n) => (
                     <option key={n} value={n}>{n}+</option>
@@ -163,13 +176,16 @@ const SearchFilters = ({ onFilterChange, initialFilters = {} }) => {
               </div>
               <div className="search-filters-panel-row">
                 <label>Baths</label>
-                <select value={filters.bathrooms} onChange={(e) => handleChange('bathrooms', e.target.value)}>
+                <select value={draft.bathrooms} onChange={(e) => updateDraft('bathrooms', e.target.value)}>
                   <option value="">Any</option>
                   {BATHS.filter(Boolean).map((n) => (
                     <option key={n} value={n}>{n}+</option>
                   ))}
                 </select>
               </div>
+              <button type="button" className="search-filters-apply" onClick={handleApply}>
+                Apply
+              </button>
             </div>
           )}
         </div>
@@ -189,12 +205,15 @@ const SearchFilters = ({ onFilterChange, initialFilters = {} }) => {
                 <button
                   key={o.value || 'all'}
                   type="button"
-                  className={`search-filters-option ${filters.propertyType === o.value ? 'active' : ''}`}
-                  onClick={() => { handleChange('propertyType', o.value); setOpenDropdown(null); }}
+                  className={`search-filters-option ${draft.propertyType === o.value ? 'active' : ''}`}
+                  onClick={() => updateDraft('propertyType', o.value)}
                 >
                   {o.label}
                 </button>
               ))}
+              <button type="button" className="search-filters-apply" onClick={handleApply}>
+                Apply
+              </button>
             </div>
           )}
         </div>
@@ -213,9 +232,9 @@ const SearchFilters = ({ onFilterChange, initialFilters = {} }) => {
               <div className="search-filters-panel-row">
                 <label>City</label>
                 <CityStateAutocomplete
-                  value={filters.city}
-                  onCityChange={(v) => handleChange('city', v)}
-                  onCityStateSelect={({ city, state }) => update({ ...filters, city, state })}
+                  value={draft.city}
+                  onCityChange={(v) => updateDraft('city', v)}
+                  onCityStateSelect={({ city, state }) => updateDraftMulti({ city, state })}
                   placeholder="City"
                   className="search-filters-input"
                 />
@@ -224,8 +243,8 @@ const SearchFilters = ({ onFilterChange, initialFilters = {} }) => {
                 <label>State</label>
                 <input
                   type="text"
-                  value={filters.state}
-                  onChange={(e) => handleChange('state', e.target.value.toUpperCase())}
+                  value={draft.state}
+                  onChange={(e) => updateDraft('state', e.target.value.toUpperCase())}
                   placeholder="e.g. CA"
                   maxLength="2"
                   className="search-filters-input"
@@ -234,10 +253,10 @@ const SearchFilters = ({ onFilterChange, initialFilters = {} }) => {
               <div className="search-filters-panel-row">
                 <label>Sort</label>
                 <select
-                  value={`${filters.orderBy}_${filters.orderDirection}`}
+                  value={`${draft.orderBy}_${draft.orderDirection}`}
                   onChange={(e) => {
                     const [orderBy, orderDirection] = e.target.value.split('_');
-                    update({ ...filters, orderBy, orderDirection });
+                    updateDraftMulti({ orderBy, orderDirection });
                   }}
                   className="search-filters-input"
                 >
@@ -246,6 +265,9 @@ const SearchFilters = ({ onFilterChange, initialFilters = {} }) => {
                   <option value="price_desc">Price: High to Low</option>
                 </select>
               </div>
+              <button type="button" className="search-filters-apply" onClick={handleApply}>
+                Apply
+              </button>
               <button type="button" className="search-filters-reset" onClick={handleReset}>
                 Reset filters
               </button>
