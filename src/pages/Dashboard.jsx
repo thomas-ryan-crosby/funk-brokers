@@ -306,6 +306,23 @@ const Dashboard = () => {
     return <span className={`offer-status-badge ${c}`}>{l}</span>;
   };
 
+  /** Event badges for Deal Center: "You have received an offer", "You have received a counter", "You sent an offer", "You sent a counter" */
+  const getOfferEventBadge = (offer, { isReceived }) => {
+    if (!offer || !user?.uid) return null;
+    const uid = user.uid;
+    // Seller / offers on your listings
+    if (isReceived) {
+      if (offer.counteredByOfferId) return { label: 'You sent a counter', type: 'sent-counter' };
+      if (offer.counterToOfferId && offer.createdBy === uid) return { label: 'You sent a counter', type: 'sent-counter' };
+      if (offer.counterToOfferId && offer.createdBy !== uid) return { label: 'You have received a counter', type: 'received-counter' };
+      return { label: 'You have received an offer', type: 'received-offer' };
+    }
+    // Buyer / offers you've sent
+    if (offer.counterToOfferId && offer.createdBy === uid) return { label: 'You sent a counter', type: 'sent-counter' };
+    if (offer.counteredByOfferId) return { label: 'You have received a counter', type: 'received-counter' };
+    return { label: 'You sent an offer', type: 'sent-offer' };
+  };
+
   if (authLoading || loading) {
     return (
       <div className="dashboard-page">
@@ -568,9 +585,14 @@ const Dashboard = () => {
                           <p className="deal-no-offers">No offers yet.</p>
                         ) : (
                           <div className="deal-offers">
-                            {offers.map((offer) => (
+                            {offers.map((offer) => {
+                              const evt = getOfferEventBadge(offer, { isReceived: true });
+                              return (
                               <div key={offer.id} className="deal-offer-row">
                                 <div className="deal-offer-main">
+                                  {evt && (
+                                    <span className={`offer-event-badge offer-event-badge--${evt.type}`}>{evt.label}</span>
+                                  )}
                                   <span className="deal-offer-buyer">{offer.buyerName || 'Buyer'}</span>
                                   <span className="deal-offer-amount">{formatCurrency(offer.offerAmount)}</span>
                                   <span className="deal-offer-meta">
@@ -617,7 +639,8 @@ const Dashboard = () => {
                                   )}
                                 </div>
                               </div>
-                            ))}
+                            );
+                            })}
                           </div>
                         )}
                       </div>
@@ -634,9 +657,14 @@ const Dashboard = () => {
                 </p>
               ) : (
                 <div className="deal-sent-list">
-                  {sentOffers.map(({ offer, property }) => (
+                  {sentOffers.map(({ offer, property }) => {
+                    const evt = getOfferEventBadge(offer, { isReceived: false });
+                    return (
                     <div key={offer.id} className="deal-offer-row">
                       <div className="deal-offer-main">
+                        {evt && (
+                          <span className={`offer-event-badge offer-event-badge--${evt.type}`}>{evt.label}</span>
+                        )}
                         <Link to={`/property/${offer.propertyId}`} className="deal-offer-property">
                           {[property?.address, property?.city, property?.state].filter(Boolean).join(', ') || 'Property'}
                         </Link>
@@ -687,7 +715,8 @@ const Dashboard = () => {
                         )}
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
