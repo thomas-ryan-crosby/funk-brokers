@@ -13,6 +13,21 @@
  * @param {object} profile - purchase profile (purchaseProfiles/{userId})
  * @returns {{ score: number, label: string }}
  */
+/**
+ * Same criteria as getVerifiedBuyerScore for being "verified": all 4 items must be present.
+ * @param {object} profile - { buyerInfo?, verificationDocuments? }
+ * @returns {boolean}
+ */
+export function meetsVerifiedBuyerCriteria(profile) {
+  if (!profile) return false;
+  const docs = profile.verificationDocuments || {};
+  const hasBuyerInfo = !!(profile.buyerInfo?.name && profile.buyerInfo?.email);
+  const hasProofOfFunds = !!docs.proofOfFunds;
+  const hasPreApprovalOrBank = !!(docs.preApprovalLetter || docs.bankLetter);
+  const hasGovernmentId = !!docs.governmentId;
+  return hasBuyerInfo && hasProofOfFunds && hasPreApprovalOrBank && hasGovernmentId;
+}
+
 export function getVerifiedBuyerScore(profile) {
   if (!profile) return { score: 0, label: 'Not started' };
   if (profile.buyerVerified) return { score: 100, label: 'Verified' };

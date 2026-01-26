@@ -8,7 +8,8 @@ import { getSavedSearches, removeSavedSearch, getPurchaseProfile, setPurchasePro
 import { getOffersByProperty, getOffersByBuyer, acceptOffer, rejectOffer, withdrawOffer, counterOffer } from '../services/offerService';
 import { getTransactionsByUser, getTransactionByOfferId, createTransaction } from '../services/transactionService';
 import { uploadFile } from '../services/storageService';
-import { getVerifiedBuyerScore, getListingTier, getListingTierLabel } from '../utils/verificationScores';
+import { deleteField } from 'firebase/firestore';
+import { getVerifiedBuyerScore, getListingTier, getListingTierLabel, meetsVerifiedBuyerCriteria } from '../utils/verificationScores';
 import PropertyCard from '../components/PropertyCard';
 import CounterOfferModal from '../components/CounterOfferModal';
 import ViewOfferModal from '../components/ViewOfferModal';
@@ -297,9 +298,24 @@ const Dashboard = () => {
     if (!window.confirm(`Remove ${key === 'proofOfFunds' ? 'Proof of Funds' : key === 'preApprovalLetter' ? 'Pre-Approval Letter' : key === 'bankLetter' ? 'Bank Letter' : 'Government ID'}?`)) return;
     const docs = { ...(purchaseProfile?.verificationDocuments || {}) };
     delete docs[key];
+    const nextProfile = { ...purchaseProfile, verificationDocuments: docs };
+    const stillVerified = meetsVerifiedBuyerCriteria(nextProfile);
+    const updates = { verificationDocuments: docs };
+    if (!stillVerified) {
+      updates.buyerVerified = false;
+      updates.buyerVerifiedAt = deleteField();
+    }
     try {
-      await setPurchaseProfile(user.uid, { verificationDocuments: docs });
-      setPurchaseProfileState((p) => (p ? { ...p, verificationDocuments: docs } : null));
+      await setPurchaseProfile(user.uid, updates);
+      setPurchaseProfileState((p) => {
+        if (!p) return p;
+        const next = { ...p, verificationDocuments: docs };
+        if (!stillVerified) {
+          next.buyerVerified = false;
+          next.buyerVerifiedAt = null;
+        }
+        return next;
+      });
     } catch (err) {
       console.error(err);
       alert('Failed to remove. Please try again.');
@@ -321,9 +337,10 @@ const Dashboard = () => {
 
   const handleRemoveBuyerInfo = async () => {
     if (!window.confirm('Remove your buyer name and email? You may need to provide them again to submit offers.')) return;
+    const updates = { buyerInfo: {}, buyerVerified: false, buyerVerifiedAt: deleteField() };
     try {
-      await setPurchaseProfile(user.uid, { buyerInfo: {} });
-      setPurchaseProfileState((p) => (p ? { ...p, buyerInfo: {} } : null));
+      await setPurchaseProfile(user.uid, updates);
+      setPurchaseProfileState((p) => (p ? { ...p, buyerInfo: {}, buyerVerified: false, buyerVerifiedAt: null } : null));
       setEditingBuyerInfo(false);
       setBuyerInfoForm({ name: '', email: '' });
     } catch (err) {
