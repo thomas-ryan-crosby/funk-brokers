@@ -560,14 +560,12 @@ const Dashboard = () => {
           >
             Transactions ({transactions.length})
           </button>
-          {purchaseProfile?.buyerVerified && (
-            <button
-              className={`tab ${activeTab === 'buying-power' ? 'active' : ''}`}
-              onClick={() => setActiveTab('buying-power')}
-            >
-              Buying Power
-            </button>
-          )}
+          <button
+            className={`tab ${activeTab === 'buying-power' ? 'active' : ''}`}
+            onClick={() => setActiveTab('buying-power')}
+          >
+            Buying Power
+          </button>
         </div>
 
         <div className="dashboard-content">
@@ -1016,7 +1014,7 @@ const Dashboard = () => {
             </div>
           )}
 
-          {activeTab === 'buying-power' && purchaseProfile?.buyerVerified && (
+          {activeTab === 'buying-power' && (
             <div className="dashboard-section buying-power-section">
               <div className="section-header">
                 <h2>Buying Power</h2>

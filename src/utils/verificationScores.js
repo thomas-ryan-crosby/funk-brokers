@@ -30,8 +30,7 @@ export function meetsVerifiedBuyerCriteria(profile) {
 
 export function getVerifiedBuyerScore(profile) {
   if (!profile) return { score: 0, label: 'Not started' };
-  if (profile.buyerVerified) return { score: 100, label: 'Verified' };
-
+  /* Always derive from stored data so the widget stays in sync when docs/buyerInfo are removed. */
   const docs = profile.verificationDocuments || {};
   const hasBuyerInfo = !!(profile.buyerInfo?.name && profile.buyerInfo?.email);
   const hasProofOfFunds = !!docs.proofOfFunds;
