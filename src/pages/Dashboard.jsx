@@ -8,7 +8,7 @@ import { getSavedSearches, removeSavedSearch, getPurchaseProfile, setPurchasePro
 import { getOffersByProperty, getOffersByBuyer, acceptOffer, rejectOffer, withdrawOffer, counterOffer } from '../services/offerService';
 import { getTransactionsByUser, getTransactionByOfferId, createTransaction } from '../services/transactionService';
 import { uploadFile } from '../services/storageService';
-import { getVerifiedBuyerScore, getListingTier, isListed, getListingTierLabel } from '../utils/verificationScores';
+import { getVerifiedBuyerScore, getListingTier, getListingTierLabel } from '../utils/verificationScores';
 import PropertyCard from '../components/PropertyCard';
 import CounterOfferModal from '../components/CounterOfferModal';
 import ViewOfferModal from '../components/ViewOfferModal';
@@ -570,7 +570,7 @@ const Dashboard = () => {
                 <div className="properties-list">
                   {activeList.map((property) => (
                     <div key={property.id} className="property-item">
-                      <PropertyCard property={property} embedded listingTier={getListingTier(property)} isListed={isListed(property)} />
+                      <PropertyCard property={property} embedded listingTier={getListingTier(property)} />
                       <div className="property-actions">
                         {getStatusBadge(property)}
                         <div className="action-buttons">
@@ -597,7 +597,7 @@ const Dashboard = () => {
                   <div className="properties-list">
                     {archivedList.map((property) => (
                       <div key={property.id} className="property-item property-item-archived">
-                        <PropertyCard property={property} embedded listingTier={getListingTier(property)} isListed={isListed(property)} />
+                        <PropertyCard property={property} embedded listingTier={getListingTier(property)} />
                         <div className="property-actions">
                           {getStatusBadge(property)}
                           <div className="action-buttons">
@@ -633,7 +633,7 @@ const Dashboard = () => {
                 <div className="properties-list">
                   {favoriteProperties.map((property) => (
                     <div key={property.id} className="property-item">
-                      <PropertyCard property={property} embedded listingTier={getListingTier(property)} isListed={isListed(property)} />
+                      <PropertyCard property={property} embedded listingTier={getListingTier(property)} />
                       <div className="property-actions">
                         <div className="action-buttons">
                           <button

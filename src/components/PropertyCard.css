@@ -213,6 +213,16 @@
   background: #fef3c7;
 }
 
+.property-card__tag--status.property-card__tag--listed {
+  color: #065f46;
+  background: #d1fae5;
+}
+
+.property-card__tag--status.property-card__tag--not-listed {
+  color: #64748b;
+  background: #f1f5f9;
+}
+
 /* ——— Compact ——— */
 
 .property-card--compact .property-card__media {

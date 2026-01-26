@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getListingTierLabel } from '../utils/verificationScores';
+import { getListingTier, getListingTierLabel } from '../utils/verificationScores';
 import './PropertyCard.css';
 
-const PropertyCard = ({ property, embedded, compact, listingTier, isListed }) => {
+const PropertyCard = ({ property, embedded, compact, listingTier }) => {
+  const tier = listingTier ?? getListingTier(property);
+  const isListedStatus = property.availableForSale !== false && property.status !== 'not_listed';
   const [imgError, setImgError] = useState(false);
   const photoUrl = property.photos?.[0];
 
@@ -95,14 +97,14 @@ const PropertyCard = ({ property, embedded, compact, listingTier, isListed }) =>
           ) : null}
         </div>
         <div className="property-card__tags">
-          {listingTier != null && (
-            <span className={`property-card__tag property-card__tag--tier property-card__tag--${listingTier}`}>
-              {getListingTierLabel(listingTier)}
-              {isListed != null && ` · ${isListed ? 'Listed' : 'Unlisted'}`}
-            </span>
-          )}
+          <span className={`property-card__tag property-card__tag--tier property-card__tag--${tier}`}>
+            {getListingTierLabel(tier)}
+          </span>
+          <span className={`property-card__tag property-card__tag--status property-card__tag--${isListedStatus ? 'listed' : 'not-listed'}`}>
+            {isListedStatus ? 'Listed' : 'Not listed'}
+          </span>
           <span className={`property-card__tag property-card__tag--comms property-card__tag--comms-${property.acceptingCommunications !== false ? 'accepting' : 'not-accepting'}`}>
-            {property.acceptingCommunications !== false ? 'Accepting comms' : 'Not accepting'}
+            {property.acceptingCommunications !== false ? 'Accepting' : 'Not accepting'}
           </span>
         </div>
       </div>

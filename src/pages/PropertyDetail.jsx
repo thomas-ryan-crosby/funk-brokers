@@ -105,8 +105,12 @@ const PropertyDetail = () => {
     const next = !(property.availableForSale !== false);
     setAvailableForSaleUpdating(true);
     try {
-      await updateProperty(property.id, { availableForSale: next });
-      setProperty((p) => (p ? { ...p, availableForSale: next } : p));
+      const updates = {
+        availableForSale: next,
+        status: next ? 'active' : 'not_listed',
+      };
+      await updateProperty(property.id, updates);
+      setProperty((p) => (p ? { ...p, ...updates } : p));
     } catch (err) {
       console.error(err);
       alert('Failed to update. Please try again.');
@@ -197,6 +201,14 @@ const PropertyDetail = () => {
     <div className="property-detail-page">
       <div className="property-detail-container">
         <div className="property-detail-header">
+          <button
+            type="button"
+            className="property-detail-back"
+            onClick={() => navigate(-1)}
+            aria-label="Go back"
+          >
+            ← Back
+          </button>
           <h1>{formatPrice(property.price)}</h1>
           <p className="property-address">{formatAddress(property)}</p>
         </div>
@@ -395,10 +407,16 @@ const PropertyDetail = () => {
                 <span className="detail-value">
                   {property.archived
                     ? 'Archived'
+                    : property.status === 'not_listed'
+                    ? 'Not listed'
                     : property.status === 'active'
                     ? 'Active'
                     : property.status === 'under_contract'
                     ? 'Under Contract'
+                    : property.status === 'sold'
+                    ? 'Sold'
+                    : property.status === 'withdrawn'
+                    ? 'Withdrawn'
                     : property.status}
                 </span>
               </div>

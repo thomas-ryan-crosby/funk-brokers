@@ -16,6 +16,27 @@
 .property-detail-header {
   padding: 32px;
   border-bottom: 1px solid #e0e0e0;
+  position: relative;
+}
+
+.property-detail-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
+  padding: 6px 0;
+  background: none;
+  border: none;
+  font-size: 15px;
+  font-weight: 600;
+  color: #3b82f6;
+  cursor: pointer;
+  font-family: inherit;
+  transition: color 0.2s;
+}
+
+.property-detail-back:hover {
+  color: #2563eb;
 }
 
 .property-detail-header h1 {
