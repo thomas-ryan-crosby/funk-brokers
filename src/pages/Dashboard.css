@@ -168,6 +168,15 @@
   border-bottom-color: #3b82f6;
 }
 
+.tab.tab--link {
+  text-decoration: none;
+  color: #64748b;
+}
+
+.tab.tab--link:hover {
+  color: #3b82f6;
+}
+
 .dashboard-content {
   background: white;
   border-radius: 12px;

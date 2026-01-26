@@ -534,6 +534,9 @@ const Dashboard = () => {
           >
             Deal Center
           </button>
+          <Link to="/messages" className="tab tab--link">
+            Messages
+          </Link>
           <button
             className={`tab ${activeTab === 'transactions' ? 'active' : ''}`}
             onClick={() => setActiveTab('transactions')}
