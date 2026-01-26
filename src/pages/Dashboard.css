@@ -662,6 +662,80 @@
   cursor: wait;
 }
 
+/* Vendor Center */
+.vendor-center-section .section-header .form-hint {
+  margin: 8px 0 0 0;
+}
+
+.vendor-center-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-bottom: 24px;
+}
+
+.vendor-center-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.vendor-center-item:last-of-type {
+  border-bottom: none;
+}
+
+.vendor-center-type {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.vendor-center-meta {
+  font-size: 14px;
+  color: #64748b;
+}
+
+.vendor-center-meta a {
+  color: #3b82f6;
+  text-decoration: none;
+}
+
+.vendor-center-meta a:hover {
+  text-decoration: underline;
+}
+
+.vendor-center-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+}
+
+.vendor-center-form {
+  padding-top: 20px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.vendor-center-form h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #475569;
+  margin: 0 0 12px 0;
+}
+
+.vendor-center-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.vendor-center-fields .buying-power-input,
+.vendor-center-fields select.buying-power-input {
+  width: 100%;
+}
+
 /* Deal Center */
 .deal-center-section .section-header .form-hint {
   margin: 8px 0 0 0;

@@ -3,7 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getTransactionById, updateStepComplete as updateStepCompleteService, setAssignedVendor } from '../services/transactionService';
 import { getPropertyById } from '../services/propertyService';
-import { getVendorsByUser, createVendor, updateVendor, deleteVendor, VENDOR_TYPES } from '../services/vendorService';
+import { getVendorsByUser, VENDOR_TYPES } from '../services/vendorService';
 import './TransactionManager.css';
 
 const toDate = (v) => {
@@ -43,10 +43,6 @@ const TransactionManager = () => {
   const [togglingStepId, setTogglingStepId] = useState(null);
   const [assignModalRole, setAssignModalRole] = useState(null);
   const [assignSelectedId, setAssignSelectedId] = useState('');
-  const [assignNewForm, setAssignNewForm] = useState({ name: '', company: '', phone: '', email: '' });
-  const [manageVendorsOpen, setManageVendorsOpen] = useState(false);
-  const [editingVendorId, setEditingVendorId] = useState(null);
-  const [vendorForm, setVendorForm] = useState({ name: '', company: '', phone: '', email: '', type: 'other' });
 
   useEffect(() => {
     if (authLoading) return;
@@ -112,31 +108,15 @@ const TransactionManager = () => {
   const openAssignModal = (role) => {
     setAssignModalRole(role);
     setAssignSelectedId('');
-    setAssignNewForm({ name: '', company: '', phone: '', email: '' });
   };
 
   const closeAssignModal = () => {
     setAssignModalRole(null);
     setAssignSelectedId('');
-    setAssignNewForm({ name: '', company: '', phone: '', email: '' });
   };
 
   const handleAssignVendor = async () => {
-    if (!transaction?.id || !assignModalRole) return;
-    if (assignSelectedId === 'new') {
-      if (!assignNewForm.name?.trim()) return;
-      try {
-        const newId = await createVendor(user.uid, { ...assignNewForm, type: assignModalRole });
-        await setAssignedVendor(transaction.id, assignModalRole, newId);
-        await load();
-        closeAssignModal();
-      } catch (err) {
-        console.error(err);
-        alert('Failed to add and assign. Please try again.');
-      }
-      return;
-    }
-    if (!assignSelectedId) return;
+    if (!transaction?.id || !assignModalRole || !assignSelectedId) return;
     try {
       await setAssignedVendor(transaction.id, assignModalRole, assignSelectedId);
       await load();
@@ -144,59 +124,6 @@ const TransactionManager = () => {
     } catch (err) {
       console.error(err);
       alert('Failed to assign. Please try again.');
-    }
-  };
-
-  const handleManageSaveVendor = async () => {
-    if (editingVendorId) {
-      try {
-        await updateVendor(editingVendorId, vendorForm);
-        const v = await getVendorsByUser(user.uid);
-        setVendors(v);
-        setEditingVendorId(null);
-        setVendorForm({ name: '', company: '', phone: '', email: '', type: 'other' });
-      } catch (err) {
-        console.error(err);
-        alert('Failed to update vendor.');
-      }
-    } else {
-      if (!vendorForm.name?.trim()) return;
-      try {
-        await createVendor(user.uid, vendorForm);
-        const v = await getVendorsByUser(user.uid);
-        setVendors(v);
-        setVendorForm({ name: '', company: '', phone: '', email: '', type: 'other' });
-      } catch (err) {
-        console.error(err);
-        alert('Failed to add vendor.');
-      }
-    }
-  };
-
-  const handleManageEdit = (v) => {
-    setEditingVendorId(v.id);
-    setVendorForm({
-      name: v.name || '',
-      company: v.company || '',
-      phone: v.phone || '',
-      email: v.email || '',
-      type: v.type || 'other',
-    });
-  };
-
-  const handleManageDelete = async (vendorId) => {
-    if (!confirm('Delete this vendor? They will be removed from any transactions.')) return;
-    try {
-      await deleteVendor(vendorId);
-      const v = await getVendorsByUser(user.uid);
-      setVendors(v);
-      if (editingVendorId === vendorId) {
-        setEditingVendorId(null);
-        setVendorForm({ name: '', company: '', phone: '', email: '', type: 'other' });
-      }
-    } catch (err) {
-      console.error(err);
-      alert('Failed to delete vendor.');
     }
   };
 
@@ -288,9 +215,6 @@ const TransactionManager = () => {
               </div>
             );
           })}
-          <p className="tm-manage-link">
-            <button type="button" className="btn-link" onClick={() => setManageVendorsOpen(true)}>Manage my vendors</button>
-          </p>
         </div>
 
         <div className="tm-steps">
@@ -335,72 +259,28 @@ const TransactionManager = () => {
             <h3 className="tm-modal-title">
               Assign {VENDOR_TYPES.find((t) => t.id === assignModalRole)?.label || assignModalRole}
             </h3>
-            <div className="tm-form-group">
-              <label>Vendor</label>
-              <select
-                className="tm-vendor-select"
-                value={assignSelectedId}
-                onChange={(e) => setAssignSelectedId(e.target.value)}
-              >
-                <option value="">— Choose —</option>
-                <option value="new">+ Add new vendor</option>
-                {vendors.map((v) => (
-                  <option key={v.id} value={v.id}>{v.name}{v.company ? ` (${v.company})` : ''}</option>
-                ))}
-              </select>
-            </div>
-            {assignSelectedId === 'new' && (
-              <>
-                <div className="tm-form-group">
-                  <label>Name *</label>
-                  <input
-                    type="text"
-                    value={assignNewForm.name}
-                    onChange={(e) => setAssignNewForm((f) => ({ ...f, name: e.target.value }))}
-                    placeholder="Contact name"
-                  />
-                </div>
-                <div className="tm-form-group">
-                  <label>Company</label>
-                  <input
-                    type="text"
-                    value={assignNewForm.company}
-                    onChange={(e) => setAssignNewForm((f) => ({ ...f, company: e.target.value }))}
-                    placeholder="Company name"
-                  />
-                </div>
-                <div className="tm-form-group">
-                  <label>Phone</label>
-                  <input
-                    type="text"
-                    value={assignNewForm.phone}
-                    onChange={(e) => setAssignNewForm((f) => ({ ...f, phone: e.target.value }))}
-                    placeholder="Phone"
-                  />
-                </div>
-                <div className="tm-form-group">
-                  <label>Email</label>
-                  <input
-                    type="email"
-                    value={assignNewForm.email}
-                    onChange={(e) => setAssignNewForm((f) => ({ ...f, email: e.target.value }))}
-                    placeholder="Email"
-                  />
-                </div>
-              </>
+            {vendors.length === 0 ? (
+              <p className="tm-form-hint">
+                You don&apos;t have any vendors yet. Add them in <Link to="/dashboard?tab=vendor-center">Vendor Center</Link> first.
+              </p>
+            ) : (
+              <div className="tm-form-group">
+                <label>Vendor</label>
+                <select
+                  className="tm-vendor-select"
+                  value={assignSelectedId}
+                  onChange={(e) => setAssignSelectedId(e.target.value)}
+                >
+                  <option value="">— Choose —</option>
+                  {vendors.map((v) => (
+                    <option key={v.id} value={v.id}>{v.name}{v.company ? ` (${v.company})` : ''}</option>
+                  ))}
+                </select>
+              </div>
             )}
             <div className="tm-modal-actions">
               <button type="button" className="btn btn-outline" onClick={closeAssignModal}>Cancel</button>
-              {assignSelectedId === 'new' ? (
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={handleAssignVendor}
-                  disabled={!assignNewForm.name?.trim()}
-                >
-                  Add &amp; assign
-                </button>
-              ) : (
+              {vendors.length > 0 && (
                 <button
                   type="button"
                   className="btn btn-primary"
@@ -410,95 +290,6 @@ const TransactionManager = () => {
                   Assign
                 </button>
               )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {manageVendorsOpen && (
-        <div className="tm-modal-overlay" onClick={() => setManageVendorsOpen(false)}>
-          <div className="tm-modal tm-modal-wide" onClick={(e) => e.stopPropagation()}>
-            <h3 className="tm-modal-title">Manage my vendors</h3>
-            <div className="tm-manage-list">
-              {vendors.map((v) => (
-                <div key={v.id} className="tm-manage-row">
-                  <div>
-                    <strong>{v.name}</strong>
-                    {v.company && <span> — {v.company}</span>}
-                    <span className="tm-manage-type"> {VENDOR_TYPES.find((t) => t.id === v.type)?.label || v.type}</span>
-                  </div>
-                  <div className="tm-vendor-actions">
-                    <button type="button" className="btn-link" onClick={() => handleManageEdit(v)}>Edit</button>
-                    <button type="button" className="btn-link" onClick={() => handleManageDelete(v.id)}>Delete</button>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="tm-manage-form">
-              <h4>{editingVendorId ? 'Edit vendor' : 'Add vendor'}</h4>
-              <div className="tm-form-group">
-                <label>Name *</label>
-                <input
-                  type="text"
-                  value={vendorForm.name}
-                  onChange={(e) => setVendorForm((f) => ({ ...f, name: e.target.value }))}
-                  placeholder="Contact name"
-                />
-              </div>
-              <div className="tm-form-group">
-                <label>Company</label>
-                <input
-                  type="text"
-                  value={vendorForm.company}
-                  onChange={(e) => setVendorForm((f) => ({ ...f, company: e.target.value }))}
-                  placeholder="Company name"
-                />
-              </div>
-              <div className="tm-form-group">
-                <label>Phone</label>
-                <input
-                  type="text"
-                  value={vendorForm.phone}
-                  onChange={(e) => setVendorForm((f) => ({ ...f, phone: e.target.value }))}
-                  placeholder="Phone"
-                />
-              </div>
-              <div className="tm-form-group">
-                <label>Email</label>
-                <input
-                  type="email"
-                  value={vendorForm.email}
-                  onChange={(e) => setVendorForm((f) => ({ ...f, email: e.target.value }))}
-                  placeholder="Email"
-                />
-              </div>
-              <div className="tm-form-group">
-                <label>Type</label>
-                <select
-                  value={vendorForm.type}
-                  onChange={(e) => setVendorForm((f) => ({ ...f, type: e.target.value }))}
-                >
-                  {VENDOR_TYPES.map((t) => (
-                    <option key={t.id} value={t.id}>{t.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="tm-modal-actions">
-                {editingVendorId && (
-                  <button type="button" className="btn btn-outline" onClick={() => { setEditingVendorId(null); setVendorForm({ name: '', company: '', phone: '', email: '', type: 'other' }); }}>Cancel edit</button>
-                )}
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={handleManageSaveVendor}
-                  disabled={!vendorForm.name?.trim()}
-                >
-                  {editingVendorId ? 'Save' : 'Add vendor'}
-                </button>
-              </div>
-            </div>
-            <div className="tm-modal-actions tm-modal-actions-end">
-              <button type="button" className="btn btn-outline" onClick={() => setManageVendorsOpen(false)}>Close</button>
             </div>
           </div>
         </div>

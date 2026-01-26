@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getPropertiesBySeller, getPropertyById, archiveProperty, restoreProperty, deletePropertyPermanently } from '../services/propertyService';
 import { getUserFavoriteIds, removeFromFavorites } from '../services/favoritesService';
@@ -75,6 +75,11 @@ const Dashboard = () => {
   const [counterOfferFor, setCounterOfferFor] = useState(null); // { offer, property } or null
   const [viewOfferFor, setViewOfferFor] = useState(null); // { offer, property } or null
   const [countdownNow, setCountdownNow] = useState(() => Date.now());
+  const [vendors, setVendors] = useState([]);
+  const [vendorForm, setVendorForm] = useState({ name: '', company: '', phone: '', email: '', type: 'other' });
+  const [editingVendorId, setEditingVendorId] = useState(null);
+
+  const location = useLocation();
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -92,6 +97,11 @@ const Dashboard = () => {
       loadDashboardData();
     }
   }, [isAuthenticated, user]);
+
+  useEffect(() => {
+    const tab = new URLSearchParams(location.search).get('tab');
+    if (tab === 'vendor-center') setActiveTab('vendor-center');
+  }, [location.search]);
 
   const loadDashboardData = async () => {
     try {
@@ -164,6 +174,10 @@ const Dashboard = () => {
       // Load transactions (Transaction Manager)
       const tx = await getTransactionsByUser(user.uid).catch(() => []);
       setTransactions(tx);
+
+      // Load vendors (Vendor Center)
+      const v = await getVendorsByUser(user.uid).catch(() => []);
+      setVendors(v);
     } catch (err) {
       setError('Failed to load dashboard data. Please try again.');
       console.error(err);
@@ -361,6 +375,45 @@ const Dashboard = () => {
     } catch (err) {
       console.error(err);
       alert('Failed to save. Please try again.');
+    }
+  };
+
+  const handleVendorSave = async () => {
+    if (!vendorForm.name?.trim()) return;
+    try {
+      if (editingVendorId) {
+        await updateVendor(editingVendorId, vendorForm);
+        setEditingVendorId(null);
+      } else {
+        await createVendor(user.uid, vendorForm);
+      }
+      const v = await getVendorsByUser(user.uid);
+      setVendors(v);
+      setVendorForm({ name: '', company: '', phone: '', email: '', type: 'other' });
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save vendor. Please try again.');
+    }
+  };
+
+  const handleVendorEdit = (v) => {
+    setEditingVendorId(v.id);
+    setVendorForm({ name: v.name || '', company: v.company || '', phone: v.phone || '', email: v.email || '', type: v.type || 'other' });
+  };
+
+  const handleVendorDelete = async (vendorId) => {
+    if (!window.confirm('Delete this vendor? They will be removed from any transactions.')) return;
+    try {
+      await deleteVendor(vendorId);
+      const v = await getVendorsByUser(user.uid);
+      setVendors(v);
+      if (editingVendorId === vendorId) {
+        setEditingVendorId(null);
+        setVendorForm({ name: '', company: '', phone: '', email: '', type: 'other' });
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to delete vendor. Please try again.');
     }
   };
 
@@ -565,6 +618,12 @@ const Dashboard = () => {
             onClick={() => setActiveTab('buying-power')}
           >
             Buying Power
+          </button>
+          <button
+            className={`tab ${activeTab === 'vendor-center' ? 'active' : ''}`}
+            onClick={() => setActiveTab('vendor-center')}
+          >
+            Vendor Center
           </button>
         </div>
 
@@ -1157,6 +1216,88 @@ const Dashboard = () => {
                     </div>
                   );
                 })}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'vendor-center' && (
+            <div className="dashboard-section vendor-center-section">
+              <div className="section-header">
+                <h2>Vendor Center</h2>
+                <p className="form-hint">Manage vendors and contacts for your deals. Assign them to transactions from the deal page.</p>
+              </div>
+              <div className="vendor-center-list">
+                {vendors.map((v) => (
+                  <div key={v.id} className="vendor-center-item">
+                    <div>
+                      <strong>{v.name}</strong>
+                      {v.company && <span> — {v.company}</span>}
+                      <span className="vendor-center-type"> {VENDOR_TYPES.find((t) => t.id === v.type)?.label || v.type}</span>
+                    </div>
+                    <div className="vendor-center-meta">
+                      {v.phone && <a href={`tel:${v.phone}`}>{v.phone}</a>}
+                      {v.phone && v.email && ' · '}
+                      {v.email && <a href={`mailto:${v.email}`}>{v.email}</a>}
+                    </div>
+                    <div className="vendor-center-actions">
+                      <button type="button" className="btn btn-outline btn-small" onClick={() => handleVendorEdit(v)}>Edit</button>
+                      <button type="button" className="btn btn-outline btn-small doc-remove-btn" onClick={() => handleVendorDelete(v.id)}>Delete</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {vendors.length === 0 && (
+                <p className="empty-message">No vendors yet. Add one below.</p>
+              )}
+              <div className="vendor-center-form">
+                <h3>{editingVendorId ? 'Edit vendor' : 'Add vendor'}</h3>
+                <div className="vendor-center-fields">
+                  <input
+                    type="text"
+                    placeholder="Name *"
+                    value={vendorForm.name}
+                    onChange={(e) => setVendorForm((f) => ({ ...f, name: e.target.value }))}
+                    className="buying-power-input"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Company"
+                    value={vendorForm.company}
+                    onChange={(e) => setVendorForm((f) => ({ ...f, company: e.target.value }))}
+                    className="buying-power-input"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Phone"
+                    value={vendorForm.phone}
+                    onChange={(e) => setVendorForm((f) => ({ ...f, phone: e.target.value }))}
+                    className="buying-power-input"
+                  />
+                  <input
+                    type="email"
+                    placeholder="Email"
+                    value={vendorForm.email}
+                    onChange={(e) => setVendorForm((f) => ({ ...f, email: e.target.value }))}
+                    className="buying-power-input"
+                  />
+                  <select
+                    value={vendorForm.type}
+                    onChange={(e) => setVendorForm((f) => ({ ...f, type: e.target.value }))}
+                    className="buying-power-input"
+                  >
+                    {VENDOR_TYPES.map((t) => (
+                      <option key={t.id} value={t.id}>{t.label}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="buying-power-edit-actions">
+                  {editingVendorId && (
+                    <button type="button" className="btn btn-outline" onClick={() => { setEditingVendorId(null); setVendorForm({ name: '', company: '', phone: '', email: '', type: 'other' }); }}>Cancel</button>
+                  )}
+                  <button type="button" className="btn btn-primary" onClick={handleVendorSave} disabled={!vendorForm.name?.trim()}>
+                    {editingVendorId ? 'Save' : 'Add vendor'}
+                  </button>
+                </div>
               </div>
             </div>
           )}

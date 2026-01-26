@@ -225,6 +225,21 @@
   margin-bottom: 6px;
 }
 
+.tm-form-hint {
+  margin: 0 0 16px 0;
+  font-size: 14px;
+  color: #64748b;
+}
+
+.tm-form-hint a {
+  color: #3b82f6;
+  text-decoration: none;
+}
+
+.tm-form-hint a:hover {
+  text-decoration: underline;
+}
+
 .tm-form-group input,
 .tm-form-group select,
 .tm-vendor-select {
