@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getPropertyById, updateProperty, archiveProperty, restoreProperty, deletePropertyPermanently } from '../services/propertyService';
 import { addToFavorites, removeFromFavorites, isFavorited, getFavoriteCountForProperty } from '../services/favoritesService';
+import { getPreListingChecklist, isPreListingChecklistComplete } from '../services/preListingChecklistService';
 import { getListingTierProgress, getListingTierLabel } from '../utils/verificationScores';
 import './PropertyDetail.css';
 
@@ -103,6 +104,26 @@ const PropertyDetail = () => {
   const handleAvailableForSaleToggle = async () => {
     if (!property || !isOwner || availableForSaleUpdating) return;
     const next = !(property.availableForSale !== false);
+    
+    // If turning ON (making available for sale), check pre-listing checklist
+    if (next && user?.uid) {
+      try {
+        const checklist = await getPreListingChecklist(user.uid);
+        if (!isPreListingChecklistComplete(checklist)) {
+          navigate(`/pre-listing-checklist`, { 
+            state: { returnTo: `/property/${property.id}` } 
+          });
+          return;
+        }
+      } catch (err) {
+        console.error('Error checking checklist:', err);
+        navigate(`/pre-listing-checklist`, { 
+          state: { returnTo: `/property/${property.id}` } 
+        });
+        return;
+      }
+    }
+    
     setAvailableForSaleUpdating(true);
     try {
       const updates = {

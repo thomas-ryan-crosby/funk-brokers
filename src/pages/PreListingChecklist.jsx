@@ -396,7 +396,10 @@ const PreListingChecklist = () => {
               key={s.num}
               type="button"
               className={`step-nav-btn ${currentStep === s.num ? 'active' : ''} ${s.data.completed ? 'completed' : ''}`}
-              onClick={() => setCurrentStep(s.num)}
+              onClick={() => {
+                setCurrentStep(s.num);
+                savePreListingChecklist(user.uid, { currentStep: s.num }).catch(console.error);
+              }}
             >
               <span className="step-nav-number">{s.num}</span>
               <span className="step-nav-title">{s.title}</span>
