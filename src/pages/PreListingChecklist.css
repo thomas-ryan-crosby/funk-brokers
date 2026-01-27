@@ -1,0 +1,548 @@
+.pre-listing-checklist-page {
+  min-height: 100vh;
+  background: #f8fafc;
+  padding: 40px 20px;
+}
+
+.pre-listing-checklist-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  background: white;
+  border-radius: 12px;
+  padding: 32px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.checklist-header {
+  margin-bottom: 32px;
+  padding-bottom: 24px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.checklist-header h1 {
+  font-size: 32px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  color: #1e293b;
+}
+
+.checklist-header p {
+  font-size: 16px;
+  color: #64748b;
+  margin: 0 0 16px 0;
+}
+
+.completion-progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.progress-bar {
+  flex: 1;
+  height: 12px;
+  background: #e2e8f0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #10b981);
+  transition: width 0.3s;
+}
+
+.checklist-steps-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 32px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.step-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  font-family: inherit;
+}
+
+.step-nav-btn:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.step-nav-btn.active {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.step-nav-btn.completed {
+  border-color: #10b981;
+}
+
+.step-nav-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  color: #64748b;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.step-nav-btn.active .step-nav-number {
+  background: #3b82f6;
+  color: white;
+}
+
+.step-nav-btn.completed .step-nav-number {
+  background: #10b981;
+  color: white;
+}
+
+.step-nav-title {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.step-nav-check {
+  color: #10b981;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.checklist-step-content {
+  min-height: 400px;
+}
+
+.checklist-step {
+  padding: 24px 0;
+}
+
+.checklist-step h2 {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  color: #1e293b;
+}
+
+.step-description {
+  font-size: 15px;
+  color: #64748b;
+  margin: 0 0 24px 0;
+  line-height: 1.6;
+}
+
+.step-questionnaire,
+.step-disclosures,
+.step-prep-checklist,
+.step-marketing-checklist,
+.step-logistics-checklist {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 20px;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.question-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.question-group label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.question-group select,
+.question-group input[type="text"],
+.question-group textarea {
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.question-group select:focus,
+.question-group input:focus,
+.question-group textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.question-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.step-questionnaire h3,
+.step-deed-upload h3,
+.step-vendor-assignment h3,
+.step-file-uploads h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #475569;
+  margin: 0 0 12px 0;
+}
+
+.step-deed-upload,
+.step-vendor-assignment {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.step-deed-upload > div,
+.step-vendor-assignment > div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.step-deed-upload a {
+  color: #3b82f6;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.step-deed-upload a:hover {
+  text-decoration: underline;
+}
+
+.step-vendor-assignment select {
+  width: 100%;
+  max-width: 400px;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.step-disclosures label,
+.step-prep-checklist label,
+.step-marketing-checklist label,
+.step-logistics-checklist label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  color: #1e293b;
+  cursor: pointer;
+}
+
+.step-disclosures input[type="checkbox"],
+.step-prep-checklist input[type="checkbox"],
+.step-marketing-checklist input[type="checkbox"],
+.step-logistics-checklist input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.step-support-option {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+}
+
+.step-support-option label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #92400e;
+  cursor: pointer;
+}
+
+.step-support-requested {
+  padding: 16px;
+  background: #d1fae5;
+  border: 1px solid #a7f3d0;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.step-support-requested p {
+  margin: 0 0 12px 0;
+  color: #065f46;
+  font-size: 15px;
+}
+
+.step-support-requested label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #065f46;
+  cursor: pointer;
+}
+
+.step-certification {
+  margin: 24px 0;
+  padding: 16px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.step-certification label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  color: #1e293b;
+  cursor: pointer;
+}
+
+.step-certification input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.step-certification strong {
+  font-weight: 600;
+}
+
+.step-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.step-file-uploads {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: #f8fafc;
+  border-radius: 8px;
+}
+
+.step-file-uploads ul {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.step-file-uploads li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+
+.step-file-uploads li a {
+  color: #3b82f6;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.step-file-uploads li a:hover {
+  text-decoration: underline;
+}
+
+.photo-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.photo-preview {
+  position: relative;
+  width: 100%;
+  padding-top: 100%;
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+}
+
+.photo-preview img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.remove-photo {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(220, 38, 38, 0.9);
+  color: white;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.remove-photo:hover {
+  background: rgba(220, 38, 38, 1);
+}
+
+.checklist-complete {
+  margin-top: 32px;
+  padding: 24px;
+  background: #d1fae5;
+  border: 2px solid #10b981;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.checklist-complete h2 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #065f46;
+  margin: 0 0 8px 0;
+}
+
+.checklist-complete p {
+  font-size: 16px;
+  color: #065f46;
+  margin: 0 0 20px 0;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.btn-primary {
+  background: #3b82f6;
+  color: #fff;
+  border-color: #3b82f6;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+.btn-outline {
+  background: transparent;
+  color: #64748b;
+  border-color: #e2e8f0;
+}
+
+.btn-outline:hover:not(:disabled) {
+  background: #f8fafc;
+  color: #3b82f6;
+  border-color: #cbd5e1;
+}
+
+.btn-small {
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.btn-large {
+  padding: 14px 28px;
+  font-size: 16px;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.loading-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: #64748b;
+  font-size: 18px;
+}
+
+.form-hint {
+  font-size: 14px;
+  color: #64748b;
+  margin: 8px 0 0 0;
+}
+
+.form-hint a {
+  color: #3b82f6;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.form-hint a:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .pre-listing-checklist-container {
+    padding: 20px;
+  }
+
+  .checklist-steps-nav {
+    padding: 12px;
+  }
+
+  .step-nav-btn {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .step-actions {
+    flex-direction: column;
+  }
+
+  .step-actions .btn {
+    width: 100%;
+  }
+}

@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { createProperty } from '../services/propertyService';
 import { uploadFile, uploadMultipleFiles } from '../services/storageService';
+import { getPreListingChecklist, isPreListingChecklistComplete } from '../services/preListingChecklistService';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import './ListProperty.css';
 
@@ -38,13 +39,35 @@ const ListProperty = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [checkingChecklist, setCheckingChecklist] = useState(true);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       // Redirect to sign up if not authenticated
       navigate('/sign-up?redirect=/list-property');
+      return;
     }
-  }, [isAuthenticated, authLoading, navigate]);
+    if (isAuthenticated && user?.uid) {
+      checkChecklist();
+    }
+  }, [isAuthenticated, authLoading, navigate, user?.uid]);
+
+  const checkChecklist = async () => {
+    if (!user?.uid) return;
+    try {
+      const checklist = await getPreListingChecklist(user.uid);
+      if (!isPreListingChecklistComplete(checklist)) {
+        navigate('/pre-listing-checklist', { state: { returnTo: '/list-property' } });
+        return;
+      }
+    } catch (err) {
+      console.error('Error checking checklist:', err);
+      navigate('/pre-listing-checklist', { state: { returnTo: '/list-property' } });
+      return;
+    } finally {
+      setCheckingChecklist(false);
+    }
+  };
 
   // Unlock "Create Listing" after a short delay to avoid double-click on "Next" submitting before photos
   useEffect(() => {
@@ -248,8 +271,8 @@ const ListProperty = () => {
     }
   };
 
-  // Show loading while checking auth
-  if (authLoading) {
+  // Show loading while checking auth or checklist
+  if (authLoading || checkingChecklist) {
     return (
       <div className="list-property-page">
         <div className="loading-state">Loading...</div>

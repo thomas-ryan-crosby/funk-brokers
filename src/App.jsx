@@ -18,6 +18,7 @@ import GetVerified from './pages/GetVerified';
 import VerifyBuyer from './pages/VerifyBuyer';
 import TransactionManager from './pages/TransactionManager';
 import Messages from './pages/Messages';
+import PreListingChecklist from './pages/PreListingChecklist';
 import { logout } from './services/authService';
 import './App.css';
 
@@ -78,6 +79,7 @@ function AppContent() {
             <Route path="/how-selling-works" element={<HowSellingWorks />} />
             <Route path="/how-buying-works" element={<HowBuyingWorks />} />
             <Route path="/begin-sale" element={<BeginSale />} />
+            <Route path="/pre-listing-checklist" element={<PreListingChecklist />} />
             <Route path="/create-search" element={<CreateSearch />} />
           </Routes>
         </main>
