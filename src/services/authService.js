@@ -34,6 +34,7 @@ export const signUp = async (email, password, userData = {}) => {
       name: userData.name || '',
       phone: userData.phone || '',
       role: userData.role || 'seller', // seller, buyer, or both
+      publicUsername: userData.publicUsername || null, // Public-facing display name
       createdAt: new Date(),
       updatedAt: new Date(),
     };

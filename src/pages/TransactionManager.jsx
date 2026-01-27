@@ -197,13 +197,19 @@ const TransactionManager = () => {
                 <span className="tm-vendor-role">{label}</span>
                 {vendor ? (
                   <div className="tm-vendor-assigned">
-                    <span className="tm-vendor-name">{vendor.name}</span>
-                    {vendor.company && <span className="tm-vendor-company">{vendor.company}</span>}
-                    <span className="tm-vendor-contact">
-                      {vendor.phone && <a href={`tel:${vendor.phone}`}>{vendor.phone}</a>}
-                      {vendor.phone && vendor.email && ' · '}
-                      {vendor.email && <a href={`mailto:${vendor.email}`}>{vendor.email}</a>}
-                    </span>
+                    <span className="tm-vendor-name">{vendor.vendorName || 'Unnamed vendor'}</span>
+                    {vendor.contacts && vendor.contacts.length > 0 && (
+                      <span className="tm-vendor-contacts">
+                        {vendor.contacts.map((c, idx) => (
+                          <span key={c.id || idx}>
+                            {idx > 0 && ' · '}
+                            <strong>{c.name}</strong>
+                            {c.phone && <a href={`tel:${c.phone}`}> {c.phone}</a>}
+                            {c.email && <a href={`mailto:${c.email}`}> {c.email}</a>}
+                          </span>
+                        ))}
+                      </span>
+                    )}
                     <div className="tm-vendor-actions">
                       <button type="button" className="btn-link" onClick={() => openAssignModal(role)}>Change</button>
                       <button type="button" className="btn-link" onClick={() => handleRemoveVendor(role)}>Remove</button>
@@ -273,7 +279,7 @@ const TransactionManager = () => {
                 >
                   <option value="">— Choose —</option>
                   {vendors.map((v) => (
-                    <option key={v.id} value={v.id}>{v.name}{v.company ? ` (${v.company})` : ''}</option>
+                    <option key={v.id} value={v.id}>{v.vendorName || 'Unnamed vendor'}</option>
                   ))}
                 </select>
               </div>

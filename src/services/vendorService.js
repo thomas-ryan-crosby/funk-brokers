@@ -24,7 +24,7 @@ export const VENDOR_TYPES = [
 /**
  * Create a vendor for a user.
  * @param {string} userId
- * @param {object} data - { name, company?, phone?, email?, type }
+ * @param {object} data - { vendorName, type, contacts?: [{ name, phone?, email? }] }
  * @returns {Promise<string>} vendor id
  */
 export const createVendor = async (userId, data) => {
@@ -32,11 +32,9 @@ export const createVendor = async (userId, data) => {
   const now = new Date();
   const ref = await addDoc(collection(db, VENDORS_COLLECTION), {
     userId,
-    name: data.name || '',
-    company: data.company || null,
-    phone: data.phone || null,
-    email: data.email || null,
+    vendorName: data.vendorName || '',
     type: data.type || 'other',
+    contacts: data.contacts || [],
     createdAt: now,
     updatedAt: now,
   });
@@ -55,7 +53,7 @@ export const getVendorsByUser = async (userId) => {
   const snap = await getDocs(q);
   const list = [];
   snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
-  list.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  list.sort((a, b) => (a.vendorName || '').localeCompare(b.vendorName || ''));
   return list;
 };
 
@@ -77,10 +75,44 @@ export const updateVendor = async (vendorId, data) => {
   if (!vendorId) throw new Error('vendorId is required');
   const ref = doc(db, VENDORS_COLLECTION, vendorId);
   const payload = { updatedAt: new Date() };
-  ['name', 'company', 'phone', 'email', 'type'].forEach((k) => {
+  ['vendorName', 'type', 'contacts'].forEach((k) => {
     if (data[k] !== undefined) payload[k] = data[k];
   });
   await updateDoc(ref, payload);
+};
+
+/**
+ * Add a contact to a vendor.
+ */
+export const addVendorContact = async (vendorId, contact) => {
+  if (!vendorId) throw new Error('vendorId is required');
+  const v = await getVendorById(vendorId);
+  if (!v) throw new Error('Vendor not found');
+  const contacts = v.contacts || [];
+  contacts.push({ ...contact, id: Date.now().toString() });
+  await updateVendor(vendorId, { contacts });
+};
+
+/**
+ * Update a contact in a vendor.
+ */
+export const updateVendorContact = async (vendorId, contactId, contact) => {
+  if (!vendorId) throw new Error('vendorId is required');
+  const v = await getVendorById(vendorId);
+  if (!v) throw new Error('Vendor not found');
+  const contacts = (v.contacts || []).map((c) => (c.id === contactId ? { ...c, ...contact } : c));
+  await updateVendor(vendorId, { contacts });
+};
+
+/**
+ * Remove a contact from a vendor.
+ */
+export const removeVendorContact = async (vendorId, contactId) => {
+  if (!vendorId) throw new Error('vendorId is required');
+  const v = await getVendorById(vendorId);
+  if (!v) throw new Error('Vendor not found');
+  const contacts = (v.contacts || []).filter((c) => c.id !== contactId);
+  await updateVendor(vendorId, { contacts });
 };
 
 /**

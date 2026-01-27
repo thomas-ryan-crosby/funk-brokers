@@ -675,11 +675,7 @@
 }
 
 .vendor-center-item {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 16px;
-  padding: 14px 0;
+  padding: 16px 0;
   border-bottom: 1px solid #e2e8f0;
 }
 
@@ -687,29 +683,111 @@
   border-bottom: none;
 }
 
+.vendor-center-item-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.vendor-center-item-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  flex: 1;
+  min-width: 0;
+}
+
+.vendor-center-name {
+  font-size: 16px;
+  color: #1e293b;
+}
+
 .vendor-center-type {
   font-size: 12px;
   color: #64748b;
+  padding: 2px 8px;
+  background: #f1f5f9;
+  border-radius: 4px;
 }
 
-.vendor-center-meta {
-  font-size: 14px;
+.vendor-center-contact-count {
+  font-size: 13px;
   color: #64748b;
 }
 
-.vendor-center-meta a {
+.vendor-center-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.vendor-center-contacts {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.vendor-center-contacts h4 {
+  font-size: 14px;
+  font-weight: 600;
+  color: #475569;
+  margin: 0 0 12px 0;
+}
+
+.vendor-center-contacts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-bottom: 16px;
+}
+
+.vendor-center-contact-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.vendor-center-contact-item:last-child {
+  border-bottom: none;
+}
+
+.vendor-center-contact-meta {
+  font-size: 13px;
+  color: #64748b;
+  margin-left: 8px;
+}
+
+.vendor-center-contact-meta a {
   color: #3b82f6;
   text-decoration: none;
 }
 
-.vendor-center-meta a:hover {
+.vendor-center-contact-meta a:hover {
   text-decoration: underline;
 }
 
-.vendor-center-actions {
-  margin-left: auto;
+.vendor-center-contact-actions {
   display: flex;
   gap: 8px;
+  flex-shrink: 0;
+}
+
+.vendor-center-contact-form {
+  padding-top: 12px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.vendor-center-contact-form h5 {
+  font-size: 13px;
+  font-weight: 600;
+  color: #475569;
+  margin: 0 0 8px 0;
 }
 
 .vendor-center-form {

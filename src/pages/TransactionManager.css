@@ -120,24 +120,29 @@
 .tm-vendor-name {
   font-weight: 500;
   color: #1e293b;
+  font-size: 15px;
 }
 
-.tm-vendor-company {
+.tm-vendor-contacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
   font-size: 13px;
   color: #64748b;
+  margin-top: 4px;
 }
 
-.tm-vendor-contact {
-  font-size: 13px;
-  color: #64748b;
+.tm-vendor-contacts strong {
+  color: #1e293b;
+  font-weight: 500;
 }
 
-.tm-vendor-contact a {
+.tm-vendor-contacts a {
   color: #3b82f6;
   text-decoration: none;
 }
 
-.tm-vendor-contact a:hover {
+.tm-vendor-contacts a:hover {
   text-decoration: underline;
 }
 

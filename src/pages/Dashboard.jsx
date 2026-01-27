@@ -7,7 +7,8 @@ import { getAllProperties } from '../services/propertyService';
 import { getSavedSearches, removeSavedSearch, getPurchaseProfile, setPurchaseProfile } from '../services/profileService';
 import { getOffersByProperty, getOffersByBuyer, acceptOffer, rejectOffer, withdrawOffer, counterOffer } from '../services/offerService';
 import { getTransactionsByUser, getTransactionByOfferId, createTransaction } from '../services/transactionService';
-import { getVendorsByUser, createVendor, updateVendor, deleteVendor, VENDOR_TYPES } from '../services/vendorService';
+import { getVendorsByUser, createVendor, updateVendor, deleteVendor, addVendorContact, updateVendorContact, removeVendorContact, VENDOR_TYPES } from '../services/vendorService';
+import { updateUserProfile, getUserProfile } from '../services/authService';
 import { uploadFile } from '../services/storageService';
 import { deleteField } from 'firebase/firestore';
 import { getVerifiedBuyerScore, getListingTier, getListingTierLabel, meetsVerifiedBuyerCriteria } from '../utils/verificationScores';
@@ -67,6 +68,8 @@ const Dashboard = () => {
   const [buyingPowerForm, setBuyingPowerForm] = useState('');
   const [editingBuyerInfo, setEditingBuyerInfo] = useState(false);
   const [buyerInfoForm, setBuyerInfoForm] = useState({ name: '', email: '' });
+  const [editingPublicUsername, setEditingPublicUsername] = useState(false);
+  const [publicUsernameForm, setPublicUsernameForm] = useState('');
   const [uploadingDoc, setUploadingDoc] = useState(null);
   const [offersByProperty, setOffersByProperty] = useState({});
   const [sentOffers, setSentOffers] = useState([]);
@@ -77,8 +80,11 @@ const Dashboard = () => {
   const [viewOfferFor, setViewOfferFor] = useState(null); // { offer, property } or null
   const [countdownNow, setCountdownNow] = useState(() => Date.now());
   const [vendors, setVendors] = useState([]);
-  const [vendorForm, setVendorForm] = useState({ name: '', company: '', phone: '', email: '', type: 'other' });
+  const [vendorForm, setVendorForm] = useState({ vendorName: '', type: 'other' });
   const [editingVendorId, setEditingVendorId] = useState(null);
+  const [editingContactId, setEditingContactId] = useState(null);
+  const [contactForm, setContactForm] = useState({ name: '', phone: '', email: '' });
+  const [expandedVendorId, setExpandedVendorId] = useState(null);
 
   const location = useLocation();
 
@@ -379,18 +385,35 @@ const Dashboard = () => {
     }
   };
 
+  const handleSavePublicUsername = async () => {
+    const username = (publicUsernameForm || '').trim() || null;
+    try {
+      await updateUserProfile(user.uid, { publicUsername: username });
+      // Reload user profile
+      const profile = await getUserProfile(user.uid);
+      // Update AuthContext would require a refresh, but we can at least update local state
+      // For now, just show success - the profile will update on next page load
+      setEditingPublicUsername(false);
+      setPublicUsernameForm('');
+      alert('Public username saved. Changes will appear after page refresh.');
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save. Please try again.');
+    }
+  };
+
   const handleVendorSave = async () => {
-    if (!vendorForm.name?.trim()) return;
+    if (!vendorForm.vendorName?.trim()) return;
     try {
       if (editingVendorId) {
         await updateVendor(editingVendorId, vendorForm);
         setEditingVendorId(null);
       } else {
-        await createVendor(user.uid, vendorForm);
+        await createVendor(user.uid, { ...vendorForm, contacts: [] });
       }
       const v = await getVendorsByUser(user.uid);
       setVendors(v);
-      setVendorForm({ name: '', company: '', phone: '', email: '', type: 'other' });
+      setVendorForm({ vendorName: '', type: 'other' });
     } catch (err) {
       console.error(err);
       alert('Failed to save vendor. Please try again.');
@@ -399,7 +422,7 @@ const Dashboard = () => {
 
   const handleVendorEdit = (v) => {
     setEditingVendorId(v.id);
-    setVendorForm({ name: v.name || '', company: v.company || '', phone: v.phone || '', email: v.email || '', type: v.type || 'other' });
+    setVendorForm({ vendorName: v.vendorName || '', type: v.type || 'other' });
   };
 
   const handleVendorDelete = async (vendorId) => {
@@ -410,11 +433,54 @@ const Dashboard = () => {
       setVendors(v);
       if (editingVendorId === vendorId) {
         setEditingVendorId(null);
-        setVendorForm({ name: '', company: '', phone: '', email: '', type: 'other' });
+        setVendorForm({ vendorName: '', type: 'other' });
+      }
+      if (expandedVendorId === vendorId) {
+        setExpandedVendorId(null);
       }
     } catch (err) {
       console.error(err);
       alert('Failed to delete vendor. Please try again.');
+    }
+  };
+
+  const handleContactSave = async (vendorId) => {
+    if (!contactForm.name?.trim()) return;
+    try {
+      if (editingContactId) {
+        await updateVendorContact(vendorId, editingContactId, contactForm);
+        setEditingContactId(null);
+      } else {
+        await addVendorContact(vendorId, contactForm);
+      }
+      const v = await getVendorsByUser(user.uid);
+      setVendors(v);
+      setContactForm({ name: '', phone: '', email: '' });
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save contact. Please try again.');
+    }
+  };
+
+  const handleContactEdit = (vendorId, contact) => {
+    setEditingContactId(contact.id);
+    setContactForm({ name: contact.name || '', phone: contact.phone || '', email: contact.email || '' });
+    setExpandedVendorId(vendorId);
+  };
+
+  const handleContactDelete = async (vendorId, contactId) => {
+    if (!window.confirm('Delete this contact?')) return;
+    try {
+      await removeVendorContact(vendorId, contactId);
+      const v = await getVendorsByUser(user.uid);
+      setVendors(v);
+      if (editingContactId === contactId) {
+        setEditingContactId(null);
+        setContactForm({ name: '', phone: '', email: '' });
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Failed to delete contact. Please try again.');
     }
   };
 
@@ -1175,6 +1241,46 @@ const Dashboard = () => {
                 )}
               </div>
 
+              <div className="buying-power-card buying-power-info-card">
+                <h3>Public username</h3>
+                <p className="form-hint" style={{ marginTop: 0, marginBottom: '12px' }}>A public-facing display name shown to other users. Leave empty to use your real name.</p>
+                {editingPublicUsername ? (
+                  <div className="buyer-info-edit">
+                    <input
+                      type="text"
+                      placeholder="Public username (optional)"
+                      value={publicUsernameForm}
+                      onChange={(e) => setPublicUsernameForm(e.target.value)}
+                      className="buying-power-input"
+                    />
+                    <div className="buying-power-edit-actions">
+                      <button type="button" className="btn btn-primary" onClick={handleSavePublicUsername}>
+                        Save
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-outline"
+                        onClick={() => { setEditingPublicUsername(false); setPublicUsernameForm(''); }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="buyer-info-display">
+                    <div className="buyer-info-fields">
+                      <span className="buyer-info-label">Public username</span>
+                      <span className="buyer-info-value">{userProfile?.publicUsername || '—'}</span>
+                    </div>
+                    <div className="buying-power-actions">
+                      <button type="button" className="btn btn-outline btn-small" onClick={() => { setEditingPublicUsername(true); setPublicUsernameForm(userProfile?.publicUsername || ''); }}>
+                        Edit
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="buying-power-docs">
                 <h3>Supporting documents</h3>
                 {[
@@ -1230,20 +1336,85 @@ const Dashboard = () => {
               <div className="vendor-center-list">
                 {vendors.map((v) => (
                   <div key={v.id} className="vendor-center-item">
-                    <div>
-                      <strong>{v.name}</strong>
-                      {v.company && <span> — {v.company}</span>}
-                      <span className="vendor-center-type"> {VENDOR_TYPES.find((t) => t.id === v.type)?.label || v.type}</span>
+                    <div className="vendor-center-item-header">
+                      <div className="vendor-center-item-main">
+                        <strong className="vendor-center-name">{v.vendorName || 'Unnamed vendor'}</strong>
+                        <span className="vendor-center-type"> {VENDOR_TYPES.find((t) => t.id === v.type)?.label || v.type}</span>
+                        {v.contacts && v.contacts.length > 0 && (
+                          <span className="vendor-center-contact-count">({v.contacts.length} {v.contacts.length === 1 ? 'contact' : 'contacts'})</span>
+                        )}
+                      </div>
+                      <div className="vendor-center-actions">
+                        <button type="button" className="btn btn-outline btn-small" onClick={() => setExpandedVendorId(expandedVendorId === v.id ? null : v.id)}>
+                          {expandedVendorId === v.id ? 'Collapse' : 'View contacts'}
+                        </button>
+                        <button type="button" className="btn btn-outline btn-small" onClick={() => handleVendorEdit(v)}>Edit</button>
+                        <button type="button" className="btn btn-outline btn-small doc-remove-btn" onClick={() => handleVendorDelete(v.id)}>Delete</button>
+                      </div>
                     </div>
-                    <div className="vendor-center-meta">
-                      {v.phone && <a href={`tel:${v.phone}`}>{v.phone}</a>}
-                      {v.phone && v.email && ' · '}
-                      {v.email && <a href={`mailto:${v.email}`}>{v.email}</a>}
-                    </div>
-                    <div className="vendor-center-actions">
-                      <button type="button" className="btn btn-outline btn-small" onClick={() => handleVendorEdit(v)}>Edit</button>
-                      <button type="button" className="btn btn-outline btn-small doc-remove-btn" onClick={() => handleVendorDelete(v.id)}>Delete</button>
-                    </div>
+                    {expandedVendorId === v.id && (
+                      <div className="vendor-center-contacts">
+                        <h4>Contacts</h4>
+                        {v.contacts && v.contacts.length > 0 ? (
+                          <div className="vendor-center-contacts-list">
+                            {v.contacts.map((contact) => (
+                              <div key={contact.id} className="vendor-center-contact-item">
+                                <div>
+                                  <strong>{contact.name}</strong>
+                                  {(contact.phone || contact.email) && (
+                                    <span className="vendor-center-contact-meta">
+                                      {contact.phone && <a href={`tel:${contact.phone}`}>{contact.phone}</a>}
+                                      {contact.phone && contact.email && ' · '}
+                                      {contact.email && <a href={`mailto:${contact.email}`}>{contact.email}</a>}
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="vendor-center-contact-actions">
+                                  <button type="button" className="btn btn-outline btn-small" onClick={() => handleContactEdit(v.id, contact)}>Edit</button>
+                                  <button type="button" className="btn btn-outline btn-small doc-remove-btn" onClick={() => handleContactDelete(v.id, contact.id)}>Delete</button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="empty-message">No contacts yet. Add one below.</p>
+                        )}
+                        <div className="vendor-center-contact-form">
+                          <h5>{editingContactId ? 'Edit contact' : 'Add contact'}</h5>
+                          <div className="vendor-center-fields">
+                            <input
+                              type="text"
+                              placeholder="Name *"
+                              value={contactForm.name}
+                              onChange={(e) => setContactForm((f) => ({ ...f, name: e.target.value }))}
+                              className="buying-power-input"
+                            />
+                            <input
+                              type="text"
+                              placeholder="Phone"
+                              value={contactForm.phone}
+                              onChange={(e) => setContactForm((f) => ({ ...f, phone: e.target.value }))}
+                              className="buying-power-input"
+                            />
+                            <input
+                              type="email"
+                              placeholder="Email"
+                              value={contactForm.email}
+                              onChange={(e) => setContactForm((f) => ({ ...f, email: e.target.value }))}
+                              className="buying-power-input"
+                            />
+                          </div>
+                          <div className="buying-power-edit-actions">
+                            {editingContactId && (
+                              <button type="button" className="btn btn-outline" onClick={() => { setEditingContactId(null); setContactForm({ name: '', phone: '', email: '' }); }}>Cancel</button>
+                            )}
+                            <button type="button" className="btn btn-primary" onClick={() => handleContactSave(v.id)} disabled={!contactForm.name?.trim()}>
+                              {editingContactId ? 'Save' : 'Add contact'}
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -1255,30 +1426,9 @@ const Dashboard = () => {
                 <div className="vendor-center-fields">
                   <input
                     type="text"
-                    placeholder="Name *"
-                    value={vendorForm.name}
-                    onChange={(e) => setVendorForm((f) => ({ ...f, name: e.target.value }))}
-                    className="buying-power-input"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Company"
-                    value={vendorForm.company}
-                    onChange={(e) => setVendorForm((f) => ({ ...f, company: e.target.value }))}
-                    className="buying-power-input"
-                  />
-                  <input
-                    type="text"
-                    placeholder="Phone"
-                    value={vendorForm.phone}
-                    onChange={(e) => setVendorForm((f) => ({ ...f, phone: e.target.value }))}
-                    className="buying-power-input"
-                  />
-                  <input
-                    type="email"
-                    placeholder="Email"
-                    value={vendorForm.email}
-                    onChange={(e) => setVendorForm((f) => ({ ...f, email: e.target.value }))}
+                    placeholder="Vendor name *"
+                    value={vendorForm.vendorName}
+                    onChange={(e) => setVendorForm((f) => ({ ...f, vendorName: e.target.value }))}
                     className="buying-power-input"
                   />
                   <select
@@ -1293,9 +1443,9 @@ const Dashboard = () => {
                 </div>
                 <div className="buying-power-edit-actions">
                   {editingVendorId && (
-                    <button type="button" className="btn btn-outline" onClick={() => { setEditingVendorId(null); setVendorForm({ name: '', company: '', phone: '', email: '', type: 'other' }); }}>Cancel</button>
+                    <button type="button" className="btn btn-outline" onClick={() => { setEditingVendorId(null); setVendorForm({ vendorName: '', type: 'other' }); }}>Cancel</button>
                   )}
-                  <button type="button" className="btn btn-primary" onClick={handleVendorSave} disabled={!vendorForm.name?.trim()}>
+                  <button type="button" className="btn btn-primary" onClick={handleVendorSave} disabled={!vendorForm.vendorName?.trim()}>
                     {editingVendorId ? 'Save' : 'Add vendor'}
                   </button>
                 </div>
