@@ -7,6 +7,7 @@ import { getAllProperties } from '../services/propertyService';
 import { getSavedSearches, removeSavedSearch, getPurchaseProfile, setPurchaseProfile } from '../services/profileService';
 import { getOffersByProperty, getOffersByBuyer, acceptOffer, rejectOffer, withdrawOffer, counterOffer } from '../services/offerService';
 import { getTransactionsByUser, getTransactionByOfferId, createTransaction } from '../services/transactionService';
+import { getVendorsByUser, createVendor, updateVendor, deleteVendor, VENDOR_TYPES } from '../services/vendorService';
 import { uploadFile } from '../services/storageService';
 import { deleteField } from 'firebase/firestore';
 import { getVerifiedBuyerScore, getListingTier, getListingTierLabel, meetsVerifiedBuyerCriteria } from '../utils/verificationScores';
