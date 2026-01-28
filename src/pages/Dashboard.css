@@ -1046,31 +1046,32 @@
 }
 
 .vendor-table-expanded-content {
-  padding: 24px;
+  padding: 32px;
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 24px;
 }
 
 .vendor-table-details-section {
   background: white;
-  border-radius: 8px;
-  padding: 20px;
+  border-radius: 12px;
+  padding: 24px;
   border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .vendor-table-details-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
   padding-bottom: 16px;
   border-bottom: 2px solid #e2e8f0;
 }
 
 .vendor-table-details-header h4 {
   font-size: 18px;
-  font-weight: 600;
+  font-weight: 700;
   color: #1e293b;
   margin: 0;
 }
@@ -1078,13 +1079,15 @@
 .vendor-table-details-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
+  gap: 24px 32px;
+  align-items: start;
 }
 
 .vendor-table-detail-item {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
+  min-height: 60px;
 }
 
 .vendor-table-detail-item--full {
@@ -1092,22 +1095,29 @@
 }
 
 .vendor-table-detail-item label {
-  font-size: 13px;
-  font-weight: 600;
+  font-size: 12px;
+  font-weight: 700;
   color: #64748b;
   text-transform: uppercase;
   letter-spacing: 0.5px;
+  margin: 0;
+  line-height: 1.2;
 }
 
 .vendor-table-detail-item > div {
   font-size: 15px;
   color: #1e293b;
+  line-height: 1.5;
+  min-height: 22px;
+  display: flex;
+  align-items: center;
 }
 
 .vendor-table-link {
   color: #3b82f6;
   text-decoration: none;
   transition: color 0.2s;
+  display: inline-block;
 }
 
 .vendor-table-link:hover {
@@ -1117,18 +1127,22 @@
 
 .vendor-table-notes {
   background: #f8fafc;
-  padding: 12px;
-  border-radius: 6px;
+  padding: 12px 16px;
+  border-radius: 8px;
   border: 1px solid #e2e8f0;
   white-space: pre-wrap;
-  line-height: 1.5;
+  line-height: 1.6;
+  font-size: 14px;
+  color: #475569;
+  min-height: 60px;
 }
 
 .vendor-table-contacts-section {
   background: white;
-  border-radius: 8px;
-  padding: 20px;
+  border-radius: 12px;
+  padding: 24px;
   border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .vendor-table-contacts-expanded {
@@ -1140,12 +1154,14 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e2e8f0;
 }
 
 .vendor-table-contacts-header h4 {
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 700;
   color: #1e293b;
   margin: 0;
 }
