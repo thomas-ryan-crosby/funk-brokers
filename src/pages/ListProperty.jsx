@@ -416,11 +416,17 @@ const ListProperty = () => {
                     value={addressInputValue}
                     onAddressChange={(v) => {
                       setAddressInputValue(v);
-                      if (!v.trim()) setFormData((prev) => ({ ...prev, address: '', city: '', state: '', zipCode: '', latitude: undefined, longitude: undefined }));
+                      if (!v.trim()) {
+                        const updated = { ...formData, address: '', city: '', state: '', zipCode: '', latitude: undefined, longitude: undefined };
+                        setFormData(updated);
+                        saveProgressDebounced(updated);
+                      }
                     }}
                     onAddressSelect={(obj) => {
-                      setFormData((prev) => ({ ...prev, ...obj }));
+                      const updated = { ...formData, ...obj };
+                      setFormData(updated);
                       setAddressInputValue([obj.address, obj.city, obj.state, obj.zipCode].filter(Boolean).join(', '));
+                      saveProgressDebounced(updated);
                     }}
                     placeholder="Select an address from the list (start typing to search)"
                     required
