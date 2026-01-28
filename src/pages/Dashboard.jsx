@@ -1416,133 +1416,159 @@ const Dashboard = () => {
                   )}
                 </div>
               ) : (
-                <div className="vendor-center-grid">
-                  {filteredVendors.map((v) => (
-                    <div key={v.id} className="vendor-card">
-                      <div className="vendor-card-header">
-                        <div className="vendor-card-title-section">
-                          <h3 className="vendor-card-name">{v.vendorName || 'Unnamed vendor'}</h3>
-                          <span className="vendor-card-type-badge vendor-card-type-badge--{v.type}">
-                            {VENDOR_TYPES.find((t) => t.id === v.type)?.label || v.type}
-                          </span>
-                        </div>
-                        <div className="vendor-card-actions">
-                          <button
-                            type="button"
-                            className="vendor-card-action-btn"
-                            onClick={() => setExpandedVendorId(expandedVendorId === v.id ? null : v.id)}
-                            title={expandedVendorId === v.id ? 'Collapse' : 'View contacts'}
-                          >
-                            {expandedVendorId === v.id ? '▼' : '▶'}
-                          </button>
-                          <button
-                            type="button"
-                            className="vendor-card-action-btn"
-                            onClick={() => handleVendorEdit(v)}
-                            title="Edit vendor"
-                          >
-                            ✏️
-                          </button>
-                          <button
-                            type="button"
-                            className="vendor-card-action-btn vendor-card-action-btn--danger"
-                            onClick={() => handleVendorDelete(v.id)}
-                            title="Delete vendor"
-                          >
-                            🗑️
-                          </button>
-                        </div>
-                      </div>
-
-                      <div className="vendor-card-contacts-summary">
-                        <span className="vendor-card-contacts-count">
-                          {v.contacts && v.contacts.length > 0 ? (
-                            <>
-                              {v.contacts.length} {v.contacts.length === 1 ? 'contact' : 'contacts'}
-                            </>
-                          ) : (
-                            'No contacts'
-                          )}
-                        </span>
-                        {expandedVendorId !== v.id && v.contacts && v.contacts.length > 0 && (
-                          <div className="vendor-card-contacts-preview">
-                            {v.contacts.slice(0, 2).map((c) => (
-                              <span key={c.id} className="vendor-card-contact-preview">{c.name}</span>
-                            ))}
-                            {v.contacts.length > 2 && <span className="vendor-card-contact-preview">+{v.contacts.length - 2} more</span>}
-                          </div>
-                        )}
-                      </div>
-
-                      {expandedVendorId === v.id && (
-                        <div className="vendor-card-contacts-expanded">
-                          <div className="vendor-card-contacts-header">
-                            <h4>Contacts</h4>
-                            <button
-                              type="button"
-                              className="btn btn-outline btn-small"
-                              onClick={() => handleNewContact(v.id)}
-                            >
-                              + Add Contact
-                            </button>
-                          </div>
-                          {v.contacts && v.contacts.length > 0 ? (
-                            <div className="vendor-card-contacts-list">
-                              {v.contacts.map((contact) => (
-                                <div key={contact.id} className="vendor-card-contact-item">
-                                  <div className="vendor-card-contact-info">
-                                    <div className="vendor-card-contact-name">{contact.name}</div>
-                                    <div className="vendor-card-contact-details">
-                                      {contact.phone && (
-                                        <a href={`tel:${contact.phone}`} className="vendor-card-contact-link">
-                                          📞 {contact.phone}
-                                        </a>
-                                      )}
-                                      {contact.phone && contact.email && <span className="vendor-card-contact-separator">·</span>}
-                                      {contact.email && (
-                                        <a href={`mailto:${contact.email}`} className="vendor-card-contact-link">
-                                          ✉️ {contact.email}
-                                        </a>
-                                      )}
-                                    </div>
-                                  </div>
-                                  <div className="vendor-card-contact-actions">
-                                    <button
-                                      type="button"
-                                      className="vendor-card-contact-action"
-                                      onClick={() => handleEditContact(v.id, contact)}
-                                      title="Edit contact"
-                                    >
-                                      ✏️
-                                    </button>
-                                    <button
-                                      type="button"
-                                      className="vendor-card-contact-action vendor-card-contact-action--danger"
-                                      onClick={() => handleContactDelete(v.id, contact.id)}
-                                      title="Delete contact"
-                                    >
-                                      🗑️
-                                    </button>
-                                  </div>
+                <div className="vendor-center-table-wrapper">
+                  <table className="vendor-center-table">
+                    <thead>
+                      <tr>
+                        <th className="vendor-table-col-name">Vendor Name</th>
+                        <th className="vendor-table-col-type">Type</th>
+                        <th className="vendor-table-col-contacts">Contacts</th>
+                        <th className="vendor-table-col-actions">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filteredVendors.map((v) => (
+                        <>
+                          <tr key={v.id} className="vendor-table-row">
+                            <td className="vendor-table-col-name">
+                              <strong className="vendor-table-name">{v.vendorName || 'Unnamed vendor'}</strong>
+                            </td>
+                            <td className="vendor-table-col-type">
+                              <span className="vendor-table-type-badge vendor-table-type-badge--{v.type}">
+                                {VENDOR_TYPES.find((t) => t.id === v.type)?.label || v.type}
+                              </span>
+                            </td>
+                            <td className="vendor-table-col-contacts">
+                              <div className="vendor-table-contacts-cell">
+                                <span className="vendor-table-contacts-count">
+                                  {v.contacts && v.contacts.length > 0 ? (
+                                    <>
+                                      {v.contacts.length} {v.contacts.length === 1 ? 'contact' : 'contacts'}
+                                    </>
+                                  ) : (
+                                    'No contacts'
+                                  )}
+                                </span>
+                                {v.contacts && v.contacts.length > 0 && (
+                                  <button
+                                    type="button"
+                                    className="vendor-table-expand-btn"
+                                    onClick={() => setExpandedVendorId(expandedVendorId === v.id ? null : v.id)}
+                                  >
+                                    {expandedVendorId === v.id ? '▼ Hide' : '▶ View'}
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                            <td className="vendor-table-col-actions">
+                              <div className="vendor-table-actions">
+                                <button
+                                  type="button"
+                                  className="vendor-table-action-btn"
+                                  onClick={() => handleVendorEdit(v)}
+                                  title="Edit vendor"
+                                >
+                                  Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  className="vendor-table-action-btn vendor-table-action-btn--danger"
+                                  onClick={() => handleVendorDelete(v.id)}
+                                  title="Delete vendor"
+                                >
+                                  Delete
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                          {expandedVendorId === v.id && (
+                            <tr key={`${v.id}-contacts`} className="vendor-table-row-expanded">
+                              <td colSpan="4" className="vendor-table-contacts-expanded">
+                                <div className="vendor-table-contacts-header">
+                                  <h4>Contacts</h4>
+                                  <button
+                                    type="button"
+                                    className="btn btn-outline btn-small"
+                                    onClick={() => handleNewContact(v.id)}
+                                  >
+                                    + Add Contact
+                                  </button>
                                 </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <div className="vendor-card-contacts-empty">
-                              <p>No contacts yet. Add your first contact to get started.</p>
-                              <button
-                                type="button"
-                                className="btn btn-outline btn-small"
-                                onClick={() => handleNewContact(v.id)}
-                              >
-                                + Add Contact
-                              </button>
-                            </div>
+                                {v.contacts && v.contacts.length > 0 ? (
+                                  <table className="vendor-table-contacts-table">
+                                    <thead>
+                                      <tr>
+                                        <th>Name</th>
+                                        <th>Phone</th>
+                                        <th>Email</th>
+                                        <th>Actions</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {v.contacts.map((contact) => (
+                                        <tr key={contact.id}>
+                                          <td><strong>{contact.name}</strong></td>
+                                          <td>
+                                            {contact.phone ? (
+                                              <a href={`tel:${contact.phone}`} className="vendor-table-contact-link">
+                                                {contact.phone}
+                                              </a>
+                                            ) : (
+                                              <span className="vendor-table-empty">—</span>
+                                            )}
+                                          </td>
+                                          <td>
+                                            {contact.email ? (
+                                              <a href={`mailto:${contact.email}`} className="vendor-table-contact-link">
+                                                {contact.email}
+                                              </a>
+                                            ) : (
+                                              <span className="vendor-table-empty">—</span>
+                                            )}
+                                          </td>
+                                          <td>
+                                            <div className="vendor-table-contact-actions">
+                                              <button
+                                                type="button"
+                                                className="vendor-table-contact-action"
+                                                onClick={() => handleEditContact(v.id, contact)}
+                                                title="Edit contact"
+                                              >
+                                                Edit
+                                              </button>
+                                              <button
+                                                type="button"
+                                                className="vendor-table-contact-action vendor-table-contact-action--danger"
+                                                onClick={() => handleContactDelete(v.id, contact.id)}
+                                                title="Delete contact"
+                                              >
+                                                Delete
+                                              </button>
+                                            </div>
+                                          </td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                ) : (
+                                  <div className="vendor-table-contacts-empty">
+                                    <p>No contacts yet. Add your first contact to get started.</p>
+                                    <button
+                                      type="button"
+                                      className="btn btn-outline btn-small"
+                                      onClick={() => handleNewContact(v.id)}
+                                    >
+                                      + Add Contact
+                                    </button>
+                                  </div>
+                                )}
+                              </td>
+                            </tr>
                           )}
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                        </>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>

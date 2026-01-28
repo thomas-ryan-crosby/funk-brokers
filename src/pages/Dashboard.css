@@ -768,48 +768,82 @@
   margin: 0 0 24px 0;
 }
 
-.vendor-center-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
-  gap: 24px;
+/* Vendor Center Table Styles */
+.vendor-center-table-wrapper {
+  background: white;
+  border-radius: 12px;
+  border: 2px solid #e2e8f0;
+  overflow: hidden;
   margin-bottom: 32px;
 }
 
-.vendor-card {
+.vendor-center-table {
+  width: 100%;
+  border-collapse: collapse;
   background: white;
-  border: 2px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 24px;
-  transition: all 0.2s;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-.vendor-card:hover {
-  border-color: #cbd5e1;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+.vendor-center-table thead {
+  background: #f8fafc;
+  border-bottom: 2px solid #e2e8f0;
 }
 
-.vendor-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 16px;
-}
-
-.vendor-card-title-section {
-  flex: 1;
-  min-width: 0;
-}
-
-.vendor-card-name {
-  font-size: 20px;
+.vendor-center-table th {
+  padding: 16px 20px;
+  text-align: left;
+  font-size: 13px;
   font-weight: 700;
-  color: #1e293b;
-  margin: 0 0 8px 0;
-  word-break: break-word;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #e2e8f0;
 }
 
-.vendor-card-type-badge {
+.vendor-center-table tbody tr {
+  border-bottom: 1px solid #f1f5f9;
+  transition: background-color 0.15s;
+}
+
+.vendor-center-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.vendor-center-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.vendor-center-table td {
+  padding: 16px 20px;
+  vertical-align: middle;
+}
+
+.vendor-table-col-name {
+  width: 30%;
+  min-width: 200px;
+}
+
+.vendor-table-col-type {
+  width: 20%;
+  min-width: 150px;
+}
+
+.vendor-table-col-contacts {
+  width: 30%;
+  min-width: 180px;
+}
+
+.vendor-table-col-actions {
+  width: 20%;
+  min-width: 150px;
+}
+
+.vendor-table-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.vendor-table-type-badge {
   display: inline-block;
   padding: 6px 12px;
   font-size: 13px;
@@ -820,210 +854,217 @@
   border: 1px solid #e2e8f0;
 }
 
-.vendor-card-type-badge--title_company {
+.vendor-table-type-badge--title_company {
   background: #dbeafe;
   color: #1e40af;
   border-color: #bfdbfe;
 }
 
-.vendor-card-type-badge--inspection_company {
+.vendor-table-type-badge--inspection_company {
   background: #fef3c7;
   color: #92400e;
   border-color: #fde68a;
 }
 
-.vendor-card-type-badge--mortgage_services {
+.vendor-table-type-badge--mortgage_services {
   background: #d1fae5;
   color: #065f46;
   border-color: #a7f3d0;
 }
 
-.vendor-card-actions {
-  display: flex;
-  gap: 4px;
-  margin-left: 12px;
-  flex-shrink: 0;
-}
-
-.vendor-card-action-btn {
-  width: 36px;
-  height: 36px;
+.vendor-table-contacts-cell {
   display: flex;
   align-items: center;
-  justify-content: center;
-  border: 1px solid #e2e8f0;
-  background: white;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 16px;
-  transition: all 0.2s;
-  padding: 0;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
-.vendor-card-action-btn:hover {
-  background: #f8fafc;
-  border-color: #cbd5e1;
-  transform: translateY(-1px);
-}
-
-.vendor-card-action-btn--danger:hover {
-  background: #fef2f2;
-  border-color: #fecaca;
-  color: #dc2626;
-}
-
-.vendor-card-contacts-summary {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding-top: 16px;
-  border-top: 1px solid #f1f5f9;
-}
-
-.vendor-card-contacts-count {
+.vendor-table-contacts-count {
   font-size: 14px;
   color: #64748b;
   font-weight: 500;
 }
 
-.vendor-card-contacts-preview {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-top: 4px;
-}
-
-.vendor-card-contact-preview {
+.vendor-table-expand-btn {
+  padding: 4px 12px;
   font-size: 13px;
+  color: #3b82f6;
+  background: transparent;
+  border: 1px solid #3b82f6;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  font-weight: 500;
+}
+
+.vendor-table-expand-btn:hover {
+  background: #eff6ff;
+  border-color: #2563eb;
+  color: #2563eb;
+}
+
+.vendor-table-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.vendor-table-action-btn {
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
   color: #475569;
-  padding: 4px 8px;
-  background: #f8fafc;
-  border-radius: 4px;
+  background: white;
   border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
 }
 
-.vendor-card-contacts-expanded {
-  margin-top: 20px;
-  padding-top: 20px;
-  border-top: 2px solid #e2e8f0;
+.vendor-table-action-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #1e293b;
 }
 
-.vendor-card-contacts-header {
+.vendor-table-action-btn--danger {
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+.vendor-table-action-btn--danger:hover {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #b91c1c;
+}
+
+.vendor-table-row-expanded {
+  background: #f8fafc !important;
+}
+
+.vendor-table-contacts-expanded {
+  padding: 24px !important;
+  background: #f8fafc;
+}
+
+.vendor-table-contacts-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
 }
 
-.vendor-card-contacts-header h4 {
+.vendor-table-contacts-header h4 {
   font-size: 16px;
   font-weight: 600;
   color: #1e293b;
   margin: 0;
 }
 
-.vendor-card-contacts-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.vendor-card-contact-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  padding: 16px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+.vendor-table-contacts-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
   border-radius: 8px;
-  transition: all 0.2s;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
 }
 
-.vendor-card-contact-item:hover {
+.vendor-table-contacts-table thead {
   background: #f1f5f9;
-  border-color: #cbd5e1;
 }
 
-.vendor-card-contact-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.vendor-card-contact-name {
-  font-size: 15px;
+.vendor-table-contacts-table th {
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 12px;
   font-weight: 600;
-  color: #1e293b;
-  margin-bottom: 6px;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #e2e8f0;
 }
 
-.vendor-card-contact-details {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 8px;
+.vendor-table-contacts-table tbody tr {
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.vendor-table-contacts-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.vendor-table-contacts-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.vendor-table-contacts-table td {
+  padding: 12px 16px;
   font-size: 14px;
-  color: #64748b;
+  color: #1e293b;
 }
 
-.vendor-card-contact-link {
+.vendor-table-contact-link {
   color: #3b82f6;
   text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
   transition: color 0.2s;
 }
 
-.vendor-card-contact-link:hover {
+.vendor-table-contact-link:hover {
   color: #2563eb;
   text-decoration: underline;
 }
 
-.vendor-card-contact-separator {
-  color: #cbd5e1;
+.vendor-table-empty {
+  color: #94a3b8;
+  font-style: italic;
 }
 
-.vendor-card-contact-actions {
+.vendor-table-contact-actions {
   display: flex;
-  gap: 4px;
-  margin-left: 12px;
-  flex-shrink: 0;
+  gap: 8px;
 }
 
-.vendor-card-contact-action {
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid #e2e8f0;
+.vendor-table-contact-action {
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #475569;
   background: white;
-  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
   cursor: pointer;
-  font-size: 14px;
   transition: all 0.2s;
-  padding: 0;
+  font-family: inherit;
 }
 
-.vendor-card-contact-action:hover {
+.vendor-table-contact-action:hover {
   background: #f8fafc;
   border-color: #cbd5e1;
+  color: #1e293b;
 }
 
-.vendor-card-contact-action--danger:hover {
-  background: #fef2f2;
+.vendor-table-contact-action--danger {
+  color: #dc2626;
   border-color: #fecaca;
 }
 
-.vendor-card-contacts-empty {
+.vendor-table-contact-action--danger:hover {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #b91c1c;
+}
+
+.vendor-table-contacts-empty {
   text-align: center;
   padding: 32px 20px;
-  background: #f8fafc;
+  background: white;
   border: 2px dashed #e2e8f0;
   border-radius: 8px;
 }
 
-.vendor-card-contacts-empty p {
+.vendor-table-contacts-empty p {
   font-size: 14px;
   color: #64748b;
   margin: 0 0 16px 0;
@@ -1173,10 +1214,6 @@
     width: 100%;
   }
 
-  .vendor-center-grid {
-    grid-template-columns: 1fr;
-  }
-
   .vendor-center-filters {
     flex-direction: column;
   }
@@ -1184,6 +1221,34 @@
   .vendor-center-search,
   .vendor-center-type-filter {
     width: 100%;
+  }
+
+  .vendor-center-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .vendor-center-table {
+    min-width: 800px;
+  }
+
+  .vendor-table-col-name,
+  .vendor-table-col-type,
+  .vendor-table-col-contacts,
+  .vendor-table-col-actions {
+    min-width: 120px;
+  }
+
+  .vendor-table-actions {
+    flex-direction: column;
+  }
+
+  .vendor-table-action-btn {
+    width: 100%;
+  }
+
+  .vendor-table-contacts-table {
+    min-width: 600px;
   }
 
   .modal-content {
