@@ -80,7 +80,7 @@ const Dashboard = () => {
   const [viewOfferFor, setViewOfferFor] = useState(null); // { offer, property } or null
   const [countdownNow, setCountdownNow] = useState(() => Date.now());
   const [vendors, setVendors] = useState([]);
-  const [vendorForm, setVendorForm] = useState({ vendorName: '', type: 'other', website: '', phone: '', email: '', address: '', notes: '' });
+  const [vendorForm, setVendorForm] = useState({ vendorName: '', type: 'other', customType: '', website: '', phone: '', email: '', address: '', notes: '' });
   const [editingVendorId, setEditingVendorId] = useState(null);
   const [editingContactId, setEditingContactId] = useState(null);
   const [contactForm, setContactForm] = useState({ name: '', phone: '', email: '' });
@@ -410,6 +410,10 @@ const Dashboard = () => {
 
   const handleVendorSave = async () => {
     if (!vendorForm.vendorName?.trim()) return;
+    if (vendorForm.type === 'other' && !vendorForm.customType?.trim()) {
+      alert('Please enter a custom vendor type.');
+      return;
+    }
     try {
       if (editingVendorId) {
         await updateVendor(editingVendorId, vendorForm);
@@ -419,7 +423,7 @@ const Dashboard = () => {
       }
       const v = await getVendorsByUser(user.uid);
       setVendors(v);
-      setVendorForm({ vendorName: '', type: 'other', website: '', phone: '', email: '', address: '', notes: '' });
+      setVendorForm({ vendorName: '', type: 'other', customType: '', website: '', phone: '', email: '', address: '', notes: '' });
       setShowVendorModal(false);
     } catch (err) {
       console.error(err);
@@ -432,6 +436,7 @@ const Dashboard = () => {
     setVendorForm({
       vendorName: v.vendorName || '',
       type: v.type || 'other',
+      customType: v.customType || '',
       website: v.website || '',
       phone: v.phone || '',
       email: v.email || '',
@@ -489,7 +494,7 @@ const Dashboard = () => {
       setVendors(v);
       if (editingVendorId === vendorId) {
         setEditingVendorId(null);
-        setVendorForm({ vendorName: '', type: 'other', website: '', phone: '', email: '', address: '', notes: '' });
+        setVendorForm({ vendorName: '', type: 'other', customType: '', website: '', phone: '', email: '', address: '', notes: '' });
       }
       if (expandedVendorId === vendorId) {
         setExpandedVendorId(null);
@@ -1444,7 +1449,7 @@ const Dashboard = () => {
                             </td>
                             <td className="vendor-table-col-type">
                               <span className={`vendor-table-type-badge vendor-table-type-badge--${v.type}`}>
-                                {VENDOR_TYPES.find((t) => t.id === v.type)?.label || v.type}
+                                {v.type === 'other' && v.customType ? v.customType : (VENDOR_TYPES.find((t) => t.id === v.type)?.label || v.type)}
                               </span>
                             </td>
                             <td className="vendor-table-col-contacts">
@@ -1711,7 +1716,7 @@ const Dashboard = () => {
                 <label>Vendor Type *</label>
                 <select
                   value={vendorForm.type}
-                  onChange={(e) => setVendorForm((f) => ({ ...f, type: e.target.value }))}
+                  onChange={(e) => setVendorForm((f) => ({ ...f, type: e.target.value, customType: e.target.value !== 'other' ? '' : f.customType }))}
                   className="form-input"
                 >
                   {VENDOR_TYPES.map((t) => (
@@ -1719,6 +1724,18 @@ const Dashboard = () => {
                   ))}
                 </select>
               </div>
+              {vendorForm.type === 'other' && (
+                <div className="form-group">
+                  <label>Custom Type *</label>
+                  <input
+                    type="text"
+                    placeholder="Enter vendor type (e.g. Insurance, Appraisal, etc.)"
+                    value={vendorForm.customType}
+                    onChange={(e) => setVendorForm((f) => ({ ...f, customType: e.target.value }))}
+                    className="form-input"
+                  />
+                </div>
+              )}
               <div className="form-group">
                 <label>Website</label>
                 <input

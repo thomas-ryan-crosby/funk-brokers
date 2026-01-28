@@ -1,9 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { createProperty } from '../services/propertyService';
 import { uploadFile, uploadMultipleFiles } from '../services/storageService';
 import { getPreListingChecklist, isPreListingChecklistComplete } from '../services/preListingChecklistService';
+import { saveListingProgress, getListingProgress } from '../services/listingProgressService';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import './ListProperty.css';
 
@@ -40,6 +41,8 @@ const ListProperty = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   const [checkingChecklist, setCheckingChecklist] = useState(true);
+  const [propertyId, setPropertyId] = useState(null); // For saving progress
+  const saveProgressTimeoutRef = useRef(null);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -59,6 +62,18 @@ const ListProperty = () => {
       if (!isPreListingChecklistComplete(checklist)) {
         navigate('/pre-listing-checklist', { state: { returnTo: '/list-property' } });
         return;
+      }
+      
+      // Load saved progress if propertyId exists in URL or state
+      const urlParams = new URLSearchParams(location.search);
+      const propId = urlParams.get('propertyId') || location.state?.propertyId;
+      if (propId) {
+        setPropertyId(propId);
+        const saved = await getListingProgress(propId);
+        if (saved && saved.formData) {
+          setFormData(saved.formData);
+          if (saved.step) setStep(saved.step);
+        }
       }
     } catch (err) {
       console.error('Error checking checklist:', err);
@@ -156,10 +171,30 @@ const ListProperty = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => {
+      const updated = { ...prev, [name]: value };
+      saveProgressDebounced(updated);
+      return updated;
+    });
+  };
+
+  const saveProgressDebounced = (data) => {
+    if (!propertyId || !user?.uid) return;
+    if (saveProgressTimeoutRef.current) {
+      clearTimeout(saveProgressTimeoutRef.current);
+    }
+    saveProgressTimeoutRef.current = setTimeout(async () => {
+      try {
+        await saveListingProgress(propertyId, {
+          userId: user.uid,
+          step,
+          formData: data,
+          photoFilesCount: photoFiles.length,
+        });
+      } catch (err) {
+        console.error('Error saving progress:', err);
+      }
+    }, 2000);
   };
 
   const handlePhotoChange = (e) => {
@@ -169,15 +204,24 @@ const ListProperty = () => {
     // Create previews
     const previews = files.map((file) => URL.createObjectURL(file));
     setPhotoPreviews(previews);
+    
+    // Save progress
+    if (propertyId && user?.uid) {
+      saveProgressDebounced({ ...formData, photos: files });
+    }
   };
 
   const handleFeatureToggle = (feature) => {
-    setFormData((prev) => ({
-      ...prev,
-      features: prev.features.includes(feature)
-        ? prev.features.filter((f) => f !== feature)
-        : [...prev.features, feature],
-    }));
+    setFormData((prev) => {
+      const updated = {
+        ...prev,
+        features: prev.features.includes(feature)
+          ? prev.features.filter((f) => f !== feature)
+          : [...prev.features, feature],
+      };
+      saveProgressDebounced(updated);
+      return updated;
+    });
   };
 
   const validateStep = (stepNum) => {
@@ -194,12 +238,26 @@ const ListProperty = () => {
     return true;
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (validateStep(step)) {
       const next = step + 1;
       setStep(next);
       setError(null);
       if (next === 4) setStep4UnlockAt(Date.now() + 500);
+      
+      // Save progress on step change
+      if (propertyId && user?.uid) {
+        try {
+          await saveListingProgress(propertyId, {
+            userId: user.uid,
+            step: next,
+            formData,
+            photoFilesCount: photoFiles.length,
+          });
+        } catch (err) {
+          console.error('Error saving progress:', err);
+        }
+      }
     } else {
       setError('Please fill in all required fields.');
     }
@@ -261,6 +319,18 @@ const ListProperty = () => {
       }
 
       const propertyId = await createProperty(propertyData);
+      setPropertyId(propertyId);
+      
+      // Clear saved progress after successful creation
+      try {
+        const { doc: firestoreDoc, deleteDoc } = await import('firebase/firestore');
+        const { db } = await import('../config/firebase');
+        const ref = firestoreDoc(db, 'listingProgress', propertyId);
+        await deleteDoc(ref);
+      } catch (err) {
+        console.error('Error clearing progress:', err);
+      }
+      
       setSuccess(true);
       console.log('Property created with ID:', propertyId);
     } catch (err) {

@@ -34,6 +34,7 @@ export const createVendor = async (userId, data) => {
     userId,
     vendorName: data.vendorName || '',
     type: data.type || 'other',
+    customType: data.type === 'other' ? (data.customType || null) : null,
     website: data.website || null,
     phone: data.phone || null,
     email: data.email || null,
@@ -80,9 +81,13 @@ export const updateVendor = async (vendorId, data) => {
   if (!vendorId) throw new Error('vendorId is required');
   const ref = doc(db, VENDORS_COLLECTION, vendorId);
   const payload = { updatedAt: new Date() };
-  ['vendorName', 'type', 'website', 'phone', 'email', 'address', 'notes', 'contacts'].forEach((k) => {
+  ['vendorName', 'type', 'customType', 'website', 'phone', 'email', 'address', 'notes', 'contacts'].forEach((k) => {
     if (data[k] !== undefined) payload[k] = data[k];
   });
+  // Clear customType if type is not 'other'
+  if (data.type !== 'other' && data.type !== undefined) {
+    payload.customType = null;
+  }
   await updateDoc(ref, payload);
 };
 

@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { getPropertyById, updateProperty, archiveProperty, restoreProperty, deletePropertyPermanently } from '../services/propertyService';
 import { addToFavorites, removeFromFavorites, isFavorited, getFavoriteCountForProperty } from '../services/favoritesService';
 import { getPreListingChecklist, isPreListingChecklistComplete } from '../services/preListingChecklistService';
+import { calculateListingReadiness } from '../services/listingProgressService';
 import { getListingTierProgress, getListingTierLabel } from '../utils/verificationScores';
 import './PropertyDetail.css';
 
@@ -20,8 +21,17 @@ const PropertyDetail = () => {
   const [favoriteCount, setFavoriteCount] = useState(null);
   const [commsUpdating, setCommsUpdating] = useState(false);
   const [availableForSaleUpdating, setAvailableForSaleUpdating] = useState(false);
+  const [listingReadiness, setListingReadiness] = useState(0);
 
   const isOwner = !!(property && user && property.sellerId === user.uid);
+
+  // Calculate listing readiness when property loads
+  useEffect(() => {
+    if (property && isOwner) {
+      const readiness = calculateListingReadiness(property);
+      setListingReadiness(readiness);
+    }
+  }, [property, isOwner]);
 
   useEffect(() => {
     loadProperty();
@@ -444,21 +454,28 @@ const PropertyDetail = () => {
               <div className={`detail-row ${isOwner ? 'detail-row--comms' : ''}`}>
                 <span className="detail-label">Available for sale</span>
                 {isOwner ? (
-                  <label className="comms-toggle-wrap">
-                    <span className="toggle-switch">
-                      <input
-                        type="checkbox"
-                        checked={property.availableForSale !== false}
-                        onChange={handleAvailableForSaleToggle}
-                        disabled={availableForSaleUpdating}
-                        aria-label="Listed for sale on the platform"
-                      />
-                      <span className="toggle-switch__track" aria-hidden />
-                    </span>
-                    <span className={`comms-toggle-label detail-value--comms-${property.availableForSale !== false ? 'accepting' : 'not-accepting'}`}>
-                      {property.availableForSale !== false ? 'Yes' : 'No'}
-                    </span>
-                  </label>
+                  <div className="available-for-sale-control">
+                    <label className="comms-toggle-wrap">
+                      <span className="toggle-switch">
+                        <input
+                          type="checkbox"
+                          checked={property.availableForSale !== false}
+                          onChange={handleAvailableForSaleToggle}
+                          disabled={availableForSaleUpdating}
+                          aria-label="Listed for sale on the platform"
+                        />
+                        <span className="toggle-switch__track" aria-hidden />
+                      </span>
+                      <span className={`comms-toggle-label detail-value--comms-${property.availableForSale !== false ? 'accepting' : 'not-accepting'}`}>
+                        {property.availableForSale !== false ? 'Yes' : 'No'}
+                      </span>
+                    </label>
+                    {property.availableForSale === false && listingReadiness > 0 && (
+                      <span className="listing-readiness-badge">
+                        {listingReadiness}% Ready
+                      </span>
+                    )}
+                  </div>
                 ) : (
                   <span className="detail-value">
                     {property.availableForSale !== false ? 'Listed for sale' : 'Not currently for sale'}

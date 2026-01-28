@@ -346,6 +346,25 @@
   gap: 10px;
 }
 
+.available-for-sale-control {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.listing-readiness-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  background: #fef3c7;
+  color: #92400e;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid #fde68a;
+}
+
 .comms-toggle-label {
   font-size: 14px;
   font-weight: 600;
