@@ -348,9 +348,22 @@
 
 .available-for-sale-control {
   display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.available-for-sale-toggle-wrapper {
+  display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   flex-wrap: wrap;
+}
+
+.edit-checklist-btn {
+  padding: 6px 12px;
+  font-size: 13px;
+  white-space: nowrap;
 }
 
 .listing-readiness-badge {

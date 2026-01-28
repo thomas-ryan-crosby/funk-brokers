@@ -467,26 +467,45 @@ const PropertyDetail = () => {
                 <span className="detail-label">Available for sale</span>
                 {isOwner ? (
                   <div className="available-for-sale-control">
-                    <label className="comms-toggle-wrap">
-                      <span className="toggle-switch">
-                        <input
-                          type="checkbox"
-                          checked={property.availableForSale !== false}
-                          onChange={handleAvailableForSaleToggle}
-                          disabled={availableForSaleUpdating}
-                          aria-label="Listed for sale on the platform"
-                        />
-                        <span className="toggle-switch__track" aria-hidden />
-                      </span>
-                      <span className={`comms-toggle-label detail-value--comms-${property.availableForSale !== false ? 'accepting' : 'not-accepting'}`}>
-                        {property.availableForSale !== false ? 'Yes' : 'No'}
-                      </span>
-                    </label>
-                    {property.availableForSale === false && listingReadiness > 0 && (
-                      <span className="listing-readiness-badge">
-                        {listingReadiness}% Ready
-                      </span>
-                    )}
+                    <div className="available-for-sale-toggle-wrapper">
+                      <label className="comms-toggle-wrap">
+                        <span className="toggle-switch">
+                          <input
+                            type="checkbox"
+                            checked={property.availableForSale !== false}
+                            onChange={handleAvailableForSaleToggle}
+                            disabled={availableForSaleUpdating}
+                            aria-label="Listed for sale on the platform"
+                          />
+                          <span className="toggle-switch__track" aria-hidden />
+                        </span>
+                        <span className={`comms-toggle-label detail-value--comms-${property.availableForSale !== false ? 'accepting' : 'not-accepting'}`}>
+                          {property.availableForSale !== false ? 'Yes' : 'No'}
+                        </span>
+                      </label>
+                      {property.availableForSale === false && listingReadiness > 0 && (
+                        <span className="listing-readiness-badge">
+                          {listingReadiness}% Ready
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-small edit-checklist-btn"
+                      onClick={() => {
+                        navigate('/pre-listing-checklist', {
+                          state: {
+                            returnTo: `/property/${property.id}`,
+                            propertyLocation: property.latitude && property.longitude ? {
+                              lat: property.latitude,
+                              lng: property.longitude
+                            } : null
+                          }
+                        });
+                      }}
+                    >
+                      Edit Checklist
+                    </button>
                   </div>
                 ) : (
                   <span className="detail-value">
