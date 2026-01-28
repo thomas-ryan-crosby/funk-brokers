@@ -1476,61 +1476,61 @@ const PreListingChecklist = () => {
             </button>
           </div>
         )}
+
+        {/* Disclosure Form Modals */}
+        <DisclosureFormModal
+          isOpen={disclosureModalOpen === 'propertyCondition'}
+          onClose={() => setDisclosureModalOpen(null)}
+          disclosureType="propertyCondition"
+          initialData={getDisclosureData('propertyCondition')}
+          onSave={(data) => handleDisclosureSave('propertyCondition', data)}
+        />
+        <DisclosureFormModal
+          isOpen={disclosureModalOpen === 'leadPaint'}
+          onClose={() => setDisclosureModalOpen(null)}
+          disclosureType="leadPaint"
+          initialData={getDisclosureData('leadPaint')}
+          onSave={(data) => handleDisclosureSave('leadPaint', data)}
+        />
+        <DisclosureFormModal
+          isOpen={disclosureModalOpen === 'hoaDisclosures'}
+          onClose={() => setDisclosureModalOpen(null)}
+          disclosureType="hoaDisclosures"
+          initialData={getDisclosureData('hoaDisclosures')}
+          onSave={(data) => handleDisclosureSave('hoaDisclosures', data)}
+        />
+        <DisclosureFormModal
+          isOpen={disclosureModalOpen === 'floodZone'}
+          onClose={() => setDisclosureModalOpen(null)}
+          disclosureType="floodZone"
+          initialData={getDisclosureData('floodZone')}
+          onSave={(data) => handleDisclosureSave('floodZone', data)}
+        />
+        <DisclosureFormModal
+          isOpen={disclosureModalOpen === 'knownDefects'}
+          onClose={() => setDisclosureModalOpen(null)}
+          disclosureType="knownDefects"
+          initialData={getDisclosureData('knownDefects')}
+          onSave={(data) => handleDisclosureSave('knownDefects', data)}
+        />
+        <DisclosureFormModal
+          isOpen={disclosureModalOpen === 'priorRepairs'}
+          onClose={() => setDisclosureModalOpen(null)}
+          disclosureType="priorRepairs"
+          initialData={getDisclosureData('priorRepairs')}
+          onSave={(data) => handleDisclosureSave('priorRepairs', data)}
+        />
+        <DisclosureFormModal
+          isOpen={disclosureModalOpen === 'insuranceClaims'}
+          onClose={() => setDisclosureModalOpen(null)}
+          disclosureType="insuranceClaims"
+          initialData={getDisclosureData('insuranceClaims')}
+          onSave={(data) => handleDisclosureSave('insuranceClaims', data)}
+        />
       </div>
     </div>
   );
 };
-
-      {/* Disclosure Form Modals */}
-      <DisclosureFormModal
-        isOpen={disclosureModalOpen === 'propertyCondition'}
-        onClose={() => setDisclosureModalOpen(null)}
-        disclosureType="propertyCondition"
-        initialData={getDisclosureData('propertyCondition')}
-        onSave={(data) => handleDisclosureSave('propertyCondition', data)}
-      />
-      <DisclosureFormModal
-        isOpen={disclosureModalOpen === 'leadPaint'}
-        onClose={() => setDisclosureModalOpen(null)}
-        disclosureType="leadPaint"
-        initialData={getDisclosureData('leadPaint')}
-        onSave={(data) => handleDisclosureSave('leadPaint', data)}
-      />
-      <DisclosureFormModal
-        isOpen={disclosureModalOpen === 'hoaDisclosures'}
-        onClose={() => setDisclosureModalOpen(null)}
-        disclosureType="hoaDisclosures"
-        initialData={getDisclosureData('hoaDisclosures')}
-        onSave={(data) => handleDisclosureSave('hoaDisclosures', data)}
-      />
-      <DisclosureFormModal
-        isOpen={disclosureModalOpen === 'floodZone'}
-        onClose={() => setDisclosureModalOpen(null)}
-        disclosureType="floodZone"
-        initialData={getDisclosureData('floodZone')}
-        onSave={(data) => handleDisclosureSave('floodZone', data)}
-      />
-      <DisclosureFormModal
-        isOpen={disclosureModalOpen === 'knownDefects'}
-        onClose={() => setDisclosureModalOpen(null)}
-        disclosureType="knownDefects"
-        initialData={getDisclosureData('knownDefects')}
-        onSave={(data) => handleDisclosureSave('knownDefects', data)}
-      />
-      <DisclosureFormModal
-        isOpen={disclosureModalOpen === 'priorRepairs'}
-        onClose={() => setDisclosureModalOpen(null)}
-        disclosureType="priorRepairs"
-        initialData={getDisclosureData('priorRepairs')}
-        onSave={(data) => handleDisclosureSave('priorRepairs', data)}
-      />
-      <DisclosureFormModal
-        isOpen={disclosureModalOpen === 'insuranceClaims'}
-        onClose={() => setDisclosureModalOpen(null)}
-        disclosureType="insuranceClaims"
-        initialData={getDisclosureData('insuranceClaims')}
-        onSave={(data) => handleDisclosureSave('insuranceClaims', data)}
-      />
     </div>
   );
 };
