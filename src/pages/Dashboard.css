@@ -835,6 +835,11 @@
 .vendor-table-col-actions {
   width: 20%;
   min-width: 150px;
+  text-align: right;
+}
+
+.vendor-center-table th.vendor-table-col-actions {
+  text-align: right;
 }
 
 .vendor-table-name {

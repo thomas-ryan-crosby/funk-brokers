@@ -1434,7 +1434,7 @@ const Dashboard = () => {
                               <strong className="vendor-table-name">{v.vendorName || 'Unnamed vendor'}</strong>
                             </td>
                             <td className="vendor-table-col-type">
-                              <span className="vendor-table-type-badge vendor-table-type-badge--{v.type}">
+                              <span className={`vendor-table-type-badge vendor-table-type-badge--${v.type}`}>
                                 {VENDOR_TYPES.find((t) => t.id === v.type)?.label || v.type}
                               </span>
                             </td>
