@@ -24,7 +24,7 @@ export const VENDOR_TYPES = [
 /**
  * Create a vendor for a user.
  * @param {string} userId
- * @param {object} data - { vendorName, type, contacts?: [{ name, phone?, email? }] }
+ * @param {object} data - { vendorName, type, website?, phone?, email?, address?, notes?, contacts?: [{ name, phone?, email? }] }
  * @returns {Promise<string>} vendor id
  */
 export const createVendor = async (userId, data) => {
@@ -34,6 +34,11 @@ export const createVendor = async (userId, data) => {
     userId,
     vendorName: data.vendorName || '',
     type: data.type || 'other',
+    website: data.website || null,
+    phone: data.phone || null,
+    email: data.email || null,
+    address: data.address || null,
+    notes: data.notes || null,
     contacts: data.contacts || [],
     createdAt: now,
     updatedAt: now,
@@ -75,7 +80,7 @@ export const updateVendor = async (vendorId, data) => {
   if (!vendorId) throw new Error('vendorId is required');
   const ref = doc(db, VENDORS_COLLECTION, vendorId);
   const payload = { updatedAt: new Date() };
-  ['vendorName', 'type', 'contacts'].forEach((k) => {
+  ['vendorName', 'type', 'website', 'phone', 'email', 'address', 'notes', 'contacts'].forEach((k) => {
     if (data[k] !== undefined) payload[k] = data[k];
   });
   await updateDoc(ref, payload);

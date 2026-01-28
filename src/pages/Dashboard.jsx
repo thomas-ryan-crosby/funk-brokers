@@ -80,7 +80,7 @@ const Dashboard = () => {
   const [viewOfferFor, setViewOfferFor] = useState(null); // { offer, property } or null
   const [countdownNow, setCountdownNow] = useState(() => Date.now());
   const [vendors, setVendors] = useState([]);
-  const [vendorForm, setVendorForm] = useState({ vendorName: '', type: 'other' });
+  const [vendorForm, setVendorForm] = useState({ vendorName: '', type: 'other', website: '', phone: '', email: '', address: '', notes: '' });
   const [editingVendorId, setEditingVendorId] = useState(null);
   const [editingContactId, setEditingContactId] = useState(null);
   const [contactForm, setContactForm] = useState({ name: '', phone: '', email: '' });
@@ -90,6 +90,7 @@ const Dashboard = () => {
   const [showVendorModal, setShowVendorModal] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
   const [contactModalVendorId, setContactModalVendorId] = useState(null);
+  const [viewingVendorId, setViewingVendorId] = useState(null);
 
   const location = useLocation();
 
@@ -418,7 +419,7 @@ const Dashboard = () => {
       }
       const v = await getVendorsByUser(user.uid);
       setVendors(v);
-      setVendorForm({ vendorName: '', type: 'other' });
+      setVendorForm({ vendorName: '', type: 'other', website: '', phone: '', email: '', address: '', notes: '' });
       setShowVendorModal(false);
     } catch (err) {
       console.error(err);
@@ -428,13 +429,21 @@ const Dashboard = () => {
 
   const handleVendorEdit = (v) => {
     setEditingVendorId(v.id);
-    setVendorForm({ vendorName: v.vendorName || '', type: v.type || 'other' });
+    setVendorForm({
+      vendorName: v.vendorName || '',
+      type: v.type || 'other',
+      website: v.website || '',
+      phone: v.phone || '',
+      email: v.email || '',
+      address: v.address || '',
+      notes: v.notes || '',
+    });
     setShowVendorModal(true);
   };
 
   const handleNewVendor = () => {
     setEditingVendorId(null);
-    setVendorForm({ vendorName: '', type: 'other' });
+    setVendorForm({ vendorName: '', type: 'other', website: '', phone: '', email: '', address: '', notes: '' });
     setShowVendorModal(true);
   };
 
@@ -480,7 +489,7 @@ const Dashboard = () => {
       setVendors(v);
       if (editingVendorId === vendorId) {
         setEditingVendorId(null);
-        setVendorForm({ vendorName: '', type: 'other' });
+        setVendorForm({ vendorName: '', type: 'other', website: '', phone: '', email: '', address: '', notes: '' });
       }
       if (expandedVendorId === vendorId) {
         setExpandedVendorId(null);
@@ -1449,19 +1458,26 @@ const Dashboard = () => {
                                     'No contacts'
                                   )}
                                 </span>
-                                {v.contacts && v.contacts.length > 0 && (
-                                  <button
-                                    type="button"
-                                    className="vendor-table-expand-btn"
-                                    onClick={() => setExpandedVendorId(expandedVendorId === v.id ? null : v.id)}
-                                  >
-                                    {expandedVendorId === v.id ? '▼ Hide' : '▶ View'}
-                                  </button>
-                                )}
                               </div>
                             </td>
                             <td className="vendor-table-col-actions">
                               <div className="vendor-table-actions">
+                                <button
+                                  type="button"
+                                  className="vendor-table-action-btn"
+                                  onClick={() => {
+                                    if (expandedVendorId === v.id) {
+                                      setExpandedVendorId(null);
+                                      setViewingVendorId(null);
+                                    } else {
+                                      setExpandedVendorId(v.id);
+                                      setViewingVendorId(v.id);
+                                    }
+                                  }}
+                                  title="View vendor details"
+                                >
+                                  {expandedVendorId === v.id ? '▼ Hide' : '▶ View'}
+                                </button>
                                 <button
                                   type="button"
                                   className="vendor-table-action-btn"
@@ -1482,18 +1498,87 @@ const Dashboard = () => {
                             </td>
                           </tr>
                           {expandedVendorId === v.id && (
-                            <tr key={`${v.id}-contacts`} className="vendor-table-row-expanded">
-                              <td colSpan="4" className="vendor-table-contacts-expanded">
-                                <div className="vendor-table-contacts-header">
-                                  <h4>Contacts</h4>
-                                  <button
-                                    type="button"
-                                    className="btn btn-outline btn-small"
-                                    onClick={() => handleNewContact(v.id)}
-                                  >
-                                    + Add Contact
-                                  </button>
-                                </div>
+                            <tr key={`${v.id}-expanded`} className="vendor-table-row-expanded">
+                              <td colSpan="4" className="vendor-table-expanded-cell">
+                                <div className="vendor-table-expanded-content">
+                                  <div className="vendor-table-details-section">
+                                    <div className="vendor-table-details-header">
+                                      <h4>Vendor Details</h4>
+                                      <button
+                                        type="button"
+                                        className="btn btn-outline btn-small"
+                                        onClick={() => handleVendorEdit(v)}
+                                      >
+                                        Edit Details
+                                      </button>
+                                    </div>
+                                    <div className="vendor-table-details-grid">
+                                      <div className="vendor-table-detail-item">
+                                        <label>Website</label>
+                                        <div>
+                                          {v.website ? (
+                                            <a href={v.website.startsWith('http') ? v.website : `https://${v.website}`} target="_blank" rel="noopener noreferrer" className="vendor-table-link">
+                                              {v.website}
+                                            </a>
+                                          ) : (
+                                            <span className="vendor-table-empty">—</span>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <div className="vendor-table-detail-item">
+                                        <label>Phone</label>
+                                        <div>
+                                          {v.phone ? (
+                                            <a href={`tel:${v.phone}`} className="vendor-table-link">
+                                              {v.phone}
+                                            </a>
+                                          ) : (
+                                            <span className="vendor-table-empty">—</span>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <div className="vendor-table-detail-item">
+                                        <label>Email</label>
+                                        <div>
+                                          {v.email ? (
+                                            <a href={`mailto:${v.email}`} className="vendor-table-link">
+                                              {v.email}
+                                            </a>
+                                          ) : (
+                                            <span className="vendor-table-empty">—</span>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <div className="vendor-table-detail-item vendor-table-detail-item--full">
+                                        <label>Address</label>
+                                        <div>
+                                          {v.address ? (
+                                            <span>{v.address}</span>
+                                          ) : (
+                                            <span className="vendor-table-empty">—</span>
+                                          )}
+                                        </div>
+                                      </div>
+                                      {v.notes && (
+                                        <div className="vendor-table-detail-item vendor-table-detail-item--full">
+                                          <label>Notes</label>
+                                          <div className="vendor-table-notes">{v.notes}</div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+
+                                  <div className="vendor-table-contacts-section">
+                                    <div className="vendor-table-contacts-header">
+                                      <h4>Contacts</h4>
+                                      <button
+                                        type="button"
+                                        className="btn btn-outline btn-small"
+                                        onClick={() => handleNewContact(v.id)}
+                                      >
+                                        + Add Contact
+                                      </button>
+                                    </div>
                                 {v.contacts && v.contacts.length > 0 ? (
                                   <table className="vendor-table-contacts-table">
                                     <thead>
@@ -1562,6 +1647,8 @@ const Dashboard = () => {
                                     </button>
                                   </div>
                                 )}
+                                  </div>
+                                </div>
                               </td>
                             </tr>
                           )}
@@ -1596,14 +1683,14 @@ const Dashboard = () => {
       )}
 
       {showVendorModal && (
-        <div className="modal-overlay" onClick={() => { setShowVendorModal(false); setEditingVendorId(null); setVendorForm({ vendorName: '', type: 'other' }); }}>
+        <div className="modal-overlay" onClick={() => { setShowVendorModal(false); setEditingVendorId(null); setVendorForm({ vendorName: '', type: 'other', website: '', phone: '', email: '', address: '', notes: '' }); }}>
           <div className="modal-content vendor-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>{editingVendorId ? 'Edit Vendor' : 'Add Vendor'}</h2>
               <button
                 type="button"
                 className="modal-close"
-                onClick={() => { setShowVendorModal(false); setEditingVendorId(null); setVendorForm({ vendorName: '', type: 'other' }); }}
+                onClick={() => { setShowVendorModal(false); setEditingVendorId(null); setVendorForm({ vendorName: '', type: 'other', website: '', phone: '', email: '', address: '', notes: '' }); }}
               >
                 ×
               </button>
@@ -1632,12 +1719,62 @@ const Dashboard = () => {
                   ))}
                 </select>
               </div>
+              <div className="form-group">
+                <label>Website</label>
+                <input
+                  type="url"
+                  placeholder="https://example.com"
+                  value={vendorForm.website}
+                  onChange={(e) => setVendorForm((f) => ({ ...f, website: e.target.value }))}
+                  className="form-input"
+                />
+              </div>
+              <div className="form-group">
+                <label>Phone</label>
+                <input
+                  type="tel"
+                  placeholder="(555) 123-4567"
+                  value={vendorForm.phone}
+                  onChange={(e) => setVendorForm((f) => ({ ...f, phone: e.target.value }))}
+                  className="form-input"
+                />
+              </div>
+              <div className="form-group">
+                <label>Email</label>
+                <input
+                  type="email"
+                  placeholder="vendor@example.com"
+                  value={vendorForm.email}
+                  onChange={(e) => setVendorForm((f) => ({ ...f, email: e.target.value }))}
+                  className="form-input"
+                />
+              </div>
+              <div className="form-group">
+                <label>Address</label>
+                <input
+                  type="text"
+                  placeholder="123 Main St, City, State ZIP"
+                  value={vendorForm.address}
+                  onChange={(e) => setVendorForm((f) => ({ ...f, address: e.target.value }))}
+                  className="form-input"
+                />
+              </div>
+              <div className="form-group">
+                <label>Notes</label>
+                <textarea
+                  placeholder="Additional notes about this vendor..."
+                  value={vendorForm.notes}
+                  onChange={(e) => setVendorForm((f) => ({ ...f, notes: e.target.value }))}
+                  className="form-input"
+                  rows={4}
+                />
+              </div>
             </div>
             <div className="modal-footer">
               <button
                 type="button"
                 className="btn btn-outline"
-                onClick={() => { setShowVendorModal(false); setEditingVendorId(null); setVendorForm({ vendorName: '', type: 'other' }); }}
+                onClick={() => { setShowVendorModal(false); setEditingVendorId(null); setVendorForm({ vendorName: '', type: 'other', website: '', phone: '', email: '', address: '', notes: '' }); }}
               >
                 Cancel
               </button>
