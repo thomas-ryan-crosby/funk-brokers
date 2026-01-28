@@ -150,6 +150,44 @@
 }
 
 .step-questionnaire,
+.step-disclosures {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.disclosure-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.disclosure-item label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: 1;
+  margin: 0;
+  cursor: default;
+}
+
+.disclosure-completed {
+  color: #059669;
+  font-size: 13px;
+  font-weight: 600;
+  margin-left: 8px;
+}
+
+.disclosure-item .btn-small {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
 .step-disclosures,
 .step-prep-checklist,
 .step-marketing-checklist,

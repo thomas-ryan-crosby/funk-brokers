@@ -5,6 +5,7 @@ import { getPreListingChecklist, savePreListingChecklist, isPreListingChecklistC
 import { getVendorsByUser, VENDOR_TYPES } from '../services/vendorService';
 import { uploadFile } from '../services/storageService';
 import CompsMap from '../components/CompsMap';
+import DisclosureFormModal from '../components/DisclosureFormModal';
 import './PreListingChecklist.css';
 
 const PreListingChecklist = () => {
@@ -59,15 +60,23 @@ const PreListingChecklist = () => {
   // Step 4: Disclosures
   const [step4Data, setStep4Data] = useState({
     propertyCondition: false,
+    propertyConditionData: null,
     leadPaint: false,
+    leadPaintData: null,
     hoaDisclosures: false,
+    hoaDisclosuresData: null,
     floodZone: false,
+    floodZoneData: null,
     knownDefects: false,
+    knownDefectsData: null,
     priorRepairs: false,
+    priorRepairsData: null,
     insuranceClaims: false,
+    insuranceClaimsData: null,
     disclosureFiles: [],
     completed: false,
   });
+  const [disclosureModalOpen, setDisclosureModalOpen] = useState(null);
 
   // Step 5: Property Prep
   const [step5Data, setStep5Data] = useState({
@@ -149,7 +158,7 @@ const PreListingChecklist = () => {
     }, 2000);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step4Data.propertyCondition, step4Data.leadPaint, step4Data.hoaDisclosures, step4Data.floodZone, step4Data.knownDefects, step4Data.priorRepairs, step4Data.insuranceClaims, step4Data.disclosureFiles?.length]);
+  }, [step4Data.propertyConditionData, step4Data.leadPaintData, step4Data.hoaDisclosuresData, step4Data.floodZoneData, step4Data.knownDefectsData, step4Data.priorRepairsData, step4Data.insuranceClaimsData, step4Data.disclosureFiles?.length]);
 
   useEffect(() => {
     if (!user?.uid || loading || step5Data.completed) return;
@@ -247,6 +256,22 @@ const PreListingChecklist = () => {
     }
   };
 
+  const handleDisclosureSave = (disclosureType, formData) => {
+    const dataKey = `${disclosureType}Data`;
+    const updated = {
+      ...step4Data,
+      [disclosureType]: true,
+      [dataKey]: formData,
+    };
+    setStep4Data(updated);
+    saveStep(4, updated);
+  };
+
+  const getDisclosureData = (disclosureType) => {
+    const dataKey = `${disclosureType}Data`;
+    return step4Data[dataKey] || null;
+  };
+
   const handleFileUpload = async (stepNum, field, file) => {
     if (!file) return;
     const maxSize = 10 * 1024 * 1024;
@@ -342,8 +367,17 @@ const PreListingChecklist = () => {
         setStep3Data(stepData);
       }
     } else if (stepNum === 4) {
-      if (!step4Data.propertyCondition || !step4Data.leadPaint || !step4Data.knownDefects) {
-        alert('Please complete all required disclosures.');
+      // Check required disclosures have form data
+      if (!step4Data.propertyConditionData) {
+        alert('Please complete the Property Condition Disclosure form.');
+        return;
+      }
+      if (!step4Data.leadPaintData) {
+        alert('Please complete the Lead-Based Paint Disclosure form.');
+        return;
+      }
+      if (!step4Data.knownDefectsData) {
+        alert('Please complete the Known Defects Disclosure form.');
         return;
       }
       stepData = { ...step4Data, completed: true };
@@ -877,62 +911,229 @@ const PreListingChecklist = () => {
               </p>
 
               <div className="step-disclosures">
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={step4Data.propertyCondition}
-                    onChange={(e) => setStep4Data((d) => ({ ...d, propertyCondition: e.target.checked }))}
-                  />
-                  Property condition disclosure *
-                </label>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={step4Data.leadPaint}
-                    onChange={(e) => setStep4Data((d) => ({ ...d, leadPaint: e.target.checked }))}
-                  />
-                  Lead-based paint disclosure (pre-1978) *
-                </label>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={step4Data.hoaDisclosures}
-                    onChange={(e) => setStep4Data((d) => ({ ...d, hoaDisclosures: e.target.checked }))}
-                  />
-                  HOA disclosures (if applicable)
-                </label>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={step4Data.floodZone}
-                    onChange={(e) => setStep4Data((d) => ({ ...d, floodZone: e.target.checked }))}
-                  />
-                  Flood zone disclosure
-                </label>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={step4Data.knownDefects}
-                    onChange={(e) => setStep4Data((d) => ({ ...d, knownDefects: e.target.checked }))}
-                  />
-                  Known defects disclosure *
-                </label>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={step4Data.priorRepairs}
-                    onChange={(e) => setStep4Data((d) => ({ ...d, priorRepairs: e.target.checked }))}
-                  />
-                  Prior repairs disclosure
-                </label>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={step4Data.insuranceClaims}
-                    onChange={(e) => setStep4Data((d) => ({ ...d, insuranceClaims: e.target.checked }))}
-                  />
-                  Insurance claims disclosure
-                </label>
+                <div className="disclosure-item">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={step4Data.propertyCondition}
+                      readOnly
+                    />
+                    Property condition disclosure *
+                    {step4Data.propertyConditionData && (
+                      <span className="disclosure-completed">✓ Completed</span>
+                    )}
+                  </label>
+                  {!step4Data.propertyConditionData && (
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-small"
+                      onClick={() => setDisclosureModalOpen('propertyCondition')}
+                    >
+                      Complete Form
+                    </button>
+                  )}
+                  {step4Data.propertyConditionData && (
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-small"
+                      onClick={() => setDisclosureModalOpen('propertyCondition')}
+                    >
+                      Edit
+                    </button>
+                  )}
+                </div>
+
+                <div className="disclosure-item">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={step4Data.leadPaint}
+                      readOnly
+                    />
+                    Lead-based paint disclosure (pre-1978) *
+                    {step4Data.leadPaintData && (
+                      <span className="disclosure-completed">✓ Completed</span>
+                    )}
+                  </label>
+                  {!step4Data.leadPaintData && (
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-small"
+                      onClick={() => setDisclosureModalOpen('leadPaint')}
+                    >
+                      Complete Form
+                    </button>
+                  )}
+                  {step4Data.leadPaintData && (
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-small"
+                      onClick={() => setDisclosureModalOpen('leadPaint')}
+                    >
+                      Edit
+                    </button>
+                  )}
+                </div>
+
+                <div className="disclosure-item">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={step4Data.hoaDisclosures}
+                      readOnly
+                    />
+                    HOA disclosures (if applicable)
+                    {step4Data.hoaDisclosuresData && (
+                      <span className="disclosure-completed">✓ Completed</span>
+                    )}
+                  </label>
+                  {!step4Data.hoaDisclosuresData && (
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-small"
+                      onClick={() => setDisclosureModalOpen('hoaDisclosures')}
+                    >
+                      Complete Form
+                    </button>
+                  )}
+                  {step4Data.hoaDisclosuresData && (
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-small"
+                      onClick={() => setDisclosureModalOpen('hoaDisclosures')}
+                    >
+                      Edit
+                    </button>
+                  )}
+                </div>
+
+                <div className="disclosure-item">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={step4Data.floodZone}
+                      readOnly
+                    />
+                    Flood zone disclosure
+                    {step4Data.floodZoneData && (
+                      <span className="disclosure-completed">✓ Completed</span>
+                    )}
+                  </label>
+                  {!step4Data.floodZoneData && (
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-small"
+                      onClick={() => setDisclosureModalOpen('floodZone')}
+                    >
+                      Complete Form
+                    </button>
+                  )}
+                  {step4Data.floodZoneData && (
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-small"
+                      onClick={() => setDisclosureModalOpen('floodZone')}
+                    >
+                      Edit
+                    </button>
+                  )}
+                </div>
+
+                <div className="disclosure-item">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={step4Data.knownDefects}
+                      readOnly
+                    />
+                    Known defects disclosure *
+                    {step4Data.knownDefectsData && (
+                      <span className="disclosure-completed">✓ Completed</span>
+                    )}
+                  </label>
+                  {!step4Data.knownDefectsData && (
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-small"
+                      onClick={() => setDisclosureModalOpen('knownDefects')}
+                    >
+                      Complete Form
+                    </button>
+                  )}
+                  {step4Data.knownDefectsData && (
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-small"
+                      onClick={() => setDisclosureModalOpen('knownDefects')}
+                    >
+                      Edit
+                    </button>
+                  )}
+                </div>
+
+                <div className="disclosure-item">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={step4Data.priorRepairs}
+                      readOnly
+                    />
+                    Prior repairs disclosure
+                    {step4Data.priorRepairsData && (
+                      <span className="disclosure-completed">✓ Completed</span>
+                    )}
+                  </label>
+                  {!step4Data.priorRepairsData && (
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-small"
+                      onClick={() => setDisclosureModalOpen('priorRepairs')}
+                    >
+                      Complete Form
+                    </button>
+                  )}
+                  {step4Data.priorRepairsData && (
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-small"
+                      onClick={() => setDisclosureModalOpen('priorRepairs')}
+                    >
+                      Edit
+                    </button>
+                  )}
+                </div>
+
+                <div className="disclosure-item">
+                  <label>
+                    <input
+                      type="checkbox"
+                      checked={step4Data.insuranceClaims}
+                      readOnly
+                    />
+                    Insurance claims disclosure
+                    {step4Data.insuranceClaimsData && (
+                      <span className="disclosure-completed">✓ Completed</span>
+                    )}
+                  </label>
+                  {!step4Data.insuranceClaimsData && (
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-small"
+                      onClick={() => setDisclosureModalOpen('insuranceClaims')}
+                    >
+                      Complete Form
+                    </button>
+                  )}
+                  {step4Data.insuranceClaimsData && (
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-small"
+                      onClick={() => setDisclosureModalOpen('insuranceClaims')}
+                    >
+                      Edit
+                    </button>
+                  )}
+                </div>
               </div>
 
               <div className="step-file-uploads">
@@ -1276,6 +1477,60 @@ const PreListingChecklist = () => {
           </div>
         )}
       </div>
+    </div>
+  );
+};
+
+      {/* Disclosure Form Modals */}
+      <DisclosureFormModal
+        isOpen={disclosureModalOpen === 'propertyCondition'}
+        onClose={() => setDisclosureModalOpen(null)}
+        disclosureType="propertyCondition"
+        initialData={getDisclosureData('propertyCondition')}
+        onSave={(data) => handleDisclosureSave('propertyCondition', data)}
+      />
+      <DisclosureFormModal
+        isOpen={disclosureModalOpen === 'leadPaint'}
+        onClose={() => setDisclosureModalOpen(null)}
+        disclosureType="leadPaint"
+        initialData={getDisclosureData('leadPaint')}
+        onSave={(data) => handleDisclosureSave('leadPaint', data)}
+      />
+      <DisclosureFormModal
+        isOpen={disclosureModalOpen === 'hoaDisclosures'}
+        onClose={() => setDisclosureModalOpen(null)}
+        disclosureType="hoaDisclosures"
+        initialData={getDisclosureData('hoaDisclosures')}
+        onSave={(data) => handleDisclosureSave('hoaDisclosures', data)}
+      />
+      <DisclosureFormModal
+        isOpen={disclosureModalOpen === 'floodZone'}
+        onClose={() => setDisclosureModalOpen(null)}
+        disclosureType="floodZone"
+        initialData={getDisclosureData('floodZone')}
+        onSave={(data) => handleDisclosureSave('floodZone', data)}
+      />
+      <DisclosureFormModal
+        isOpen={disclosureModalOpen === 'knownDefects'}
+        onClose={() => setDisclosureModalOpen(null)}
+        disclosureType="knownDefects"
+        initialData={getDisclosureData('knownDefects')}
+        onSave={(data) => handleDisclosureSave('knownDefects', data)}
+      />
+      <DisclosureFormModal
+        isOpen={disclosureModalOpen === 'priorRepairs'}
+        onClose={() => setDisclosureModalOpen(null)}
+        disclosureType="priorRepairs"
+        initialData={getDisclosureData('priorRepairs')}
+        onSave={(data) => handleDisclosureSave('priorRepairs', data)}
+      />
+      <DisclosureFormModal
+        isOpen={disclosureModalOpen === 'insuranceClaims'}
+        onClose={() => setDisclosureModalOpen(null)}
+        disclosureType="insuranceClaims"
+        initialData={getDisclosureData('insuranceClaims')}
+        onSave={(data) => handleDisclosureSave('insuranceClaims', data)}
+      />
     </div>
   );
 };
