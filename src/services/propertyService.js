@@ -40,8 +40,7 @@ export const createProperty = async (propertyData) => {
  */
 export const getAllProperties = async () => {
   try {
-    // Get all properties that could be shown (active, under_contract, or not_listed with availableForSale)
-    // We'll fetch all and filter client-side since Firestore doesn't support OR queries easily
+    // Get all properties (except archived)
     const allPropertiesQuery = collection(db, PROPERTIES_COLLECTION);
     const querySnapshot = await getDocs(allPropertiesQuery);
     
@@ -53,21 +52,8 @@ export const getAllProperties = async () => {
       });
     });
     
-    // Filter to only show properties that should be visible:
-    // 1. Not archived
-    // 2. availableForSale is true (or missing for backward compat)
-    // 3. Status is 'active', 'under_contract', or 'not_listed' (if availableForSale is true)
-    const visibleProperties = properties.filter((p) => {
-      if (p.archived === true) return false;
-      if (p.availableForSale === false) return false;
-      
-      // Include active, under_contract, or not_listed (if availableForSale is true)
-      const validStatuses = ['active', 'under_contract'];
-      if (p.status === 'not_listed' && p.availableForSale !== false) {
-        validStatuses.push('not_listed');
-      }
-      return validStatuses.includes(p.status);
-    });
+    // Filter out only archived properties - show everything else
+    const visibleProperties = properties.filter((p) => p.archived !== true);
     
     // Sort client-side by createdAt (newest first)
     visibleProperties.sort((a, b) => {
@@ -143,7 +129,7 @@ export const getPropertyById = async (propertyId) => {
  */
 export const searchProperties = async (filters = {}) => {
   try {
-    // Get all properties and filter client-side (since Firestore doesn't support OR queries easily)
+    // Get all properties and filter client-side
     const allPropertiesQuery = collection(db, PROPERTIES_COLLECTION);
     const querySnapshot = await getDocs(allPropertiesQuery);
     
@@ -152,21 +138,25 @@ export const searchProperties = async (filters = {}) => {
       properties.push({ id: doc.id, ...doc.data() });
     });
 
-    // Filter to only show properties that should be visible:
-    // 1. Not archived
-    // 2. availableForSale is true (or missing for backward compat)
-    // 3. Status is 'active', 'under_contract', or 'not_listed' (if availableForSale is true)
-    properties = properties.filter((p) => {
-      if (p.archived === true) return false;
-      if (p.availableForSale === false) return false;
-      
-      // Include active, under_contract, or not_listed (if availableForSale is true)
-      const validStatuses = ['active', 'under_contract'];
-      if (p.status === 'not_listed' && p.availableForSale !== false) {
-        validStatuses.push('not_listed');
-      }
-      return validStatuses.includes(p.status);
-    });
+    // Filter out only archived properties - show everything else
+    properties = properties.filter((p) => p.archived !== true);
+    
+    // Filter by listed status
+    if (filters.listedStatus === 'listed') {
+      // Show only listed properties (availableForSale is true and status is active/under_contract)
+      properties = properties.filter((p) => 
+        p.availableForSale !== false && 
+        (p.status === 'active' || p.status === 'under_contract')
+      );
+    } else if (filters.listedStatus === 'not_listed') {
+      // Show only not listed properties
+      properties = properties.filter((p) => 
+        p.availableForSale === false || 
+        p.status === 'not_listed' ||
+        (p.status !== 'active' && p.status !== 'under_contract')
+      );
+    }
+    // If listedStatus is 'all' or not set, show all properties
     
     // Filter out under contract properties if showUnderContract is false
     if (filters.showUnderContract === false) {

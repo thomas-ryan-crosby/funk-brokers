@@ -23,6 +23,7 @@ const defaultFilters = () => ({
   bathrooms: '',
   city: '',
   state: '',
+  listedStatus: 'all', // 'all', 'listed', 'not_listed'
   showUnderContract: true, // Default to showing under contract properties
   orderBy: 'createdAt',
   orderDirection: 'desc',
@@ -250,6 +251,18 @@ const SearchFilters = ({ onFilterChange, initialFilters = {} }) => {
                   maxLength="2"
                   className="search-filters-input"
                 />
+              </div>
+              <div className="search-filters-panel-row">
+                <label>Listed Status</label>
+                <select
+                  value={draft.listedStatus || 'all'}
+                  onChange={(e) => updateDraft('listedStatus', e.target.value)}
+                  className="search-filters-input"
+                >
+                  <option value="all">All Properties</option>
+                  <option value="listed">Listed Only</option>
+                  <option value="not_listed">Not Listed Only</option>
+                </select>
               </div>
               <div className="search-filters-panel-row">
                 <label>Sort</label>

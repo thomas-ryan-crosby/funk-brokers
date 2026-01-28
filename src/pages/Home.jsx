@@ -16,12 +16,8 @@ const Home = () => {
   const [propertiesInMapView, setPropertiesInMapView] = useState([]);
 
   useEffect(() => {
-    const hasFilters = Object.keys(filters).length > 0 && Object.values(filters).some((v) => v != null && v !== '');
-    if (hasFilters) {
-      loadPropertiesWithFilters();
-    } else {
-      loadProperties();
-    }
+    // Always use searchProperties to support listedStatus filter
+    loadPropertiesWithFilters();
   }, [filters]);
 
   const loadProperties = async () => {
