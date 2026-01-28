@@ -40,14 +40,29 @@ export const createProperty = async (propertyData) => {
  */
 export const getAllProperties = async () => {
   try {
-    // First, get all active properties (without orderBy to avoid index requirement)
-    const q = query(
+    // Get both active and under_contract properties
+    const activeQuery = query(
       collection(db, PROPERTIES_COLLECTION),
       where('status', '==', 'active')
     );
-    const querySnapshot = await getDocs(q);
+    const contractQuery = query(
+      collection(db, PROPERTIES_COLLECTION),
+      where('status', '==', 'under_contract')
+    );
+    
+    const [activeSnapshot, contractSnapshot] = await Promise.all([
+      getDocs(activeQuery),
+      getDocs(contractQuery)
+    ]);
+    
     const properties = [];
-    querySnapshot.forEach((doc) => {
+    activeSnapshot.forEach((doc) => {
+      properties.push({
+        id: doc.id,
+        ...doc.data(),
+      });
+    });
+    contractSnapshot.forEach((doc) => {
       properties.push({
         id: doc.id,
         ...doc.data(),
@@ -129,18 +144,36 @@ export const getPropertyById = async (propertyId) => {
  */
 export const searchProperties = async (filters = {}) => {
   try {
-    const q = query(
+    // Get both active and under_contract properties
+    const activeQuery = query(
       collection(db, PROPERTIES_COLLECTION),
       where('status', '==', 'active')
     );
-    const querySnapshot = await getDocs(q);
+    const contractQuery = query(
+      collection(db, PROPERTIES_COLLECTION),
+      where('status', '==', 'under_contract')
+    );
+    
+    const [activeSnapshot, contractSnapshot] = await Promise.all([
+      getDocs(activeQuery),
+      getDocs(contractQuery)
+    ]);
+    
     let properties = [];
-    querySnapshot.forEach((doc) => {
+    activeSnapshot.forEach((doc) => {
+      properties.push({ id: doc.id, ...doc.data() });
+    });
+    contractSnapshot.forEach((doc) => {
       properties.push({ id: doc.id, ...doc.data() });
     });
 
     // Exclude archived and not-available-for-sale (missing availableForSale treated as true for backward compat)
     properties = properties.filter((p) => p.archived !== true && p.availableForSale !== false);
+    
+    // Filter out under contract properties if showUnderContract is false
+    if (filters.showUnderContract === false) {
+      properties = properties.filter((p) => p.status !== 'under_contract');
+    }
 
     // Client-side: query (substring on address, city, state, zipCode)
     if (filters.query && String(filters.query).trim()) {

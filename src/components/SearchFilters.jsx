@@ -23,6 +23,7 @@ const defaultFilters = () => ({
   bathrooms: '',
   city: '',
   state: '',
+  showUnderContract: true, // Default to showing under contract properties
   orderBy: 'createdAt',
   orderDirection: 'desc',
 });
@@ -264,6 +265,16 @@ const SearchFilters = ({ onFilterChange, initialFilters = {} }) => {
                   <option value="price_asc">Price: Low to High</option>
                   <option value="price_desc">Price: High to Low</option>
                 </select>
+              </div>
+              <div className="search-filters-panel-row">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={draft.showUnderContract !== false}
+                    onChange={(e) => updateDraft('showUnderContract', e.target.checked)}
+                  />
+                  Show properties under contract
+                </label>
               </div>
               <button type="button" className="search-filters-apply" onClick={handleApply}>
                 Apply
