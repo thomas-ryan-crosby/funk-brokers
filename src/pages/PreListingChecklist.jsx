@@ -1531,8 +1531,5 @@ const PreListingChecklist = () => {
     </div>
   );
 };
-    </div>
-  );
-};
 
 export default PreListingChecklist;
