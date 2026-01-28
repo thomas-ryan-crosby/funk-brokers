@@ -186,23 +186,33 @@ const PreListingChecklist = () => {
       const vendorsList = await getVendorsByUser(user.uid);
       setVendors(vendorsList);
 
+      // Set map center priority: propertyLocation > deedLocation > first comp
+      let centerSet = false;
+      const propertyLocation = location.state?.propertyLocation;
+      if (propertyLocation && propertyLocation.lat && propertyLocation.lng) {
+        setMapCenter(propertyLocation);
+        centerSet = true;
+      }
+
       if (saved) {
         setChecklist(saved);
       if (saved.step1LegalAuthority) {
         setStep1Data(saved.step1LegalAuthority);
-        // Set map center from deed location if available, or use a default
-        if (saved.step1LegalAuthority.deedLocation) {
+        // Set map center from deed location if property location not available
+        if (!centerSet && saved.step1LegalAuthority.deedLocation) {
           setMapCenter(saved.step1LegalAuthority.deedLocation);
+          centerSet = true;
         }
       }
       if (saved.step2TitleOwnership) setStep2Data(saved.step2TitleOwnership);
       if (saved.step3ListingStrategy) {
         setStep3Data(saved.step3ListingStrategy);
-        // Set map center from first comp if available
-        if (saved.step3ListingStrategy.verifiedComps && saved.step3ListingStrategy.verifiedComps.length > 0) {
+        // Set map center from first comp if property/deed location not available
+        if (!centerSet && saved.step3ListingStrategy.verifiedComps && saved.step3ListingStrategy.verifiedComps.length > 0) {
           const firstComp = saved.step3ListingStrategy.verifiedComps[0];
           if (firstComp.latitude && firstComp.longitude) {
             setMapCenter({ lat: firstComp.latitude, lng: firstComp.longitude });
+            centerSet = true;
           }
         }
       }
@@ -728,7 +738,7 @@ const PreListingChecklist = () => {
                   <div className="step-comps-section">
                     <h3>Verified Comparables (Optional)</h3>
                     <p className="step-comps-description">
-                      Select up to 3 nearby properties on the map and enter their closing values to use as verified comparables for pricing.
+                      Select up to 5 nearby properties on the map and enter their closing values to use as verified comparables for pricing. Click on a property marker to view details, then click "Add" to add it as a comp.
                     </p>
                     
                     {!mapCenter && (
@@ -748,7 +758,7 @@ const PreListingChecklist = () => {
                           // Remove if already selected
                           const updated = comps.filter((_, i) => i !== existingIndex);
                           setStep3Data((d) => ({ ...d, verifiedComps: updated }));
-                        } else if (comps.length < 3) {
+                        } else if (comps.length < 5) {
                           // Add new comp
                           const newComp = {
                             parcelId: parcel.attomId,
@@ -762,19 +772,15 @@ const PreListingChecklist = () => {
                           };
                           const updated = [...comps, newComp];
                           setStep3Data((d) => ({ ...d, verifiedComps: updated }));
-                          // Center map on first comp
-                          if (updated.length === 1 && parcel.latitude && parcel.longitude) {
-                            setMapCenter({ lat: parcel.latitude, lng: parcel.longitude });
-                          }
                         } else {
-                          alert('You can select a maximum of 3 comparables.');
+                          alert('You can select a maximum of 5 comparables.');
                         }
                       }}
                     />
 
                     {step3Data.verifiedComps && step3Data.verifiedComps.length > 0 && (
                       <div className="step-comps-list">
-                        <h4>Selected Comparables ({step3Data.verifiedComps.length}/3)</h4>
+                        <h4>Selected Comparables ({step3Data.verifiedComps.length}/5)</h4>
                         {step3Data.verifiedComps.map((comp, index) => (
                           <div key={comp.parcelId || index} className="step-comp-item">
                             <div className="step-comp-header">

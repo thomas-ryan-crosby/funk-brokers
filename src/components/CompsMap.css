@@ -73,3 +73,25 @@
   color: #3b82f6 !important;
   font-weight: 600;
 }
+
+.comps-map-add-btn {
+  margin-top: 8px;
+  padding: 8px 16px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  transition: background-color 0.2s;
+}
+
+.comps-map-add-btn:hover {
+  background: #2563eb;
+}
+
+.comps-map-add-btn:active {
+  background: #1d4ed8;
+}

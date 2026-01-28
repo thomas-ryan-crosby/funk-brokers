@@ -121,14 +121,26 @@ const PropertyDetail = () => {
         const checklist = await getPreListingChecklist(user.uid);
         if (!isPreListingChecklistComplete(checklist)) {
           navigate(`/pre-listing-checklist`, { 
-            state: { returnTo: `/property/${property.id}` } 
+            state: { 
+              returnTo: `/property/${property.id}`,
+              propertyLocation: property.latitude && property.longitude ? {
+                lat: property.latitude,
+                lng: property.longitude
+              } : null
+            } 
           });
           return;
         }
       } catch (err) {
         console.error('Error checking checklist:', err);
         navigate(`/pre-listing-checklist`, { 
-          state: { returnTo: `/property/${property.id}` } 
+          state: { 
+            returnTo: `/property/${property.id}`,
+            propertyLocation: property.latitude && property.longitude ? {
+              lat: property.latitude,
+              lng: property.longitude
+            } : null
+          } 
         });
         return;
       }

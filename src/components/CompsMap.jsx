@@ -95,31 +95,50 @@ const CompsMap = ({ center, onCompSelect, selectedComps = [] }) => {
         parcel,
       });
 
+      // Create unique ID for this parcel's info window
+      const infoId = `comps-info-${parcel.attomId || Date.now()}-${Math.random()}`;
+      
       const info = new window.google.maps.InfoWindow({
         content: `
-          <div class="comps-map-info">
+          <div class="comps-map-info" id="${infoId}">
             <strong>${parcel.address || 'Address unknown'}</strong>
             ${parcel.estimate ? `<p>Estimate: ${formatPrice(parcel.estimate)}</p>` : ''}
             ${parcel.lastSalePrice ? `<p>Last sale: ${formatPrice(parcel.lastSalePrice)}</p>` : ''}
-            ${isSelected ? '<p class="comps-map-info-selected">✓ Selected as comp</p>' : '<p>Click to select as comp</p>'}
+            ${isSelected 
+              ? '<p class="comps-map-info-selected">✓ Selected as comp</p>' 
+              : `<button class="comps-map-add-btn" data-parcel-id="${parcel.attomId}">Add as Comp</button>`
+            }
           </div>
         `,
       });
 
+      // Open info window on marker click
       marker.addListener('click', () => {
-        if (typeof onCompSelect === 'function') {
-          onCompSelect(parcel);
-        }
+        info.open(map, marker);
+        
+        // Set up click handler for Add button after info window DOM is ready
+        window.google.maps.event.addListenerOnce(info, 'domready', () => {
+          const addBtn = document.querySelector(`#${infoId} .comps-map-add-btn`);
+          if (addBtn && typeof onCompSelect === 'function') {
+            // Remove any existing listener to prevent duplicates
+            const newBtn = addBtn.cloneNode(true);
+            addBtn.parentNode.replaceChild(newBtn, addBtn);
+            newBtn.addEventListener('click', (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onCompSelect(parcel);
+              info.close();
+            });
+          }
+        });
       });
 
       marker.addListener('mouseover', () => {
         setHoveredParcel(parcel);
-        info.open(map, marker);
       });
 
       marker.addListener('mouseout', () => {
         setHoveredParcel(null);
-        info.close();
       });
 
       markersRef.current.push(marker);
