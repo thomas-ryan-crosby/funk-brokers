@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { getPreListingChecklist, savePreListingChecklist, isPreListingChecklistComplete } from '../services/preListingChecklistService';
 import { getVendorsByUser, VENDOR_TYPES } from '../services/vendorService';
 import { uploadFile } from '../services/storageService';
+import CompsMap from '../components/CompsMap';
 import './PreListingChecklist.css';
 
 const PreListingChecklist = () => {
@@ -50,8 +51,10 @@ const PreListingChecklist = () => {
     targetBuyer: '',
     repairsStrategy: '',
     concessionsStrategy: '',
+    verifiedComps: [], // Array of { parcelId, address, latitude, longitude, closingValue }
     completed: false,
   });
+  const [mapCenter, setMapCenter] = useState(null);
 
   // Step 4: Disclosures
   const [step4Data, setStep4Data] = useState({
@@ -137,7 +140,7 @@ const PreListingChecklist = () => {
     }, 2000);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step3Data.needsSupport, step3Data.listPrice, step3Data.timing, step3Data.targetBuyer, step3Data.repairsStrategy, step3Data.concessionsStrategy]);
+  }, [step3Data.needsSupport, step3Data.listPrice, step3Data.timing, step3Data.targetBuyer, step3Data.repairsStrategy, step3Data.concessionsStrategy, step3Data.verifiedComps?.length]);
 
   useEffect(() => {
     if (!user?.uid || loading || step4Data.completed) return;
@@ -185,14 +188,29 @@ const PreListingChecklist = () => {
 
       if (saved) {
         setChecklist(saved);
-        if (saved.step1LegalAuthority) setStep1Data(saved.step1LegalAuthority);
-        if (saved.step2TitleOwnership) setStep2Data(saved.step2TitleOwnership);
-        if (saved.step3ListingStrategy) setStep3Data(saved.step3ListingStrategy);
-        if (saved.step4Disclosures) setStep4Data(saved.step4Disclosures);
-        if (saved.step5PropertyPrep) setStep5Data(saved.step5PropertyPrep);
-        if (saved.step6MarketingAssets) setStep6Data(saved.step6MarketingAssets);
-        if (saved.step7ShowingsOffers) setStep7Data(saved.step7ShowingsOffers);
-        if (saved.currentStep) setCurrentStep(saved.currentStep);
+      if (saved.step1LegalAuthority) {
+        setStep1Data(saved.step1LegalAuthority);
+        // Set map center from deed location if available, or use a default
+        if (saved.step1LegalAuthority.deedLocation) {
+          setMapCenter(saved.step1LegalAuthority.deedLocation);
+        }
+      }
+      if (saved.step2TitleOwnership) setStep2Data(saved.step2TitleOwnership);
+      if (saved.step3ListingStrategy) {
+        setStep3Data(saved.step3ListingStrategy);
+        // Set map center from first comp if available
+        if (saved.step3ListingStrategy.verifiedComps && saved.step3ListingStrategy.verifiedComps.length > 0) {
+          const firstComp = saved.step3ListingStrategy.verifiedComps[0];
+          if (firstComp.latitude && firstComp.longitude) {
+            setMapCenter({ lat: firstComp.latitude, lng: firstComp.longitude });
+          }
+        }
+      }
+      if (saved.step4Disclosures) setStep4Data(saved.step4Disclosures);
+      if (saved.step5PropertyPrep) setStep5Data(saved.step5PropertyPrep);
+      if (saved.step6MarketingAssets) setStep6Data(saved.step6MarketingAssets);
+      if (saved.step7ShowingsOffers) setStep7Data(saved.step7ShowingsOffers);
+      if (saved.currentStep) setCurrentStep(saved.currentStep);
       }
     } catch (err) {
       console.error('Error loading checklist:', err);
@@ -300,6 +318,15 @@ const PreListingChecklist = () => {
         if (!step3Data.listPrice || !step3Data.timing || !step3Data.targetBuyer) {
           alert('Please complete all required fields.');
           return;
+        }
+        // Validate comps if any are selected
+        const comps = step3Data.verifiedComps || [];
+        if (comps.length > 0) {
+          const incompleteComps = comps.filter((c) => !c.closingValue || !c.closingValue.trim());
+          if (incompleteComps.length > 0) {
+            alert('Please enter closing values for all selected comparables.');
+            return;
+          }
         }
         stepData = { ...step3Data, completed: true };
         setStep3Data(stepData);
@@ -696,6 +723,97 @@ const PreListingChecklist = () => {
                         rows={3}
                       />
                     </div>
+                  </div>
+
+                  <div className="step-comps-section">
+                    <h3>Verified Comparables (Optional)</h3>
+                    <p className="step-comps-description">
+                      Select up to 3 nearby properties on the map and enter their closing values to use as verified comparables for pricing.
+                    </p>
+                    
+                    {!mapCenter && (
+                      <div className="step-comps-center-prompt">
+                        <p>Enter your property address in Step 1 to center the map, or manually navigate to your area.</p>
+                      </div>
+                    )}
+                    
+                    <CompsMap
+                      center={mapCenter}
+                      selectedComps={step3Data.verifiedComps || []}
+                      onCompSelect={(parcel) => {
+                        const comps = step3Data.verifiedComps || [];
+                        const existingIndex = comps.findIndex((c) => c.parcelId === parcel.attomId);
+                        
+                        if (existingIndex >= 0) {
+                          // Remove if already selected
+                          const updated = comps.filter((_, i) => i !== existingIndex);
+                          setStep3Data((d) => ({ ...d, verifiedComps: updated }));
+                        } else if (comps.length < 3) {
+                          // Add new comp
+                          const newComp = {
+                            parcelId: parcel.attomId,
+                            address: parcel.address || 'Address unknown',
+                            latitude: parcel.latitude,
+                            longitude: parcel.longitude,
+                            closingValue: '',
+                            estimate: parcel.estimate,
+                            lastSalePrice: parcel.lastSalePrice,
+                            lastSaleDate: parcel.lastSaleDate,
+                          };
+                          const updated = [...comps, newComp];
+                          setStep3Data((d) => ({ ...d, verifiedComps: updated }));
+                          // Center map on first comp
+                          if (updated.length === 1 && parcel.latitude && parcel.longitude) {
+                            setMapCenter({ lat: parcel.latitude, lng: parcel.longitude });
+                          }
+                        } else {
+                          alert('You can select a maximum of 3 comparables.');
+                        }
+                      }}
+                    />
+
+                    {step3Data.verifiedComps && step3Data.verifiedComps.length > 0 && (
+                      <div className="step-comps-list">
+                        <h4>Selected Comparables ({step3Data.verifiedComps.length}/3)</h4>
+                        {step3Data.verifiedComps.map((comp, index) => (
+                          <div key={comp.parcelId || index} className="step-comp-item">
+                            <div className="step-comp-header">
+                              <div className="step-comp-info">
+                                <strong>{comp.address}</strong>
+                                {comp.estimate && (
+                                  <span className="step-comp-estimate">Est: {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(comp.estimate)}</span>
+                                )}
+                              </div>
+                              <button
+                                type="button"
+                                className="step-comp-remove"
+                                onClick={() => {
+                                  const updated = step3Data.verifiedComps.filter((_, i) => i !== index);
+                                  setStep3Data((d) => ({ ...d, verifiedComps: updated }));
+                                }}
+                                title="Remove comp"
+                              >
+                                ×
+                              </button>
+                            </div>
+                            <div className="step-comp-closing-value">
+                              <label>Closing Value *</label>
+                              <input
+                                type="text"
+                                inputMode="numeric"
+                                placeholder="Enter closing value (e.g. 450000)"
+                                value={comp.closingValue}
+                                onChange={(e) => {
+                                  const updated = [...step3Data.verifiedComps];
+                                  updated[index] = { ...updated[index], closingValue: e.target.value };
+                                  setStep3Data((d) => ({ ...d, verifiedComps: updated }));
+                                }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div className="step-certification">
