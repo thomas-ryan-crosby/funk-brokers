@@ -74,9 +74,26 @@ const CompsMap = ({ center, onCompSelect, selectedComps = [] }) => {
     if (!ready || !mapInstanceRef.current || !window.google?.maps) return;
     const map = mapInstanceRef.current;
 
-    // Clear existing markers
+    // Clear existing markers and clean up old callbacks
     markersRef.current.forEach((m) => m.setMap(null));
     markersRef.current = [];
+    
+    // Clean up old callbacks (keep only active ones)
+    if (window.compsMapCallbacks) {
+      const activeIds = new Set();
+      parcels.forEach((p) => {
+        Object.keys(window.compsMapCallbacks).forEach((id) => {
+          if (id.includes(String(p.attomId))) {
+            activeIds.add(id);
+          }
+        });
+      });
+      Object.keys(window.compsMapCallbacks).forEach((id) => {
+        if (!activeIds.has(id)) {
+          delete window.compsMapCallbacks[id];
+        }
+      });
+    }
 
     parcels.forEach((parcel) => {
       const isSelected = selectedComps.some((c) => c.parcelId === parcel.attomId);
@@ -95,42 +112,39 @@ const CompsMap = ({ center, onCompSelect, selectedComps = [] }) => {
         parcel,
       });
 
-      // Create unique ID for this parcel's info window
-      const infoId = `comps-info-${parcel.attomId || Date.now()}-${Math.random()}`;
+      // Create a unique callback ID for this parcel
+      const callbackId = `comp-add-${parcel.attomId || Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      
+      // Store the callback in a global object (Google Maps InfoWindow limitation)
+      if (!window.compsMapCallbacks) {
+        window.compsMapCallbacks = {};
+      }
       
       const info = new window.google.maps.InfoWindow({
         content: `
-          <div class="comps-map-info" id="${infoId}">
+          <div class="comps-map-info">
             <strong>${parcel.address || 'Address unknown'}</strong>
             ${parcel.estimate ? `<p>Estimate: ${formatPrice(parcel.estimate)}</p>` : ''}
             ${parcel.lastSalePrice ? `<p>Last sale: ${formatPrice(parcel.lastSalePrice)}</p>` : ''}
             ${isSelected 
               ? '<p class="comps-map-info-selected">✓ Selected as comp</p>' 
-              : `<button class="comps-map-add-btn" data-parcel-id="${parcel.attomId}">Add as Comp</button>`
+              : `<button class="comps-map-add-btn" onclick="if(window.compsMapCallbacks && window.compsMapCallbacks['${callbackId}']) { window.compsMapCallbacks['${callbackId}'](); }">Add as Comp</button>`
             }
           </div>
         `,
       });
+      
+      // Store callback that closes info window and calls onCompSelect
+      window.compsMapCallbacks[callbackId] = () => {
+        info.close();
+        if (typeof onCompSelect === 'function') {
+          onCompSelect(parcel);
+        }
+      };
 
       // Open info window on marker click
       marker.addListener('click', () => {
         info.open(map, marker);
-        
-        // Set up click handler for Add button after info window DOM is ready
-        window.google.maps.event.addListenerOnce(info, 'domready', () => {
-          const addBtn = document.querySelector(`#${infoId} .comps-map-add-btn`);
-          if (addBtn && typeof onCompSelect === 'function') {
-            // Remove any existing listener to prevent duplicates
-            const newBtn = addBtn.cloneNode(true);
-            addBtn.parentNode.replaceChild(newBtn, addBtn);
-            newBtn.addEventListener('click', (e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              onCompSelect(parcel);
-              info.close();
-            });
-          }
-        });
       });
 
       marker.addListener('mouseover', () => {
