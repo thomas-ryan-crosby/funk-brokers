@@ -85,6 +85,11 @@ const Dashboard = () => {
   const [editingContactId, setEditingContactId] = useState(null);
   const [contactForm, setContactForm] = useState({ name: '', phone: '', email: '' });
   const [expandedVendorId, setExpandedVendorId] = useState(null);
+  const [vendorSearchQuery, setVendorSearchQuery] = useState('');
+  const [vendorTypeFilter, setVendorTypeFilter] = useState('all');
+  const [showVendorModal, setShowVendorModal] = useState(false);
+  const [showContactModal, setShowContactModal] = useState(false);
+  const [contactModalVendorId, setContactModalVendorId] = useState(null);
 
   const location = useLocation();
 
@@ -414,6 +419,7 @@ const Dashboard = () => {
       const v = await getVendorsByUser(user.uid);
       setVendors(v);
       setVendorForm({ vendorName: '', type: 'other' });
+      setShowVendorModal(false);
     } catch (err) {
       console.error(err);
       alert('Failed to save vendor. Please try again.');
@@ -423,6 +429,47 @@ const Dashboard = () => {
   const handleVendorEdit = (v) => {
     setEditingVendorId(v.id);
     setVendorForm({ vendorName: v.vendorName || '', type: v.type || 'other' });
+    setShowVendorModal(true);
+  };
+
+  const handleNewVendor = () => {
+    setEditingVendorId(null);
+    setVendorForm({ vendorName: '', type: 'other' });
+    setShowVendorModal(true);
+  };
+
+  const handleNewContact = (vendorId) => {
+    setContactModalVendorId(vendorId);
+    setEditingContactId(null);
+    setContactForm({ name: '', phone: '', email: '' });
+    setShowContactModal(true);
+  };
+
+  const handleEditContact = (vendorId, contact) => {
+    setContactModalVendorId(vendorId);
+    setEditingContactId(contact.id);
+    setContactForm({ name: contact.name || '', phone: contact.phone || '', email: contact.email || '' });
+    setShowContactModal(true);
+  };
+
+  const handleContactSaveModal = async () => {
+    if (!contactForm.name?.trim() || !contactModalVendorId) return;
+    try {
+      if (editingContactId) {
+        await updateVendorContact(contactModalVendorId, editingContactId, contactForm);
+        setEditingContactId(null);
+      } else {
+        await addVendorContact(contactModalVendorId, contactForm);
+      }
+      const v = await getVendorsByUser(user.uid);
+      setVendors(v);
+      setContactForm({ name: '', phone: '', email: '' });
+      setContactModalVendorId(null);
+      setShowContactModal(false);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save contact. Please try again.');
+    }
   };
 
   const handleVendorDelete = async (vendorId) => {
@@ -444,29 +491,25 @@ const Dashboard = () => {
     }
   };
 
-  const handleContactSave = async (vendorId) => {
-    if (!contactForm.name?.trim()) return;
-    try {
-      if (editingContactId) {
-        await updateVendorContact(vendorId, editingContactId, contactForm);
-        setEditingContactId(null);
-      } else {
-        await addVendorContact(vendorId, contactForm);
-      }
-      const v = await getVendorsByUser(user.uid);
-      setVendors(v);
-      setContactForm({ name: '', phone: '', email: '' });
-    } catch (err) {
-      console.error(err);
-      alert('Failed to save contact. Please try again.');
+  // Filtered vendors based on search and type filter
+  const filteredVendors = useMemo(() => {
+    let filtered = vendors;
+    if (vendorSearchQuery.trim()) {
+      const query = vendorSearchQuery.toLowerCase();
+      filtered = filtered.filter((v) => 
+        (v.vendorName || '').toLowerCase().includes(query) ||
+        (v.contacts || []).some((c) => 
+          (c.name || '').toLowerCase().includes(query) ||
+          (c.email || '').toLowerCase().includes(query) ||
+          (c.phone || '').includes(query)
+        )
+      );
     }
-  };
-
-  const handleContactEdit = (vendorId, contact) => {
-    setEditingContactId(contact.id);
-    setContactForm({ name: contact.name || '', phone: contact.phone || '', email: contact.email || '' });
-    setExpandedVendorId(vendorId);
-  };
+    if (vendorTypeFilter !== 'all') {
+      filtered = filtered.filter((v) => v.type === vendorTypeFilter);
+    }
+    return filtered;
+  }, [vendors, vendorSearchQuery, vendorTypeFilter]);
 
   const handleContactDelete = async (vendorId, contactId) => {
     if (!window.confirm('Delete this contact?')) return;
@@ -1329,127 +1372,179 @@ const Dashboard = () => {
 
           {activeTab === 'vendor-center' && (
             <div className="dashboard-section vendor-center-section">
-              <div className="section-header">
-                <h2>Vendor Center</h2>
-                <p className="form-hint">Manage vendors and contacts for your deals. Assign them to transactions from the deal page.</p>
+              <div className="vendor-center-header">
+                <div>
+                  <h2>Vendor Center</h2>
+                  <p className="vendor-center-subtitle">Manage vendors and contacts for your deals. Assign them to transactions from the deal page.</p>
+                </div>
+                <button type="button" className="btn btn-primary vendor-center-add-btn" onClick={handleNewVendor}>
+                  + Add Vendor
+                </button>
               </div>
-              <div className="vendor-center-list">
-                {vendors.map((v) => (
-                  <div key={v.id} className="vendor-center-item">
-                    <div className="vendor-center-item-header">
-                      <div className="vendor-center-item-main">
-                        <strong className="vendor-center-name">{v.vendorName || 'Unnamed vendor'}</strong>
-                        <span className="vendor-center-type"> {VENDOR_TYPES.find((t) => t.id === v.type)?.label || v.type}</span>
-                        {v.contacts && v.contacts.length > 0 && (
-                          <span className="vendor-center-contact-count">({v.contacts.length} {v.contacts.length === 1 ? 'contact' : 'contacts'})</span>
-                        )}
-                      </div>
-                      <div className="vendor-center-actions">
-                        <button type="button" className="btn btn-outline btn-small" onClick={() => setExpandedVendorId(expandedVendorId === v.id ? null : v.id)}>
-                          {expandedVendorId === v.id ? 'Collapse' : 'View contacts'}
-                        </button>
-                        <button type="button" className="btn btn-outline btn-small" onClick={() => handleVendorEdit(v)}>Edit</button>
-                        <button type="button" className="btn btn-outline btn-small doc-remove-btn" onClick={() => handleVendorDelete(v.id)}>Delete</button>
-                      </div>
-                    </div>
-                    {expandedVendorId === v.id && (
-                      <div className="vendor-center-contacts">
-                        <h4>Contacts</h4>
-                        {v.contacts && v.contacts.length > 0 ? (
-                          <div className="vendor-center-contacts-list">
-                            {v.contacts.map((contact) => (
-                              <div key={contact.id} className="vendor-center-contact-item">
-                                <div>
-                                  <strong>{contact.name}</strong>
-                                  {(contact.phone || contact.email) && (
-                                    <span className="vendor-center-contact-meta">
-                                      {contact.phone && <a href={`tel:${contact.phone}`}>{contact.phone}</a>}
-                                      {contact.phone && contact.email && ' · '}
-                                      {contact.email && <a href={`mailto:${contact.email}`}>{contact.email}</a>}
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="vendor-center-contact-actions">
-                                  <button type="button" className="btn btn-outline btn-small" onClick={() => handleContactEdit(v.id, contact)}>Edit</button>
-                                  <button type="button" className="btn btn-outline btn-small doc-remove-btn" onClick={() => handleContactDelete(v.id, contact.id)}>Delete</button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className="empty-message">No contacts yet. Add one below.</p>
-                        )}
-                        <div className="vendor-center-contact-form">
-                          <h5>{editingContactId ? 'Edit contact' : 'Add contact'}</h5>
-                          <div className="vendor-center-fields">
-                            <input
-                              type="text"
-                              placeholder="Name *"
-                              value={contactForm.name}
-                              onChange={(e) => setContactForm((f) => ({ ...f, name: e.target.value }))}
-                              className="buying-power-input"
-                            />
-                            <input
-                              type="text"
-                              placeholder="Phone"
-                              value={contactForm.phone}
-                              onChange={(e) => setContactForm((f) => ({ ...f, phone: e.target.value }))}
-                              className="buying-power-input"
-                            />
-                            <input
-                              type="email"
-                              placeholder="Email"
-                              value={contactForm.email}
-                              onChange={(e) => setContactForm((f) => ({ ...f, email: e.target.value }))}
-                              className="buying-power-input"
-                            />
-                          </div>
-                          <div className="buying-power-edit-actions">
-                            {editingContactId && (
-                              <button type="button" className="btn btn-outline" onClick={() => { setEditingContactId(null); setContactForm({ name: '', phone: '', email: '' }); }}>Cancel</button>
-                            )}
-                            <button type="button" className="btn btn-primary" onClick={() => handleContactSave(v.id)} disabled={!contactForm.name?.trim()}>
-                              {editingContactId ? 'Save' : 'Add contact'}
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-              {vendors.length === 0 && (
-                <p className="empty-message">No vendors yet. Add one below.</p>
-              )}
-              <div className="vendor-center-form">
-                <h3>{editingVendorId ? 'Edit vendor' : 'Add vendor'}</h3>
-                <div className="vendor-center-fields">
+
+              <div className="vendor-center-filters">
+                <div className="vendor-center-search">
                   <input
                     type="text"
-                    placeholder="Vendor name *"
-                    value={vendorForm.vendorName}
-                    onChange={(e) => setVendorForm((f) => ({ ...f, vendorName: e.target.value }))}
-                    className="buying-power-input"
+                    placeholder="Search vendors or contacts..."
+                    value={vendorSearchQuery}
+                    onChange={(e) => setVendorSearchQuery(e.target.value)}
+                    className="vendor-center-search-input"
                   />
-                  <select
-                    value={vendorForm.type}
-                    onChange={(e) => setVendorForm((f) => ({ ...f, type: e.target.value }))}
-                    className="buying-power-input"
-                  >
-                    {VENDOR_TYPES.map((t) => (
-                      <option key={t.id} value={t.id}>{t.label}</option>
-                    ))}
-                  </select>
                 </div>
-                <div className="buying-power-edit-actions">
-                  {editingVendorId && (
-                    <button type="button" className="btn btn-outline" onClick={() => { setEditingVendorId(null); setVendorForm({ vendorName: '', type: 'other' }); }}>Cancel</button>
-                  )}
-                  <button type="button" className="btn btn-primary" onClick={handleVendorSave} disabled={!vendorForm.vendorName?.trim()}>
-                    {editingVendorId ? 'Save' : 'Add vendor'}
-                  </button>
-                </div>
+                <select
+                  value={vendorTypeFilter}
+                  onChange={(e) => setVendorTypeFilter(e.target.value)}
+                  className="vendor-center-type-filter"
+                >
+                  <option value="all">All Types</option>
+                  {VENDOR_TYPES.map((t) => (
+                    <option key={t.id} value={t.id}>{t.label}</option>
+                  ))}
+                </select>
               </div>
+
+              {filteredVendors.length === 0 ? (
+                <div className="vendor-center-empty">
+                  <div className="vendor-center-empty-icon">📋</div>
+                  <h3>{vendors.length === 0 ? 'No vendors yet' : 'No vendors match your search'}</h3>
+                  <p>{vendors.length === 0 ? 'Add your first vendor to get started managing your deal contacts.' : 'Try adjusting your search or filter.'}</p>
+                  {vendors.length === 0 && (
+                    <button type="button" className="btn btn-primary" onClick={handleNewVendor}>
+                      Add Your First Vendor
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="vendor-center-grid">
+                  {filteredVendors.map((v) => (
+                    <div key={v.id} className="vendor-card">
+                      <div className="vendor-card-header">
+                        <div className="vendor-card-title-section">
+                          <h3 className="vendor-card-name">{v.vendorName || 'Unnamed vendor'}</h3>
+                          <span className="vendor-card-type-badge vendor-card-type-badge--{v.type}">
+                            {VENDOR_TYPES.find((t) => t.id === v.type)?.label || v.type}
+                          </span>
+                        </div>
+                        <div className="vendor-card-actions">
+                          <button
+                            type="button"
+                            className="vendor-card-action-btn"
+                            onClick={() => setExpandedVendorId(expandedVendorId === v.id ? null : v.id)}
+                            title={expandedVendorId === v.id ? 'Collapse' : 'View contacts'}
+                          >
+                            {expandedVendorId === v.id ? '▼' : '▶'}
+                          </button>
+                          <button
+                            type="button"
+                            className="vendor-card-action-btn"
+                            onClick={() => handleVendorEdit(v)}
+                            title="Edit vendor"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            type="button"
+                            className="vendor-card-action-btn vendor-card-action-btn--danger"
+                            onClick={() => handleVendorDelete(v.id)}
+                            title="Delete vendor"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </div>
+
+                      <div className="vendor-card-contacts-summary">
+                        <span className="vendor-card-contacts-count">
+                          {v.contacts && v.contacts.length > 0 ? (
+                            <>
+                              {v.contacts.length} {v.contacts.length === 1 ? 'contact' : 'contacts'}
+                            </>
+                          ) : (
+                            'No contacts'
+                          )}
+                        </span>
+                        {expandedVendorId !== v.id && v.contacts && v.contacts.length > 0 && (
+                          <div className="vendor-card-contacts-preview">
+                            {v.contacts.slice(0, 2).map((c) => (
+                              <span key={c.id} className="vendor-card-contact-preview">{c.name}</span>
+                            ))}
+                            {v.contacts.length > 2 && <span className="vendor-card-contact-preview">+{v.contacts.length - 2} more</span>}
+                          </div>
+                        )}
+                      </div>
+
+                      {expandedVendorId === v.id && (
+                        <div className="vendor-card-contacts-expanded">
+                          <div className="vendor-card-contacts-header">
+                            <h4>Contacts</h4>
+                            <button
+                              type="button"
+                              className="btn btn-outline btn-small"
+                              onClick={() => handleNewContact(v.id)}
+                            >
+                              + Add Contact
+                            </button>
+                          </div>
+                          {v.contacts && v.contacts.length > 0 ? (
+                            <div className="vendor-card-contacts-list">
+                              {v.contacts.map((contact) => (
+                                <div key={contact.id} className="vendor-card-contact-item">
+                                  <div className="vendor-card-contact-info">
+                                    <div className="vendor-card-contact-name">{contact.name}</div>
+                                    <div className="vendor-card-contact-details">
+                                      {contact.phone && (
+                                        <a href={`tel:${contact.phone}`} className="vendor-card-contact-link">
+                                          📞 {contact.phone}
+                                        </a>
+                                      )}
+                                      {contact.phone && contact.email && <span className="vendor-card-contact-separator">·</span>}
+                                      {contact.email && (
+                                        <a href={`mailto:${contact.email}`} className="vendor-card-contact-link">
+                                          ✉️ {contact.email}
+                                        </a>
+                                      )}
+                                    </div>
+                                  </div>
+                                  <div className="vendor-card-contact-actions">
+                                    <button
+                                      type="button"
+                                      className="vendor-card-contact-action"
+                                      onClick={() => handleEditContact(v.id, contact)}
+                                      title="Edit contact"
+                                    >
+                                      ✏️
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="vendor-card-contact-action vendor-card-contact-action--danger"
+                                      onClick={() => handleContactDelete(v.id, contact.id)}
+                                      title="Delete contact"
+                                    >
+                                      🗑️
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="vendor-card-contacts-empty">
+                              <p>No contacts yet. Add your first contact to get started.</p>
+                              <button
+                                type="button"
+                                className="btn btn-outline btn-small"
+                                onClick={() => handleNewContact(v.id)}
+                              >
+                                + Add Contact
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -1472,6 +1567,132 @@ const Dashboard = () => {
           onClose={() => setViewOfferFor(null)}
           formatCurrency={formatCurrency}
         />
+      )}
+
+      {showVendorModal && (
+        <div className="modal-overlay" onClick={() => { setShowVendorModal(false); setEditingVendorId(null); setVendorForm({ vendorName: '', type: 'other' }); }}>
+          <div className="modal-content vendor-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{editingVendorId ? 'Edit Vendor' : 'Add Vendor'}</h2>
+              <button
+                type="button"
+                className="modal-close"
+                onClick={() => { setShowVendorModal(false); setEditingVendorId(null); setVendorForm({ vendorName: '', type: 'other' }); }}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label>Vendor Name *</label>
+                <input
+                  type="text"
+                  placeholder="e.g. ABC Title Company"
+                  value={vendorForm.vendorName}
+                  onChange={(e) => setVendorForm((f) => ({ ...f, vendorName: e.target.value }))}
+                  className="form-input"
+                  autoFocus
+                />
+              </div>
+              <div className="form-group">
+                <label>Vendor Type *</label>
+                <select
+                  value={vendorForm.type}
+                  onChange={(e) => setVendorForm((f) => ({ ...f, type: e.target.value }))}
+                  className="form-input"
+                >
+                  {VENDOR_TYPES.map((t) => (
+                    <option key={t.id} value={t.id}>{t.label}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={() => { setShowVendorModal(false); setEditingVendorId(null); setVendorForm({ vendorName: '', type: 'other' }); }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleVendorSave}
+                disabled={!vendorForm.vendorName?.trim()}
+              >
+                {editingVendorId ? 'Save Changes' : 'Add Vendor'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showContactModal && (
+        <div className="modal-overlay" onClick={() => { setShowContactModal(false); setContactModalVendorId(null); setEditingContactId(null); setContactForm({ name: '', phone: '', email: '' }); }}>
+          <div className="modal-content contact-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{editingContactId ? 'Edit Contact' : 'Add Contact'}</h2>
+              <button
+                type="button"
+                className="modal-close"
+                onClick={() => { setShowContactModal(false); setContactModalVendorId(null); setEditingContactId(null); setContactForm({ name: '', phone: '', email: '' }); }}
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label>Name *</label>
+                <input
+                  type="text"
+                  placeholder="Contact name"
+                  value={contactForm.name}
+                  onChange={(e) => setContactForm((f) => ({ ...f, name: e.target.value }))}
+                  className="form-input"
+                  autoFocus
+                />
+              </div>
+              <div className="form-group">
+                <label>Phone</label>
+                <input
+                  type="tel"
+                  placeholder="(555) 123-4567"
+                  value={contactForm.phone}
+                  onChange={(e) => setContactForm((f) => ({ ...f, phone: e.target.value }))}
+                  className="form-input"
+                />
+              </div>
+              <div className="form-group">
+                <label>Email</label>
+                <input
+                  type="email"
+                  placeholder="contact@example.com"
+                  value={contactForm.email}
+                  onChange={(e) => setContactForm((f) => ({ ...f, email: e.target.value }))}
+                  className="form-input"
+                />
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button
+                type="button"
+                className="btn btn-outline"
+                onClick={() => { setShowContactModal(false); setContactModalVendorId(null); setEditingContactId(null); setContactForm({ name: '', phone: '', email: '' }); }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={handleContactSaveModal}
+                disabled={!contactForm.name?.trim()}
+              >
+                {editingContactId ? 'Save Changes' : 'Add Contact'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
