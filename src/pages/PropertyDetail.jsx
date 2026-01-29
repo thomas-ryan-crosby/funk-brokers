@@ -564,7 +564,12 @@ const PropertyDetail = () => {
                 <div className="property-tier-progress-card">
                   <h3>Property tier</h3>
                   <div className="tier-current">
-                    <span className={`tier-badge tier-badge--${prog.tier}`}>{getListingTierLabel(prog.tier)}</span>
+                    <span className={`tier-badge tier-badge--${prog.tier}`}>
+                      {prog.tier === 'generic' && <span className="tier-badge-icon">⚪</span>}
+                      {prog.tier === 'verified' && <span className="tier-badge-icon">✓</span>}
+                      {prog.tier === 'premium' && <span className="tier-badge-icon">⭐</span>}
+                      <span className="tier-badge-text">{getListingTierLabel(prog.tier)}</span>
+                    </span>
                   </div>
                   {prog.nextTier && (
                     <>

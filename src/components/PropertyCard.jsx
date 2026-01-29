@@ -98,7 +98,10 @@ const PropertyCard = ({ property, embedded, compact, listingTier }) => {
         </div>
         <div className="property-card__tags">
           <span className={`property-card__tag property-card__tag--tier property-card__tag--${tier}`}>
-            {getListingTierLabel(tier)}
+            {tier === 'generic' && <span className="property-card__tag-icon">⚪</span>}
+            {tier === 'verified' && <span className="property-card__tag-icon">✓</span>}
+            {tier === 'premium' && <span className="property-card__tag-icon">⭐</span>}
+            <span>{getListingTierLabel(tier)}</span>
           </span>
           <span className={`property-card__tag property-card__tag--status property-card__tag--${isListedStatus ? 'listed' : 'not-listed'}`}>
             {isListedStatus ? 'Listed' : 'Not listed'}
