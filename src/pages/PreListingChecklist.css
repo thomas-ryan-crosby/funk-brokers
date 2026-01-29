@@ -32,6 +32,49 @@
   margin: 0 0 16px 0;
 }
 
+.checklist-property-selector {
+  margin-top: 24px;
+}
+
+.checklist-property-selector label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 8px;
+}
+
+.checklist-property-select {
+  width: 100%;
+  max-width: 400px;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #334155;
+  background: #fff;
+}
+
+.checklist-property-hint,
+.checklist-property-selector .checklist-property-hint {
+  font-size: 13px;
+  color: #64748b;
+  margin-top: 12px;
+}
+
+.checklist-no-property {
+  margin-top: 24px;
+  padding: 24px;
+  background: #f8fafc;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.checklist-no-property p {
+  margin: 0 0 16px 0;
+  color: #64748b;
+}
+
 .completion-progress {
   display: flex;
   align-items: center;

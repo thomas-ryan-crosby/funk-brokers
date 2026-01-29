@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getPreListingChecklist, savePreListingChecklist, isPreListingChecklistComplete } from '../services/preListingChecklistService';
+import { getPropertiesBySeller } from '../services/propertyService';
 import { getVendorsByUser, VENDOR_TYPES } from '../services/vendorService';
 import { uploadFile } from '../services/storageService';
 import CompsMap from '../components/CompsMap';
@@ -12,6 +13,11 @@ const PreListingChecklist = () => {
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const propertyIdFromUrl = searchParams.get('propertyId');
+  const propertyIdFromState = location.state?.propertyId;
+  const [propertyId, setPropertyId] = useState(propertyIdFromState || propertyIdFromUrl || null);
+  const [userProperties, setUserProperties] = useState([]);
   const [currentStep, setCurrentStep] = useState(1);
   const [checklist, setChecklist] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -114,18 +120,30 @@ const PreListingChecklist = () => {
   const [uploadingFiles, setUploadingFiles] = useState({});
   const [requestingSupport, setRequestingSupport] = useState({});
 
+  // Sync propertyId from navigation state or URL
+  useEffect(() => {
+    const fromState = location.state?.propertyId;
+    const fromUrl = searchParams.get('propertyId');
+    if (fromState) setPropertyId(fromState);
+    else if (fromUrl) setPropertyId(fromUrl);
+  }, [location.state?.propertyId, searchParams]);
+
   useEffect(() => {
     if (authLoading) return;
     if (!isAuthenticated) {
       navigate('/sign-in?redirect=/pre-listing-checklist');
       return;
     }
-    loadChecklist();
-  }, [isAuthenticated, authLoading, navigate]);
+    if (user?.uid && !propertyId) {
+      getPropertiesBySeller(user.uid).then(setUserProperties).catch(() => setUserProperties([]));
+    }
+    if (propertyId) loadChecklist();
+    else setLoading(false);
+  }, [isAuthenticated, authLoading, navigate, user?.uid, propertyId]);
 
   // Auto-save step data when it changes (debounced) - only save incomplete steps
   useEffect(() => {
-    if (!user?.uid || loading || step1Data.completed) return;
+    if (!propertyId || loading || step1Data.completed) return;
     const timer = setTimeout(() => {
       saveStep(1, step1Data);
     }, 2000);
@@ -140,10 +158,10 @@ const PreListingChecklist = () => {
     }, 2000);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(step2Data.questionnaire)]);
+  }, [propertyId, JSON.stringify(step2Data.questionnaire)]);
 
   useEffect(() => {
-    if (!user?.uid || loading || step3Data.completed) return;
+    if (!propertyId || loading || step3Data.completed) return;
     const timer = setTimeout(() => {
       saveStep(3, step3Data);
     }, 2000);
@@ -158,10 +176,10 @@ const PreListingChecklist = () => {
     }, 2000);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step4Data.noHoa, step4Data.propertyConditionData, step4Data.leadPaintData, step4Data.hoaDisclosuresData, step4Data.floodZoneData, step4Data.knownDefectsData, step4Data.priorRepairsData, step4Data.insuranceClaimsData, step4Data.disclosureFiles?.length]);
+  }, [propertyId, step4Data.noHoa, step4Data.propertyConditionData, step4Data.leadPaintData, step4Data.hoaDisclosuresData, step4Data.floodZoneData, step4Data.knownDefectsData, step4Data.priorRepairsData, step4Data.insuranceClaimsData, step4Data.disclosureFiles?.length]);
 
   useEffect(() => {
-    if (!user?.uid || loading || step5Data.completed) return;
+    if (!propertyId || loading || step5Data.completed) return;
     const timer = setTimeout(() => {
       saveStep(5, step5Data);
     }, 2000);
@@ -176,24 +194,26 @@ const PreListingChecklist = () => {
     }, 2000);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step6Data.professionalPhotos, step6Data.floorPlans, step6Data.videoDrone, step6Data.description, step6Data.featureHighlights, step6Data.photoFiles?.length]);
+  }, [propertyId, step6Data.professionalPhotos, step6Data.floorPlans, step6Data.videoDrone, step6Data.description, step6Data.featureHighlights, step6Data.photoFiles?.length]);
 
   useEffect(() => {
-    if (!user?.uid || loading || step7Data.completed) return;
+    if (!propertyId || loading || step7Data.completed) return;
     const timer = setTimeout(() => {
       saveStep(7, step7Data);
     }, 2000);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step7Data.lockboxPlan, step7Data.showingRestrictions, step7Data.offerInstructions, step7Data.sellerAvailability, step7Data.timelineExpectations]);
+  }, [propertyId, step7Data.lockboxPlan, step7Data.showingRestrictions, step7Data.offerInstructions, step7Data.sellerAvailability, step7Data.timelineExpectations]);
 
   const loadChecklist = async () => {
-    if (!user?.uid) return;
+    if (!propertyId) return;
     try {
       setLoading(true);
-      const saved = await getPreListingChecklist(user.uid);
-      const vendorsList = await getVendorsByUser(user.uid);
-      setVendors(vendorsList);
+      const saved = await getPreListingChecklist(propertyId);
+      if (user?.uid) {
+        const vendorsList = await getVendorsByUser(user.uid);
+        setVendors(vendorsList);
+      }
 
       // Set map center priority: propertyLocation > deedLocation > first comp
       let centerSet = false;
@@ -205,31 +225,29 @@ const PreListingChecklist = () => {
 
       if (saved) {
         setChecklist(saved);
-      if (saved.step1LegalAuthority) {
-        setStep1Data(saved.step1LegalAuthority);
-        // Set map center from deed location if property location not available
-        if (!centerSet && saved.step1LegalAuthority.deedLocation) {
-          setMapCenter(saved.step1LegalAuthority.deedLocation);
-          centerSet = true;
-        }
-      }
-      if (saved.step2TitleOwnership) setStep2Data(saved.step2TitleOwnership);
-      if (saved.step3ListingStrategy) {
-        setStep3Data(saved.step3ListingStrategy);
-        // Set map center from first comp if property/deed location not available
-        if (!centerSet && saved.step3ListingStrategy.verifiedComps && saved.step3ListingStrategy.verifiedComps.length > 0) {
-          const firstComp = saved.step3ListingStrategy.verifiedComps[0];
-          if (firstComp.latitude && firstComp.longitude) {
-            setMapCenter({ lat: firstComp.latitude, lng: firstComp.longitude });
+        if (saved.step1LegalAuthority) {
+          setStep1Data(saved.step1LegalAuthority);
+          if (!centerSet && saved.step1LegalAuthority.deedLocation) {
+            setMapCenter(saved.step1LegalAuthority.deedLocation);
             centerSet = true;
           }
         }
-      }
-      if (saved.step4Disclosures) setStep4Data(saved.step4Disclosures);
-      if (saved.step5PropertyPrep) setStep5Data(saved.step5PropertyPrep);
-      if (saved.step6MarketingAssets) setStep6Data(saved.step6MarketingAssets);
-      if (saved.step7ShowingsOffers) setStep7Data(saved.step7ShowingsOffers);
-      if (saved.currentStep) setCurrentStep(saved.currentStep);
+        if (saved.step2TitleOwnership) setStep2Data(saved.step2TitleOwnership);
+        if (saved.step3ListingStrategy) {
+          setStep3Data(saved.step3ListingStrategy);
+          if (!centerSet && saved.step3ListingStrategy.verifiedComps && saved.step3ListingStrategy.verifiedComps.length > 0) {
+            const firstComp = saved.step3ListingStrategy.verifiedComps[0];
+            if (firstComp.latitude && firstComp.longitude) {
+              setMapCenter({ lat: firstComp.latitude, lng: firstComp.longitude });
+              centerSet = true;
+            }
+          }
+        }
+        if (saved.step4Disclosures) setStep4Data(saved.step4Disclosures);
+        if (saved.step5PropertyPrep) setStep5Data(saved.step5PropertyPrep);
+        if (saved.step6MarketingAssets) setStep6Data(saved.step6MarketingAssets);
+        if (saved.step7ShowingsOffers) setStep7Data(saved.step7ShowingsOffers);
+        if (saved.currentStep) setCurrentStep(saved.currentStep);
       }
     } catch (err) {
       console.error('Error loading checklist:', err);
@@ -246,7 +264,7 @@ const PreListingChecklist = () => {
         [`step${stepNum}${stepNum === 1 ? 'LegalAuthority' : stepNum === 2 ? 'TitleOwnership' : stepNum === 3 ? 'ListingStrategy' : stepNum === 4 ? 'Disclosures' : stepNum === 5 ? 'PropertyPrep' : stepNum === 6 ? 'MarketingAssets' : 'ShowingsOffers'}`]: stepData,
         currentStep: Math.max(currentStep, stepNum),
       };
-      await savePreListingChecklist(user.uid, updates);
+      await savePreListingChecklist(propertyId, updates);
       setChecklist((prev) => ({ ...prev, ...updates }));
     } catch (err) {
       console.error('Error saving step:', err);
@@ -287,7 +305,7 @@ const PreListingChecklist = () => {
     setUploadingFiles((prev) => ({ ...prev, [`${stepNum}_${field}`]: true }));
     try {
       const ext = file.name.split('.').pop();
-      const path = `pre-listing/${user.uid}/${Date.now()}_${field}.${ext}`;
+      const path = `pre-listing/${propertyId}/${Date.now()}_${field}.${ext}`;
       const url = await uploadFile(file, path);
       if (stepNum === 1 && field === 'deed') {
         const updated = { ...step1Data, deedUrl: url };
@@ -424,15 +442,71 @@ const PreListingChecklist = () => {
     }
   };
 
-  if (authLoading || loading) {
+  if (authLoading) {
+    return (
+      <div className="pre-listing-checklist-page">
+        <div className="loading-state">Loading...</div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) return null;
+
+  // No property selected: show property selector or prompt to add one
+  if (!propertyId) {
+    if (loading) return null;
+    return (
+      <div className="pre-listing-checklist-page">
+        <div className="pre-listing-checklist-container">
+          <div className="checklist-header">
+            <h1>Pre-Listing Checklist</h1>
+            <p>Each property has its own checklist. Select a property to continue.</p>
+          </div>
+          {userProperties.length > 0 ? (
+            <div className="checklist-property-selector">
+              <label htmlFor="prelisting-property-select">Select property</label>
+              <select
+                id="prelisting-property-select"
+                value=""
+                onChange={(e) => {
+                  const id = e.target.value;
+                  if (id) {
+                    setPropertyId(id);
+                    setSearchParams({ propertyId: id });
+                    navigate(location.pathname, { state: { ...location.state, propertyId: id }, replace: true });
+                  }
+                }}
+                className="checklist-property-select"
+              >
+                <option value="">Choose a property...</option>
+                {userProperties.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {[p.address, p.city, p.state].filter(Boolean).join(', ') || p.id}
+                  </option>
+                ))}
+              </select>
+              <p className="checklist-property-hint">You can also open the checklist from a property&apos;s detail page via &quot;Edit Checklist&quot;.</p>
+            </div>
+          ) : (
+            <div className="checklist-no-property">
+              <p>You don&apos;t have any properties yet. Add a property from your dashboard, then open its pre-listing checklist from the property page.</p>
+              <button type="button" className="btn btn-primary" onClick={() => navigate('/dashboard')}>
+                Go to Dashboard
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (loading) {
     return (
       <div className="pre-listing-checklist-page">
         <div className="loading-state">Loading checklist...</div>
       </div>
     );
   }
-
-  if (!isAuthenticated) return null;
 
   const steps = [
     { num: 1, title: 'Confirm Legal Authority to Sell', data: step1Data },
@@ -469,7 +543,7 @@ const PreListingChecklist = () => {
               className={`step-nav-btn ${currentStep === s.num ? 'active' : ''} ${s.data.completed ? 'completed' : ''}`}
               onClick={() => {
                 setCurrentStep(s.num);
-                savePreListingChecklist(user.uid, { currentStep: s.num }).catch(console.error);
+                savePreListingChecklist(propertyId, { currentStep: s.num }).catch(console.error);
               }}
             >
               <span className="step-nav-number">{s.num}</span>

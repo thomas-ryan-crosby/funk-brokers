@@ -138,6 +138,13 @@
   border: 1px solid #e2e8f0;
   border-radius: 6px;
   font-size: 14px;
+  background: #fff;
+  color: #334155;
+}
+
+.search-filters-panel select option {
+  background: #fff;
+  color: #334155;
 }
 
 .search-filters-panel input:focus,
@@ -168,6 +175,30 @@
   background: #eff6ff;
   color: #1e40af;
   font-weight: 500;
+}
+
+/* Home Type panel: ensure visible text (fix white-on-white) */
+.search-filters-panel--type {
+  background: #fff;
+  color: #334155;
+}
+
+.search-filters-panel--type .search-filters-option,
+.search-filters-panel--type .search-filters-option--checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #334155;
+  background: #fff;
+}
+
+.search-filters-panel--type .search-filters-option--checkbox input {
+  margin: 0;
+  accent-color: #3b82f6;
+}
+
+.search-filters-panel--type .search-filters-option--checkbox span {
+  color: #334155;
 }
 
 .search-filters-apply {

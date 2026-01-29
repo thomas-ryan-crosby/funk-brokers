@@ -3,7 +3,6 @@ import CityStateAutocomplete from './CityStateAutocomplete';
 import './SearchFilters.css';
 
 const PROPERTY_TYPES = [
-  { value: '', label: 'All Types' },
   { value: 'single-family', label: 'Single Family' },
   { value: 'condo', label: 'Condo' },
   { value: 'townhouse', label: 'Townhouse' },
@@ -18,20 +17,32 @@ const defaultFilters = () => ({
   query: '',
   minPrice: '',
   maxPrice: '',
-  propertyType: '',
+  propertyTypes: [], // multi-select: empty = all types
   bedrooms: '',
   bathrooms: '',
+  minSquareFeet: '',
+  maxSquareFeet: '',
   city: '',
   state: '',
   listedStatus: 'all', // 'all', 'listed', 'not_listed'
-  showUnderContract: true, // Default to showing under contract properties
+  showUnderContract: true,
   orderBy: 'createdAt',
   orderDirection: 'desc',
 });
 
+const normalizeInitial = (initial = {}) => {
+  const base = defaultFilters();
+  const propertyTypes = Array.isArray(initial.propertyTypes)
+    ? initial.propertyTypes
+    : initial.propertyType
+      ? [initial.propertyType]
+      : [];
+  return { ...base, ...initial, propertyTypes };
+};
+
 const SearchFilters = ({ onFilterChange, initialFilters = {} }) => {
-  const [filters, setFilters] = useState(() => ({ ...defaultFilters(), ...initialFilters }));
-  const [draft, setDraft] = useState(() => ({ ...defaultFilters(), ...initialFilters }));
+  const [filters, setFilters] = useState(() => normalizeInitial(initialFilters));
+  const [draft, setDraft] = useState(() => normalizeInitial(initialFilters));
   const [locationInput, setLocationInput] = useState(initialFilters.query || '');
   const [openDropdown, setOpenDropdown] = useState(null);
   const barRef = useRef(null);
@@ -92,7 +103,27 @@ const SearchFilters = ({ onFilterChange, initialFilters = {} }) => {
     return [b, t].filter(Boolean).join(', ') || 'Beds & Baths';
   };
 
-  const typeLabel = () => PROPERTY_TYPES.find((o) => o.value === filters.propertyType)?.label || 'Home Type';
+  const typeLabel = () => {
+    const arr = filters.propertyTypes || [];
+    if (arr.length === 0) return 'Home Type';
+    if (arr.length === 1) return PROPERTY_TYPES.find((o) => o.value === arr[0])?.label || 'Home Type';
+    return `${arr.length} types`;
+  };
+
+  const sqFtLabel = () => {
+    const min = filters.minSquareFeet ? Number(filters.minSquareFeet).toLocaleString() : '';
+    const max = filters.maxSquareFeet ? Number(filters.maxSquareFeet).toLocaleString() : '';
+    if (min && max) return `${min} - ${max} sq ft`;
+    if (min) return `${min}+ sq ft`;
+    if (max) return `Up to ${max} sq ft`;
+    return 'Square Ft';
+  };
+
+  const togglePropertyType = (value) => {
+    const current = draft.propertyTypes || [];
+    const next = current.includes(value) ? current.filter((v) => v !== value) : [...current, value];
+    updateDraft('propertyTypes', next);
+  };
 
   return (
     <div className="search-filters search-filters--top" ref={barRef}>
@@ -213,6 +244,44 @@ const SearchFilters = ({ onFilterChange, initialFilters = {} }) => {
                   {o.label}
                 </button>
               ))}
+              <button type="button" className="search-filters-apply" onClick={handleApply}>
+                Apply
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="search-filters-dropdown">
+          <button
+            type="button"
+            className={`search-filters-trigger ${openDropdown === 'sqft' ? 'open' : ''}`}
+            onClick={(e) => { e.stopPropagation(); setOpenDropdown(openDropdown === 'sqft' ? null : 'sqft'); }}
+          >
+            {sqFtLabel()}
+            <span className="search-filters-chevron">▼</span>
+          </button>
+          {openDropdown === 'sqft' && (
+            <div className="search-filters-panel" onClick={(e) => e.stopPropagation()}>
+              <div className="search-filters-panel-row">
+                <label>Min sq ft</label>
+                <input
+                  type="number"
+                  placeholder="Any"
+                  min="0"
+                  value={draft.minSquareFeet}
+                  onChange={(e) => updateDraft('minSquareFeet', e.target.value)}
+                />
+              </div>
+              <div className="search-filters-panel-row">
+                <label>Max sq ft</label>
+                <input
+                  type="number"
+                  placeholder="Any"
+                  min="0"
+                  value={draft.maxSquareFeet}
+                  onChange={(e) => updateDraft('maxSquareFeet', e.target.value)}
+                />
+              </div>
               <button type="button" className="search-filters-apply" onClick={handleApply}>
                 Apply
               </button>

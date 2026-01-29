@@ -1,35 +1,21 @@
-// Pre-Listing Checklist Service - Firestore operations for pre-listing checklist completion
-import {
-  collection,
-  addDoc,
-  getDocs,
-  getDoc,
-  doc,
-  query,
-  where,
-  updateDoc,
-  setDoc,
-} from 'firebase/firestore';
+// Pre-Listing Checklist Service - Firestore operations for pre-listing checklist (one per property)
+import { getDoc, doc, setDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
 const PRE_LISTING_CHECKLISTS_COLLECTION = 'preListingChecklists';
 
 /**
- * Get pre-listing checklist for a user (one per user, not per property)
- * @param {string} userId
+ * Get pre-listing checklist for a property (one checklist per property)
+ * @param {string} propertyId
  * @returns {Promise<object|null>}
  */
-export const getPreListingChecklist = async (userId) => {
-  if (!userId) return null;
+export const getPreListingChecklist = async (propertyId) => {
+  if (!propertyId) return null;
   try {
-    const q = query(
-      collection(db, PRE_LISTING_CHECKLISTS_COLLECTION),
-      where('userId', '==', userId)
-    );
-    const snap = await getDocs(q);
-    if (snap.empty) return null;
-    const d = snap.docs[0];
-    return { id: d.id, ...d.data() };
+    const ref = doc(db, PRE_LISTING_CHECKLISTS_COLLECTION, propertyId);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) return null;
+    return { id: snap.id, ...snap.data() };
   } catch (err) {
     console.error('Error fetching pre-listing checklist:', err);
     throw err;
@@ -37,27 +23,20 @@ export const getPreListingChecklist = async (userId) => {
 };
 
 /**
- * Create or update pre-listing checklist
- * @param {string} userId
+ * Create or update pre-listing checklist for a property
+ * @param {string} propertyId
  * @param {object} data - checklist data
  */
-export const savePreListingChecklist = async (userId, data) => {
-  if (!userId) throw new Error('userId is required');
+export const savePreListingChecklist = async (propertyId, data) => {
+  if (!propertyId) throw new Error('propertyId is required');
   try {
-    const existing = await getPreListingChecklist(userId);
-    if (existing) {
-      const ref = doc(db, PRE_LISTING_CHECKLISTS_COLLECTION, existing.id);
-      await updateDoc(ref, { ...data, updatedAt: new Date() });
-      return existing.id;
-    } else {
-      const ref = await addDoc(collection(db, PRE_LISTING_CHECKLISTS_COLLECTION), {
-        userId,
-        ...data,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      });
-      return ref.id;
-    }
+    const ref = doc(db, PRE_LISTING_CHECKLISTS_COLLECTION, propertyId);
+    await setDoc(ref, {
+      propertyId,
+      ...data,
+      updatedAt: new Date(),
+    }, { merge: true });
+    return propertyId;
   } catch (err) {
     console.error('Error saving pre-listing checklist:', err);
     throw err;

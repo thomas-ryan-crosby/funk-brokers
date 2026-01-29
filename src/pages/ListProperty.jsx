@@ -3,7 +3,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { createProperty } from '../services/propertyService';
 import { uploadFile, uploadMultipleFiles } from '../services/storageService';
-import { getPreListingChecklist, isPreListingChecklistComplete } from '../services/preListingChecklistService';
 import { saveListingProgress, getListingProgress } from '../services/listingProgressService';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import './ListProperty.css';
@@ -40,31 +39,25 @@ const ListProperty = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
-  const [checkingChecklist, setCheckingChecklist] = useState(true);
+  const [checkingAuth, setCheckingAuth] = useState(true);
   const [propertyId, setPropertyId] = useState(null); // For saving progress
   const saveProgressTimeoutRef = useRef(null);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      // Redirect to sign up if not authenticated
       navigate('/sign-up?redirect=/list-property');
       return;
     }
     if (isAuthenticated && user?.uid) {
-      checkChecklist();
+      loadProgressIfAny().finally(() => setCheckingAuth(false));
+    } else {
+      setCheckingAuth(false);
     }
   }, [isAuthenticated, authLoading, navigate, user?.uid]);
 
-  const checkChecklist = async () => {
+  const loadProgressIfAny = async () => {
     if (!user?.uid) return;
     try {
-      const checklist = await getPreListingChecklist(user.uid);
-      if (!isPreListingChecklistComplete(checklist)) {
-        navigate('/pre-listing-checklist', { state: { returnTo: '/list-property' } });
-        return;
-      }
-      
-      // Load saved progress if propertyId exists in URL or state
       const urlParams = new URLSearchParams(location.search);
       const propId = urlParams.get('propertyId') || location.state?.propertyId;
       if (propId) {
@@ -76,11 +69,7 @@ const ListProperty = () => {
         }
       }
     } catch (err) {
-      console.error('Error checking checklist:', err);
-      navigate('/pre-listing-checklist', { state: { returnTo: '/list-property' } });
-      return;
-    } finally {
-      setCheckingChecklist(false);
+      console.error('Error loading progress:', err);
     }
   };
 
@@ -342,7 +331,7 @@ const ListProperty = () => {
   };
 
   // Show loading while checking auth or checklist
-  if (authLoading || checkingChecklist) {
+  if (authLoading || checkingAuth) {
     return (
       <div className="list-property-page">
         <div className="loading-state">Loading...</div>

@@ -118,16 +118,17 @@ const PropertyDetail = () => {
     // If turning ON (making available for sale), check pre-listing checklist
     if (next && user?.uid) {
       try {
-        const checklist = await getPreListingChecklist(user.uid);
+        const checklist = await getPreListingChecklist(property.id);
         if (!isPreListingChecklistComplete(checklist)) {
           navigate(`/pre-listing-checklist`, { 
             state: { 
+              propertyId: property.id,
               returnTo: `/property/${property.id}`,
               propertyLocation: property.latitude && property.longitude ? {
                 lat: property.latitude,
                 lng: property.longitude
               } : null
-            } 
+            }
           });
           return;
         }
@@ -495,6 +496,7 @@ const PropertyDetail = () => {
                       onClick={() => {
                         navigate('/pre-listing-checklist', {
                           state: {
+                            propertyId: property.id,
                             returnTo: `/property/${property.id}`,
                             propertyLocation: property.latitude && property.longitude ? {
                               lat: property.latitude,

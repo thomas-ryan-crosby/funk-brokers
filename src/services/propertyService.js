@@ -216,8 +216,19 @@ export const searchProperties = async (filters = {}) => {
     if (filters.maxPrice) {
       properties = properties.filter((p) => (p.price ?? 0) <= parseFloat(filters.maxPrice));
     }
-    if (filters.propertyType) {
-      properties = properties.filter((p) => p.propertyType === filters.propertyType);
+    const typeList = Array.isArray(filters.propertyTypes) && filters.propertyTypes.length > 0
+      ? filters.propertyTypes
+      : filters.propertyType ? [filters.propertyType] : null;
+    if (typeList && typeList.length > 0) {
+      properties = properties.filter((p) => typeList.includes(p.propertyType));
+    }
+    if (filters.minSquareFeet && Number.isFinite(parseFloat(filters.minSquareFeet))) {
+      const min = parseFloat(filters.minSquareFeet);
+      properties = properties.filter((p) => (p.squareFeet ?? 0) >= min);
+    }
+    if (filters.maxSquareFeet && Number.isFinite(parseFloat(filters.maxSquareFeet))) {
+      const max = parseFloat(filters.maxSquareFeet);
+      properties = properties.filter((p) => (p.squareFeet ?? 0) <= max);
     }
     if (filters.bedrooms) {
       properties = properties.filter((p) => (p.bedrooms ?? 0) >= parseInt(filters.bedrooms, 10));
