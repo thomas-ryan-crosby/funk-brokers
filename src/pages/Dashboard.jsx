@@ -11,7 +11,7 @@ import { getVendorsByUser, createVendor, updateVendor, deleteVendor, addVendorCo
 import { updateUserProfile, getUserProfile } from '../services/authService';
 import { uploadFile } from '../services/storageService';
 import { deleteField } from 'firebase/firestore';
-import { getVerifiedBuyerScore, getListingTier, getListingTierLabel, meetsVerifiedBuyerCriteria } from '../utils/verificationScores';
+import { getVerifiedBuyerScore, getListingTier, getListingTierLabel, getListingTierProgress, meetsVerifiedBuyerCriteria } from '../utils/verificationScores';
 import PropertyCard from '../components/PropertyCard';
 import CounterOfferModal from '../components/CounterOfferModal';
 import ViewOfferModal from '../components/ViewOfferModal';
@@ -758,33 +758,46 @@ const Dashboard = () => {
                 <h2>My Properties</h2>
                 {activeList.length === 0 && archivedList.length === 0 && (
                   <p className="empty-message">
-                    You haven't listed any properties yet.{' '}
-                    <Link to="/begin-sale" state={{ startFresh: true }}>Add my property</Link>
+                    Claim a property from the <Link to="/browse">map</Link> or{' '}
+                    <Link to="/begin-sale" state={{ startFresh: true }}>list a new property</Link>.
                   </p>
                 )}
               </div>
 
               {activeList.length > 0 && (
                 <div className="properties-list">
-                  {activeList.map((property) => (
-                    <div key={property.id} className="property-item">
-                      <PropertyCard property={property} embedded listingTier={getListingTier(property)} />
-                      <div className="property-actions">
-                        {getStatusBadge(property)}
-                        <div className="action-buttons">
-                          <Link to={`/property/${property.id}`} className="action-btn btn btn-secondary" title="View">View</Link>
-                          {property.status === 'active' && (
+                  {activeList.map((property) => {
+                    const tierProgress = getListingTierProgress(property);
+                    const showTierNudge = tierProgress.nextTier && tierProgress.percentage < 100;
+                    return (
+                      <div key={property.id} className="property-item">
+                        <PropertyCard property={property} embedded listingTier={getListingTier(property)} />
+                        {showTierNudge && (
+                          <div className="property-tier-nudge">
+                            <span className="property-tier-nudge-text">
+                              Add more info to reach <strong>{tierProgress.nextTier}</strong>
+                              {tierProgress.missingItems?.length > 0 && (
+                                <span className="property-tier-nudge-hint"> — e.g. {tierProgress.missingItems.slice(0, 2).join(', ')}</span>
+                              )}
+                            </span>
+                            <Link to={`/property/${property.id}`} className="property-tier-nudge-link">Add info</Link>
+                          </div>
+                        )}
+                        <div className="property-actions">
+                          {getStatusBadge(property)}
+                          <div className="action-buttons">
+                            <Link to={`/property/${property.id}`} className="action-btn btn btn-secondary" title="View">View</Link>
                             <Link to={`/property/${property.id}/edit`} className="action-btn btn btn-outline" title="Edit">Edit</Link>
-                          )}
-                          {!property.verified && (
-                            <Link to={`/property/${property.id}/get-verified`} className="action-btn btn btn-outline" title="Verify">Verify</Link>
-                          )}
-                          <button type="button" className="action-btn btn btn-outline" title="Archive" onClick={() => handleArchive(property.id)}>Arch</button>
-                          <button type="button" className="action-btn btn btn-danger" title="Delete" onClick={() => handleDeletePermanently(property.id)}>Del</button>
+                            {!property.verified && (
+                              <Link to={`/property/${property.id}/get-verified`} className="action-btn btn btn-outline" title="Verify">Verify</Link>
+                            )}
+                            <button type="button" className="action-btn btn btn-outline" title="Archive" onClick={() => handleArchive(property.id)}>Arch</button>
+                            <button type="button" className="action-btn btn btn-danger" title="Delete" onClick={() => handleDeletePermanently(property.id)}>Del</button>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 

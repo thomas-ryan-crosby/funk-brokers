@@ -100,8 +100,16 @@
   border-top: 1px solid #e2e8f0;
 }
 
-.unlisted-property-disclaimer {
+.unlisted-property-authority {
   margin: 16px 0 0 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+  line-height: 1.4;
+}
+
+.unlisted-property-disclaimer {
+  margin: 12px 0 0 0;
   font-size: 12px;
   color: #94a3b8;
   line-height: 1.4;
@@ -125,7 +133,12 @@
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
-.unlisted-property-claim-btn:hover {
+.unlisted-property-claim-btn:hover:not(:disabled) {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(5, 150, 105, 0.35);
+}
+
+.unlisted-property-claim-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }

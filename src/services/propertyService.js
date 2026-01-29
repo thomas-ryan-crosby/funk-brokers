@@ -15,7 +15,7 @@ import { db } from '../config/firebase';
 const PROPERTIES_COLLECTION = 'properties';
 
 /**
- * Create a new property listing
+ * Create a new property listing (full listing workflow)
  */
 export const createProperty = async (propertyData) => {
   try {
@@ -31,6 +31,42 @@ export const createProperty = async (propertyData) => {
     console.error('Error creating property:', error);
     throw error;
   }
+};
+
+/**
+ * Claim a property (simple one-step: "I own or have authority"). Creates minimal property
+ * and adds it to the user's dashboard. No pre-listing checklist or full listing flow.
+ * @param {object} parcel - { address?, latitude?, longitude?, beds?, baths?, squareFeet?, estimate? }
+ * @param {string} sellerId - current user uid
+ * @returns {Promise<string>} new property id
+ */
+export const claimProperty = async (parcel, sellerId) => {
+  if (!sellerId) throw new Error('User ID required to claim property');
+  const now = new Date();
+  const data = {
+    sellerId,
+    address: parcel?.address || 'Address unknown',
+    latitude: parcel?.latitude ?? null,
+    longitude: parcel?.longitude ?? null,
+    city: '',
+    state: '',
+    zipCode: '',
+    propertyType: '',
+    bedrooms: parcel?.beds != null && Number.isFinite(Number(parcel.beds)) ? Number(parcel.beds) : null,
+    bathrooms: parcel?.baths != null && Number.isFinite(Number(parcel.baths)) ? Number(parcel.baths) : null,
+    squareFeet: parcel?.squareFeet != null && Number.isFinite(Number(parcel.squareFeet)) ? Number(parcel.squareFeet) : null,
+    price: parcel?.estimate != null && Number.isFinite(Number(parcel.estimate)) ? Number(parcel.estimate) : null,
+    photos: [],
+    features: [],
+    status: 'not_listed',
+    availableForSale: false,
+    acceptingCommunications: true,
+    archived: false,
+    createdAt: now,
+    updatedAt: now,
+  };
+  const docRef = await addDoc(collection(db, PROPERTIES_COLLECTION), data);
+  return docRef.id;
 };
 
 /**

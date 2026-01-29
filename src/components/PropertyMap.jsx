@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { loadGooglePlaces } from '../utils/loadGooglePlaces';
 import { getParcelsInViewport } from '../services/parcelService';
+import { claimProperty } from '../services/propertyService';
 import UnlistedPropertyModal from './UnlistedPropertyModal';
 import './PropertyMap.css';
 
@@ -46,6 +48,7 @@ const unlistedTooltipContent = (p) => `
 
 const PropertyMap = ({ properties = [], onPropertiesInView }) => {
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
   const mapRef = useRef(null);
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
@@ -55,19 +58,25 @@ const PropertyMap = ({ properties = [], onPropertiesInView }) => {
   const [error, setError] = useState(null);
   const [unlistedParcels, setUnlistedParcels] = useState([]);
   const [selectedUnlistedParcel, setSelectedUnlistedParcel] = useState(null);
+  const [claiming, setClaiming] = useState(false);
 
-  const handleClaimUnlisted = (parcel) => {
-    setSelectedUnlistedParcel(null);
-    const state = {
-      claimAddress: parcel?.address,
-      claimLat: parcel?.latitude,
-      claimLng: parcel?.longitude,
-    };
-    if (parcel?.beds != null && Number.isFinite(Number(parcel.beds))) state.claimBeds = Number(parcel.beds);
-    if (parcel?.baths != null && Number.isFinite(Number(parcel.baths))) state.claimBaths = Number(parcel.baths);
-    if (parcel?.squareFeet != null && Number.isFinite(Number(parcel.squareFeet))) state.claimSquareFeet = Number(parcel.squareFeet);
-    if (parcel?.estimate != null && Number.isFinite(Number(parcel.estimate))) state.claimEstimate = Number(parcel.estimate);
-    navigate('/list-property', { state });
+  const handleClaimUnlisted = async (parcel) => {
+    if (!isAuthenticated || !user?.uid) {
+      setSelectedUnlistedParcel(null);
+      navigate('/sign-up', { state: { returnTo: '/browse', message: 'Sign in to claim this property' } });
+      return;
+    }
+    setClaiming(true);
+    try {
+      const propertyId = await claimProperty(parcel, user.uid);
+      setSelectedUnlistedParcel(null);
+      navigate(`/property/${propertyId}`, { state: { fromClaim: true } });
+    } catch (err) {
+      console.error('Claim property failed:', err);
+      alert('Failed to claim property. Please try again.');
+    } finally {
+      setClaiming(false);
+    }
   };
 
   useEffect(() => {
@@ -237,7 +246,7 @@ const PropertyMap = ({ properties = [], onPropertiesInView }) => {
     <div className="property-map">
       <div ref={mapRef} className="property-map-canvas" aria-label="Property map" />
       {!ready && <div className="property-map-loading">Loading map…</div>}
-      <UnlistedPropertyModal parcel={selectedUnlistedParcel} onClose={() => setSelectedUnlistedParcel(null)} onClaim={handleClaimUnlisted} />
+      <UnlistedPropertyModal parcel={selectedUnlistedParcel} onClose={() => setSelectedUnlistedParcel(null)} onClaim={handleClaimUnlisted} claiming={claiming} />
     </div>
   );
 };

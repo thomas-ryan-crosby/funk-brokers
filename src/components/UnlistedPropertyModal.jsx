@@ -24,15 +24,16 @@ const formatLastSale = (date, price) => {
 };
 
 /**
- * @param {{ parcel: { address?, estimate?, lastSaleDate?, lastSalePrice?, beds?, baths?, squareFeet? } | null, onClose: () => void, onClaim?: (parcel) => void }}
+ * @param {{ parcel: { address?, estimate?, lastSaleDate?, lastSalePrice?, beds?, baths?, squareFeet? } | null, onClose: () => void, onClaim?: (parcel) => void, claiming?: boolean }}
  */
-const UnlistedPropertyModal = ({ parcel, onClose, onClaim }) => {
+const UnlistedPropertyModal = ({ parcel, onClose, onClaim, claiming = false }) => {
   if (!parcel) return null;
 
   const { address, estimate, lastSaleDate, lastSalePrice, beds, baths, squareFeet } = parcel;
   const hasDetails = [beds, baths, squareFeet].some((v) => v != null && v !== '');
 
   const handleClaim = () => {
+    if (claiming) return;
     if (typeof onClaim === 'function') onClaim(parcel);
     onClose();
   };
@@ -41,7 +42,7 @@ const UnlistedPropertyModal = ({ parcel, onClose, onClaim }) => {
     <div className="unlisted-property-overlay" onClick={onClose} role="presentation">
       <div className="unlisted-property-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-labelledby="unlisted-property-title">
         <div className="unlisted-property-header">
-          <h2 id="unlisted-property-title">Property</h2>
+          <h2 id="unlisted-property-title">Claim this property</h2>
           <button type="button" className="unlisted-property-close" onClick={onClose} aria-label="Close">&times;</button>
         </div>
 
@@ -64,12 +65,15 @@ const UnlistedPropertyModal = ({ parcel, onClose, onClaim }) => {
             </dl>
           )}
 
+          <p className="unlisted-property-authority">
+            I directly own or have authority to claim this property.
+          </p>
           <p className="unlisted-property-disclaimer">Funk Estimate and last sale are from public records. Not an appraisal.</p>
         </div>
 
         <div className="unlisted-property-footer">
-          <button type="button" className="unlisted-property-claim-btn" onClick={handleClaim}>
-            Claim property
+          <button type="button" className="unlisted-property-claim-btn" onClick={handleClaim} disabled={claiming}>
+            {claiming ? 'Claiming…' : 'Claim property'}
           </button>
         </div>
       </div>

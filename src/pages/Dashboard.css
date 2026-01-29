@@ -237,6 +237,40 @@
   border-color: #cbd5e1;
 }
 
+.property-tier-nudge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #f0fdf4;
+  border-top: 1px solid #bbf7d0;
+  font-size: 13px;
+  color: #166534;
+}
+
+.property-tier-nudge-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.property-tier-nudge-hint {
+  color: #15803d;
+  font-weight: 400;
+}
+
+.property-tier-nudge-link {
+  color: #059669;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.property-tier-nudge-link:hover {
+  text-decoration: underline;
+}
+
 .property-actions {
   padding: 10px 14px;
   border-top: 1px solid #e2e8f0;
@@ -306,6 +340,11 @@
 .status-draft {
   background: #fce7f3;
   color: #9f1239;
+}
+
+.status-not-listed {
+  background: #f1f5f9;
+  color: #475569;
 }
 
 .status-default {
