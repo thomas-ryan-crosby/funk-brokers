@@ -384,25 +384,28 @@ const PropertyDetail = () => {
               </div>
             ) : (
               <div className="property-actions">
-                {property.availableForSale === false ? (
-                  <p className="property-comms-closed">This property is not currently listed for sale.</p>
+                {property.acceptingCommunications === false ? (
+                  <p className="property-comms-closed">This seller is not accepting offers or inquiries at this time.</p>
                 ) : (
                   <>
-                    {property.acceptingCommunications !== false ? (
+                    {property.availableForSale !== false && (
                       <Link to={`/submit-offer/${property.id}`} className="btn btn-primary btn-large">
                         Submit Offer
                       </Link>
-                    ) : (
-                      <p className="property-comms-closed">This seller is not accepting offers or inquiries at this time.</p>
                     )}
-                    <button 
-                      className="btn btn-secondary btn-large"
-                      onClick={() => {
-                        alert('Tour scheduling coming soon! For now, please contact the seller directly.');
-                      }}
-                    >
-                      Schedule Tour
-                    </button>
+                    {property.availableForSale !== false && (
+                      <button
+                        className="btn btn-secondary btn-large"
+                        onClick={() => {
+                          alert('Tour scheduling coming soon! For now, please contact the seller directly.');
+                        }}
+                      >
+                        Schedule Tour
+                      </button>
+                    )}
+                    {property.availableForSale === false && (
+                      <p className="property-not-listed-note">This property is not currently listed for sale. You can still reach out to the seller.</p>
+                    )}
                     {property.sellerId && (
                       <Link
                         to={`/messages?to=${encodeURIComponent(property.sellerId)}&propertyId=${encodeURIComponent(property.id)}`}
