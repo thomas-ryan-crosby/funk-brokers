@@ -16,30 +16,45 @@ const GetVerified = () => {
   const [success, setSuccess] = useState(false);
   const [step, setStep] = useState(1);
 
-  // Step 1 – Confirm the home
-  const [deedFile, setDeedFile] = useState(null);
-  const [propertyTaxFile, setPropertyTaxFile] = useState(null);
-  const [disclosureFile, setDisclosureFile] = useState(null);
-  const [hoaDocsFile, setHoaDocsFile] = useState(null);
-  const [payoffFile, setPayoffFile] = useState(null);
-  const [taxesCurrent, setTaxesCurrent] = useState('');
+  // Step 1 – About Home (property basics)
+  const [bedrooms, setBedrooms] = useState('');
+  const [bathrooms, setBathrooms] = useState('');
+  const [squareFeet, setSquareFeet] = useState('');
+  const [lotSize, setLotSize] = useState('');
+  const [yearBuilt, setYearBuilt] = useState('');
   const [hasHOA, setHasHOA] = useState('');
   const [hoaFee, setHoaFee] = useState('');
+  const [propertyTaxEstimate, setPropertyTaxEstimate] = useState('');
+  const [hasInsurance, setHasInsurance] = useState('');
+  const [insuranceApproximation, setInsuranceApproximation] = useState('');
+  const [features, setFeatures] = useState([]);
+  const [step1Confirmed, setStep1Confirmed] = useState(false);
+
+  // Step 2 – Confirm the home (documents)
+  const [deedFile, setDeedFile] = useState(null);
+  const [propertyTaxFile, setPropertyTaxFile] = useState(null);
+  const [hoaDocsFile, setHoaDocsFile] = useState(null);
   const [hasMortgage, setHasMortgage] = useState('');
-  const [hasLiens, setHasLiens] = useState('');
-  const [lienDetails, setLienDetails] = useState('');
+  const [remainingMortgage, setRemainingMortgage] = useState('');
+  const [mortgageFile, setMortgageFile] = useState(null);
+  const [lienTax, setLienTax] = useState('');
+  const [lienHOA, setLienHOA] = useState('');
+  const [lienMechanic, setLienMechanic] = useState('');
+  const [lienOther, setLienOther] = useState('');
+  const [payoffFile, setPayoffFile] = useState(null);
+  const [step2Confirmed, setStep2Confirmed] = useState(false);
 
-  // Step 2 – Price the home
-  const [valuationFile, setValuationFile] = useState(null);
+  // Step 3 – Price the home
+  const [estimatedWorth, setEstimatedWorth] = useState('');
+  const [makeMeMovePrice, setMakeMeMovePrice] = useState('');
+  const [useCompAnalysis, setUseCompAnalysis] = useState(false);
+  const [verifiedComps, setVerifiedComps] = useState([]);
+  const [step3Confirmed, setStep3Confirmed] = useState(false);
 
-  // Step 3 – Home readiness
-  const [hasMajorDefects, setHasMajorDefects] = useState('');
-  const [majorDefectsNote, setMajorDefectsNote] = useState('');
-  const [readyForShowings, setReadyForShowings] = useState('');
-  const [readyForShowingsDate, setReadyForShowingsDate] = useState('');
-  const [inspectionFile, setInspectionFile] = useState(null);
+  // Step 4 – Content (photos/videos)
   const [photoFiles, setPhotoFiles] = useState([]);
   const [photoPreviews, setPhotoPreviews] = useState([]);
+  const [videoFiles, setVideoFiles] = useState([]);
   const [savedMessage, setSavedMessage] = useState('');
 
   useEffect(() => {
@@ -63,27 +78,35 @@ const GetVerified = () => {
         return;
       }
       if (p.verified) {
-        setError('This listing is already verified.');
+        setError('This property is already verified.');
         setLoading(false);
         return;
       }
       setProperty(p);
-      setHoaFee(p.hoaFee != null ? String(p.hoaFee) : '');
-      if (p.taxesCurrent === true) setTaxesCurrent('yes');
-      else if (p.taxesCurrent === false) setTaxesCurrent('no');
+      setBedrooms(p.bedrooms != null ? String(p.bedrooms) : '');
+      setBathrooms(p.bathrooms != null ? String(p.bathrooms) : '');
+      setSquareFeet(p.squareFeet != null ? String(p.squareFeet) : '');
+      setLotSize(p.lotSize != null ? String(p.lotSize) : '');
+      setYearBuilt(p.yearBuilt != null ? String(p.yearBuilt) : '');
       if (p.hasHOA === true) setHasHOA('yes');
       else if (p.hasHOA === false) setHasHOA('no');
+      setHoaFee(p.hoaFee != null ? String(p.hoaFee) : '');
+      setPropertyTaxEstimate(p.propertyTax != null ? String(p.propertyTax) : '');
+      if (p.hasInsurance === true) setHasInsurance('yes');
+      else if (p.hasInsurance === false) setHasInsurance('no');
+      setInsuranceApproximation(p.insuranceApproximation != null ? String(p.insuranceApproximation) : '');
+      setFeatures(Array.isArray(p.features) ? [...p.features] : []);
       if (p.hasMortgage === true) setHasMortgage('yes');
       else if (p.hasMortgage === false) setHasMortgage('no');
-      if (p.hasLiens === true) setHasLiens('yes');
-      else if (p.hasLiens === false) setHasLiens('no');
-      if (p.lienDetails != null) setLienDetails(String(p.lienDetails));
-      if (p.hasMajorDefects === true) setHasMajorDefects('yes');
-      else if (p.hasMajorDefects === false) setHasMajorDefects('no');
-      if (p.majorDefectsNote != null) setMajorDefectsNote(String(p.majorDefectsNote));
-      if (p.readyForShowings === true) setReadyForShowings('yes');
-      else if (p.readyForShowings === false) setReadyForShowings('no');
-      if (p.readyForShowingsDate != null) setReadyForShowingsDate(String(p.readyForShowingsDate));
+      setRemainingMortgage(p.remainingMortgage != null ? String(p.remainingMortgage) : '');
+      setLienTax(p.lienTax === true ? 'yes' : p.lienTax === false ? 'no' : '');
+      setLienHOA(p.lienHOA === true ? 'yes' : p.lienHOA === false ? 'no' : '');
+      setLienMechanic(p.lienMechanic === true ? 'yes' : p.lienMechanic === false ? 'no' : '');
+      setLienOther(p.lienOtherDetails != null ? String(p.lienOtherDetails) : '');
+      setEstimatedWorth(p.estimatedWorth != null ? String(p.estimatedWorth) : p.price != null ? String(p.price) : '');
+      setMakeMeMovePrice(p.makeMeMovePrice != null ? String(p.makeMeMovePrice) : '');
+      setUseCompAnalysis(!!(p.verifiedComps && p.verifiedComps.length > 0));
+      setVerifiedComps(Array.isArray(p.verifiedComps) ? [...p.verifiedComps] : []);
     } catch (err) {
       setError('Property not found or failed to load.');
       console.error(err);
@@ -93,33 +116,33 @@ const GetVerified = () => {
   };
 
   const totalPhotoCount = (property?.photos?.length ?? 0) + (photoFiles?.length ?? 0);
+  const commonFeaturesList = ['Garage', 'Fireplace', 'Pool', 'Garden', 'Hardwood Floors', 'Updated Kitchen', 'Updated Bathroom', 'Central Air', 'Central Heat', 'Washer/Dryer', 'Dishwasher', 'Garbage Disposal'];
+
+  const toggleFeature = (f) => {
+    setFeatures((prev) => (prev.includes(f) ? prev.filter((x) => x !== f) : [...prev, f]));
+  };
 
   const getVerificationProgress = () => {
     let completed = 0;
     let total = 0;
     const inc = (cond) => { total++; if (cond) completed++; };
 
+    inc(!!(bedrooms !== '' && bathrooms !== ''));
+    inc(!!(squareFeet !== '' || lotSize !== '' || yearBuilt !== ''));
+    inc(!!(hasHOA === 'yes' || hasHOA === 'no'));
+    if (hasHOA === 'yes') inc(!isNaN(parseFloat(hoaFee)) && parseFloat(hoaFee) >= 0);
+    inc(!!(propertyTaxEstimate !== ''));
+    inc(!!(hasInsurance === 'yes' || hasInsurance === 'no'));
+    if (hasInsurance === 'yes') inc(!!(insuranceApproximation !== ''));
     inc(!!(property?.deedUrl || deedFile));
     inc(!!(property?.propertyTaxRecordUrl || propertyTaxFile));
-    inc(!!(taxesCurrent === 'yes' || taxesCurrent === 'no'));
-    inc(!!(property?.disclosureFormsUrl || disclosureFile));
-    inc(!!(hasHOA === 'yes' || hasHOA === 'no'));
-    if (hasHOA === 'yes') {
-      inc(!!(property?.hoaDocsUrl || hoaDocsFile));
-      inc(!isNaN(parseFloat(hoaFee)) && parseFloat(hoaFee) >= 0);
-    }
+    if (hasHOA === 'yes') inc(!!(property?.hoaDocsUrl || hoaDocsFile));
     inc(!!(hasMortgage === 'yes' || hasMortgage === 'no'));
-    inc(!!(hasLiens === 'yes' || hasLiens === 'no'));
-    if (hasMortgage === 'yes' || hasLiens === 'yes') {
-      inc(!!(property?.payoffOrLienReleaseUrl || payoffFile));
-    }
-    if (hasLiens === 'yes') inc(!!lienDetails?.trim());
-    inc(!!(property?.valuationDocUrl || valuationFile));
-    inc(!!(hasMajorDefects === 'yes' || hasMajorDefects === 'no'));
-    if (hasMajorDefects === 'yes') inc(!!majorDefectsNote?.trim());
-    inc(totalPhotoCount >= 5);
-    inc(!!(readyForShowings === 'yes' || readyForShowings === 'no'));
-    if (readyForShowings === 'no') inc(!!readyForShowingsDate?.trim());
+    if (hasMortgage === 'yes') inc(!!(remainingMortgage !== '' || property?.mortgageDocUrl || mortgageFile));
+    inc(!!(lienTax !== '' && lienHOA !== '' && lienMechanic !== ''));
+    inc(!!(estimatedWorth !== '' && !isNaN(parseFloat(estimatedWorth))));
+    inc(!!(makeMeMovePrice !== '' && !isNaN(parseFloat(makeMeMovePrice))));
+    inc(totalPhotoCount >= 1);
 
     const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
     return { completed, total, percentage };
@@ -134,33 +157,32 @@ const GetVerified = () => {
   const validateAndCollect = () => {
     const errs = [];
 
-    // Step 1
-    if (!property.deedUrl && !deedFile) errs.push('Deed (upload or already on file)');
-    if (!property.propertyTaxRecordUrl && !propertyTaxFile) errs.push('Property tax record');
-    if (!taxesCurrent) errs.push('Property taxes current (Yes/No)');
-    if (!property.disclosureFormsUrl && !disclosureFile) errs.push('Disclosure forms');
+    if (!step1Confirmed) errs.push('Confirm property basics (Step 1)');
+    if (!step2Confirmed) errs.push('Confirm documents (Step 2)');
+    if (!step3Confirmed) errs.push('Confirm pricing (Step 3)');
+
+    if (!bedrooms.trim()) errs.push('Bedrooms');
+    if (!bathrooms.trim()) errs.push('Bathrooms');
+    if (!propertyTaxEstimate.trim() || isNaN(parseFloat(propertyTaxEstimate))) errs.push('Property taxes estimate');
     if (!hasHOA) errs.push('HOA (Yes/No)');
     if (hasHOA === 'yes') {
-      if (!property.hoaDocsUrl && !hoaDocsFile) errs.push('HOA documents');
       const fee = parseFloat(hoaFee);
-      if (isNaN(fee) || fee < 0) errs.push('HOA dues ($/month)');
+      if (isNaN(fee) || fee < 0) errs.push('HOA fees ($/month)');
     }
+    if (!hasInsurance) errs.push('Insurance (Yes/No)');
+    if (hasInsurance === 'yes' && (!insuranceApproximation.trim() || isNaN(parseFloat(insuranceApproximation)))) errs.push('Annual insurance approximation');
+
+    if (!property.deedUrl && !deedFile) errs.push('Deed');
+    if (!property.propertyTaxRecordUrl && !propertyTaxFile) errs.push('Property tax record');
+    if (hasHOA === 'yes' && !property.hoaDocsUrl && !hoaDocsFile) errs.push('HOA bylaws/covenants or critical HOA docs');
     if (!hasMortgage) errs.push('Mortgage (Yes/No)');
-    if (!hasLiens) errs.push('Liens (Yes/No)');
-    if (hasMortgage === 'yes' || hasLiens === 'yes') {
-      if (!property.payoffOrLienReleaseUrl && !payoffFile) errs.push('Payoff statement or lien release');
-    }
-    if (hasLiens === 'yes' && !lienDetails.trim()) errs.push('Lien details');
+    if (hasMortgage === 'yes' && !remainingMortgage.trim()) errs.push('Approximate remaining mortgage');
+    if (lienTax === '' || lienHOA === '' || lienMechanic === '') errs.push('Liens/encumbrances (answer each)');
 
-    // Step 2
-    if (!property.valuationDocUrl && !valuationFile) errs.push('Appraisal, BPO, or CMA (valuation)');
+    if (!estimatedWorth.trim() || isNaN(parseFloat(estimatedWorth))) errs.push('What you think the property is worth');
+    if (!makeMeMovePrice.trim() || isNaN(parseFloat(makeMeMovePrice))) errs.push('Make me move price');
 
-    // Step 3
-    if (!hasMajorDefects) errs.push('Major known defects (Yes/No)');
-    if (hasMajorDefects === 'yes' && !majorDefectsNote.trim()) errs.push('Description of major defects');
-    if (!readyForShowings) errs.push('Ready for showings (Yes/No)');
-    if (readyForShowings === 'no' && !readyForShowingsDate.trim()) errs.push('Date when ready for showings');
-    if (totalPhotoCount < 5) errs.push('At least 5 property photos (add below)');
+    if (totalPhotoCount < 1) errs.push('At least one photo or video');
 
     return errs;
   };
@@ -175,6 +197,21 @@ const GetVerified = () => {
       const ext = (f) => (f?.name?.split('.').pop() || 'pdf');
       const updates = {};
 
+      if (bedrooms !== '') updates.bedrooms = parseInt(bedrooms, 10);
+      if (bathrooms !== '') updates.bathrooms = parseFloat(bathrooms);
+      if (squareFeet !== '') updates.squareFeet = parseFloat(squareFeet);
+      if (lotSize !== '') updates.lotSize = parseFloat(lotSize);
+      if (yearBuilt !== '') updates.yearBuilt = parseInt(yearBuilt, 10);
+      updates.hasHOA = hasHOA === 'yes';
+      if (hasHOA === 'yes') {
+        const fee = parseFloat(hoaFee);
+        if (!isNaN(fee) && fee >= 0) updates.hoaFee = fee;
+      }
+      if (propertyTaxEstimate !== '') updates.propertyTax = parseFloat(propertyTaxEstimate);
+      updates.hasInsurance = hasInsurance === 'yes';
+      if (hasInsurance === 'yes' && insuranceApproximation !== '') updates.insuranceApproximation = parseFloat(insuranceApproximation);
+      updates.features = features;
+
       if (deedFile) {
         const url = await uploadFile(deedFile, `${prefix}/deed_${Date.now()}.${ext(deedFile)}`);
         updates.deedUrl = url;
@@ -185,51 +222,38 @@ const GetVerified = () => {
         updates.propertyTaxRecordUrl = url;
         setPropertyTaxFile(null);
       }
-      if (disclosureFile) {
-        const url = await uploadFile(disclosureFile, `${prefix}/disclosure_${Date.now()}.${ext(disclosureFile)}`);
-        updates.disclosureFormsUrl = url;
-        setDisclosureFile(null);
+      if (hasHOA === 'yes' && hoaDocsFile) {
+        const url = await uploadFile(hoaDocsFile, `${prefix}/hoa_${Date.now()}.${ext(hoaDocsFile)}`);
+        updates.hoaDocsUrl = url;
+        setHoaDocsFile(null);
       }
-      if (hasHOA === 'yes') {
-        if (hoaDocsFile) {
-          const url = await uploadFile(hoaDocsFile, `${prefix}/hoa_${Date.now()}.${ext(hoaDocsFile)}`);
-          updates.hoaDocsUrl = url;
-          setHoaDocsFile(null);
-        }
-        const fee = parseFloat(hoaFee);
-        if (!isNaN(fee) && fee >= 0) updates.hoaFee = fee;
+      updates.hasMortgage = hasMortgage === 'yes';
+      if (hasMortgage === 'yes' && remainingMortgage !== '') updates.remainingMortgage = parseFloat(remainingMortgage);
+      if (hasMortgage === 'yes' && mortgageFile) {
+        const url = await uploadFile(mortgageFile, `${prefix}/mortgage_${Date.now()}.${ext(mortgageFile)}`);
+        updates.mortgageDocUrl = url;
+        setMortgageFile(null);
       }
-      if ((hasMortgage === 'yes' || hasLiens === 'yes') && payoffFile) {
+      if (payoffFile) {
         const url = await uploadFile(payoffFile, `${prefix}/payoffOrLien_${Date.now()}.${ext(payoffFile)}`);
         updates.payoffOrLienReleaseUrl = url;
         setPayoffFile(null);
       }
-      if (valuationFile) {
-        const url = await uploadFile(valuationFile, `${prefix}/valuation_${Date.now()}.${ext(valuationFile)}`);
-        updates.valuationDocUrl = url;
-        setValuationFile(null);
-      }
-      if (inspectionFile) {
-        const url = await uploadFile(inspectionFile, `${prefix}/inspection_${Date.now()}.${ext(inspectionFile)}`);
-        updates.inspectionReportUrl = url;
-        setInspectionFile(null);
-      }
+      updates.lienTax = lienTax === 'yes';
+      updates.lienHOA = lienHOA === 'yes';
+      updates.lienMechanic = lienMechanic === 'yes';
+      if (lienOther.trim()) updates.lienOtherDetails = lienOther.trim();
+
+      if (estimatedWorth !== '') updates.estimatedWorth = parseFloat(estimatedWorth);
+      if (makeMeMovePrice !== '') updates.makeMeMovePrice = parseFloat(makeMeMovePrice);
+      updates.verifiedComps = useCompAnalysis ? verifiedComps : [];
+
       if (photoFiles.length > 0) {
         const urls = await uploadMultipleFiles(photoFiles, `properties/${id}/photos`);
         updates.photos = [...(property.photos || []), ...urls];
         setPhotoFiles([]);
         setPhotoPreviews([]);
       }
-
-      if (taxesCurrent === 'yes' || taxesCurrent === 'no') updates.taxesCurrent = taxesCurrent === 'yes';
-      if (hasHOA === 'yes' || hasHOA === 'no') updates.hasHOA = hasHOA === 'yes';
-      if (hasMortgage === 'yes' || hasMortgage === 'no') updates.hasMortgage = hasMortgage === 'yes';
-      if (hasLiens === 'yes' || hasLiens === 'no') updates.hasLiens = hasLiens === 'yes';
-      if (hasLiens === 'yes') updates.lienDetails = lienDetails?.trim() || null;
-      if (hasMajorDefects === 'yes' || hasMajorDefects === 'no') updates.hasMajorDefects = hasMajorDefects === 'yes';
-      if (hasMajorDefects === 'yes') updates.majorDefectsNote = majorDefectsNote?.trim() || null;
-      if (readyForShowings === 'yes' || readyForShowings === 'no') updates.readyForShowings = readyForShowings === 'yes';
-      if (readyForShowings === 'no') updates.readyForShowingsDate = readyForShowingsDate?.trim() || null;
 
       if (Object.keys(updates).length > 0) {
         await updateProperty(id, updates);
@@ -259,33 +283,15 @@ const GetVerified = () => {
       const ext = (f) => (f?.name?.split('.').pop() || 'pdf');
 
       let deedUrl = property.deedUrl;
-      if (!deedUrl && deedFile) {
-        deedUrl = await uploadFile(deedFile, `${prefix}/deed_${Date.now()}.${ext(deedFile)}`);
-      }
+      if (!deedUrl && deedFile) deedUrl = await uploadFile(deedFile, `${prefix}/deed_${Date.now()}.${ext(deedFile)}`);
       let propertyTaxRecordUrl = property.propertyTaxRecordUrl;
-      if (!propertyTaxRecordUrl && propertyTaxFile) {
-        propertyTaxRecordUrl = await uploadFile(propertyTaxFile, `${prefix}/propertyTax_${Date.now()}.${ext(propertyTaxFile)}`);
-      }
-      let disclosureFormsUrl = property.disclosureFormsUrl;
-      if (!disclosureFormsUrl && disclosureFile) {
-        disclosureFormsUrl = await uploadFile(disclosureFile, `${prefix}/disclosure_${Date.now()}.${ext(disclosureFile)}`);
-      }
+      if (!propertyTaxRecordUrl && propertyTaxFile) propertyTaxRecordUrl = await uploadFile(propertyTaxFile, `${prefix}/propertyTax_${Date.now()}.${ext(propertyTaxFile)}`);
       let hoaDocsUrl = property.hoaDocsUrl;
-      if (hasHOA === 'yes' && !hoaDocsUrl && hoaDocsFile) {
-        hoaDocsUrl = await uploadFile(hoaDocsFile, `${prefix}/hoa_${Date.now()}.${ext(hoaDocsFile)}`);
-      }
+      if (hasHOA === 'yes' && !hoaDocsUrl && hoaDocsFile) hoaDocsUrl = await uploadFile(hoaDocsFile, `${prefix}/hoa_${Date.now()}.${ext(hoaDocsFile)}`);
+      let mortgageDocUrl = property.mortgageDocUrl;
+      if (hasMortgage === 'yes' && !mortgageDocUrl && mortgageFile) mortgageDocUrl = await uploadFile(mortgageFile, `${prefix}/mortgage_${Date.now()}.${ext(mortgageFile)}`);
       let payoffOrLienReleaseUrl = property.payoffOrLienReleaseUrl;
-      if ((hasMortgage === 'yes' || hasLiens === 'yes') && !payoffOrLienReleaseUrl && payoffFile) {
-        payoffOrLienReleaseUrl = await uploadFile(payoffFile, `${prefix}/payoffOrLien_${Date.now()}.${ext(payoffFile)}`);
-      }
-      let valuationDocUrl = property.valuationDocUrl;
-      if (!valuationDocUrl && valuationFile) {
-        valuationDocUrl = await uploadFile(valuationFile, `${prefix}/valuation_${Date.now()}.${ext(valuationFile)}`);
-      }
-      let inspectionReportUrl = property.inspectionReportUrl;
-      if (!inspectionReportUrl && inspectionFile) {
-        inspectionReportUrl = await uploadFile(inspectionFile, `${prefix}/inspection_${Date.now()}.${ext(inspectionFile)}`);
-      }
+      if (!payoffOrLienReleaseUrl && payoffFile) payoffOrLienReleaseUrl = await uploadFile(payoffFile, `${prefix}/payoffOrLien_${Date.now()}.${ext(payoffFile)}`);
       let photos = property.photos || [];
       if (photoFiles.length > 0) {
         const urls = await uploadMultipleFiles(photoFiles, `properties/${id}/photos`);
@@ -295,27 +301,34 @@ const GetVerified = () => {
       const updates = {
         verified: true,
         verifiedAt: new Date(),
-        taxesCurrent: taxesCurrent === 'yes',
+        bedrooms: bedrooms !== '' ? parseInt(bedrooms, 10) : property.bedrooms,
+        bathrooms: bathrooms !== '' ? parseFloat(bathrooms) : property.bathrooms,
+        squareFeet: squareFeet !== '' ? parseFloat(squareFeet) : property.squareFeet,
+        lotSize: lotSize !== '' ? parseFloat(lotSize) : property.lotSize,
+        yearBuilt: yearBuilt !== '' ? parseInt(yearBuilt, 10) : property.yearBuilt,
         hasHOA: hasHOA === 'yes',
+        hoaFee: hasHOA === 'yes' ? parseFloat(hoaFee) : null,
+        propertyTax: propertyTaxEstimate !== '' ? parseFloat(propertyTaxEstimate) : null,
+        hasInsurance: hasInsurance === 'yes',
+        insuranceApproximation: hasInsurance === 'yes' && insuranceApproximation !== '' ? parseFloat(insuranceApproximation) : null,
+        features,
+        deedUrl,
+        propertyTaxRecordUrl,
+        hoaDocsUrl: hasHOA === 'yes' ? hoaDocsUrl : null,
         hasMortgage: hasMortgage === 'yes',
-        hasLiens: hasLiens === 'yes',
-        lienDetails: hasLiens === 'yes' ? lienDetails.trim() : null,
-        hasMajorDefects: hasMajorDefects === 'yes',
-        majorDefectsNote: hasMajorDefects === 'yes' ? majorDefectsNote.trim() : null,
-        readyForShowings: readyForShowings === 'yes',
-        readyForShowingsDate: readyForShowings === 'no' ? readyForShowingsDate.trim() : null,
-        valuationDocUrl,
-        payoffOrLienReleaseUrl: hasMortgage === 'yes' || hasLiens === 'yes' ? payoffOrLienReleaseUrl : null,
+        remainingMortgage: hasMortgage === 'yes' && remainingMortgage !== '' ? parseFloat(remainingMortgage) : null,
+        mortgageDocUrl: hasMortgage === 'yes' ? mortgageDocUrl : null,
+        payoffOrLienReleaseUrl: payoffOrLienReleaseUrl || null,
+        lienTax: lienTax === 'yes',
+        lienHOA: lienHOA === 'yes',
+        lienMechanic: lienMechanic === 'yes',
+        lienOtherDetails: lienOther.trim() || null,
+        estimatedWorth: estimatedWorth !== '' ? parseFloat(estimatedWorth) : null,
+        makeMeMovePrice: makeMeMovePrice !== '' ? parseFloat(makeMeMovePrice) : null,
+        verifiedComps: useCompAnalysis ? verifiedComps : [],
+        price: estimatedWorth !== '' ? parseFloat(estimatedWorth) : property.price,
         photos,
       };
-      if (deedFile) updates.deedUrl = deedUrl;
-      if (propertyTaxFile) updates.propertyTaxRecordUrl = propertyTaxRecordUrl;
-      if (disclosureFile) updates.disclosureFormsUrl = disclosureFormsUrl;
-      if (hasHOA === 'yes') {
-        if (hoaDocsFile) updates.hoaDocsUrl = hoaDocsUrl;
-        updates.hoaFee = parseFloat(hoaFee);
-      }
-      if (inspectionFile) updates.inspectionReportUrl = inspectionReportUrl;
 
       await updateProperty(id, updates);
       setSuccess(true);
@@ -349,7 +362,7 @@ const GetVerified = () => {
     return (
       <div className="get-verified-page">
         <div className="get-verified-container get-verified-success">
-          <h2>Your listing is now verified</h2>
+          <h2>Your property is now verified</h2>
           <p>Buyers will see a Verified badge on your property.</p>
           <Link to={`/property/${id}`} className="btn btn-primary btn-large">View Property</Link>
         </div>
@@ -363,9 +376,9 @@ const GetVerified = () => {
   return (
     <div className="get-verified-page">
       <div className="get-verified-container">
-        <h1>Get your listing verified</h1>
+        <h1>Get your property verified</h1>
         <p className="get-verified-intro">
-          Complete the steps below so buyers see a Verified badge. Existing documents on your listing are reused when possible.
+          Complete the steps below so buyers see a Verified badge. Confirm each section to the best of your knowledge before continuing.
         </p>
         <div className="verification-progress">
           <div className="verification-progress-bar">
@@ -374,49 +387,39 @@ const GetVerified = () => {
           <span className="verification-progress-text">{percentage}% complete</span>
         </div>
         <div className="step-indicator">
-          <div className={`step ${step >= 1 ? 'active' : ''}`}>1. Confirm the home</div>
-          <div className={`step ${step >= 2 ? 'active' : ''}`}>2. Price the home</div>
-          <div className={`step ${step >= 3 ? 'active' : ''}`}>3. Home readiness</div>
+          <div className={`step ${step >= 1 ? 'active' : ''}`}>1. About Home</div>
+          <div className={`step ${step >= 2 ? 'active' : ''}`}>2. Confirm the home</div>
+          <div className={`step ${step >= 3 ? 'active' : ''}`}>3. Price the home</div>
+          <div className={`step ${step >= 4 ? 'active' : ''}`}>4. Content</div>
         </div>
         {error && <div className="error-message">{error}</div>}
         {savedMessage && <div className="saved-message">{savedMessage}</div>}
         <form onSubmit={handleSubmit}>
           {step === 1 && (
             <div className="form-step">
-              <h2>Confirm the home</h2>
-              <p className="form-note">Ownership, taxes, HOA, mortgage, and liens.</p>
-
-              <div className="form-group">
-                <label>Deed *</label>
-                {property.deedUrl ? (
-                  <p className="on-file">✓ Deed on file</p>
-                ) : (
-                  <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => setDeedFile(e.target.files?.[0] || null)} />
-                )}
-              </div>
-              <div className="form-group">
-                <label>Property tax record *</label>
-                {property.propertyTaxRecordUrl ? (
-                  <p className="on-file">✓ Property tax record on file</p>
-                ) : (
-                  <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => setPropertyTaxFile(e.target.files?.[0] || null)} />
-                )}
-              </div>
-              <div className="form-group">
-                <label>Property taxes current? *</label>
-                <select value={taxesCurrent} onChange={(e) => setTaxesCurrent(e.target.value)} required>
-                  <option value="">Select</option>
-                  <option value="yes">Yes</option>
-                  <option value="no">No</option>
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Disclosure forms *</label>
-                {property.disclosureFormsUrl ? (
-                  <p className="on-file">✓ Disclosures on file</p>
-                ) : (
-                  <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => setDisclosureFile(e.target.files?.[0] || null)} />
-                )}
+              <h2>About Home</h2>
+              <p className="form-note">Confirm the property basics to the best of your knowledge.</p>
+              <div className="form-grid-2">
+                <div className="form-group">
+                  <label>Bedrooms *</label>
+                  <input type="number" min="0" value={bedrooms} onChange={(e) => setBedrooms(e.target.value)} placeholder="e.g. 3" required />
+                </div>
+                <div className="form-group">
+                  <label>Bathrooms *</label>
+                  <input type="number" min="0" step="0.5" value={bathrooms} onChange={(e) => setBathrooms(e.target.value)} placeholder="e.g. 2.5" required />
+                </div>
+                <div className="form-group">
+                  <label>Square footage</label>
+                  <input type="number" min="0" value={squareFeet} onChange={(e) => setSquareFeet(e.target.value)} placeholder="e.g. 2200" />
+                </div>
+                <div className="form-group">
+                  <label>Lot size (sq ft)</label>
+                  <input type="number" min="0" value={lotSize} onChange={(e) => setLotSize(e.target.value)} placeholder="e.g. 8000" />
+                </div>
+                <div className="form-group">
+                  <label>Year built</label>
+                  <input type="number" min="1800" max={new Date().getFullYear() + 1} value={yearBuilt} onChange={(e) => setYearBuilt(e.target.value)} placeholder="e.g. 1995" />
+                </div>
               </div>
               <div className="form-group">
                 <label>HOA? *</label>
@@ -427,18 +430,64 @@ const GetVerified = () => {
                 </select>
               </div>
               {hasHOA === 'yes' && (
+                <div className="form-group">
+                  <label>HOA fees ($/month) *</label>
+                  <input type="number" min="0" step="1" value={hoaFee} onChange={(e) => setHoaFee(e.target.value)} placeholder="e.g. 150" />
+                </div>
+              )}
+              <div className="form-group">
+                <label>Property taxes estimate ($/year) *</label>
+                <input type="number" min="0" step="100" value={propertyTaxEstimate} onChange={(e) => setPropertyTaxEstimate(e.target.value)} placeholder="e.g. 6000" required />
+              </div>
+              <div className="form-group">
+                <label>Insurance? *</label>
+                <select value={hasInsurance} onChange={(e) => setHasInsurance(e.target.value)} required>
+                  <option value="">Select</option>
+                  <option value="yes">Yes</option>
+                  <option value="no">No</option>
+                </select>
+              </div>
+              {hasInsurance === 'yes' && (
+                <div className="form-group">
+                  <label>Annual insurance approximation ($/year)</label>
+                  <input type="number" min="0" step="100" value={insuranceApproximation} onChange={(e) => setInsuranceApproximation(e.target.value)} placeholder="e.g. 1800" />
+                </div>
+              )}
+              <div className="form-group">
+                <label>Features</label>
+                <div className="feature-chips">
+                  {commonFeaturesList.map((f) => (
+                    <button key={f} type="button" className={`feature-chip ${features.includes(f) ? 'active' : ''}`} onClick={() => toggleFeature(f)}>{f}</button>
+                  ))}
+                </div>
+              </div>
+              <label className="confirm-checkbox">
+                <input type="checkbox" checked={step1Confirmed} onChange={(e) => setStep1Confirmed(e.target.checked)} />
+                <span>I confirm this is accurate to the best of my knowledge.</span>
+              </label>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="form-step">
+              <h2>Confirm the home</h2>
+              <p className="form-note">Upload documents and confirm ownership, taxes, HOA (if applicable), mortgage, and liens.</p>
+              <div className="form-group">
+                <label>Deed *</label>
+                <p className="form-instruction">This was provided with the title company upon property closure and is likely recorded with your local municipality.</p>
+                {property.deedUrl ? <p className="on-file">✓ Deed on file</p> : <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => setDeedFile(e.target.files?.[0] || null)} />}
+              </div>
+              <div className="form-group">
+                <label>Property tax record *</label>
+                <p className="form-instruction">Available via your municipality assessor portal.</p>
+                {property.propertyTaxRecordUrl ? <p className="on-file">✓ Property tax record on file</p> : <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => setPropertyTaxFile(e.target.files?.[0] || null)} />}
+              </div>
+              {hasHOA === 'yes' && (
                 <>
                   <div className="form-group">
-                    <label>HOA documents *</label>
-                    {property.hoaDocsUrl ? (
-                      <p className="on-file">✓ HOA docs on file</p>
-                    ) : (
-                      <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => setHoaDocsFile(e.target.files?.[0] || null)} />
-                    )}
-                  </div>
-                  <div className="form-group">
-                    <label>HOA dues ($/month) *</label>
-                    <input type="number" min="0" step="1" value={hoaFee} onChange={(e) => setHoaFee(e.target.value)} placeholder="e.g. 150" />
+                    <label>HOA bylaws and covenants / critical HOA docs *</label>
+                    <p className="form-instruction">Obtain and upload HOA bylaws, covenants, and other critical HOA documents.</p>
+                    {property.hoaDocsUrl ? <p className="on-file">✓ HOA docs on file</p> : <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => setHoaDocsFile(e.target.files?.[0] || null)} />}
                   </div>
                 </>
               )}
@@ -450,136 +499,138 @@ const GetVerified = () => {
                   <option value="no">No</option>
                 </select>
               </div>
+              {hasMortgage === 'yes' && (
+                <>
+                  <div className="form-group">
+                    <label>Approximate remaining mortgage balance ($) *</label>
+                    <input type="number" min="0" step="1000" value={remainingMortgage} onChange={(e) => setRemainingMortgage(e.target.value)} placeholder="e.g. 250000" />
+                  </div>
+                  <div className="form-group">
+                    <label>Mortgage document (optional)</label>
+                    {property.mortgageDocUrl ? <p className="on-file">✓ Mortgage doc on file</p> : <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => setMortgageFile(e.target.files?.[0] || null)} />}
+                  </div>
+                </>
+              )}
               <div className="form-group">
-                <label>Known liens or encumbrances? *</label>
-                <select value={hasLiens} onChange={(e) => setHasLiens(e.target.value)} required>
-                  <option value="">Select</option>
-                  <option value="yes">Yes</option>
-                  <option value="no">No</option>
-                </select>
+                <label>Known liens or encumbrances</label>
+                <p className="form-instruction">Toggle yes or no for each; describe any other in the box below.</p>
+                <div className="lien-toggles">
+                  <label><span>Tax lien?</span> <select value={lienTax} onChange={(e) => setLienTax(e.target.value)}><option value="">—</option><option value="yes">Yes</option><option value="no">No</option></select></label>
+                  <label><span>HOA lien?</span> <select value={lienHOA} onChange={(e) => setLienHOA(e.target.value)}><option value="">—</option><option value="yes">Yes</option><option value="no">No</option></select></label>
+                  <label><span>Mechanic&apos;s lien?</span> <select value={lienMechanic} onChange={(e) => setLienMechanic(e.target.value)}><option value="">—</option><option value="yes">Yes</option><option value="no">No</option></select></label>
+                </div>
+                <textarea value={lienOther} onChange={(e) => setLienOther(e.target.value)} rows={2} placeholder="Describe any other liens or encumbrances..." className="lien-other-input" />
               </div>
-              {(hasMortgage === 'yes' || hasLiens === 'yes') && (
+              {(lienTax === 'yes' || lienHOA === 'yes' || lienMechanic === 'yes' || lienOther.trim()) && (
                 <div className="form-group">
-                  <label>Payoff statement or lien release *</label>
-                  {property.payoffOrLienReleaseUrl ? (
-                    <p className="on-file">✓ Document on file</p>
-                  ) : (
-                    <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => setPayoffFile(e.target.files?.[0] || null)} />
-                  )}
+                  <label>Payoff statement or lien release (if applicable)</label>
+                  {property.payoffOrLienReleaseUrl ? <p className="on-file">✓ Document on file</p> : <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => setPayoffFile(e.target.files?.[0] || null)} />}
                 </div>
               )}
-              {hasLiens === 'yes' && (
-                <div className="form-group">
-                  <label>Lien details *</label>
-                  <textarea value={lienDetails} onChange={(e) => setLienDetails(e.target.value)} rows={3} placeholder="Describe the lien(s) and how they will be cleared." />
-                </div>
-              )}
-            </div>
-          )}
-
-          {step === 2 && (
-            <div className="form-step">
-              <h2>Price the home</h2>
-              <p className="form-note">Support your list price with a valuation.</p>
-              <div className="form-group">
-                <label>List price</label>
-                <p className="read-only-value">
-                  {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(property.price)}
-                </p>
-              </div>
-              <div className="form-group">
-                <label>Appraisal, BPO, or CMA (opinion of value) *</label>
-                {property.valuationDocUrl ? (
-                  <p className="on-file">✓ Valuation on file</p>
-                ) : (
-                  <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => setValuationFile(e.target.files?.[0] || null)} />
-                )}
-                <p className="form-hint">Upload at least one: appraisal, broker price opinion, or comparable market analysis.</p>
-              </div>
+              <label className="confirm-checkbox">
+                <input type="checkbox" checked={step2Confirmed} onChange={(e) => setStep2Confirmed(e.target.checked)} />
+                <span>I confirm this is accurate to the best of my knowledge.</span>
+              </label>
             </div>
           )}
 
           {step === 3 && (
             <div className="form-step">
-              <h2>Home readiness</h2>
-              <p className="form-note">Defects, photos, and showings.</p>
+              <h2>Price the home</h2>
+              <p className="form-note">What you think the property is worth and your &quot;make me move&quot; price.</p>
               <div className="form-group">
-                <label>Major known defects? *</label>
-                <select value={hasMajorDefects} onChange={(e) => setHasMajorDefects(e.target.value)} required>
-                  <option value="">Select</option>
-                  <option value="yes">Yes</option>
-                  <option value="no">No</option>
-                </select>
+                <label>What do you think the property is worth? ($) *</label>
+                <input type="number" min="0" step="1000" value={estimatedWorth} onChange={(e) => setEstimatedWorth(e.target.value)} placeholder="e.g. 450000" required />
               </div>
-              {hasMajorDefects === 'yes' && (
-                <div className="form-group">
-                  <label>Describe major defects *</label>
-                  <textarea value={majorDefectsNote} onChange={(e) => setMajorDefectsNote(e.target.value)} rows={3} placeholder="Or state: See inspection report." />
-                </div>
-              )}
               <div className="form-group">
-                <label>Photos *</label>
-                <p className="form-hint">At least 5 photos required. Add or upload below.</p>
-                <p className={totalPhotoCount >= 5 ? 'on-file' : 'form-hint form-hint--warn'}>
-                  {totalPhotoCount >= 5 ? `✓ ${totalPhotoCount} photos` : `${totalPhotoCount} of 5 photos`}
-                </p>
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  onChange={handlePhotoFilesChange}
-                  className="input-file"
-                />
-                {((property?.photos?.length ?? 0) > 0 || photoPreviews.length > 0) && (
-                  <div className="photo-previews">
-                    {property?.photos?.map((url, i) => (
-                      <div key={`ex-${i}`} className="photo-preview"><img src={url} alt={`Photo ${i + 1}`} /></div>
-                    ))}
-                    {photoPreviews.map((url, i) => (
-                      <div key={`new-${i}`} className="photo-preview"><img src={url} alt={`New ${i + 1}`} /></div>
-                    ))}
+                <label>Make me move price ($) *</label>
+                <p className="form-hint">If I got this, I would pack my bags tomorrow.</p>
+                <input type="number" min="0" step="1000" value={makeMeMovePrice} onChange={(e) => setMakeMeMovePrice(e.target.value)} placeholder="e.g. 500000" required />
+              </div>
+              <div className="form-group">
+                <label className="toggle-label">
+                  <input type="checkbox" checked={useCompAnalysis} onChange={(e) => setUseCompAnalysis(e.target.checked)} />
+                  <span>Use comparative property analysis (select recent sales)</span>
+                </label>
+                {useCompAnalysis && (
+                  <div className="comps-section">
+                    <p className="form-hint">Select comparable recent sales on the map (up to 5).</p>
+                    <div className="get-verified-comps-map">
+                      <CompsMap
+                        center={property?.latitude != null && property?.longitude != null ? { lat: property.latitude, lng: property.longitude } : null}
+                        selectedComps={verifiedComps}
+                        onCompSelect={(parcel) => {
+                          const existing = verifiedComps.find((c) => (c.parcelId || c.attomId) === (parcel.attomId || parcel.parcelId));
+                          if (existing) {
+                            setVerifiedComps(verifiedComps.filter((c) => (c.parcelId || c.attomId) !== (parcel.attomId || parcel.parcelId)));
+                          } else if (verifiedComps.length < 5) {
+                            setVerifiedComps([
+                              ...verifiedComps,
+                              {
+                                parcelId: parcel.attomId || parcel.parcelId,
+                                attomId: parcel.attomId || parcel.parcelId,
+                                address: parcel.address,
+                                latitude: parcel.latitude,
+                                longitude: parcel.longitude,
+                                closingValue: parcel.estimate || parcel.closingValue || '',
+                              },
+                            ]);
+                          }
+                        }}
+                      />
+                    </div>
+                    <p className="form-hint">Selected: {verifiedComps.length} of 5 comps.</p>
                   </div>
                 )}
               </div>
+              <label className="confirm-checkbox">
+                <input type="checkbox" checked={step3Confirmed} onChange={(e) => setStep3Confirmed(e.target.checked)} />
+                <span>I confirm this is accurate to the best of my knowledge.</span>
+              </label>
+            </div>
+          )}
+
+          {step === 4 && (
+            <div className="form-step">
+              <h2>Content</h2>
+              <p className="form-note">Upload current photos and videos of the property. Home readiness is addressed in the listing checklist when you&apos;re ready to list.</p>
               <div className="form-group">
-                <label>Ready for showings? *</label>
-                <select value={readyForShowings} onChange={(e) => setReadyForShowings(e.target.value)} required>
-                  <option value="">Select</option>
-                  <option value="yes">Yes, now</option>
-                  <option value="no">No, by a specific date</option>
-                </select>
+                <label>Photos</label>
+                <p className="form-hint">Upload one or more current photos.</p>
+                <p className={totalPhotoCount >= 1 ? 'on-file' : 'form-hint form-hint--warn'}>{totalPhotoCount >= 1 ? `✓ ${totalPhotoCount} photo(s)` : 'Add at least one photo'}</p>
+                <input type="file" accept="image/*" multiple onChange={handlePhotoFilesChange} className="input-file" />
               </div>
-              {readyForShowings === 'no' && (
-                <div className="form-group">
-                  <label>Date when ready for showings *</label>
-                  <input type="date" value={readyForShowingsDate} onChange={(e) => setReadyForShowingsDate(e.target.value)} />
+              <div className="form-group">
+                <label>Videos (optional)</label>
+                <input type="file" accept="video/*" multiple onChange={(e) => setVideoFiles(Array.from(e.target.files || []))} className="input-file" />
+                {videoFiles.length > 0 && <p className="form-hint">{videoFiles.length} video(s) selected</p>}
+              </div>
+              {((property?.photos?.length ?? 0) > 0 || photoPreviews.length > 0) && (
+                <div className="photo-previews">
+                  {property?.photos?.map((url, i) => <div key={`ex-${i}`} className="photo-preview"><img src={url} alt={`Photo ${i + 1}`} /></div>)}
+                  {photoPreviews.map((url, i) => <div key={`new-${i}`} className="photo-preview"><img src={url} alt={`New ${i + 1}`} /></div>)}
                 </div>
               )}
-              <div className="form-group">
-                <label>Inspection report (optional)</label>
-                {property.inspectionReportUrl ? (
-                  <p className="on-file">✓ Inspection on file</p>
-                ) : (
-                  <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => setInspectionFile(e.target.files?.[0] || null)} />
-                )}
-              </div>
             </div>
           )}
 
           <div className="form-actions">
-            {step > 1 && (
-              <button type="button" onClick={() => setStep((s) => s - 1)} className="btn-secondary">Back</button>
-            )}
-            {step < 3 ? (
-              <button type="button" onClick={() => setStep((s) => s + 1)} className="btn-primary">Next</button>
+            {step > 1 && <button type="button" onClick={() => setStep((s) => s - 1)} className="btn-secondary">Back</button>}
+            {step < 4 ? (
+              <button
+                type="button"
+                onClick={() => setStep((s) => s + 1)}
+                className="btn-primary"
+                disabled={(step === 1 && !step1Confirmed) || (step === 2 && !step2Confirmed) || (step === 3 && !step3Confirmed)}
+              >
+                Next
+              </button>
             ) : (
-              <button type="submit" disabled={saving || totalPhotoCount < 5} className="btn-primary">
+              <button type="submit" disabled={saving || totalPhotoCount < 1} className="btn-primary">
                 {saving ? 'Completing...' : 'Complete verification'}
               </button>
             )}
-            <button type="button" onClick={handleSaveProgress} disabled={saving} className="btn-secondary">
-              Save progress
-            </button>
+            <button type="button" onClick={handleSaveProgress} disabled={saving} className="btn-secondary">Save progress</button>
           </div>
         </form>
       </div>
