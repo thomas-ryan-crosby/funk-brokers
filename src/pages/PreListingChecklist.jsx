@@ -213,6 +213,45 @@ const PreListingChecklist = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [propertyId, step7Data.lockboxPlan, step7Data.showingRestrictions, step7Data.offerInstructions, step7Data.sellerAvailability, step7Data.timelineExpectations]);
 
+  const applyVerificationToStep2 = (prop, step2) => {
+    const q = { ...(step2.questionnaire || {}) };
+    const hasMortgage = prop.hasMortgage === true;
+    const lienTax = prop.lienTax === true;
+    const lienHOA = prop.lienHOA === true;
+    const lienMech = prop.lienMechanic === true;
+    const lienOther = !!(prop.lienOtherDetails && String(prop.lienOtherDetails).trim());
+    const anyLien = lienTax || lienHOA || lienMech || lienOther;
+    if (!(q.outstandingMortgages || '').trim()) {
+      if (hasMortgage && anyLien) q.outstandingMortgages = 'both';
+      else if (hasMortgage) q.outstandingMortgages = 'mortgage';
+      else if (anyLien) q.outstandingMortgages = 'liens';
+      else q.outstandingMortgages = 'none';
+    }
+    if (!(q.judgmentsLiens || '').trim()) {
+      const count = [lienTax, lienHOA, lienMech, lienOther].filter(Boolean).length;
+      if (count === 0) q.judgmentsLiens = 'none';
+      else if (count > 1) q.judgmentsLiens = 'multiple';
+      else if (lienTax) q.judgmentsLiens = 'tax';
+      else if (lienHOA) q.judgmentsLiens = 'hoa';
+      else if (lienMech) q.judgmentsLiens = 'judgments';
+      else q.judgmentsLiens = 'multiple';
+    }
+    return { ...step2, questionnaire: q };
+  };
+
+  const mapVerificationCompsToStep3 = (comps) => {
+    return (comps || []).map((c) => ({
+      parcelId: c.parcelId || c.attomId,
+      address: c.address || 'Address unknown',
+      latitude: c.latitude,
+      longitude: c.longitude,
+      closingValue: c.closingValue != null ? String(c.closingValue) : '',
+      estimate: c.estimate,
+      lastSalePrice: c.lastSalePrice,
+      lastSaleDate: c.lastSaleDate,
+    }));
+  };
+
   const loadChecklist = async () => {
     if (!propertyId) return;
     try {
@@ -252,12 +291,21 @@ const PreListingChecklist = () => {
         } else if (property?.deedUrl) {
           setStep1Data((prev) => ({ ...prev, deedUrl: property.deedUrl }));
         }
-        if (saved.step2TitleOwnership) setStep2Data(saved.step2TitleOwnership);
+        if (saved.step2TitleOwnership) {
+          let step2 = saved.step2TitleOwnership;
+          if (property) step2 = applyVerificationToStep2(property, step2);
+          setStep2Data(step2);
+        } else if (property) {
+          setStep2Data((prev) => applyVerificationToStep2(property, prev));
+        }
         if (saved.step3ListingStrategy) {
           let step3 = saved.step3ListingStrategy;
           if (property && !(step3.listPrice || '').trim()) {
             const v = property.estimatedWorth ?? property.makeMeMovePrice ?? property.price;
             if (v != null) step3 = { ...step3, listPrice: String(v) };
+          }
+          if (property?.verifiedComps?.length && !(step3.verifiedComps?.length)) {
+            step3 = { ...step3, verifiedComps: mapVerificationCompsToStep3(property.verifiedComps) };
           }
           setStep3Data(step3);
           if (!centerSet && step3.verifiedComps && step3.verifiedComps.length > 0) {
@@ -269,11 +317,19 @@ const PreListingChecklist = () => {
           }
         } else if (property) {
           const v = property.estimatedWorth ?? property.makeMeMovePrice ?? property.price;
-          if (v != null) setStep3Data((prev) => ({ ...prev, listPrice: String(v) }));
+          const comps = property.verifiedComps?.length ? mapVerificationCompsToStep3(property.verifiedComps) : [];
+          setStep3Data((prev) => ({
+            ...prev,
+            listPrice: v != null ? String(v) : prev.listPrice,
+            verifiedComps: comps.length ? comps : prev.verifiedComps,
+          }));
         }
       }
       if (!saved && property?.deedUrl) {
         setStep1Data((prev) => ({ ...prev, deedUrl: property.deedUrl }));
+      }
+      if (!saved && property) {
+        setStep2Data((prev) => applyVerificationToStep2(property, prev));
       }
       if (saved) {
         if (saved.step4Disclosures) setStep4Data(saved.step4Disclosures);
@@ -493,6 +549,19 @@ const PreListingChecklist = () => {
     }
     setListModalChecking(true);
     try {
+      // Flush all steps to Firestore first so persisted state matches local (avoids "Missing: 2, 5, 7" when locally complete)
+      const payload = {
+        step1LegalAuthority: step1Data,
+        step2TitleOwnership: step2Data,
+        step3ListingStrategy: step3Data,
+        step4Disclosures: step4Data,
+        step5PropertyPrep: step5Data,
+        step6MarketingAssets: step6Data,
+        step7ShowingsOffers: step7Data,
+        currentStep: Math.max(currentStep, 7),
+      };
+      await savePreListingChecklist(propertyId, payload);
+
       const persisted = await getPreListingChecklist(propertyId);
       if (!isPreListingChecklistComplete(persisted)) {
         const missing = [];
@@ -508,6 +577,8 @@ const PreListingChecklist = () => {
       }
     } catch (e) {
       console.error(e);
+      alert('Failed to save or verify checklist. Please try again.');
+      return;
     } finally {
       setListModalChecking(false);
     }
@@ -787,6 +858,29 @@ const PreListingChecklist = () => {
                 Fill out the questionnaire and certify that the information is correct. You don't need full title work yet, but you need to know what's coming.
               </p>
 
+              {property && (property.hasMortgage !== undefined || property.lienTax !== undefined || property.lienHOA !== undefined || property.lienMechanic !== undefined) && (
+                <div className="step-verify-property-info step-verify-step2">
+                  <h3>From verification</h3>
+                  <p className="form-hint">Mortgage and liens info you provided during verification. Use it to complete the questionnaire below.</p>
+                  <dl className="step-verify-property-dl">
+                    <dt>Mortgage?</dt>
+                    <dd>{property.hasMortgage === true ? 'Yes' : property.hasMortgage === false ? 'No' : '—'}</dd>
+                    {property.hasMortgage === true && property.remainingMortgage != null && (
+                      <><dt>Remaining balance</dt><dd>${Number(property.remainingMortgage).toLocaleString()}</dd></>
+                    )}
+                    <dt>Tax lien?</dt>
+                    <dd>{property.lienTax === true ? 'Yes' : property.lienTax === false ? 'No' : '—'}</dd>
+                    <dt>HOA lien?</dt>
+                    <dd>{property.lienHOA === true ? 'Yes' : property.lienHOA === false ? 'No' : '—'}</dd>
+                    <dt>Mechanic&apos;s lien?</dt>
+                    <dd>{property.lienMechanic === true ? 'Yes' : property.lienMechanic === false ? 'No' : '—'}</dd>
+                    {property.lienOtherDetails && (
+                      <><dt>Other liens</dt><dd>{String(property.lienOtherDetails)}</dd></>
+                    )}
+                  </dl>
+                </div>
+              )}
+
               <div className="step-questionnaire">
                 <h3>Title & Ownership Questionnaire</h3>
                 <div className="question-group">
@@ -964,6 +1058,9 @@ const PreListingChecklist = () => {
                     <p className="step-comps-description">
                       Select up to 5 nearby properties on the map and enter their closing values to use as verified comparables for pricing. Click on a property marker to view details, then click "Add" to add it as a comp.
                     </p>
+                    {property?.verifiedComps?.length && (step3Data.verifiedComps?.length || 0) > 0 && (
+                      <p className="form-hint step-comps-from-verification">Comps from verification have been pulled through. You can add more or edit below.</p>
+                    )}
                     
                     {!mapCenter && (
                       <div className="step-comps-center-prompt">
