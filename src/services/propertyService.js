@@ -280,10 +280,11 @@ export const searchProperties = async (filters = {}) => {
 export const updateProperty = async (propertyId, updates) => {
   try {
     const docRef = doc(db, PROPERTIES_COLLECTION, propertyId);
-    await updateDoc(docRef, {
-      ...updates,
-      updatedAt: new Date(),
+    const clean = { ...updates, updatedAt: new Date() };
+    Object.keys(clean).forEach((key) => {
+      if (clean[key] === undefined) delete clean[key];
     });
+    await updateDoc(docRef, clean);
   } catch (error) {
     console.error('Error updating property:', error);
     throw error;

@@ -51,6 +51,7 @@ const GetVerified = () => {
   const [useCompAnalysis, setUseCompAnalysis] = useState(false);
   const [verifiedComps, setVerifiedComps] = useState([]);
   const [step3Confirmed, setStep3Confirmed] = useState(false);
+  const [compPriceModal, setCompPriceModal] = useState(null); // { index, address, closingValue }
 
   // Step 4 – Content (photos/videos)
   const [photoFiles, setPhotoFiles] = useState([]);
@@ -313,13 +314,13 @@ const GetVerified = () => {
         hasInsurance: hasInsurance === 'yes',
         insuranceApproximation: hasInsurance === 'yes' && insuranceApproximation !== '' ? parseFloat(insuranceApproximation) : null,
         features,
-        deedUrl,
-        propertyTaxRecordUrl,
-        hoaDocsUrl: hasHOA === 'yes' ? hoaDocsUrl : null,
+        deedUrl: deedUrl ?? null,
+        propertyTaxRecordUrl: propertyTaxRecordUrl ?? null,
+        hoaDocsUrl: hasHOA === 'yes' ? (hoaDocsUrl ?? null) : null,
         hasMortgage: hasMortgage === 'yes',
         remainingMortgage: hasMortgage === 'yes' && remainingMortgage !== '' ? parseFloat(remainingMortgage) : null,
-        mortgageDocUrl: hasMortgage === 'yes' ? mortgageDocUrl : null,
-        payoffOrLienReleaseUrl: payoffOrLienReleaseUrl || null,
+        mortgageDocUrl: hasMortgage === 'yes' ? (mortgageDocUrl ?? null) : null,
+        payoffOrLienReleaseUrl: payoffOrLienReleaseUrl ?? null,
         lienTax: lienTax === 'yes',
         lienHOA: lienHOA === 'yes',
         lienMechanic: lienMechanic === 'yes',
@@ -330,6 +331,9 @@ const GetVerified = () => {
         price: estimatedWorth !== '' ? parseFloat(estimatedWorth) : property.price,
         photos,
       };
+      Object.keys(updates).forEach((key) => {
+        if (updates[key] === undefined) delete updates[key];
+      });
 
       await updateProperty(id, updates);
       setSuccess(true);
@@ -555,7 +559,7 @@ const GetVerified = () => {
                 </label>
                 {useCompAnalysis && (
                   <div className="comps-section">
-                    <p className="form-hint">Select comparable recent sales on the map (up to 5).</p>
+                    <p className="form-hint">Select comparable recent sales on the map (up to 5). Set the sale price for each comp below.</p>
                     <div className="get-verified-comps-map">
                       <CompsMap
                         center={property?.latitude != null && property?.longitude != null ? { lat: property.latitude, lng: property.longitude } : null}
@@ -565,22 +569,74 @@ const GetVerified = () => {
                           if (existing) {
                             setVerifiedComps(verifiedComps.filter((c) => (c.parcelId || c.attomId) !== (parcel.attomId || parcel.parcelId)));
                           } else if (verifiedComps.length < 5) {
-                            setVerifiedComps([
-                              ...verifiedComps,
-                              {
-                                parcelId: parcel.attomId || parcel.parcelId,
-                                attomId: parcel.attomId || parcel.parcelId,
-                                address: parcel.address,
-                                latitude: parcel.latitude,
-                                longitude: parcel.longitude,
-                                closingValue: parcel.estimate || parcel.closingValue || '',
-                              },
-                            ]);
+                            const newComp = {
+                              parcelId: parcel.attomId || parcel.parcelId,
+                              attomId: parcel.attomId || parcel.parcelId,
+                              address: parcel.address || 'Address unknown',
+                              latitude: parcel.latitude,
+                              longitude: parcel.longitude,
+                              closingValue: String(parcel.estimate ?? parcel.closingValue ?? ''),
+                            };
+                            setVerifiedComps([...verifiedComps, newComp]);
+                            setCompPriceModal({ index: verifiedComps.length, address: newComp.address, closingValue: newComp.closingValue });
                           }
                         }}
                       />
                     </div>
+                    {verifiedComps.length > 0 && (
+                      <div className="comps-list-verified">
+                        {verifiedComps.map((comp, idx) => (
+                          <div key={comp.parcelId || comp.attomId || idx} className="comp-row">
+                            <span className="comp-address">{comp.address}</span>
+                            <span className="comp-price">
+                              {comp.closingValue ? `$${Number(comp.closingValue).toLocaleString()}` : 'Price not set'}
+                            </span>
+                            <button type="button" className="btn btn-outline btn-small" onClick={() => setCompPriceModal({ index: idx, address: comp.address, closingValue: comp.closingValue || '' })}>
+                              {comp.closingValue ? 'Edit price' : 'Set price'}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     <p className="form-hint">Selected: {verifiedComps.length} of 5 comps.</p>
+                  </div>
+                )}
+                {compPriceModal != null && (
+                  <div className="comp-price-modal-overlay" onClick={() => setCompPriceModal(null)} role="presentation">
+                    <div className="comp-price-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-labelledby="comp-price-modal-title">
+                      <h3 id="comp-price-modal-title">Set sale price for comparable</h3>
+                      <p className="comp-price-modal-address">{compPriceModal.address}</p>
+                      <div className="form-group">
+                        <label>Sale / closing price ($) *</label>
+                        <input
+                          type="number"
+                          min="0"
+                          step="1000"
+                          value={compPriceModal.closingValue}
+                          onChange={(e) => setCompPriceModal((m) => ({ ...m, closingValue: e.target.value }))}
+                          placeholder="e.g. 425000"
+                          autoFocus
+                        />
+                      </div>
+                      <div className="comp-price-modal-actions">
+                        <button type="button" className="btn btn-secondary" onClick={() => setCompPriceModal(null)}>Cancel</button>
+                        <button
+                          type="button"
+                          className="btn btn-primary"
+                          onClick={() => {
+                            const val = compPriceModal.closingValue.trim();
+                            setVerifiedComps((prev) => {
+                              const next = [...prev];
+                              if (next[compPriceModal.index]) next[compPriceModal.index] = { ...next[compPriceModal.index], closingValue: val };
+                              return next;
+                            });
+                            setCompPriceModal(null);
+                          }}
+                        >
+                          Save
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>

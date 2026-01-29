@@ -243,6 +243,97 @@
   overflow: hidden;
 }
 
+.comps-list-verified {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.comp-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  flex-wrap: wrap;
+}
+
+.comp-address {
+  flex: 1;
+  min-width: 150px;
+  font-size: 14px;
+  color: #334155;
+}
+
+.comp-price {
+  font-size: 14px;
+  font-weight: 600;
+  color: #059669;
+  min-width: 100px;
+}
+
+.comp-price-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  padding: 20px;
+}
+
+.comp-price-modal {
+  background: #fff;
+  border-radius: 8px;
+  padding: 24px;
+  max-width: 400px;
+  width: 100%;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.comp-price-modal h3 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  color: #1e293b;
+}
+
+.comp-price-modal-address {
+  margin: 0 0 16px 0;
+  font-size: 14px;
+  color: #64748b;
+}
+
+.comp-price-modal .form-group {
+  margin-bottom: 20px;
+}
+
+.comp-price-modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 20px;
+}
+
+.get-verified-container .btn-small {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.get-verified-container .btn-outline {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+}
+
+.get-verified-container .btn-outline:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
 .form-group {
   margin-bottom: 20px;
 }
