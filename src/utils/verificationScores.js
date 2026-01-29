@@ -3,10 +3,13 @@
  *
  * Verified Buyer Score: 0–100 from purchase profile completeness; 100 when buyerVerified.
  *
- * Property tiers:
- * - Generic: missing key info (owner/deed, unconfirmed sqft, no/minimal photos).
- * - Verified: explicitly verified via Get Verified flow, OR photos (5+), confirmed ownership (deed), core docs.
- * - Premium: Verified + advanced data (Matterport, floor plans, inspection report, comp/valuation, professional photos).
+ * Property tiers (6-tier system):
+ * - Basic: Minimal viable listing (address, type, price, 1 photo, basic description)
+ * - Complete: Full basic info (beds/baths, sqft/lot, 3+ photos, 100+ char description, 2+ features)
+ * - Verified: Rich data without docs (5+ photos, year built, both sqft/lot, 200+ char description, 5+ features, HOA info)
+ * - Enhanced: Ownership verified + pricing (deed, tax record, HOA docs if applicable, estimated worth OR make me move, 1+ comps)
+ * - Premium: Professional assets (professional photos OR 10+ photos, 1+ advanced asset, disclosures, 300+ char description)
+ * - Elite: Maximum richness (3+ advanced assets, professional photos confirmed, video/drone, all disclosures, 3+ comps, mortgage docs if applicable)
  */
 
 /**
@@ -49,42 +52,109 @@ export function getVerifiedBuyerScore(profile) {
 }
 
 /**
+ * Check if property meets Basic tier requirements
+ */
+function meetsBasicTier(p) {
+  if (!p) return false;
+  const hasAddress = !!(p.address && (p.city || p.state || p.zipCode));
+  const hasType = !!p.propertyType;
+  const hasPrice = p.price != null && p.price > 0;
+  const hasPhoto = (p.photos?.length ?? 0) >= 1;
+  const hasDescription = !!(p.description && p.description.trim().length >= 50);
+  return hasAddress && hasType && hasPrice && hasPhoto && hasDescription;
+}
+
+/**
+ * Check if property meets Complete tier requirements
+ */
+function meetsCompleteTier(p) {
+  if (!meetsBasicTier(p)) return false;
+  const hasBedrooms = p.bedrooms != null;
+  const hasBathrooms = p.bathrooms != null;
+  const hasSqftOrLot = !!(p.squareFeet || p.lotSize);
+  const hasEnoughPhotos = (p.photos?.length ?? 0) >= 3;
+  const hasGoodDescription = !!(p.description && p.description.trim().length >= 100);
+  const hasFeatures = Array.isArray(p.features) && p.features.length >= 2;
+  return hasBedrooms && hasBathrooms && hasSqftOrLot && hasEnoughPhotos && hasGoodDescription && hasFeatures;
+}
+
+/**
+ * Check if property meets Verified tier requirements (NO DOCUMENTS REQUIRED)
+ */
+function meetsVerifiedTier(p) {
+  if (!meetsCompleteTier(p)) return false;
+  const hasEnoughPhotos = (p.photos?.length ?? 0) >= 5;
+  const hasYearBuilt = p.yearBuilt != null;
+  const hasBothSqftAndLot = !!(p.squareFeet && p.lotSize);
+  const hasRichDescription = !!(p.description && p.description.trim().length >= 200);
+  const hasManyFeatures = Array.isArray(p.features) && p.features.length >= 5;
+  const hasHoaInfo = p.hasHOA === true ? (p.hoaFee != null) : (p.hasHOA === false || p.hoaFee != null);
+  return hasEnoughPhotos && hasYearBuilt && hasBothSqftAndLot && hasRichDescription && hasManyFeatures && hasHoaInfo;
+}
+
+/**
+ * Check if property meets Enhanced tier requirements (DOCUMENTS START HERE)
+ */
+function meetsEnhancedTier(p) {
+  if (!meetsVerifiedTier(p)) return false;
+  const hasDeed = !!p.deedUrl;
+  const hasTaxRecord = !!p.propertyTaxRecordUrl;
+  const hasHoaDocs = p.hasHOA === true ? !!p.hoaDocsUrl : true; // If no HOA, skip requirement
+  const hasPricing = !!(p.estimatedWorth || p.makeMeMovePrice);
+  const hasComps = Array.isArray(p.verifiedComps) && p.verifiedComps.length >= 1;
+  return hasDeed && hasTaxRecord && hasHoaDocs && hasPricing && hasComps;
+}
+
+/**
+ * Check if property meets Premium tier requirements
+ */
+function meetsPremiumTier(p) {
+  if (!meetsEnhancedTier(p)) return false;
+  const hasProPhotos = p.professionalPhotos === true || (p.photos?.length ?? 0) >= 10;
+  const hasAdvancedAsset = !!(p.inspectionReportUrl || p.valuationDocUrl || p.matterportTourUrl || p.floorPlanUrl || p.compReportUrl);
+  const hasDisclosures = !!p.disclosureFormsUrl;
+  const hasDetailedDescription = !!(p.description && p.description.trim().length >= 300);
+  return hasProPhotos && hasAdvancedAsset && hasDisclosures && hasDetailedDescription;
+}
+
+/**
+ * Check if property meets Elite tier requirements
+ */
+function meetsEliteTier(p) {
+  if (!meetsPremiumTier(p)) return false;
+  const advancedAssets = [
+    p.inspectionReportUrl,
+    p.valuationDocUrl,
+    p.matterportTourUrl,
+    p.floorPlanUrl,
+    p.compReportUrl,
+  ].filter(Boolean).length;
+  const hasMultipleAdvanced = advancedAssets >= 3;
+  const hasProPhotosConfirmed = p.professionalPhotos === true;
+  // Check for video/drone - check for video files array, video-related URLs, or videoDrone flag from pre-listing checklist
+  const hasVideoOrDrone = !!(p.videoTourUrl || p.droneFootageUrl || (Array.isArray(p.videos) && p.videos.length > 0) || (Array.isArray(p.videoFiles) && p.videoFiles.length > 0) || p.videoDrone === true);
+  const hasManyComps = Array.isArray(p.verifiedComps) && p.verifiedComps.length >= 3;
+  const hasMortgageDocs = p.hasMortgage === true ? !!p.mortgageDocUrl : true; // If no mortgage, skip requirement
+  // Video/drone is optional for now - can reach Elite without it, but it's a bonus
+  return hasMultipleAdvanced && hasProPhotosConfirmed && hasManyComps && hasMortgageDocs;
+}
+
+/**
  * @param {object} p - property
- * @returns {'generic'|'verified'|'premium'}
+ * @returns {'basic'|'complete'|'verified'|'enhanced'|'premium'|'elite'}
  */
 export function getListingTier(p) {
-  if (!p) return 'generic';
-
-  // If explicitly verified via Get Verified flow, check for premium assets
-  if (p.verified === true) {
-    const hasInspection = !!p.inspectionReportUrl;
-    const hasValuation = !!p.valuationDocUrl;
-    const hasMatterport = !!p.matterportTourUrl;
-    const hasFloorPlan = !!p.floorPlanUrl;
-    const hasCompReport = !!p.compReportUrl;
-    const hasProPhotos = p.professionalPhotos === true;
-    const hasAdvanced = hasInspection || hasValuation || hasMatterport || hasFloorPlan || hasCompReport || hasProPhotos;
-    return hasAdvanced ? 'premium' : 'verified';
-  }
-
-  // Not explicitly verified: check deed and photos requirements
-  const hasDeed = !!p.deedUrl;
-  const photoCount = p.photos?.length ?? 0;
-  const hasEnoughPhotos = photoCount >= 5;
-
-  // Generic: missing key info — no deed (confirmed ownership), or no/minimal photos
-  if (!hasDeed || !hasEnoughPhotos) return 'generic';
-
-  // Verified: deed + 5+ photos (implicit verification)
-  const hasInspection = !!p.inspectionReportUrl;
-  const hasValuation = !!p.valuationDocUrl;
-  const hasMatterport = !!p.matterportTourUrl;
-  const hasFloorPlan = !!p.floorPlanUrl;
-  const hasCompReport = !!p.compReportUrl;
-  const hasProPhotos = p.professionalPhotos === true;
-  const hasAdvanced = hasInspection || hasValuation || hasMatterport || hasFloorPlan || hasCompReport || hasProPhotos;
-
-  return hasAdvanced ? 'premium' : 'verified';
+  if (!p) return 'basic';
+  
+  // Check from highest to lowest tier
+  if (meetsEliteTier(p)) return 'elite';
+  if (meetsPremiumTier(p)) return 'premium';
+  if (meetsEnhancedTier(p)) return 'enhanced';
+  if (meetsVerifiedTier(p)) return 'verified';
+  if (meetsCompleteTier(p)) return 'complete';
+  if (meetsBasicTier(p)) return 'basic';
+  
+  return 'basic';
 }
 
 /**
@@ -97,72 +167,132 @@ export function isListed(p) {
 }
 
 /**
- * @param {'generic'|'verified'|'premium'} tier
+ * @param {'basic'|'complete'|'verified'|'enhanced'|'premium'|'elite'} tier
  * @returns {string}
  */
 export function getListingTierLabel(tier) {
-  const map = { generic: 'Generic', verified: 'Verified', premium: 'Premium' };
-  return map[tier] || 'Generic';
+  const map = {
+    basic: 'Basic',
+    complete: 'Complete',
+    verified: 'Verified',
+    enhanced: 'Enhanced',
+    premium: 'Premium',
+    elite: 'Elite',
+  };
+  return map[tier] || 'Basic';
 }
 
 /**
  * Progress toward the next property tier. For use on Property Detail.
  * @param {object} p - property
- * @returns {{ tier: 'generic'|'verified'|'premium', nextTier: string|null, percentage: number, missingItems: string[] }}
+ * @returns {{ tier: 'basic'|'complete'|'verified'|'enhanced'|'premium'|'elite', nextTier: string|null, percentage: number, missingItems: string[] }}
  */
 export function getListingTierProgress(p) {
   const tier = getListingTier(p);
   const photoCount = p?.photos?.length ?? 0;
-  const hasDeed = !!p?.deedUrl;
-  const hasEnoughPhotos = photoCount >= 5;
-  const isExplicitlyVerified = p?.verified === true;
+  const descLength = (p?.description || '').trim().length;
+  const featureCount = (p?.features?.length ?? 0);
 
-  if (tier === 'generic') {
-    // If explicitly verified but still generic (shouldn't happen with fixed logic), show verified requirements
-    if (isExplicitlyVerified) {
-      return {
-        tier: 'verified',
-        nextTier: 'Premium',
-        percentage: 100,
-        missingItems: [],
-      };
-    }
+  if (tier === 'basic') {
     const steps = [
-      { done: hasDeed, label: 'Deed (confirmed ownership)' },
-      { done: hasEnoughPhotos, label: `Photos (${photoCount}/5 minimum)` },
+      { done: !!(p?.bedrooms != null), label: 'Bedrooms' },
+      { done: !!(p?.bathrooms != null), label: 'Bathrooms' },
+      { done: !!(p?.squareFeet || p?.lotSize), label: 'Square feet or lot size' },
+      { done: photoCount >= 3, label: `Photos (${photoCount}/3 minimum)` },
+      { done: descLength >= 100, label: `Description (${descLength}/100 characters)` },
+      { done: featureCount >= 2, label: `Features (${featureCount}/2 minimum)` },
     ];
     const completed = steps.filter((s) => s.done).length;
     const missingItems = steps.filter((s) => !s.done).map((s) => s.label);
     return {
-      tier: 'generic',
+      tier: 'basic',
+      nextTier: 'Complete',
+      percentage: Math.round((completed / steps.length) * 100),
+      missingItems,
+    };
+  }
+
+  if (tier === 'complete') {
+    const steps = [
+      { done: photoCount >= 5, label: `Photos (${photoCount}/5 minimum)` },
+      { done: !!(p?.yearBuilt), label: 'Year built' },
+      { done: !!(p?.squareFeet && p?.lotSize), label: 'Both square feet and lot size' },
+      { done: descLength >= 200, label: `Description (${descLength}/200 characters)` },
+      { done: featureCount >= 5, label: `Features (${featureCount}/5 minimum)` },
+      { done: p?.hasHOA === true ? (p?.hoaFee != null) : (p?.hasHOA === false || p?.hoaFee != null), label: 'HOA information' },
+    ];
+    const completed = steps.filter((s) => s.done).length;
+    const missingItems = steps.filter((s) => !s.done).map((s) => s.label);
+    return {
+      tier: 'complete',
       nextTier: 'Verified',
-      percentage: Math.round((completed / 2) * 100),
+      percentage: Math.round((completed / steps.length) * 100),
       missingItems,
     };
   }
 
   if (tier === 'verified') {
-    const advanced = [
-      { has: !!p?.inspectionReportUrl, label: 'Inspection report' },
-      { has: !!p?.valuationDocUrl, label: 'Valuation / CMA' },
-      { has: !!p?.matterportTourUrl, label: 'Matterport tour' },
-      { has: !!p?.floorPlanUrl, label: 'Floor plan' },
-      { has: !!p?.compReportUrl, label: 'Comp report' },
-      { has: p?.professionalPhotos === true, label: 'Professional photos' },
+    const steps = [
+      { done: !!p?.deedUrl, label: 'Deed (ownership confirmation)' },
+      { done: !!p?.propertyTaxRecordUrl, label: 'Property tax record' },
+      { done: p?.hasHOA === true ? !!p?.hoaDocsUrl : true, label: p?.hasHOA === true ? 'HOA documents' : 'HOA info (N/A)' },
+      { done: !!(p?.estimatedWorth || p?.makeMeMovePrice), label: 'Estimated worth or make me move price' },
+      { done: (p?.verifiedComps?.length ?? 0) >= 1, label: 'At least 1 verified comparable' },
     ];
-    const hasAny = advanced.some((a) => a.has);
-    const missingItems = advanced.filter((a) => !a.has).map((a) => a.label);
-    const completed = advanced.filter((a) => a.has).length;
+    const completed = steps.filter((s) => s.done).length;
+    const missingItems = steps.filter((s) => !s.done).map((s) => s.label);
     return {
       tier: 'verified',
+      nextTier: 'Enhanced',
+      percentage: Math.round((completed / steps.length) * 100),
+      missingItems,
+    };
+  }
+
+  if (tier === 'enhanced') {
+    const steps = [
+      { done: p?.professionalPhotos === true || photoCount >= 10, label: 'Professional photos or 10+ photos' },
+      { done: !!(p?.inspectionReportUrl || p?.valuationDocUrl || p?.matterportTourUrl || p?.floorPlanUrl || p?.compReportUrl), label: 'At least 1 advanced asset (inspection, floor plan, Matterport, valuation, comp report)' },
+      { done: !!p?.disclosureFormsUrl, label: 'Disclosure forms' },
+      { done: descLength >= 300, label: `Description (${descLength}/300 characters)` },
+    ];
+    const completed = steps.filter((s) => s.done).length;
+    const missingItems = steps.filter((s) => !s.done).map((s) => s.label);
+    return {
+      tier: 'enhanced',
       nextTier: 'Premium',
-      percentage: hasAny ? 100 : Math.round((completed / 6) * 100),
-      missingItems: hasAny ? [] : missingItems,
+      percentage: Math.round((completed / steps.length) * 100),
+      missingItems,
+    };
+  }
+
+  if (tier === 'premium') {
+    const advancedAssets = [
+      p?.inspectionReportUrl,
+      p?.valuationDocUrl,
+      p?.matterportTourUrl,
+      p?.floorPlanUrl,
+      p?.compReportUrl,
+    ].filter(Boolean).length;
+    const steps = [
+      { done: advancedAssets >= 3, label: `Advanced assets (${advancedAssets}/3 minimum)` },
+      { done: p?.professionalPhotos === true, label: 'Professional photos confirmed' },
+      { done: !!(p?.videoTourUrl || p?.droneFootageUrl || (Array.isArray(p?.videos) && p.videos.length > 0) || (Array.isArray(p?.videoFiles) && p.videoFiles.length > 0) || p?.videoDrone === true), label: 'Video tour or drone footage (optional)' },
+      { done: (p?.verifiedComps?.length ?? 0) >= 3, label: '3+ verified comparables' },
+      { done: p?.hasMortgage === true ? !!p?.mortgageDocUrl : true, label: p?.hasMortgage === true ? 'Mortgage documents' : 'Mortgage info (N/A)' },
+    ];
+    const completed = steps.filter((s) => s.done).length;
+    const missingItems = steps.filter((s) => !s.done).map((s) => s.label);
+    return {
+      tier: 'premium',
+      nextTier: 'Elite',
+      percentage: Math.round((completed / steps.length) * 100),
+      missingItems,
     };
   }
 
   return {
-    tier: 'premium',
+    tier: 'elite',
     nextTier: null,
     percentage: 100,
     missingItems: [],

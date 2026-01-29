@@ -558,16 +558,19 @@ const PropertyDetail = () => {
 
             {(() => {
               const prog = getListingTierProgress(property);
-              const tiers = ['Generic', 'Verified', 'Premium'];
+              const tiers = ['Basic', 'Complete', 'Verified', 'Enhanced', 'Premium', 'Elite'];
               const currentTierIndex = tiers.findIndex((t) => t.toLowerCase() === prog.tier);
               return (
                 <div className="property-tier-progress-card">
                   <h3>Property tier</h3>
                   <div className="tier-current">
                     <span className={`tier-badge tier-badge--${prog.tier}`}>
-                      {prog.tier === 'generic' && <span className="tier-badge-icon">⚪</span>}
+                      {prog.tier === 'basic' && <span className="tier-badge-icon">⚪</span>}
+                      {prog.tier === 'complete' && <span className="tier-badge-icon">📋</span>}
                       {prog.tier === 'verified' && <span className="tier-badge-icon">✓</span>}
+                      {prog.tier === 'enhanced' && <span className="tier-badge-icon">🔒</span>}
                       {prog.tier === 'premium' && <span className="tier-badge-icon">⭐</span>}
+                      {prog.tier === 'elite' && <span className="tier-badge-icon">👑</span>}
                       <span className="tier-badge-text">{getListingTierLabel(prog.tier)}</span>
                     </span>
                   </div>

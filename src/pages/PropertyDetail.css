@@ -502,15 +502,26 @@
   display: inline-block;
 }
 
-.tier-badge--generic {
+.tier-badge--basic {
   color: #475569;
   background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
   border-color: #cbd5e1;
   box-shadow: 0 2px 8px rgba(71, 85, 105, 0.15);
 }
 
-.tier-badge--generic .tier-badge-icon {
+.tier-badge--basic .tier-badge-icon {
   filter: grayscale(0.3);
+}
+
+.tier-badge--complete {
+  color: #1e40af;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border-color: #3b82f6;
+  box-shadow: 0 2px 10px rgba(59, 130, 246, 0.2);
+}
+
+.tier-badge--complete .tier-badge-icon {
+  filter: drop-shadow(0 1px 1px rgba(59, 130, 246, 0.3));
 }
 
 .tier-badge--verified {
@@ -538,6 +549,17 @@
   color: #059669;
   font-weight: 900;
   text-shadow: 0 1px 2px rgba(5, 150, 105, 0.3);
+}
+
+.tier-badge--enhanced {
+  color: #0f766e;
+  background: linear-gradient(135deg, #ccfbf1 0%, #99f6e4 100%);
+  border-color: #14b8a6;
+  box-shadow: 0 2px 12px rgba(20, 184, 166, 0.25);
+}
+
+.tier-badge--enhanced .tier-badge-icon {
+  filter: drop-shadow(0 1px 2px rgba(20, 184, 166, 0.4));
 }
 
 .tier-badge--premium {
@@ -572,6 +594,43 @@
   50% {
     transform: scale(1.1);
     opacity: 0.9;
+  }
+}
+
+.tier-badge--elite {
+  color: #581c87;
+  background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 50%, #ddd6fe 100%);
+  border-color: #a855f7;
+  box-shadow: 0 4px 20px rgba(168, 85, 247, 0.35), 0 0 0 1px rgba(168, 85, 247, 0.15);
+  position: relative;
+  animation: elite-glow 2.5s ease-in-out infinite alternate;
+}
+
+@keyframes elite-glow {
+  0% {
+    box-shadow: 0 4px 20px rgba(168, 85, 247, 0.35), 0 0 0 1px rgba(168, 85, 247, 0.15);
+  }
+  100% {
+    box-shadow: 0 5px 24px rgba(168, 85, 247, 0.45), 0 0 0 1px rgba(168, 85, 247, 0.25);
+  }
+}
+
+.tier-badge--elite .tier-badge-icon {
+  color: #fbbf24;
+  filter: drop-shadow(0 2px 3px rgba(251, 191, 36, 0.6));
+  animation: crown-shine 2s ease-in-out infinite;
+}
+
+@keyframes crown-shine {
+  0%, 100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+  25% {
+    transform: scale(1.05) rotate(-2deg);
+  }
+  75% {
+    transform: scale(1.05) rotate(2deg);
   }
 }
 

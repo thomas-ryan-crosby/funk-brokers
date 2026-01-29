@@ -198,15 +198,26 @@
   align-items: center;
 }
 
-.property-card__tag--tier.property-card__tag--generic {
+.property-card__tag--tier.property-card__tag--basic {
   color: #475569;
   background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
   border: 1px solid #cbd5e1;
   box-shadow: 0 1px 4px rgba(71, 85, 105, 0.1);
 }
 
-.property-card__tag--tier.property-card__tag--generic .property-card__tag-icon {
+.property-card__tag--tier.property-card__tag--basic .property-card__tag-icon {
   filter: grayscale(0.3);
+}
+
+.property-card__tag--tier.property-card__tag--complete {
+  color: #1e40af;
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border: 1px solid #3b82f6;
+  box-shadow: 0 1px 5px rgba(59, 130, 246, 0.15);
+}
+
+.property-card__tag--tier.property-card__tag--complete .property-card__tag-icon {
+  filter: drop-shadow(0 1px 1px rgba(59, 130, 246, 0.2));
 }
 
 .property-card__tag--tier.property-card__tag--verified {
@@ -222,6 +233,17 @@
   text-shadow: 0 1px 1px rgba(5, 150, 105, 0.2);
 }
 
+.property-card__tag--tier.property-card__tag--enhanced {
+  color: #0f766e;
+  background: linear-gradient(135deg, #ccfbf1 0%, #99f6e4 100%);
+  border: 1.5px solid #14b8a6;
+  box-shadow: 0 2px 6px rgba(20, 184, 166, 0.2);
+}
+
+.property-card__tag--tier.property-card__tag--enhanced .property-card__tag-icon {
+  filter: drop-shadow(0 1px 1px rgba(20, 184, 166, 0.3));
+}
+
 .property-card__tag--tier.property-card__tag--premium {
   color: #1e3a8a;
   background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 50%, #93c5fd 100%);
@@ -232,6 +254,18 @@
 .property-card__tag--tier.property-card__tag--premium .property-card__tag-icon {
   color: #fbbf24;
   filter: drop-shadow(0 1px 1px rgba(251, 191, 36, 0.4));
+}
+
+.property-card__tag--tier.property-card__tag--elite {
+  color: #581c87;
+  background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 50%, #ddd6fe 100%);
+  border: 1.5px solid #a855f7;
+  box-shadow: 0 3px 10px rgba(168, 85, 247, 0.3);
+}
+
+.property-card__tag--tier.property-card__tag--elite .property-card__tag-icon {
+  color: #fbbf24;
+  filter: drop-shadow(0 1px 2px rgba(251, 191, 36, 0.5));
 }
 
 .property-card__tag--comms-accepting {
