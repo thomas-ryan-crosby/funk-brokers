@@ -450,7 +450,7 @@
   opacity: 0.7;
 }
 
-/* Listing tier progress (Generic → Verified → Premium) */
+/* Property tier progress (Generic → Verified → Premium) */
 .property-tier-progress-card {
   margin-top: 20px;
   padding: 20px;
@@ -546,6 +546,85 @@
   font-size: 13px;
   color: #065f46;
   margin: 8px 0 0 0;
+}
+
+.tier-timeline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.tier-timeline-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  position: relative;
+}
+
+.tier-timeline-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #cbd5e1;
+  border: 2px solid #fff;
+  margin-bottom: 6px;
+  transition: all 0.2s;
+}
+
+.tier-timeline-item--current .tier-timeline-dot {
+  background: #10b981;
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
+}
+
+.tier-timeline-item--completed .tier-timeline-dot {
+  background: #10b981;
+  border-color: #10b981;
+}
+
+.tier-timeline-item--upcoming .tier-timeline-dot {
+  background: #cbd5e1;
+  border-color: #fff;
+}
+
+.tier-timeline-label {
+  font-size: 11px;
+  font-weight: 500;
+  color: #64748b;
+  text-align: center;
+  transition: color 0.2s;
+}
+
+.tier-timeline-item--current .tier-timeline-label {
+  color: #059669;
+  font-weight: 600;
+}
+
+.tier-timeline-item--completed .tier-timeline-label {
+  color: #059669;
+}
+
+.tier-timeline-line {
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  width: 100%;
+  height: 2px;
+  background: #e2e8f0;
+  z-index: 0;
+  transition: background 0.2s;
+}
+
+.tier-timeline-item--completed .tier-timeline-line {
+  background: #10b981;
+}
+
+.tier-timeline-item:last-child .tier-timeline-line {
+  display: none;
 }
 
 .tier-advance-btn {

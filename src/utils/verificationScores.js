@@ -1,11 +1,11 @@
 /**
- * Verification and listing tier scoring.
+ * Verification and property tier scoring.
  *
  * Verified Buyer Score: 0–100 from purchase profile completeness; 100 when buyerVerified.
  *
- * Listing tiers (Property):
+ * Property tiers:
  * - Generic: missing key info (owner/deed, unconfirmed sqft, no/minimal photos).
- * - Verified: photos (5+), confirmed ownership (deed), core docs.
+ * - Verified: explicitly verified via Get Verified flow, OR photos (5+), confirmed ownership (deed), core docs.
  * - Premium: Verified + advanced data (Matterport, floor plans, inspection report, comp/valuation, professional photos).
  */
 
@@ -55,6 +55,19 @@ export function getVerifiedBuyerScore(profile) {
 export function getListingTier(p) {
   if (!p) return 'generic';
 
+  // If explicitly verified via Get Verified flow, check for premium assets
+  if (p.verified === true) {
+    const hasInspection = !!p.inspectionReportUrl;
+    const hasValuation = !!p.valuationDocUrl;
+    const hasMatterport = !!p.matterportTourUrl;
+    const hasFloorPlan = !!p.floorPlanUrl;
+    const hasCompReport = !!p.compReportUrl;
+    const hasProPhotos = p.professionalPhotos === true;
+    const hasAdvanced = hasInspection || hasValuation || hasMatterport || hasFloorPlan || hasCompReport || hasProPhotos;
+    return hasAdvanced ? 'premium' : 'verified';
+  }
+
+  // Not explicitly verified: check deed and photos requirements
   const hasDeed = !!p.deedUrl;
   const photoCount = p.photos?.length ?? 0;
   const hasEnoughPhotos = photoCount >= 5;
@@ -62,22 +75,16 @@ export function getListingTier(p) {
   // Generic: missing key info — no deed (confirmed ownership), or no/minimal photos
   if (!hasDeed || !hasEnoughPhotos) return 'generic';
 
-  // Verified: deed, 5+ photos; or explicitly verified via Get Verified flow
-  const isVerified = p.verified === true || (hasDeed && hasEnoughPhotos);
-
-  // Premium: verified + at least one advanced asset
+  // Verified: deed + 5+ photos (implicit verification)
   const hasInspection = !!p.inspectionReportUrl;
   const hasValuation = !!p.valuationDocUrl;
   const hasMatterport = !!p.matterportTourUrl;
   const hasFloorPlan = !!p.floorPlanUrl;
   const hasCompReport = !!p.compReportUrl;
   const hasProPhotos = p.professionalPhotos === true;
-
   const hasAdvanced = hasInspection || hasValuation || hasMatterport || hasFloorPlan || hasCompReport || hasProPhotos;
 
-  if (isVerified && hasAdvanced) return 'premium';
-  if (isVerified) return 'verified';
-  return 'generic';
+  return hasAdvanced ? 'premium' : 'verified';
 }
 
 /**
@@ -99,7 +106,7 @@ export function getListingTierLabel(tier) {
 }
 
 /**
- * Progress toward the next listing tier. For use on Property Detail.
+ * Progress toward the next property tier. For use on Property Detail.
  * @param {object} p - property
  * @returns {{ tier: 'generic'|'verified'|'premium', nextTier: string|null, percentage: number, missingItems: string[] }}
  */
@@ -108,8 +115,18 @@ export function getListingTierProgress(p) {
   const photoCount = p?.photos?.length ?? 0;
   const hasDeed = !!p?.deedUrl;
   const hasEnoughPhotos = photoCount >= 5;
+  const isExplicitlyVerified = p?.verified === true;
 
   if (tier === 'generic') {
+    // If explicitly verified but still generic (shouldn't happen with fixed logic), show verified requirements
+    if (isExplicitlyVerified) {
+      return {
+        tier: 'verified',
+        nextTier: 'Premium',
+        percentage: 100,
+        missingItems: [],
+      };
+    }
     const steps = [
       { done: hasDeed, label: 'Deed (confirmed ownership)' },
       { done: hasEnoughPhotos, label: `Photos (${photoCount}/5 minimum)` },

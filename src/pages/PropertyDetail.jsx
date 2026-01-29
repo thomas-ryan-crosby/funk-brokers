@@ -558,9 +558,11 @@ const PropertyDetail = () => {
 
             {(() => {
               const prog = getListingTierProgress(property);
+              const tiers = ['Generic', 'Verified', 'Premium'];
+              const currentTierIndex = tiers.findIndex((t) => t.toLowerCase() === prog.tier);
               return (
                 <div className="property-tier-progress-card">
-                  <h3>Listing tier</h3>
+                  <h3>Property tier</h3>
                   <div className="tier-current">
                     <span className={`tier-badge tier-badge--${prog.tier}`}>{getListingTierLabel(prog.tier)}</span>
                   </div>
@@ -590,6 +592,15 @@ const PropertyDetail = () => {
                     </>
                   )}
                   {!prog.nextTier && <p className="tier-complete">All requirements for Premium are met.</p>}
+                  <div className="tier-timeline">
+                    {tiers.map((tier, idx) => (
+                      <div key={tier} className={`tier-timeline-item ${idx === currentTierIndex ? 'tier-timeline-item--current' : idx < currentTierIndex ? 'tier-timeline-item--completed' : 'tier-timeline-item--upcoming'}`}>
+                        <div className="tier-timeline-dot" />
+                        <span className="tier-timeline-label">{tier}</span>
+                        {idx < tiers.length - 1 && <div className="tier-timeline-line" />}
+                      </div>
+                    ))}
+                  </div>
                 </div>
               );
             })()}
