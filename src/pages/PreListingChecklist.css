@@ -191,6 +191,36 @@
   font-size: 13px;
 }
 
+.step-disclosures-no-hoa {
+  margin-bottom: 20px;
+  padding: 16px 20px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.step-no-hoa-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1e293b;
+  cursor: pointer;
+}
+
+.step-no-hoa-toggle input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+}
+
+.step-no-hoa-hint {
+  margin: 8px 0 0 30px;
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.4;
+}
+
 .step-disclosures,
 .step-prep-checklist,
 .step-marketing-checklist,

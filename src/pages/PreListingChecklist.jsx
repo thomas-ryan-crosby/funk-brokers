@@ -51,7 +51,6 @@ const PreListingChecklist = () => {
     timing: '',
     targetBuyer: '',
     repairsStrategy: '',
-    concessionsStrategy: '',
     verifiedComps: [], // Array of { parcelId, address, latitude, longitude, closingValue }
     completed: false,
   });
@@ -59,6 +58,7 @@ const PreListingChecklist = () => {
 
   // Step 4: Disclosures
   const [step4Data, setStep4Data] = useState({
+    noHoa: false, // Toggle: when true, hide HOA sections and treat as N/A
     propertyCondition: false,
     propertyConditionData: null,
     leadPaint: false,
@@ -149,7 +149,7 @@ const PreListingChecklist = () => {
     }, 2000);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step3Data.needsSupport, step3Data.listPrice, step3Data.timing, step3Data.targetBuyer, step3Data.repairsStrategy, step3Data.concessionsStrategy, step3Data.verifiedComps?.length]);
+  }, [step3Data.needsSupport, step3Data.listPrice, step3Data.timing, step3Data.targetBuyer, step3Data.repairsStrategy, step3Data.verifiedComps?.length]);
 
   useEffect(() => {
     if (!user?.uid || loading || step4Data.completed) return;
@@ -158,7 +158,7 @@ const PreListingChecklist = () => {
     }, 2000);
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step4Data.propertyConditionData, step4Data.leadPaintData, step4Data.hoaDisclosuresData, step4Data.floodZoneData, step4Data.knownDefectsData, step4Data.priorRepairsData, step4Data.insuranceClaimsData, step4Data.disclosureFiles?.length]);
+  }, [step4Data.noHoa, step4Data.propertyConditionData, step4Data.leadPaintData, step4Data.hoaDisclosuresData, step4Data.floodZoneData, step4Data.knownDefectsData, step4Data.priorRepairsData, step4Data.insuranceClaimsData, step4Data.disclosureFiles?.length]);
 
   useEffect(() => {
     if (!user?.uid || loading || step5Data.completed) return;
@@ -758,15 +758,6 @@ const PreListingChecklist = () => {
                         rows={3}
                       />
                     </div>
-                    <div className="question-group">
-                      <label>Seller concessions strategy</label>
-                      <textarea
-                        placeholder="Describe your concessions strategy..."
-                        value={step3Data.concessionsStrategy}
-                        onChange={(e) => setStep3Data((d) => ({ ...d, concessionsStrategy: e.target.value }))}
-                        rows={3}
-                      />
-                    </div>
                   </div>
 
                   <div className="step-comps-section">
@@ -910,6 +901,18 @@ const PreListingChecklist = () => {
                 These vary by state, but typically include property condition, lead-based paint, HOA disclosures, flood zone, known defects, prior repairs, and insurance claims. Disclosures must be completed before or at listing—not after an offer.
               </p>
 
+              <div className="step-disclosures-no-hoa">
+                <label className="step-no-hoa-toggle">
+                  <input
+                    type="checkbox"
+                    checked={step4Data.noHoa === true}
+                    onChange={(e) => setStep4Data((d) => ({ ...d, noHoa: e.target.checked }))}
+                  />
+                  <span>No HOA</span>
+                </label>
+                <p className="step-no-hoa-hint">Check this if the property is not in an HOA. HOA disclosure sections will be hidden.</p>
+              </div>
+
               <div className="step-disclosures">
                 <div className="disclosure-item">
                   <label>
@@ -975,37 +978,39 @@ const PreListingChecklist = () => {
                   )}
                 </div>
 
-                <div className="disclosure-item">
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={step4Data.hoaDisclosures}
-                      readOnly
-                    />
-                    HOA disclosures (if applicable)
-                    {step4Data.hoaDisclosuresData && (
-                      <span className="disclosure-completed">✓ Completed</span>
+                {!step4Data.noHoa && (
+                  <div className="disclosure-item">
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={step4Data.hoaDisclosures}
+                        readOnly
+                      />
+                      HOA disclosures (if applicable)
+                      {step4Data.hoaDisclosuresData && (
+                        <span className="disclosure-completed">✓ Completed</span>
+                      )}
+                    </label>
+                    {!step4Data.hoaDisclosuresData && (
+                      <button
+                        type="button"
+                        className="btn btn-outline btn-small"
+                        onClick={() => setDisclosureModalOpen('hoaDisclosures')}
+                      >
+                        Complete Form
+                      </button>
                     )}
-                  </label>
-                  {!step4Data.hoaDisclosuresData && (
-                    <button
-                      type="button"
-                      className="btn btn-outline btn-small"
-                      onClick={() => setDisclosureModalOpen('hoaDisclosures')}
-                    >
-                      Complete Form
-                    </button>
-                  )}
-                  {step4Data.hoaDisclosuresData && (
-                    <button
-                      type="button"
-                      className="btn btn-outline btn-small"
-                      onClick={() => setDisclosureModalOpen('hoaDisclosures')}
-                    >
-                      Edit
-                    </button>
-                  )}
-                </div>
+                    {step4Data.hoaDisclosuresData && (
+                      <button
+                        type="button"
+                        className="btn btn-outline btn-small"
+                        onClick={() => setDisclosureModalOpen('hoaDisclosures')}
+                      >
+                        Edit
+                      </button>
+                    )}
+                  </div>
+                )}
 
                 <div className="disclosure-item">
                   <label>

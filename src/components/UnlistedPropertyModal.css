@@ -100,12 +100,23 @@
   border-top: 1px solid #e2e8f0;
 }
 
-.unlisted-property-authority {
+.unlisted-property-confirm {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
   margin: 16px 0 0 0;
   font-size: 14px;
   font-weight: 600;
   color: #1e293b;
   line-height: 1.4;
+  cursor: pointer;
+}
+
+.unlisted-property-confirm input[type="checkbox"] {
+  margin-top: 2px;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
 }
 
 .unlisted-property-disclaimer {
@@ -141,4 +152,47 @@
 .unlisted-property-claim-btn:disabled {
   opacity: 0.7;
   cursor: not-allowed;
+}
+
+/* Second step: confirm ownership */
+.unlisted-property-modal--confirm .unlisted-property-body {
+  padding: 20px;
+}
+
+.unlisted-property-confirm-prompt {
+  margin: 0 0 12px 0;
+  font-size: 15px;
+  color: #1e293b;
+  line-height: 1.5;
+}
+
+.unlisted-property-confirm-prompt strong {
+  font-weight: 600;
+}
+
+.unlisted-property-footer--actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.unlisted-property-footer--actions .btn-outline {
+  padding: 10px 18px;
+  font-size: 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #475569;
+  cursor: pointer;
+}
+
+.unlisted-property-footer--actions .btn-outline:hover {
+  background: #f1f5f9;
+  color: #1e293b;
+}
+
+.unlisted-property-footer--actions .unlisted-property-claim-btn {
+  flex: 1;
+  min-width: 0;
 }
