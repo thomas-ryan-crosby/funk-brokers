@@ -123,6 +123,19 @@
   line-height: 1.5;
 }
 
+.view-offer-disclosure-verification {
+  padding: 12px 16px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+}
+
+.view-offer-disclosure-text {
+  margin: 0;
+  font-size: 14px;
+  color: #1e40af;
+}
+
 .view-offer-meta {
   padding-top: 12px;
   border-top: 1px solid #e2e8f0;

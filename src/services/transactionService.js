@@ -142,6 +142,8 @@ export const createTransaction = async (offer, property, opts = {}) => {
     acceptedAt,
     status: 'active',
     steps: buildSteps(offer, acceptedAt),
+    disclosureAcknowledgedAt: offer.disclosureAcknowledgedAt ?? null,
+    disclosureAcknowledgedByName: offer.disclosureAcknowledgedByName ?? null,
     createdAt: acceptedAt,
     updatedAt: acceptedAt,
   });

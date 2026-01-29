@@ -184,6 +184,15 @@ const TransactionManager = () => {
               <span className="tm-label">Accepted</span>
               <span className="tm-value">{formatDate(transaction.acceptedAt)}</span>
             </div>
+            {(transaction.disclosureAcknowledgedAt || transaction.disclosureAcknowledgedByName) && (
+              <div>
+                <span className="tm-label">Disclosure acknowledged</span>
+                <span className="tm-value">
+                  {transaction.disclosureAcknowledgedAt ? formatDate(transaction.disclosureAcknowledgedAt) : '—'}
+                  {transaction.disclosureAcknowledgedByName ? ` by ${transaction.disclosureAcknowledgedByName}` : ''}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 

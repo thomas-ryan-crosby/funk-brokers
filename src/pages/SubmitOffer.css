@@ -84,6 +84,75 @@
   margin-bottom: 6px;
 }
 
+.offer-disclosures {
+  padding: 32px 24px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.offer-disclosures-title {
+  margin: 0 0 12px 0;
+  font-size: 20px;
+  color: #1e293b;
+}
+
+.offer-disclosures-intro {
+  margin: 0 0 20px 0;
+  font-size: 15px;
+  color: #475569;
+}
+
+.offer-disclosures-content {
+  margin-bottom: 24px;
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.offer-disclosures-content h3 {
+  margin: 16px 0 8px 0;
+  font-size: 15px;
+  color: #334155;
+}
+
+.offer-disclosures-content h3:first-child {
+  margin-top: 0;
+}
+
+.offer-disclosures-content p {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #475569;
+}
+
+.offer-disclosures-ack {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #334155;
+  cursor: pointer;
+}
+
+.offer-disclosures-ack input[type="checkbox"] {
+  margin-top: 3px;
+  flex-shrink: 0;
+  accent-color: #3b82f6;
+}
+
+.offer-disclosures .btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .offer-review {
   margin-top: 8px;
 }

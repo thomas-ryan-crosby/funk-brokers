@@ -18,7 +18,8 @@ const SubmitOffer = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
 
-  const [step, setStep] = useState('attention'); // 'attention' | 'form' | 'review'
+  const [step, setStep] = useState('attention'); // 'attention' | 'disclosures' | 'form' | 'review'
+  const [disclosureAcknowledged, setDisclosureAcknowledged] = useState(false);
   const [signatureName, setSignatureName] = useState('');
   const [offerData, setOfferData] = useState({
     offerAmount: '',
@@ -171,6 +172,10 @@ const SubmitOffer = () => {
   };
 
   const handleFinalSubmit = async () => {
+    if (!disclosureAcknowledged) {
+      setError('You must read and acknowledge the required disclosures before submitting an offer.');
+      return;
+    }
     const expected = (verificationData.buyerInfo.name || '').trim().toLowerCase();
     const signed = signatureName.trim().toLowerCase();
     if (expected && signed !== expected) {
@@ -313,8 +318,40 @@ const SubmitOffer = () => {
               <li>Confirm wiring instructions independently; beware of wire fraud.</li>
             </ul>
             <p className="offer-attention-text">Consult an attorney, inspector, or other professional as needed. Verify anything important to you.</p>
-            <button type="button" className="btn-primary" onClick={() => setStep('form')}>
+            <button type="button" className="btn-primary" onClick={() => setStep('disclosures')}>
               I Understand — Continue
+            </button>
+          </div>
+        )}
+
+        {step === 'disclosures' && (
+          <div className="offer-disclosures">
+            <h2 className="offer-disclosures-title">Required Disclosures</h2>
+            <p className="offer-disclosures-intro">Before submitting an offer, you must read and acknowledge the following required disclosures.</p>
+            <div className="offer-disclosures-content">
+              <h3>Lead-Based Paint</h3>
+              <p>For residential property built before 1978, federal law requires disclosure of known lead-based paint and hazards. You have the right to conduct a lead-based paint inspection and may receive a 10-day period to do so.</p>
+              <h3>Property Condition &amp; Material Facts</h3>
+              <p>Sellers are required to disclose known material facts that affect the value or desirability of the property, including structural issues, water intrusion, pest damage, and other defects. Review all seller disclosure documents and conduct your own inspections during any contingency period.</p>
+              <h3>Other Disclosures</h3>
+              <p>Additional disclosures may apply (e.g., HOA documents, flood zone, natural hazards). You are responsible for reviewing any disclosures provided by the seller and for your own due diligence.</p>
+            </div>
+            <label className="offer-disclosures-ack">
+              <input
+                type="checkbox"
+                checked={disclosureAcknowledged}
+                onChange={(e) => setDisclosureAcknowledged(e.target.checked)}
+                aria-describedby="offer-disclosures-desc"
+              />
+              <span id="offer-disclosures-desc">I have read the required disclosures above and acknowledge that I accept them. I understand that I am responsible for reviewing any seller-provided disclosures and for my own inspections and due diligence.</span>
+            </label>
+            <button
+              type="button"
+              className="btn-primary"
+              disabled={!disclosureAcknowledged}
+              onClick={() => setStep('form')}
+            >
+              Continue to Offer Form
             </button>
           </div>
         )}

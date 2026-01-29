@@ -127,6 +127,17 @@ const ViewOfferModal = ({ offer, property, onClose, formatCurrency }) => {
             </section>
           )}
 
+          {(offer.disclosureAcknowledgedAt || offer.disclosureAcknowledgedByName) && (
+            <section className="view-offer-section view-offer-disclosure-verification">
+              <h3>Disclosure acknowledgment</h3>
+              <p className="view-offer-disclosure-text">
+                Buyer acknowledged and accepted the required disclosures
+                {offer.disclosureAcknowledgedAt && ` on ${formatDate(offer.disclosureAcknowledgedAt)}`}.
+                {offer.disclosureAcknowledgedByName && ` Signed by ${offer.disclosureAcknowledgedByName}.`}
+              </p>
+            </section>
+          )}
+
           <section className="view-offer-section view-offer-meta">
             <p>Status: <strong>{(offer.status || '—').replace(/_/g, ' ')}</strong></p>
             <p>Submitted: {formatDate(offer.createdAt)}</p>
