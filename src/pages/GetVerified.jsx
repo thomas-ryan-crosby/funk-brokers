@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { getPropertyById, updateProperty } from '../services/propertyService';
 import { uploadFile, uploadMultipleFiles } from '../services/storageService';
 import CompsMap from '../components/CompsMap';
+import DragDropFileInput from '../components/DragDropFileInput';
 import './GetVerified.css';
 
 const GetVerified = () => {
@@ -150,10 +151,10 @@ const GetVerified = () => {
     return { completed, total, percentage };
   };
 
-  const handlePhotoFilesChange = (e) => {
-    const files = Array.from(e.target.files || []);
-    setPhotoFiles(files);
-    setPhotoPreviews(files.map((f) => URL.createObjectURL(f)));
+  const handlePhotoFiles = (files) => {
+    const list = Array.isArray(files) ? files : (files ? [files] : []);
+    setPhotoFiles(list);
+    setPhotoPreviews(list.map((f) => URL.createObjectURL(f)));
   };
 
   const validateAndCollect = () => {
@@ -480,19 +481,25 @@ const GetVerified = () => {
               <div className="form-group">
                 <label>Deed *</label>
                 <p className="form-instruction">This was provided with the title company upon property closure and is likely recorded with your local municipality.</p>
-                {property.deedUrl ? <p className="on-file">✓ Deed on file</p> : <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => setDeedFile(e.target.files?.[0] || null)} />}
+                {property.deedUrl ? <p className="on-file">✓ Deed on file</p> : (
+                  <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setDeedFile(f || null)} hint="PDF, JPG, or PNG." placeholder="Drop deed here or click to browse" />
+                )}
               </div>
               <div className="form-group">
                 <label>Property tax record *</label>
                 <p className="form-instruction">Available via your municipality assessor portal.</p>
-                {property.propertyTaxRecordUrl ? <p className="on-file">✓ Property tax record on file</p> : <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => setPropertyTaxFile(e.target.files?.[0] || null)} />}
+                {property.propertyTaxRecordUrl ? <p className="on-file">✓ Property tax record on file</p> : (
+                  <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setPropertyTaxFile(f || null)} hint="PDF, JPG, or PNG." placeholder="Drop property tax record here or click to browse" />
+                )}
               </div>
               {hasHOA === 'yes' && (
                 <>
                   <div className="form-group">
                     <label>HOA bylaws and covenants / critical HOA docs *</label>
                     <p className="form-instruction">Obtain and upload HOA bylaws, covenants, and other critical HOA documents.</p>
-                    {property.hoaDocsUrl ? <p className="on-file">✓ HOA docs on file</p> : <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => setHoaDocsFile(e.target.files?.[0] || null)} />}
+                    {property.hoaDocsUrl ? <p className="on-file">✓ HOA docs on file</p> : (
+                      <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setHoaDocsFile(f || null)} hint="PDF, JPG, or PNG." placeholder="Drop HOA docs here or click to browse" />
+                    )}
                   </div>
                 </>
               )}
@@ -512,7 +519,9 @@ const GetVerified = () => {
                   </div>
                   <div className="form-group">
                     <label>Mortgage document (optional)</label>
-                    {property.mortgageDocUrl ? <p className="on-file">✓ Mortgage doc on file</p> : <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => setMortgageFile(e.target.files?.[0] || null)} />}
+                    {property.mortgageDocUrl ? <p className="on-file">✓ Mortgage doc on file</p> : (
+                      <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setMortgageFile(f || null)} hint="PDF, JPG, or PNG." placeholder="Drop mortgage doc here or click to browse" />
+                    )}
                   </div>
                 </>
               )}
@@ -529,7 +538,9 @@ const GetVerified = () => {
               {(lienTax === 'yes' || lienHOA === 'yes' || lienMechanic === 'yes' || lienOther.trim()) && (
                 <div className="form-group">
                   <label>Payoff statement or lien release (if applicable)</label>
-                  {property.payoffOrLienReleaseUrl ? <p className="on-file">✓ Document on file</p> : <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => setPayoffFile(e.target.files?.[0] || null)} />}
+                  {property.payoffOrLienReleaseUrl ? <p className="on-file">✓ Document on file</p> : (
+                    <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setPayoffFile(f || null)} hint="PDF, JPG, or PNG." placeholder="Drop payoff or lien release here or click to browse" />
+                  )}
                 </div>
               )}
               <label className="confirm-checkbox">
@@ -655,11 +666,11 @@ const GetVerified = () => {
                 <label>Photos</label>
                 <p className="form-hint">Upload one or more current photos.</p>
                 <p className={totalPhotoCount >= 1 ? 'on-file' : 'form-hint form-hint--warn'}>{totalPhotoCount >= 1 ? `✓ ${totalPhotoCount} photo(s)` : 'Add at least one photo'}</p>
-                <input type="file" accept="image/*" multiple onChange={handlePhotoFilesChange} className="input-file" />
+                <DragDropFileInput multiple accept="image/*" onChange={(files) => handlePhotoFiles(files || [])} placeholder="Drop photos here or click to browse" />
               </div>
               <div className="form-group">
                 <label>Videos (optional)</label>
-                <input type="file" accept="video/*" multiple onChange={(e) => setVideoFiles(Array.from(e.target.files || []))} className="input-file" />
+                <DragDropFileInput multiple accept="video/*" onChange={(files) => setVideoFiles(Array.isArray(files) ? files : files ? [files] : [])} placeholder="Drop videos here or click to browse" />
                 {videoFiles.length > 0 && <p className="form-hint">{videoFiles.length} video(s) selected</p>}
               </div>
               {((property?.photos?.length ?? 0) > 0 || photoPreviews.length > 0) && (

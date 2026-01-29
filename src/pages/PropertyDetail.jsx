@@ -22,16 +22,21 @@ const PropertyDetail = () => {
   const [commsUpdating, setCommsUpdating] = useState(false);
   const [availableForSaleUpdating, setAvailableForSaleUpdating] = useState(false);
   const [listingReadiness, setListingReadiness] = useState(0);
+  const [checklistComplete, setChecklistComplete] = useState(false);
 
   const isOwner = !!(property && user && property.sellerId === user.uid);
 
-  // Calculate listing readiness when property loads
+  // Listing readiness: use checklist completion when available, else property-based %
   useEffect(() => {
-    if (property && isOwner) {
-      const readiness = calculateListingReadiness(property);
-      setListingReadiness(readiness);
-    }
+    if (!property || !isOwner) return;
+    const readiness = calculateListingReadiness(property);
+    setListingReadiness(readiness);
   }, [property, isOwner]);
+
+  useEffect(() => {
+    if (!property?.id || !isOwner) return;
+    getPreListingChecklist(property.id).then((c) => setChecklistComplete(!!isPreListingChecklistComplete(c))).catch(() => setChecklistComplete(false));
+  }, [property?.id, isOwner]);
 
   useEffect(() => {
     loadProperty();
@@ -154,7 +159,8 @@ const PropertyDetail = () => {
         status: next ? 'active' : 'not_listed',
       };
       await updateProperty(property.id, updates);
-      setProperty((p) => (p ? { ...p, ...updates } : p));
+      const updated = await getPropertyById(property.id);
+      setProperty(updated);
     } catch (err) {
       console.error(err);
       alert('Failed to update. Please try again.');
@@ -487,9 +493,9 @@ const PropertyDetail = () => {
                           {property.availableForSale !== false ? 'Yes' : 'No'}
                         </span>
                       </label>
-                      {property.availableForSale === false && listingReadiness > 0 && (
+                      {property.availableForSale === false && (listingReadiness > 0 || checklistComplete) && (
                         <span className="listing-readiness-badge">
-                          {listingReadiness}% Ready
+                          {checklistComplete ? '100% Ready' : `${listingReadiness}% Ready`}
                         </span>
                       )}
                     </div>

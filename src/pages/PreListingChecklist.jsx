@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getPreListingChecklist, savePreListingChecklist, isPreListingChecklistComplete } from '../services/preListingChecklistService';
-import { getPropertiesBySeller } from '../services/propertyService';
-import { getVendorsByUser, VENDOR_TYPES } from '../services/vendorService';
+import { getPropertiesBySeller, getPropertyById } from '../services/propertyService';
+import { getVendorsByUser, createVendor } from '../services/vendorService';
 import { uploadFile } from '../services/storageService';
 import CompsMap from '../components/CompsMap';
 import DisclosureFormModal from '../components/DisclosureFormModal';
+import DragDropFileInput from '../components/DragDropFileInput';
 import './PreListingChecklist.css';
 
 const PreListingChecklist = () => {
@@ -20,6 +21,7 @@ const PreListingChecklist = () => {
   const [userProperties, setUserProperties] = useState([]);
   const [currentStep, setCurrentStep] = useState(1);
   const [checklist, setChecklist] = useState(null);
+  const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [vendors, setVendors] = useState([]);
@@ -119,6 +121,12 @@ const PreListingChecklist = () => {
 
   const [uploadingFiles, setUploadingFiles] = useState({});
   const [requestingSupport, setRequestingSupport] = useState({});
+  const [addVendorModalOpen, setAddVendorModalOpen] = useState(false);
+  const [newVendorName, setNewVendorName] = useState('');
+  const [addingVendor, setAddingVendor] = useState(false);
+  const [listModalOpen, setListModalOpen] = useState(false);
+  const [listConfirmName, setListConfirmName] = useState('');
+  const [listModalChecking, setListModalChecking] = useState(false);
 
   // Sync propertyId from navigation state or URL
   useEffect(() => {
@@ -209,7 +217,12 @@ const PreListingChecklist = () => {
     if (!propertyId) return;
     try {
       setLoading(true);
-      const saved = await getPreListingChecklist(propertyId);
+      const [saved, prop] = await Promise.all([
+        getPreListingChecklist(propertyId),
+        getPropertyById(propertyId).catch(() => null),
+      ]);
+      setProperty(prop || null);
+      const property = prop;
       if (user?.uid) {
         const vendorsList = await getVendorsByUser(user.uid);
         setVendors(vendorsList);
@@ -226,23 +239,43 @@ const PreListingChecklist = () => {
       if (saved) {
         setChecklist(saved);
         if (saved.step1LegalAuthority) {
-          setStep1Data(saved.step1LegalAuthority);
-          if (!centerSet && saved.step1LegalAuthority.deedLocation) {
-            setMapCenter(saved.step1LegalAuthority.deedLocation);
+          let step1 = saved.step1LegalAuthority;
+          // Reuse deed from verification (property.deedUrl) if we don't have one in checklist
+          if (!step1.deedUrl && property?.deedUrl) {
+            step1 = { ...step1, deedUrl: property.deedUrl };
+          }
+          setStep1Data(step1);
+          if (!centerSet && step1.deedLocation) {
+            setMapCenter(step1.deedLocation);
             centerSet = true;
           }
+        } else if (property?.deedUrl) {
+          setStep1Data((prev) => ({ ...prev, deedUrl: property.deedUrl }));
         }
         if (saved.step2TitleOwnership) setStep2Data(saved.step2TitleOwnership);
         if (saved.step3ListingStrategy) {
-          setStep3Data(saved.step3ListingStrategy);
-          if (!centerSet && saved.step3ListingStrategy.verifiedComps && saved.step3ListingStrategy.verifiedComps.length > 0) {
-            const firstComp = saved.step3ListingStrategy.verifiedComps[0];
+          let step3 = saved.step3ListingStrategy;
+          if (property && !(step3.listPrice || '').trim()) {
+            const v = property.estimatedWorth ?? property.makeMeMovePrice ?? property.price;
+            if (v != null) step3 = { ...step3, listPrice: String(v) };
+          }
+          setStep3Data(step3);
+          if (!centerSet && step3.verifiedComps && step3.verifiedComps.length > 0) {
+            const firstComp = step3.verifiedComps[0];
             if (firstComp.latitude && firstComp.longitude) {
               setMapCenter({ lat: firstComp.latitude, lng: firstComp.longitude });
               centerSet = true;
             }
           }
+        } else if (property) {
+          const v = property.estimatedWorth ?? property.makeMeMovePrice ?? property.price;
+          if (v != null) setStep3Data((prev) => ({ ...prev, listPrice: String(v) }));
         }
+      }
+      if (!saved && property?.deedUrl) {
+        setStep1Data((prev) => ({ ...prev, deedUrl: property.deedUrl }));
+      }
+      if (saved) {
         if (saved.step4Disclosures) setStep4Data(saved.step4Disclosures);
         if (saved.step5PropertyPrep) setStep5Data(saved.step5PropertyPrep);
         if (saved.step6MarketingAssets) setStep6Data(saved.step6MarketingAssets);
@@ -325,6 +358,26 @@ const PreListingChecklist = () => {
       alert('Failed to upload file.');
     } finally {
       setUploadingFiles((prev) => ({ ...prev, [`${stepNum}_${field}`]: false }));
+    }
+  };
+
+  const handleAddTitleVendor = async (e) => {
+    e?.preventDefault();
+    const name = (newVendorName || '').trim();
+    if (!name || !user?.uid) return;
+    setAddingVendor(true);
+    try {
+      const id = await createVendor(user.uid, { vendorName: name, type: 'title_company' });
+      const list = await getVendorsByUser(user.uid);
+      setVendors(list);
+      setStep1Data((d) => ({ ...d, assignedVendorId: id }));
+      setNewVendorName('');
+      setAddVendorModalOpen(false);
+    } catch (err) {
+      console.error('Error adding vendor:', err);
+      alert('Failed to add vendor. Please try again.');
+    } finally {
+      setAddingVendor(false);
     }
   };
 
@@ -433,13 +486,45 @@ const PreListingChecklist = () => {
     );
   };
 
-  const handleContinueToListing = () => {
-    if (allStepsComplete()) {
-      const returnTo = location.state?.returnTo || '/list-property';
-      navigate(returnTo);
-    } else {
+  const handleListMyPropertyClick = async () => {
+    if (!allStepsComplete()) {
       alert('Please complete all steps before listing your property.');
+      return;
     }
+    setListModalChecking(true);
+    try {
+      const persisted = await getPreListingChecklist(propertyId);
+      if (!isPreListingChecklistComplete(persisted)) {
+        const missing = [];
+        if (!persisted?.step1LegalAuthority?.completed) missing.push('1');
+        if (!persisted?.step2TitleOwnership?.completed) missing.push('2');
+        if (!persisted?.step3ListingStrategy?.completed) missing.push('3');
+        if (!persisted?.step4Disclosures?.completed) missing.push('4');
+        if (!persisted?.step5PropertyPrep?.completed) missing.push('5');
+        if (!persisted?.step6MarketingAssets?.completed) missing.push('6');
+        if (!persisted?.step7ShowingsOffers?.completed) missing.push('7');
+        alert(`Please complete all steps including certifications. Missing: ${missing.join(', ')}. Complete each step and check the certification box before continuing.`);
+        return;
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setListModalChecking(false);
+    }
+    setListConfirmName('');
+    setListModalOpen(true);
+  };
+
+  const handleListModalConfirm = () => {
+    const name = (listConfirmName || '').trim();
+    if (!name) {
+      alert('Please type your full name to confirm.');
+      return;
+    }
+    setListModalOpen(false);
+    setListConfirmName('');
+    const returnTo = location.state?.returnTo || '/list-property';
+    navigate(returnTo, { state: { ...location.state, propertyId, fromPreListing: true } });
   };
 
   if (authLoading) {
@@ -620,40 +705,56 @@ const PreListingChecklist = () => {
                     <button type="button" className="btn btn-outline btn-small" onClick={() => setStep1Data((d) => ({ ...d, deedUrl: null }))}>Remove</button>
                   </div>
                 ) : (
-                  <div>
-                    <input
-                      type="file"
-                      accept=".pdf,.jpg,.jpeg,.png"
-                      disabled={uploadingFiles['1_deed']}
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        if (f) handleFileUpload(1, 'deed', f);
-                        e.target.value = '';
-                      }}
-                    />
-                    {uploadingFiles['1_deed'] && <span>Uploading...</span>}
-                  </div>
+                  <DragDropFileInput
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={(f) => { if (f) handleFileUpload(1, 'deed', f); }}
+                    disabled={!!uploadingFiles['1_deed']}
+                    uploading={!!uploadingFiles['1_deed']}
+                    hint="PDF, JPG, or PNG. Max 10MB."
+                    placeholder="Drop deed here or click to browse"
+                  />
                 )}
               </div>
 
               <div className="step-vendor-assignment">
-                <h3>Assign Legal Representative Vendor *</h3>
-                {vendors.length === 0 ? (
-                  <p className="form-hint">
-                    No vendors yet. <a href="/dashboard?tab=vendor-center">Add vendors in Vendor Center</a> first.
-                  </p>
-                ) : (
-                  <select
-                    value={step1Data.assignedVendorId || ''}
-                    onChange={(e) => setStep1Data((d) => ({ ...d, assignedVendorId: e.target.value || null }))}
-                  >
-                    <option value="">— Choose vendor —</option>
-                    {vendors.filter((v) => v.type === 'title_company' || v.type === 'other').map((v) => (
-                      <option key={v.id} value={v.id}>{v.vendorName || 'Unnamed vendor'}</option>
-                    ))}
-                  </select>
+                <h3>Assign Title *</h3>
+                <div className="step-vendor-assignment-row">
+                  {vendors.filter((v) => v.type === 'title_company' || v.type === 'other').length > 0 ? (
+                    <select
+                      value={step1Data.assignedVendorId || ''}
+                      onChange={(e) => setStep1Data((d) => ({ ...d, assignedVendorId: e.target.value || null }))}
+                    >
+                      <option value="">— Choose vendor —</option>
+                      {vendors.filter((v) => v.type === 'title_company' || v.type === 'other').map((v) => (
+                        <option key={v.id} value={v.id}>{v.vendorName || 'Unnamed vendor'}</option>
+                      ))}
+                    </select>
+                  ) : null}
+                  <button type="button" className="btn btn-outline btn-small" onClick={() => setAddVendorModalOpen(true)}>
+                    {vendors.filter((v) => v.type === 'title_company' || v.type === 'other').length > 0 ? 'Add new' : 'Add title vendor'}
+                  </button>
+                </div>
+                {vendors.filter((v) => v.type === 'title_company' || v.type === 'other').length === 0 && (
+                  <p className="form-hint">Add a title company or vendor to assign to this property. You can also add vendors in <a href="/dashboard?tab=vendor-center">Vendor Center</a>.</p>
                 )}
               </div>
+              {addVendorModalOpen && (
+                <div className="modal-overlay" onClick={() => !addingVendor && setAddVendorModalOpen(false)} role="presentation">
+                  <div className="modal-content" onClick={(e) => e.stopPropagation()} role="dialog">
+                    <h3>Add title vendor</h3>
+                    <form onSubmit={handleAddTitleVendor}>
+                      <div className="form-group">
+                        <label>Vendor name *</label>
+                        <input type="text" value={newVendorName} onChange={(e) => setNewVendorName(e.target.value)} placeholder="e.g. Acme Title Co." required />
+                      </div>
+                      <div className="modal-actions">
+                        <button type="button" className="btn btn-outline" onClick={() => { setAddVendorModalOpen(false); setNewVendorName(''); }} disabled={addingVendor}>Cancel</button>
+                        <button type="submit" className="btn btn-primary" disabled={addingVendor || !(newVendorName || '').trim()}>{addingVendor ? 'Adding…' : 'Add'}</button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
 
               <div className="step-certification">
                 <label>
@@ -774,6 +875,29 @@ const PreListingChecklist = () => {
                 Option A) I KNOW WHAT I AM DOING and I do not need assistance. Option B) I would like professional support at this step.
               </p>
 
+              {property && (
+                <div className="step-verify-property-info">
+                  <h3>Property information (from verification)</h3>
+                  <p className="form-hint">Details you provided when verifying this property. Set your listing price and timing below.</p>
+                  <dl className="step-verify-property-dl">
+                    {(property.address || property.city || property.state || property.zipCode) && (
+                      <><dt>Address</dt><dd>{[property.address, property.city, property.state, property.zipCode].filter(Boolean).join(', ') || '—'}</dd></>
+                    )}
+                    {(property.bedrooms != null || property.bathrooms != null) && (
+                      <><dt>Beds / Baths</dt><dd>{[property.bedrooms != null ? `${property.bedrooms} bed` : null, property.bathrooms != null ? `${property.bathrooms} bath` : null].filter(Boolean).join(' · ') || '—'}</dd></>
+                    )}
+                    {property.squareFeet != null && <><dt>Square feet</dt><dd>{property.squareFeet.toLocaleString()}</dd></>}
+                    {property.lotSize != null && <><dt>Lot size</dt><dd>{property.lotSize.toLocaleString()} sq ft</dd></>}
+                    {property.yearBuilt != null && <><dt>Year built</dt><dd>{property.yearBuilt}</dd></>}
+                    {(property.estimatedWorth != null || property.makeMeMovePrice != null || property.price != null) && (
+                      <><dt>Est. worth / Make me move</dt><dd>
+                        {[property.estimatedWorth != null && `$${Number(property.estimatedWorth).toLocaleString()}`, property.makeMeMovePrice != null && `$${Number(property.makeMeMovePrice).toLocaleString()}`, property.price != null && `$${Number(property.price).toLocaleString()}`].filter(Boolean).join(' / ')}
+                      </dd></>
+                    )}
+                  </dl>
+                </div>
+              )}
+
               <div className="step-support-option">
                 <label>
                   <input
@@ -790,6 +914,7 @@ const PreListingChecklist = () => {
                   <div className="step-questionnaire">
                     <div className="question-group">
                       <label>List Price *</label>
+                      <p className="step-list-price-disclaimer">This is the price that will be externally communicated to the public.</p>
                       <input
                         type="text"
                         inputMode="numeric"
@@ -1217,17 +1342,15 @@ const PreListingChecklist = () => {
 
               <div className="step-file-uploads">
                 <h3>Upload Disclosure Documents</h3>
-                <input
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png"
+                <DragDropFileInput
                   multiple
-                  disabled={uploadingFiles['4_disclosures']}
-                  onChange={(e) => {
-                    Array.from(e.target.files || []).forEach((f) => handleFileUpload(4, 'disclosures', f));
-                    e.target.value = '';
-                  }}
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={(files) => { (files || []).forEach((f) => handleFileUpload(4, 'disclosures', f)); }}
+                  disabled={!!uploadingFiles['4_disclosures']}
+                  uploading={!!uploadingFiles['4_disclosures']}
+                  hint="PDF, JPG, or PNG. Max 10MB each."
+                  placeholder="Drop disclosure documents here or click to browse"
                 />
-                {uploadingFiles['4_disclosures'] && <span>Uploading...</span>}
                 {step4Data.disclosureFiles && step4Data.disclosureFiles.length > 0 && (
                   <ul>
                     {step4Data.disclosureFiles.map((f, idx) => (
@@ -1412,17 +1535,15 @@ const PreListingChecklist = () => {
 
               <div className="step-file-uploads">
                 <h3>Upload Marketing Photos</h3>
-                <input
-                  type="file"
-                  accept=".jpg,.jpeg,.png"
+                <DragDropFileInput
                   multiple
-                  disabled={uploadingFiles['6_photos']}
-                  onChange={(e) => {
-                    Array.from(e.target.files || []).forEach((f) => handleFileUpload(6, 'photos', f));
-                    e.target.value = '';
-                  }}
+                  accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+                  onChange={(files) => { (files || []).forEach((f) => handleFileUpload(6, 'photos', f)); }}
+                  disabled={!!uploadingFiles['6_photos']}
+                  uploading={!!uploadingFiles['6_photos']}
+                  hint="JPG or PNG. Max 10MB each."
+                  placeholder="Drop marketing photos here or click to browse"
                 />
-                {uploadingFiles['6_photos'] && <span>Uploading...</span>}
                 {step6Data.photoFiles && step6Data.photoFiles.length > 0 && (
                   <div className="photo-preview-grid">
                     {step6Data.photoFiles.map((f, idx) => (
@@ -1538,8 +1659,10 @@ const PreListingChecklist = () => {
                   {requestingSupport[7] ? 'Requesting...' : 'Request Professional Support'}
                 </button>
                 <button type="button" className="btn btn-outline" onClick={() => setCurrentStep(6)}>Back</button>
-                {step7Data.completed && (
-                  <button type="button" className="btn btn-primary" onClick={handleContinueToListing}>Continue to Create Listing</button>
+                {step7Data.completed && !allStepsComplete() && (
+                  <button type="button" className="btn btn-primary" onClick={handleListMyPropertyClick} disabled={listModalChecking}>
+                    {listModalChecking ? 'Checking...' : 'List my Property'}
+                  </button>
                 )}
               </div>
             </div>
@@ -1550,9 +1673,26 @@ const PreListingChecklist = () => {
           <div className="checklist-complete">
             <h2>✓ All Steps Complete!</h2>
             <p>You can now create your property listing.</p>
-            <button type="button" className="btn btn-primary btn-large" onClick={handleContinueToListing}>
-              Continue to Create Listing
+            <button type="button" className="btn btn-primary btn-large" onClick={handleListMyPropertyClick} disabled={listModalChecking}>
+              {listModalChecking ? 'Checking...' : 'List my Property'}
             </button>
+          </div>
+        )}
+
+        {listModalOpen && (
+          <div className="modal-overlay" onClick={() => setListModalOpen(false)} role="presentation">
+            <div className="modal-content" onClick={(e) => e.stopPropagation()} role="dialog">
+              <h3>List my Property</h3>
+              <p className="list-modal-disclaimer">Information you have provided about this property will be available to the public.</p>
+              <div className="form-group">
+                <label>Type your full name to confirm *</label>
+                <input type="text" value={listConfirmName} onChange={(e) => setListConfirmName(e.target.value)} placeholder="Your full name" />
+              </div>
+              <div className="modal-actions">
+                <button type="button" className="btn btn-outline" onClick={() => { setListModalOpen(false); setListConfirmName(''); }}>Cancel</button>
+                <button type="button" className="btn btn-primary" onClick={handleListModalConfirm} disabled={!(listConfirmName || '').trim()}>Confirm</button>
+              </div>
+            </div>
           </div>
         )}
 

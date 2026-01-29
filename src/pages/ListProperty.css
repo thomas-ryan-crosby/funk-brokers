@@ -124,6 +124,20 @@
   font-size: 14px;
 }
 
+.doc-drag-drop {
+  flex: 1;
+  min-width: 200px;
+}
+
+.doc-drag-drop .drag-drop-file-input__zone {
+  min-height: 48px;
+  padding: 8px 12px;
+}
+
+.doc-drag-drop .drag-drop-file-input__placeholder {
+  font-size: 13px;
+}
+
 .doc-filename {
   font-size: 13px;
   color: #059669;

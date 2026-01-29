@@ -15,6 +15,7 @@ import { getVerifiedBuyerScore, getListingTier, getListingTierLabel, getListingT
 import PropertyCard from '../components/PropertyCard';
 import CounterOfferModal from '../components/CounterOfferModal';
 import ViewOfferModal from '../components/ViewOfferModal';
+import DragDropFileInput from '../components/DragDropFileInput';
 import './Dashboard.css';
 
 function getExpiryMs(offer) {
@@ -1370,20 +1371,16 @@ const Dashboard = () => {
                             View
                           </a>
                         )}
-                        <label className="btn btn-outline btn-small doc-replace-btn">
-                          {isUploading ? 'Uploading…' : url ? 'Replace' : 'Add'}
-                          <input
-                            type="file"
+                        <div className="doc-drag-drop-wrap">
+                          <DragDropFileInput
                             accept=".pdf,.jpg,.jpeg,.png"
+                            onChange={(f) => { if (f) handleReplaceDocument(key, f); }}
                             disabled={!!uploadingDoc}
-                            onChange={(e) => {
-                              const f = e.target.files?.[0];
-                              if (f) handleReplaceDocument(key, f);
-                              e.target.value = '';
-                            }}
-                            hidden
+                            uploading={isUploading}
+                            placeholder={url ? 'Drop to replace' : 'Drop or click to add'}
+                            className="dashboard-doc-upload"
                           />
-                        </label>
+                        </div>
                         {url && (
                           <button type="button" className="btn btn-outline btn-small doc-remove-btn" onClick={() => handleRemoveDocument(key)}>
                             Remove

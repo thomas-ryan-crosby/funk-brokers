@@ -5,6 +5,7 @@ import { createProperty } from '../services/propertyService';
 import { uploadFile, uploadMultipleFiles } from '../services/storageService';
 import { saveListingProgress, getListingProgress } from '../services/listingProgressService';
 import AddressAutocomplete from '../components/AddressAutocomplete';
+import DragDropFileInput from '../components/DragDropFileInput';
 import './ListProperty.css';
 
 const ListProperty = () => {
@@ -187,17 +188,18 @@ const ListProperty = () => {
   };
 
   const handlePhotoChange = (e) => {
-    const files = Array.from(e.target.files);
+    const files = Array.from(e.target.files || []);
     setPhotoFiles(files);
-
-    // Create previews
     const previews = files.map((file) => URL.createObjectURL(file));
     setPhotoPreviews(previews);
-    
-    // Save progress
-    if (propertyId && user?.uid) {
-      saveProgressDebounced({ ...formData, photos: files });
-    }
+    if (propertyId && user?.uid) saveProgressDebounced({ ...formData });
+  };
+
+  const handlePhotoFiles = (files) => {
+    const list = Array.isArray(files) ? files : (files ? [files] : []);
+    setPhotoFiles(list);
+    setPhotoPreviews(list.map((f) => URL.createObjectURL(f)));
+    if (propertyId && user?.uid) saveProgressDebounced({ ...formData });
   };
 
   const handleFeatureToggle = (feature) => {
@@ -591,11 +593,11 @@ const ListProperty = () => {
               <div className="form-group">
                 <label>Property Photos (optional)</label>
                 <p className="form-note">You can add photos now or later. 5+ recommended when you have them.</p>
-                <input
-                  type="file"
-                  accept="image/*"
+                <DragDropFileInput
                   multiple
-                  onChange={handlePhotoChange}
+                  accept="image/*"
+                  onChange={(files) => handlePhotoFiles(files || [])}
+                  placeholder="Drop photos here or click to browse"
                 />
                 {photoPreviews.length > 0 && (
                   <div className="photo-previews">
@@ -625,27 +627,27 @@ const ListProperty = () => {
                 <div className="document-uploads">
                   <div className="doc-row">
                     <label className="doc-label">Deed</label>
-                    <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => handleDocumentFileChange('deed', e.target.files?.[0] || null)} />
+                    <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => handleDocumentFileChange('deed', f || null)} placeholder="Drop or click" className="doc-drag-drop" />
                     {documentFiles.deed && <span className="doc-filename">✓ {documentFiles.deed.name}</span>}
                   </div>
                   <div className="doc-row">
                     <label className="doc-label">Property tax record</label>
-                    <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => handleDocumentFileChange('propertyTaxRecord', e.target.files?.[0] || null)} />
+                    <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => handleDocumentFileChange('propertyTaxRecord', f || null)} placeholder="Drop or click" className="doc-drag-drop" />
                     {documentFiles.propertyTaxRecord && <span className="doc-filename">✓ {documentFiles.propertyTaxRecord.name}</span>}
                   </div>
                   <div className="doc-row">
                     <label className="doc-label">HOA documents (if applicable)</label>
-                    <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => handleDocumentFileChange('hoaDocs', e.target.files?.[0] || null)} />
+                    <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => handleDocumentFileChange('hoaDocs', f || null)} placeholder="Drop or click" className="doc-drag-drop" />
                     {documentFiles.hoaDocs && <span className="doc-filename">✓ {documentFiles.hoaDocs.name}</span>}
                   </div>
                   <div className="doc-row">
                     <label className="doc-label">Disclosure forms</label>
-                    <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => handleDocumentFileChange('disclosureForms', e.target.files?.[0] || null)} />
+                    <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => handleDocumentFileChange('disclosureForms', f || null)} placeholder="Drop or click" className="doc-drag-drop" />
                     {documentFiles.disclosureForms && <span className="doc-filename">✓ {documentFiles.disclosureForms.name}</span>}
                   </div>
                   <div className="doc-row">
                     <label className="doc-label">Inspection report</label>
-                    <input type="file" accept=".pdf,.jpg,.jpeg,.png" onChange={(e) => handleDocumentFileChange('inspectionReport', e.target.files?.[0] || null)} />
+                    <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => handleDocumentFileChange('inspectionReport', f || null)} placeholder="Drop or click" className="doc-drag-drop" />
                     {documentFiles.inspectionReport && <span className="doc-filename">✓ {documentFiles.inspectionReport.name}</span>}
                   </div>
                 </div>

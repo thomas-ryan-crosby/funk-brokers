@@ -701,6 +701,19 @@
   cursor: wait;
 }
 
+.doc-drag-drop-wrap {
+  min-width: 160px;
+}
+
+.dashboard-doc-upload .drag-drop-file-input__zone {
+  min-height: 40px;
+  padding: 6px 12px;
+}
+
+.dashboard-doc-upload .drag-drop-file-input__placeholder {
+  font-size: 13px;
+}
+
 /* Vendor Center - Modern Redesign */
 .vendor-center-section {
   padding: 0;

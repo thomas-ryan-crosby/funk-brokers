@@ -1,0 +1,74 @@
+.drag-drop-file-input {
+  width: 100%;
+}
+
+.drag-drop-file-input__label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 8px;
+}
+
+.drag-drop-file-input__zone {
+  position: relative;
+  min-height: 80px;
+  padding: 16px 20px;
+  border: 2px dashed #cbd5e1;
+  border-radius: 8px;
+  background: #f8fafc;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.drag-drop-file-input__zone:hover:not(.disabled) {
+  border-color: #94a3b8;
+  background: #f1f5f9;
+}
+
+.drag-drop-file-input__zone.drag-over {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.drag-drop-file-input__zone.disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.drag-drop-file-input__input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.drag-drop-file-input__input:disabled {
+  cursor: not-allowed;
+}
+
+.drag-drop-file-input__placeholder,
+.drag-drop-file-input__message {
+  font-size: 14px;
+  color: #64748b;
+  pointer-events: none;
+}
+
+.drag-drop-file-input__zone.drag-over .drag-drop-file-input__placeholder {
+  color: #3b82f6;
+}
+
+.drag-drop-file-input__message {
+  color: #0ea5e9;
+}
+
+.drag-drop-file-input__hint {
+  font-size: 12px;
+  color: #64748b;
+  margin: 8px 0 0 0;
+}
