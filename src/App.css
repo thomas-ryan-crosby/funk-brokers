@@ -44,12 +44,13 @@ body {
 }
 
 .nav-logo-img {
-  height: 72px;
-  width: 72px;
+  height: 58px;
+  width: 58px;
   display: block;
   object-fit: contain;
-  transform: scale(1.15);
+  transform: scale(1.6);
   transform-origin: left center;
+  margin: -12px 0;
   filter: drop-shadow(0 8px 28px rgba(255, 0, 153, 0.35));
 }
 

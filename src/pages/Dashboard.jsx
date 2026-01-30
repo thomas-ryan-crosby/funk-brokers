@@ -668,11 +668,17 @@ const Dashboard = () => {
       <div className="dashboard-container">
         <div className="dashboard-header">
           <div className="dashboard-brand">
-            <img
-              className="dashboard-logo"
-              src={`${import.meta.env.BASE_URL}brand/opento-logo.png`}
-              alt="OpenTo"
-            />
+            <picture>
+              <source
+                srcSet={`${import.meta.env.BASE_URL}brand/opento-logo.webp`}
+                type="image/webp"
+              />
+              <img
+                className="dashboard-logo"
+                src={`${import.meta.env.BASE_URL}brand/opento-logo.png`}
+                alt="OpenTo"
+              />
+            </picture>
             <div>
               <h1>Welcome back, {userProfile?.name || user?.displayName || 'User'}!</h1>
               <p>Manage your properties and favorites</p>

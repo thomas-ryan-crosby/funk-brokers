@@ -82,11 +82,17 @@ function AppContent() {
         <nav className="app-nav">
           <div className="nav-container">
             <Link to="/" className="nav-logo">
-              <img
-                className="nav-logo-img"
-                src={`${import.meta.env.BASE_URL}brand/opento-logo.png`}
-                alt="OpenTo"
-              />
+              <picture>
+                <source
+                  srcSet={`${import.meta.env.BASE_URL}brand/opento-logo.webp`}
+                  type="image/webp"
+                />
+                <img
+                  className="nav-logo-img"
+                  src={`${import.meta.env.BASE_URL}brand/opento-logo.png`}
+                  alt="OpenTo"
+                />
+              </picture>
             </Link>
             <div className="nav-links">
               <Link to="/browse">Browse Properties</Link>
