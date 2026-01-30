@@ -40,13 +40,17 @@ body {
   color: inherit;
   display: inline-flex;
   align-items: center;
+  padding: 4px 0;
 }
 
 .nav-logo-img {
-  height: 44px;
-  width: auto;
+  height: 72px;
+  width: 72px;
   display: block;
-  filter: drop-shadow(0 6px 22px rgba(255, 0, 153, 0.35));
+  object-fit: contain;
+  transform: scale(1.15);
+  transform-origin: left center;
+  filter: drop-shadow(0 8px 28px rgba(255, 0, 153, 0.35));
 }
 
 .nav-links {
