@@ -38,23 +38,15 @@ body {
 .nav-logo {
   text-decoration: none;
   color: inherit;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 12px;
 }
 
 .nav-logo-img {
-  height: 28px;
+  height: 44px;
   width: auto;
   display: block;
-  filter: drop-shadow(0 4px 18px rgba(255, 0, 153, 0.35));
-}
-
-.nav-logo-text {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--color-text-primary, #f8fafc);
-  letter-spacing: 0.02em;
+  filter: drop-shadow(0 6px 22px rgba(255, 0, 153, 0.35));
 }
 
 .nav-links {

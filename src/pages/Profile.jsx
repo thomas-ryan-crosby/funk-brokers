@@ -156,14 +156,18 @@ const Profile = () => {
             </label>
           </div>
           <div className="profile-toggle">
-            <label>
-              <input
-                type="checkbox"
-                checked={form.anonymousProfile}
-                onChange={(e) => setForm((prev) => ({ ...prev, anonymousProfile: e.target.checked }))}
-              />
-              Keep my profile anonymous
-            </label>
+            <div className="profile-toggle-row">
+              <span>Make my profile anonymous</span>
+              <label className="toggle-switch">
+                <input
+                  type="checkbox"
+                  checked={form.anonymousProfile}
+                  onChange={(e) => setForm((prev) => ({ ...prev, anonymousProfile: e.target.checked }))}
+                  aria-label="Make my profile anonymous"
+                />
+                <span className="toggle-switch__track" aria-hidden />
+              </label>
+            </div>
             <p>When enabled, other users will see your public display name instead of your real name.</p>
           </div>
           <label className="profile-field">
