@@ -60,6 +60,7 @@ const EditProperty = () => {
         setLoading(false);
         return;
       }
+      console.debug('[EditProperty] Loaded property', { id, p });
       if (p.sellerId !== user?.uid) {
         setError('You can only edit your own listings.');
         setLoading(false);
@@ -109,6 +110,7 @@ const EditProperty = () => {
       });
       // Determine current tier
       const tier = getListingTier(p);
+      console.debug('[EditProperty] Current tier', { id, tier });
       setCurrentTier(tier);
       
       // If advancing from Basic tier, start at step 1
@@ -229,26 +231,40 @@ const EditProperty = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData) return;
+    if (!formData) {
+      console.warn('[EditProperty] Submit blocked: formData missing', { id, currentTier });
+      return;
+    }
     
     // Determine if coming from tier advancement
     const isBasicToComplete = currentTier === 'basic';
     const isCompleteToVerified = currentTier === 'complete';
+    console.debug('[EditProperty] Submit start', {
+      id,
+      currentTier,
+      isBasicToComplete,
+      isCompleteToVerified,
+      step,
+    });
     
     // If Basic → Complete multi-step form and not on final step, handle next
     if (isBasicToComplete && step < 3) {
+      console.debug('[EditProperty] Advancing to next step (Basic → Complete)', { step });
       handleNext();
       return;
     }
     if (isCompleteToVerified) {
       const descLen = (formData.description || '').trim().length;
       const totalPhotos = existingPhotos.length + newPhotoPreviews.length;
+      console.debug('[EditProperty] Complete → Verified validation', { descLen, totalPhotos });
       if (descLen < 200) {
         setError('Please add a detailed description (200+ characters).');
+        console.warn('[EditProperty] Blocked: description too short', { descLen });
         return;
       }
       if (totalPhotos < 5) {
         setError('Please upload at least 5 photos.');
+        console.warn('[EditProperty] Blocked: insufficient photos', { totalPhotos });
         return;
       }
     }
@@ -256,11 +272,16 @@ const EditProperty = () => {
     setSaving(true);
     setError(null);
     try {
+      console.debug('[EditProperty] Uploading photos', {
+        existingPhotos: existingPhotos.length,
+        newPhotoFiles: newPhotoFiles.length,
+      });
       let newUrls = [];
       if (newPhotoFiles.length > 0) {
         newUrls = await uploadMultipleFiles(newPhotoFiles, `properties/${id}/photos`);
       }
       const photos = [...existingPhotos, ...newUrls];
+      console.debug('[EditProperty] Photos ready', { totalPhotos: photos.length });
 
       const docUrlKeys = ['deed', 'propertyTaxRecord', 'hoaDocs', 'disclosureForms', 'inspectionReport'];
       const docUrls = {};
@@ -274,6 +295,7 @@ const EditProperty = () => {
           docUrls[existingKey] = existingDocUrls[existingKey];
         }
       }
+      console.debug('[EditProperty] Document URLs resolved', docUrls);
 
       const updates = {
         address: formData.address,
@@ -303,11 +325,20 @@ const EditProperty = () => {
         updates.latitude = formData.latitude;
         updates.longitude = formData.longitude;
       }
+      console.debug('[EditProperty] Updating property', {
+        id,
+        updates: {
+          ...updates,
+          photos: `${updates.photos?.length ?? 0} photos`,
+        },
+      });
       await updateProperty(id, updates);
       
       // Check if property advanced to next tier
       const updatedProperty = await getPropertyById(id);
+      console.debug('[EditProperty] Updated property fetched', updatedProperty);
       const newTier = getListingTier(updatedProperty);
+      console.debug('[EditProperty] Tier after update', { currentTier, newTier });
       
       // Show celebration if tier advanced
       if (currentTier === 'basic' && newTier === 'complete') {
@@ -325,11 +356,12 @@ const EditProperty = () => {
           navigate(`/property/${id}`);
         }, 2500);
       } else {
+        console.warn('[EditProperty] Tier did not advance as expected', { currentTier, newTier });
         navigate(`/property/${id}`);
       }
     } catch (err) {
       setError('Failed to update. Please try again.');
-      console.error(err);
+      console.error('[EditProperty] Submit error', err);
     } finally {
       setSaving(false);
     }
