@@ -1,5 +1,5 @@
 // Storage Service - Firebase Storage operations for file uploads
-import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
+import { ref, uploadBytes, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { storage } from '../config/firebase';
 
 /**
@@ -38,6 +38,55 @@ export const uploadMultipleFiles = async (files, basePath) => {
     return urls;
   } catch (error) {
     console.error('Error uploading multiple files:', error);
+    throw error;
+  }
+};
+
+/**
+ * Upload multiple files with aggregate progress callback.
+ * @param {File[]} files
+ * @param {string} basePath
+ * @param {(percent: number) => void} [onProgress]
+ * @returns {Promise<string[]>}
+ */
+export const uploadMultipleFilesWithProgress = async (files, basePath, onProgress) => {
+  try {
+    const totalBytes = files.reduce((sum, f) => sum + (f?.size || 0), 0);
+    const progressMap = new Map();
+    const updateProgress = () => {
+      if (!onProgress || totalBytes === 0) return;
+      const uploaded = Array.from(progressMap.values()).reduce((sum, v) => sum + v, 0);
+      const percent = Math.round((uploaded / totalBytes) * 100);
+      onProgress(percent);
+    };
+
+    const uploadPromises = files.map((file, index) => {
+      const fileExtension = file.name.split('.').pop();
+      const fileName = `${Date.now()}_${index}.${fileExtension}`;
+      const filePath = `${basePath}/${fileName}`;
+      const storageRef = ref(storage, filePath);
+      const task = uploadBytesResumable(storageRef, file);
+      return new Promise((resolve, reject) => {
+        task.on(
+          'state_changed',
+          (snapshot) => {
+            progressMap.set(fileName, snapshot.bytesTransferred || 0);
+            updateProgress();
+          },
+          (error) => reject(error),
+          async () => {
+            const url = await getDownloadURL(task.snapshot.ref);
+            resolve(url);
+          }
+        );
+      });
+    });
+
+    const urls = await Promise.all(uploadPromises);
+    if (onProgress) onProgress(100);
+    return urls;
+  } catch (error) {
+    console.error('Error uploading multiple files with progress:', error);
     throw error;
   }
 };

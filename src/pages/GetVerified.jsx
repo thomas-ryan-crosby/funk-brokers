@@ -3,8 +3,8 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getPropertyById, updateProperty } from '../services/propertyService';
 import { getVendorsByUser } from '../services/vendorService';
-import { uploadFile, uploadMultipleFiles } from '../services/storageService';
-import { getListingTier } from '../utils/verificationScores';
+import { uploadFile, uploadMultipleFiles, uploadMultipleFilesWithProgress } from '../services/storageService';
+import { getListingTier, getListingTierLabel } from '../utils/verificationScores';
 import CompsMap from '../components/CompsMap';
 import DragDropFileInput from '../components/DragDropFileInput';
 import './GetVerified.css';
@@ -18,6 +18,8 @@ const GetVerified = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [celebratingTier, setCelebratingTier] = useState('');
   const [step, setStep] = useState(1);
   const [currentTier, setCurrentTier] = useState(null);
 
@@ -70,12 +72,16 @@ const GetVerified = () => {
   const [matterportTourUrl, setMatterportTourUrl] = useState('');
   const [savedMessage, setSavedMessage] = useState('');
   const [uploadingMessage, setUploadingMessage] = useState('');
+  const [videoUploadProgress, setVideoUploadProgress] = useState(null);
   const [hasInsuranceClaims, setHasInsuranceClaims] = useState('');
   const [insuranceClaimsDescription, setInsuranceClaimsDescription] = useState('');
   const [insuranceClaimsFile, setInsuranceClaimsFile] = useState(null);
   const [thirdPartyReviewConfirmed, setThirdPartyReviewConfirmed] = useState(false);
   const [thirdPartyReviewVendorId, setThirdPartyReviewVendorId] = useState('');
   const [vendors, setVendors] = useState([]);
+
+  const tierOrder = ['basic', 'complete', 'verified', 'enhanced', 'premium', 'elite'];
+  const getTierIndex = (tier) => tierOrder.indexOf(tier);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -368,9 +374,11 @@ const GetVerified = () => {
       }
       if (videoFiles.length > 0) {
         console.debug('[GetVerified] Saving videos', { count: videoFiles.length });
-        const urls = await uploadMultipleFiles(videoFiles, `properties/${id}/videos`);
+        setVideoUploadProgress(0);
+        const urls = await uploadMultipleFilesWithProgress(videoFiles, `properties/${id}/videos`, (pct) => setVideoUploadProgress(pct));
         updates.videoFiles = [...(property.videoFiles || []), ...urls];
         setVideoFiles([]);
+        setVideoUploadProgress(null);
       }
       
       // Advanced assets
@@ -433,6 +441,7 @@ const GetVerified = () => {
         console.debug('[GetVerified] Save progress skipped: no updates');
       }
     } catch (err) {
+      setVideoUploadProgress(null);
       setError('Failed to save progress. Please try again.');
       console.error('[GetVerified] Save progress error', err);
     } finally {
@@ -488,9 +497,11 @@ const GetVerified = () => {
       let videos = property.videoFiles || [];
       if (videoFiles.length > 0) {
         console.debug('[GetVerified] Uploading videos', { count: videoFiles.length });
-        const urls = await uploadMultipleFiles(videoFiles, `properties/${id}/videos`);
+        setVideoUploadProgress(0);
+        const urls = await uploadMultipleFilesWithProgress(videoFiles, `properties/${id}/videos`, (pct) => setVideoUploadProgress(pct));
         videos = [...videos, ...urls];
         console.debug('[GetVerified] Video upload complete', { count: urls.length });
+        setVideoUploadProgress(null);
       }
 
       // Upload advanced assets if provided
@@ -571,8 +582,21 @@ const GetVerified = () => {
       console.debug('[GetVerified] Submit update payload', updates);
       await updateProperty(id, updates);
       console.debug('[GetVerified] Submit update complete', { id });
+      const updated = await getPropertyById(id);
+      const newTier = getListingTier(updated);
+      console.debug('[GetVerified] Tier after submit', { currentTier, newTier });
+      if (getTierIndex(newTier) > getTierIndex(currentTier)) {
+        setCelebratingTier(getListingTierLabel(newTier));
+        setShowCelebration(true);
+        setTimeout(() => {
+          setShowCelebration(false);
+          navigate(`/property/${id}`);
+        }, 2500);
+        return;
+      }
       setSuccess(true);
     } catch (err) {
+      setVideoUploadProgress(null);
       setError('Failed to complete verification. Please try again.');
       console.error('[GetVerified] Submit error', err);
     } finally {
@@ -627,6 +651,36 @@ const GetVerified = () => {
 
   return (
     <div className="get-verified-page">
+      {showCelebration && (
+        <div className="celebration-overlay">
+          <div className="celebration-container">
+            <div className="celebration-checks">
+              {[
+                { x: '80px', y: '0' },
+                { x: '69px', y: '40px' },
+                { x: '40px', y: '69px' },
+                { x: '0', y: '80px' },
+                { x: '-40px', y: '69px' },
+                { x: '-69px', y: '40px' },
+                { x: '-80px', y: '0' },
+                { x: '-69px', y: '-40px' },
+                { x: '-40px', y: '-69px' },
+                { x: '0', y: '-80px' },
+                { x: '40px', y: '-69px' },
+                { x: '69px', y: '-40px' },
+              ].map((pos, i) => (
+                <span key={i} className="celebration-check" style={{
+                  '--delay': `${i * 0.1}s`,
+                  '--final-x': `calc(-50% + ${pos.x})`,
+                  '--final-y': `calc(-50% + ${pos.y})`,
+                }}>✓</span>
+              ))}
+            </div>
+            <h2 className="celebration-title">Congratulations!</h2>
+            <p className="celebration-message">Your property is now {celebratingTier} tier!</p>
+          </div>
+        </div>
+      )}
       <div className="get-verified-container">
         <h1>Advance Property Tier</h1>
         <p className="get-verified-intro">
@@ -949,6 +1003,12 @@ const GetVerified = () => {
                       <p className="doc-filename">✓ {((property?.videoFiles?.length ?? 0) + (property?.videos?.length ?? 0))} video(s) on file</p>
                     )}
                     {videoFiles.length > 0 && <p className="doc-filename">✓ {videoFiles.length} video(s) selected</p>}
+                    {typeof videoUploadProgress === 'number' && (
+                      <div className="upload-progress">
+                        <div className="upload-progress__bar" style={{ width: `${videoUploadProgress}%` }} />
+                        <span className="upload-progress__label">{videoUploadProgress}% uploaded</span>
+                      </div>
+                    )}
                   </div>
                 </>
               )}
