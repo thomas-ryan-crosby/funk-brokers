@@ -4,12 +4,12 @@
  * Verified Buyer Score: 0–100 from purchase profile completeness; 100 when buyerVerified.
  *
  * Property tiers (6-tier system):
- * - Basic: Minimal viable listing (address, type, price, 1 photo, basic description)
- * - Complete: Full basic info (beds/baths, sqft/lot, 3+ photos, 100+ char description, 2+ features)
- * - Verified: Rich data without docs (5+ photos, year built, both sqft/lot, 200+ char description, 5+ features, HOA info)
- * - Enhanced: Ownership verified + pricing (deed, tax record, HOA docs if applicable, estimated worth OR make me move, 1+ comps)
- * - Premium: Professional assets (professional photos OR 10+ photos, 1+ advanced asset, disclosures, 300+ char description)
- * - Elite: Maximum richness (3+ advanced assets, professional photos confirmed, video/drone, all disclosures, 3+ comps, mortgage docs if applicable)
+ * - Basic (Just Claimed): Address + property type + 1 photo
+ * - Complete: Property basics + pricing + 1 photo
+ * - Verified: Detailed description + 5+ photos (no docs)
+ * - Enhanced: Deed + HOA docs (if applicable) + verified pricing + pro photos (30+) + floor plan + video
+ * - Premium: Disclosures + pro photos (30+) + floor plan + video + Matterport URL
+ * - Elite: Mortgage docs (if applicable) + inspection report + insurance claims rule + 3rd party value review
  */
 
 /**
@@ -58,9 +58,8 @@ function meetsBasicTier(p) {
   if (!p) return false;
   const hasAddress = !!(p.address && (p.city || p.state || p.zipCode));
   const hasType = !!p.propertyType;
-  const hasPrice = p.price != null && p.price > 0;
   const hasPhoto = (p.photos?.length ?? 0) >= 1;
-  return hasAddress && hasType && hasPrice && hasPhoto;
+  return hasAddress && hasType && hasPhoto;
 }
 
 /**
@@ -70,11 +69,17 @@ function meetsCompleteTier(p) {
   if (!meetsBasicTier(p)) return false;
   const hasBedrooms = p.bedrooms != null;
   const hasBathrooms = p.bathrooms != null;
-  const hasSqftOrLot = !!(p.squareFeet || p.lotSize);
-  const hasEnoughPhotos = (p.photos?.length ?? 0) >= 3;
-  const hasFeatures = Array.isArray(p.features) && p.features.length >= 2;
-  const hasPricing = !!(p.estimatedWorth || p.makeMeMovePrice);
-  return hasBedrooms && hasBathrooms && hasSqftOrLot && hasEnoughPhotos && hasFeatures && hasPricing;
+  const hasSqft = p.squareFeet != null;
+  const hasLot = p.lotSize != null;
+  const hasYearBuilt = p.yearBuilt != null;
+  const hasPropertyTax = p.propertyTax != null;
+  const hasHoaSelection = p.hasHOA === true || p.hasHOA === false;
+  const hasHoaFee = p.hasHOA === true ? (p.hoaFee != null) : true;
+  const hasInsuranceSelection = p.hasInsurance === true || p.hasInsurance === false;
+  const hasInsuranceAmount = p.hasInsurance === true ? (p.insuranceApproximation != null) : true;
+  const hasPricing = !!(p.estimatedWorth && p.makeMeMovePrice);
+  const hasPhoto = (p.photos?.length ?? 0) >= 1;
+  return hasBedrooms && hasBathrooms && hasSqft && hasLot && hasYearBuilt && hasPropertyTax && hasHoaSelection && hasHoaFee && hasInsuranceSelection && hasInsuranceAmount && hasPricing && hasPhoto;
 }
 
 /**
@@ -83,12 +88,8 @@ function meetsCompleteTier(p) {
 function meetsVerifiedTier(p) {
   if (!meetsCompleteTier(p)) return false;
   const hasEnoughPhotos = (p.photos?.length ?? 0) >= 5;
-  const hasYearBuilt = p.yearBuilt != null;
-  const hasBothSqftAndLot = !!(p.squareFeet && p.lotSize);
   const hasRichDescription = !!(p.description && p.description.trim().length >= 200);
-  const hasManyFeatures = Array.isArray(p.features) && p.features.length >= 5;
-  const hasHoaInfo = p.hasHOA === true ? (p.hoaFee != null) : (p.hasHOA === false || p.hoaFee != null);
-  return hasEnoughPhotos && hasYearBuilt && hasBothSqftAndLot && hasRichDescription && hasManyFeatures && hasHoaInfo;
+  return hasEnoughPhotos && hasRichDescription;
 }
 
 /**
@@ -97,11 +98,13 @@ function meetsVerifiedTier(p) {
 function meetsEnhancedTier(p) {
   if (!meetsVerifiedTier(p)) return false;
   const hasDeed = !!p.deedUrl;
-  const hasTaxRecord = !!p.propertyTaxRecordUrl;
   const hasHoaDocs = p.hasHOA === true ? !!p.hoaDocsUrl : true; // If no HOA, skip requirement
-  const hasPricing = !!(p.estimatedWorth || p.makeMeMovePrice);
-  const hasComps = Array.isArray(p.verifiedComps) && p.verifiedComps.length >= 1;
-  return hasDeed && hasTaxRecord && hasHoaDocs && hasPricing && hasComps;
+  const hasVerifiedPricing = !!(p.valuationDocUrl || p.compReportUrl || (Array.isArray(p.verifiedComps) && p.verifiedComps.length >= 1));
+  const hasProPhotosConfirmed = p.professionalPhotos === true;
+  const hasEnoughPhotos = (p.photos?.length ?? 0) >= 30;
+  const hasFloorPlan = !!p.floorPlanUrl;
+  const hasVideo = !!(p.videoTourUrl || (Array.isArray(p.videoFiles) && p.videoFiles.length > 0) || (Array.isArray(p.videos) && p.videos.length > 0));
+  return hasDeed && hasHoaDocs && hasVerifiedPricing && hasProPhotosConfirmed && hasEnoughPhotos && hasFloorPlan && hasVideo;
 }
 
 /**
@@ -109,11 +112,13 @@ function meetsEnhancedTier(p) {
  */
 function meetsPremiumTier(p) {
   if (!meetsEnhancedTier(p)) return false;
-  const hasProPhotos = p.professionalPhotos === true || (p.photos?.length ?? 0) >= 10;
-  const hasAdvancedAsset = !!(p.inspectionReportUrl || p.valuationDocUrl || p.matterportTourUrl || p.floorPlanUrl || p.compReportUrl);
   const hasDisclosures = !!p.disclosureFormsUrl;
-  const hasDetailedDescription = !!(p.description && p.description.trim().length >= 300);
-  return hasProPhotos && hasAdvancedAsset && hasDisclosures && hasDetailedDescription;
+  const hasProPhotosConfirmed = p.professionalPhotos === true;
+  const hasEnoughPhotos = (p.photos?.length ?? 0) >= 30;
+  const hasFloorPlan = !!p.floorPlanUrl;
+  const hasVideo = !!(p.videoTourUrl || (Array.isArray(p.videoFiles) && p.videoFiles.length > 0) || (Array.isArray(p.videos) && p.videos.length > 0));
+  const hasMatterport = !!p.matterportTourUrl;
+  return hasDisclosures && hasProPhotosConfirmed && hasEnoughPhotos && hasFloorPlan && hasVideo && hasMatterport;
 }
 
 /**
@@ -121,21 +126,18 @@ function meetsPremiumTier(p) {
  */
 function meetsEliteTier(p) {
   if (!meetsPremiumTier(p)) return false;
-  const advancedAssets = [
-    p.inspectionReportUrl,
-    p.valuationDocUrl,
-    p.matterportTourUrl,
-    p.floorPlanUrl,
-    p.compReportUrl,
-  ].filter(Boolean).length;
-  const hasMultipleAdvanced = advancedAssets >= 3;
-  const hasProPhotosConfirmed = p.professionalPhotos === true;
-  // Check for video/drone - check for video files array, video-related URLs, or videoDrone flag from pre-listing checklist
-  const hasVideoOrDrone = !!(p.videoTourUrl || p.droneFootageUrl || (Array.isArray(p.videos) && p.videos.length > 0) || (Array.isArray(p.videoFiles) && p.videoFiles.length > 0) || p.videoDrone === true);
-  const hasManyComps = Array.isArray(p.verifiedComps) && p.verifiedComps.length >= 3;
-  const hasMortgageDocs = p.hasMortgage === true ? !!p.mortgageDocUrl : true; // If no mortgage, skip requirement
-  // Video/drone is optional for now - can reach Elite without it, but it's a bonus
-  return hasMultipleAdvanced && hasProPhotosConfirmed && hasManyComps && hasMortgageDocs;
+  const hasMortgageDocs = p.hasMortgage === true ? !!(p.mortgageDocUrl || p.payoffOrLienReleaseUrl) : true; // If no mortgage, skip requirement
+  const hasInspectionReport = !!p.inspectionReportUrl;
+  const insuranceClaimsAnswered = p.hasInsuranceClaims === true || p.hasInsuranceClaims === false;
+  const insuranceClaimsSatisfied = p.hasInsuranceClaims === true
+    ? (!!p.insuranceClaimsReportUrl && !!(p.insuranceClaimsDescription || '').trim())
+    : (p.hasInsuranceClaims === false);
+  const hasThirdPartyReview = !!(
+    (p.thirdPartyReviewConfirmed === true && (p.thirdPartyReviewVendorId || p.thirdPartyReviewVendor)) ||
+    p.valuationDocUrl ||
+    p.compReportUrl
+  );
+  return hasMortgageDocs && hasInspectionReport && insuranceClaimsAnswered && insuranceClaimsSatisfied && hasThirdPartyReview;
 }
 
 /**
@@ -149,6 +151,7 @@ export function getListingTier(p) {
   if (meetsEliteTier(p)) return 'elite';
   if (meetsPremiumTier(p)) return 'premium';
   if (meetsEnhancedTier(p)) return 'enhanced';
+  if (p.verified === true && meetsCompleteTier(p)) return 'verified';
   if (meetsVerifiedTier(p)) return 'verified';
   if (meetsCompleteTier(p)) return 'complete';
   if (meetsBasicTier(p)) return 'basic';
@@ -171,14 +174,14 @@ export function isListed(p) {
  */
 export function getListingTierLabel(tier) {
   const map = {
-    basic: 'Basic',
+    basic: 'Just Claimed',
     complete: 'Complete',
     verified: 'Verified',
     enhanced: 'Enhanced',
     premium: 'Premium',
     elite: 'Elite',
   };
-  return map[tier] || 'Basic';
+  return map[tier] || 'Just Claimed';
 }
 
 /**
@@ -190,16 +193,26 @@ export function getListingTierProgress(p) {
   const tier = getListingTier(p);
   const photoCount = p?.photos?.length ?? 0;
   const descLength = (p?.description || '').trim().length;
-  const featureCount = (p?.features?.length ?? 0);
+  const hasHoaSelection = p?.hasHOA === true || p?.hasHOA === false;
+  const hasInsuranceSelection = p?.hasInsurance === true || p?.hasInsurance === false;
 
   if (tier === 'basic') {
     const steps = [
+      { done: !!(p?.address && (p?.city || p?.state || p?.zipCode)), label: 'Address' },
+      { done: !!p?.propertyType, label: 'Property type' },
       { done: !!(p?.bedrooms != null), label: 'Bedrooms' },
       { done: !!(p?.bathrooms != null), label: 'Bathrooms' },
-      { done: !!(p?.squareFeet || p?.lotSize), label: 'Square feet or lot size' },
-      { done: photoCount >= 3, label: `Photos (${photoCount}/3 minimum)` },
-      { done: featureCount >= 2, label: `Features (${featureCount}/2 minimum)` },
-      { done: !!(p?.estimatedWorth || p?.makeMeMovePrice), label: 'Pricing information' },
+      { done: p?.squareFeet != null, label: 'Square feet' },
+      { done: p?.lotSize != null, label: 'Lot size' },
+      { done: p?.yearBuilt != null, label: 'Year built' },
+      { done: p?.propertyTax != null, label: 'Property tax' },
+      { done: hasHoaSelection, label: 'HOA selection' },
+      { done: p?.hasHOA === true ? (p?.hoaFee != null) : hasHoaSelection, label: 'HOA fee (if applicable)' },
+      { done: hasInsuranceSelection, label: 'Insurance selection' },
+      { done: p?.hasInsurance === true ? (p?.insuranceApproximation != null) : hasInsuranceSelection, label: 'Insurance amount (if applicable)' },
+      { done: !!(p?.estimatedWorth), label: 'Estimated property worth' },
+      { done: !!(p?.makeMeMovePrice), label: 'Make me move price' },
+      { done: photoCount >= 1, label: `Photos (${photoCount}/1 minimum)` },
     ];
     const completed = steps.filter((s) => s.done).length;
     const missingItems = steps.filter((s) => !s.done).map((s) => s.label);
@@ -213,12 +226,8 @@ export function getListingTierProgress(p) {
 
   if (tier === 'complete') {
     const steps = [
-      { done: photoCount >= 5, label: `Photos (${photoCount}/5 minimum)` },
-      { done: !!(p?.yearBuilt), label: 'Year built' },
-      { done: !!(p?.squareFeet && p?.lotSize), label: 'Both square feet and lot size' },
       { done: descLength >= 200, label: `Description (${descLength}/200 characters)` },
-      { done: featureCount >= 5, label: `Features (${featureCount}/5 minimum)` },
-      { done: p?.hasHOA === true ? (p?.hoaFee != null) : (p?.hasHOA === false || p?.hoaFee != null), label: 'HOA information' },
+      { done: photoCount >= 5, label: `Photos (${photoCount}/5 minimum)` },
     ];
     const completed = steps.filter((s) => s.done).length;
     const missingItems = steps.filter((s) => !s.done).map((s) => s.label);
@@ -232,11 +241,13 @@ export function getListingTierProgress(p) {
 
   if (tier === 'verified') {
     const steps = [
-      { done: !!p?.deedUrl, label: 'Deed (ownership confirmation)' },
-      { done: !!p?.propertyTaxRecordUrl, label: 'Property tax record' },
-      { done: p?.hasHOA === true ? !!p?.hoaDocsUrl : true, label: p?.hasHOA === true ? 'HOA documents' : 'HOA info (N/A)' },
-      { done: !!(p?.estimatedWorth || p?.makeMeMovePrice), label: 'Estimated worth or make me move price' },
-      { done: (p?.verifiedComps?.length ?? 0) >= 1, label: 'At least 1 verified comparable' },
+      { done: !!p?.deedUrl, label: 'Deed upload' },
+      { done: p?.hasHOA === true ? !!p?.hoaDocsUrl : true, label: p?.hasHOA === true ? 'HOA documents' : 'HOA documents (N/A)' },
+      { done: !!(p?.valuationDocUrl || p?.compReportUrl || (p?.verifiedComps?.length ?? 0) >= 1), label: 'Verified pricing (comps or appraisal)' },
+      { done: p?.professionalPhotos === true, label: 'Professional photos checkbox' },
+      { done: photoCount >= 30, label: `Photos (${photoCount}/30 minimum)` },
+      { done: !!p?.floorPlanUrl, label: 'Floor plan' },
+      { done: !!(p?.videoTourUrl || (Array.isArray(p?.videoFiles) && p.videoFiles.length > 0) || (Array.isArray(p?.videos) && p.videos.length > 0)), label: 'Video' },
     ];
     const completed = steps.filter((s) => s.done).length;
     const missingItems = steps.filter((s) => !s.done).map((s) => s.label);
@@ -250,10 +261,8 @@ export function getListingTierProgress(p) {
 
   if (tier === 'enhanced') {
     const steps = [
-      { done: p?.professionalPhotos === true || photoCount >= 10, label: 'Professional photos or 10+ photos' },
-      { done: !!(p?.inspectionReportUrl || p?.valuationDocUrl || p?.matterportTourUrl || p?.floorPlanUrl || p?.compReportUrl), label: 'At least 1 advanced asset (inspection, floor plan, Matterport, valuation, comp report)' },
       { done: !!p?.disclosureFormsUrl, label: 'Disclosure forms' },
-      { done: descLength >= 300, label: `Description (${descLength}/300 characters)` },
+      { done: !!p?.matterportTourUrl, label: 'Matterport URL' },
     ];
     const completed = steps.filter((s) => s.done).length;
     const missingItems = steps.filter((s) => !s.done).map((s) => s.label);
@@ -266,19 +275,12 @@ export function getListingTierProgress(p) {
   }
 
   if (tier === 'premium') {
-    const advancedAssets = [
-      p?.inspectionReportUrl,
-      p?.valuationDocUrl,
-      p?.matterportTourUrl,
-      p?.floorPlanUrl,
-      p?.compReportUrl,
-    ].filter(Boolean).length;
     const steps = [
-      { done: advancedAssets >= 3, label: `Advanced assets (${advancedAssets}/3 minimum)` },
-      { done: p?.professionalPhotos === true, label: 'Professional photos confirmed' },
-      { done: !!(p?.videoTourUrl || p?.droneFootageUrl || (Array.isArray(p?.videos) && p.videos.length > 0) || (Array.isArray(p?.videoFiles) && p.videoFiles.length > 0) || p?.videoDrone === true), label: 'Video tour or drone footage (optional)' },
-      { done: (p?.verifiedComps?.length ?? 0) >= 3, label: '3+ verified comparables' },
-      { done: p?.hasMortgage === true ? !!p?.mortgageDocUrl : true, label: p?.hasMortgage === true ? 'Mortgage documents' : 'Mortgage info (N/A)' },
+      { done: p?.hasMortgage === true ? !!(p?.mortgageDocUrl || p?.payoffOrLienReleaseUrl) : true, label: p?.hasMortgage === true ? 'Mortgage documents' : 'Mortgage documents (N/A)' },
+      { done: !!p?.inspectionReportUrl, label: 'Inspection report' },
+      { done: p?.hasInsuranceClaims === true || p?.hasInsuranceClaims === false, label: 'Insurance claims question' },
+      { done: p?.hasInsuranceClaims === true ? (!!p?.insuranceClaimsReportUrl && !!(p?.insuranceClaimsDescription || '').trim()) : (p?.hasInsuranceClaims === false), label: 'Insurance claims documentation' },
+      { done: !!((p?.thirdPartyReviewConfirmed === true && (p?.thirdPartyReviewVendorId || p?.thirdPartyReviewVendor)) || p?.valuationDocUrl || p?.compReportUrl), label: '3rd party value review' },
     ];
     const completed = steps.filter((s) => s.done).length;
     const missingItems = steps.filter((s) => !s.done).map((s) => s.label);

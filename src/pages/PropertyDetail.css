@@ -450,7 +450,7 @@
   opacity: 0.7;
 }
 
-/* Property tier progress (Basic → Complete → Verified → Enhanced → Premium → Elite) */
+/* Property tier progress (Just Claimed → Complete → Verified → Enhanced → Premium → Elite) */
 .property-tier-progress-card {
   margin-top: 20px;
   padding: 20px;

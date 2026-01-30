@@ -171,8 +171,32 @@ const EditProperty = () => {
         setError('Please fill in all required fields (Property Type, Bedrooms, Bathrooms).');
         return;
       }
+      if (!formData.squareFeet || parseFloat(formData.squareFeet) <= 0) {
+        setError('Please enter square feet.');
+        return;
+      }
+      if (!formData.lotSize || parseFloat(formData.lotSize) <= 0) {
+        setError('Please enter lot size.');
+        return;
+      }
+      if (!formData.yearBuilt || parseInt(formData.yearBuilt, 10) <= 0) {
+        setError('Please enter year built.');
+        return;
+      }
+      if (!formData.propertyTax || parseFloat(formData.propertyTax) < 0) {
+        setError('Please enter property tax.');
+        return;
+      }
+      if (hasHOA !== 'yes' && hasHOA !== 'no') {
+        setError('Please select HOA yes/no.');
+        return;
+      }
       if (hasHOA === 'yes' && (!formData.hoaFee || parseFloat(formData.hoaFee) <= 0)) {
         setError('Please enter HOA fee amount.');
+        return;
+      }
+      if (hasInsurance !== 'yes' && hasInsurance !== 'no') {
+        setError('Please select insurance yes/no.');
         return;
       }
       if (hasInsurance === 'yes' && (!insuranceApproximation || parseFloat(insuranceApproximation) <= 0)) {
@@ -215,6 +239,18 @@ const EditProperty = () => {
     if (isBasicToComplete && step < 3) {
       handleNext();
       return;
+    }
+    if (isCompleteToVerified) {
+      const descLen = (formData.description || '').trim().length;
+      const totalPhotos = existingPhotos.length + newPhotoPreviews.length;
+      if (descLen < 200) {
+        setError('Please add a detailed description (200+ characters).');
+        return;
+      }
+      if (totalPhotos < 5) {
+        setError('Please upload at least 5 photos.');
+        return;
+      }
     }
     
     setSaving(true);
@@ -317,7 +353,7 @@ const EditProperty = () => {
 
   // Determine if coming from tier advancement
   // Basic → Complete: needs property info (multi-step form)
-  // Complete → Verified: needs ONLY additional fields (description, more photos, year built, lot size, features, HOA)
+  // Complete → Verified: needs ONLY description + 5+ photos
   const isBasicToComplete = currentTier === 'basic';
   const isCompleteToVerified = currentTier === 'complete';
   const isTierAdvancement = isBasicToComplete || isCompleteToVerified;
@@ -372,7 +408,7 @@ const EditProperty = () => {
         {error && <div className="error-message">{error}</div>}
         <form onSubmit={handleSubmit}>
           {/* Basic → Complete: Multi-step form with property info, pricing, photos */}
-          {/* Complete → Verified: Only show additional fields needed (description, photos, year built, lot size, features, HOA) */}
+          {/* Complete → Verified: Only show description + 5+ photos */}
           {/* Step 1: Address + Property Info (only for Basic → Complete step 1, or always if not tier advancement) */}
           {((isBasicToComplete && step === 1) || (!isTierAdvancement)) && (
             <>
@@ -486,8 +522,8 @@ const EditProperty = () => {
             </>
           )}
 
-          {/* Step 2: Initial Pricing Info (only shown when step === 2 if tier advancement, or always if not tier advancement) */}
-          {((isTierAdvancement && step === 2) || !isTierAdvancement) && (
+          {/* Step 2: Initial Pricing Info (only for Basic → Complete step 2, or always if not tier advancement) */}
+          {((isBasicToComplete && step === 2) || !isTierAdvancement) && (
             <div className="form-step">
               <h2>Initial Pricing</h2>
               <p className="form-note">What do you think your property is worth? (Just a guess, we will refine this later)</p>
@@ -513,7 +549,7 @@ const EditProperty = () => {
           {((isBasicToComplete && step === 3) || (!isTierAdvancement)) && (
             <div className="form-step">
               <h2>Property Photos</h2>
-              <p className="form-note">Upload photos of your property. 3+ photos recommended.</p>
+              <p className="form-note">Upload photos of your property. At least 1 photo is required.</p>
 
               <div className="form-group">
                 <label>Existing photos</label>
@@ -533,7 +569,7 @@ const EditProperty = () => {
 
               <div className="form-group">
                 <label>Property Photos *</label>
-                <p className="form-hint">Upload at least 3 photos to advance to Complete tier.</p>
+                <p className="form-hint">Upload at least 1 photo to advance to Complete tier.</p>
                 <DragDropFileInput multiple accept="image/*" onChange={(files) => handleNewPhotoFiles(files || [])} placeholder="Drop photos here or click to browse" />
                 {newPhotoPreviews.length > 0 && (
                   <div className="photo-previews">
@@ -543,6 +579,55 @@ const EditProperty = () => {
                   </div>
                 )}
                 <p className="form-hint">Total photos: {(existingPhotos.length + newPhotoPreviews.length)}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Complete → Verified: Description + 5+ photos */}
+          {isCompleteToVerified && (
+            <div className="form-step">
+              <h2>Property Description</h2>
+              <p className="form-note">Add a detailed description (200+ characters) and at least 5 photos to reach Verified.</p>
+              <div className="form-group">
+                <label>Description *</label>
+                <textarea
+                  name="description"
+                  value={formData.description || ''}
+                  onChange={handleInputChange}
+                  rows={6}
+                  placeholder="Describe your property in detail..."
+                  required
+                  minLength={200}
+                />
+                <p className="form-hint">
+                  {(formData.description || '').length} / 200 characters minimum
+                  {(formData.description || '').length >= 200 && ' ✓'}
+                </p>
+              </div>
+              <div className="form-group">
+                <label>Photos *</label>
+                <p className="form-hint">Upload at least 5 photos total for Verified tier.</p>
+                {existingPhotos.length > 0 ? (
+                  <div className="photo-previews">
+                    {existingPhotos.map((url, i) => (
+                      <div key={`ex-${i}`} className="photo-preview">
+                        <img src={url} alt={`Photo ${i + 1}`} />
+                      </div>
+                    ))}
+                  </div>
+                ) : <p className="form-hint">No photos yet. Add photos below.</p>}
+                <DragDropFileInput multiple accept="image/*" onChange={(files) => handleNewPhotoFiles(files || [])} placeholder="Drop photos here or click to browse" />
+                {newPhotoPreviews.length > 0 && (
+                  <div className="photo-previews">
+                    {newPhotoPreviews.map((url, i) => (
+                      <div key={`new-${i}`} className="photo-preview"><img src={url} alt={`New ${i + 1}`} /></div>
+                    ))}
+                  </div>
+                )}
+                <p className="form-hint">
+                  Total photos: {(existingPhotos.length + newPhotoPreviews.length)} / 5 minimum
+                  {(existingPhotos.length + newPhotoPreviews.length) >= 5 && ' ✓'}
+                </p>
               </div>
             </div>
           )}
@@ -627,7 +712,7 @@ const EditProperty = () => {
                 ) : (
                   <button 
                     type="submit" 
-                    disabled={saving || (existingPhotos.length + newPhotoPreviews.length) < 3} 
+                    disabled={saving || (existingPhotos.length + newPhotoPreviews.length) < 1} 
                     className="btn-primary"
                   >
                     {saving ? 'Saving...' : 'Complete information to get to Complete Status'}

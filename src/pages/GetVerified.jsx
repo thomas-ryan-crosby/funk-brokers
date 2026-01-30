@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getPropertyById, updateProperty } from '../services/propertyService';
+import { getVendorsByUser } from '../services/vendorService';
 import { uploadFile, uploadMultipleFiles } from '../services/storageService';
 import { getListingTier } from '../utils/verificationScores';
 import CompsMap from '../components/CompsMap';
@@ -62,13 +63,18 @@ const GetVerified = () => {
   const [videoFiles, setVideoFiles] = useState([]);
   const [inspectionReportFile, setInspectionReportFile] = useState(null);
   const [floorPlanFile, setFloorPlanFile] = useState(null);
-  const [matterportTourFile, setMatterportTourFile] = useState(null);
   const [valuationDocFile, setValuationDocFile] = useState(null);
   const [compReportFile, setCompReportFile] = useState(null);
   const [disclosureFormsFile, setDisclosureFormsFile] = useState(null);
   const [professionalPhotos, setProfessionalPhotos] = useState(false);
   const [matterportTourUrl, setMatterportTourUrl] = useState('');
   const [savedMessage, setSavedMessage] = useState('');
+  const [hasInsuranceClaims, setHasInsuranceClaims] = useState('');
+  const [insuranceClaimsDescription, setInsuranceClaimsDescription] = useState('');
+  const [insuranceClaimsFile, setInsuranceClaimsFile] = useState(null);
+  const [thirdPartyReviewConfirmed, setThirdPartyReviewConfirmed] = useState(false);
+  const [thirdPartyReviewVendorId, setThirdPartyReviewVendorId] = useState('');
+  const [vendors, setVendors] = useState([]);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -79,6 +85,11 @@ const GetVerified = () => {
   useEffect(() => {
     if (isAuthenticated && user && id) loadProperty();
   }, [isAuthenticated, user, id]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !user) return;
+    getVendorsByUser(user.uid).then(setVendors).catch(() => setVendors([]));
+  }, [isAuthenticated, user]);
 
   const loadProperty = async () => {
     try {
@@ -100,34 +111,7 @@ const GetVerified = () => {
       }
       setProperty(p);
       
-      // For Verified tier, start at Step 2 (documents) since property info is already complete
-      // For Enhanced+, check what's missing and start at appropriate step
-      if (tier === 'verified') {
-        setStep(2); // Skip Step 1 (property basics) - they already have Verified tier
-      } else if (tier === 'enhanced' || tier === 'premium') {
-        // Enhanced/Premium may need pricing/comps or advanced assets
-        // Check what's missing for next tier
-        const hasPricing = !!(p.estimatedWorth || p.makeMeMovePrice);
-        const hasComps = (p.verifiedComps?.length ?? 0) >= (tier === 'premium' ? 3 : 1);
-        const hasAdvancedAssets = !!(p.inspectionReportUrl || p.valuationDocUrl || p.matterportTourUrl || p.floorPlanUrl || p.compReportUrl);
-        const hasDisclosures = !!p.disclosureFormsUrl;
-        
-        if (tier === 'enhanced') {
-          // Enhanced → Premium: needs advanced assets, disclosures, 300+ char description
-          if (!hasAdvancedAssets || !hasDisclosures) {
-            setStep(4); // Go to content step for advanced assets
-          } else {
-            setStep(3); // Or pricing/comps if missing
-          }
-        } else if (tier === 'premium') {
-          // Premium → Elite: needs 3+ advanced assets, 3+ comps, video/drone
-          if (!hasComps || (p.verifiedComps?.length ?? 0) < 3) {
-            setStep(3); // Need more comps
-          } else {
-            setStep(4); // Need advanced assets/video
-          }
-        }
-      }
+      setStep(1);
       setBedrooms(p.bedrooms != null ? String(p.bedrooms) : '');
       setBathrooms(p.bathrooms != null ? String(p.bathrooms) : '');
       setSquareFeet(p.squareFeet != null ? String(p.squareFeet) : '');
@@ -152,6 +136,12 @@ const GetVerified = () => {
       setMakeMeMovePrice(p.makeMeMovePrice != null ? String(p.makeMeMovePrice) : '');
       setUseCompAnalysis(!!(p.verifiedComps && p.verifiedComps.length > 0));
       setVerifiedComps(Array.isArray(p.verifiedComps) ? [...p.verifiedComps] : []);
+      setProfessionalPhotos(!!p.professionalPhotos);
+      setMatterportTourUrl(p.matterportTourUrl || '');
+      setHasInsuranceClaims(p.hasInsuranceClaims === true ? 'yes' : p.hasInsuranceClaims === false ? 'no' : '');
+      setInsuranceClaimsDescription(p.insuranceClaimsDescription || '');
+      setThirdPartyReviewConfirmed(!!p.thirdPartyReviewConfirmed);
+      setThirdPartyReviewVendorId(p.thirdPartyReviewVendorId || '');
     } catch (err) {
       setError('Property not found or failed to load.');
       console.error(err);
@@ -172,22 +162,47 @@ const GetVerified = () => {
     let total = 0;
     const inc = (cond) => { total++; if (cond) completed++; };
 
-    inc(!!(bedrooms !== '' && bathrooms !== ''));
-    inc(!!(squareFeet !== '' || lotSize !== '' || yearBuilt !== ''));
-    inc(!!(hasHOA === 'yes' || hasHOA === 'no'));
-    if (hasHOA === 'yes') inc(!isNaN(parseFloat(hoaFee)) && parseFloat(hoaFee) >= 0);
-    inc(!!(propertyTaxEstimate !== ''));
-    inc(!!(hasInsurance === 'yes' || hasInsurance === 'no'));
-    if (hasInsurance === 'yes') inc(!!(insuranceApproximation !== ''));
-    inc(!!(property?.deedUrl || deedFile));
-    inc(!!(property?.propertyTaxRecordUrl || propertyTaxFile));
-    if (hasHOA === 'yes') inc(!!(property?.hoaDocsUrl || hoaDocsFile));
-    inc(!!(hasMortgage === 'yes' || hasMortgage === 'no'));
-    if (hasMortgage === 'yes') inc(!!(remainingMortgage !== '' || property?.mortgageDocUrl || mortgageFile));
-    inc(!!(lienTax !== '' && lienHOA !== '' && lienMechanic !== ''));
-    inc(!!(estimatedWorth !== '' && !isNaN(parseFloat(estimatedWorth))));
-    inc(!!(makeMeMovePrice !== '' && !isNaN(parseFloat(makeMeMovePrice))));
-    inc(totalPhotoCount >= 1);
+    const hasVerifiedPricing = !!(property?.valuationDocUrl || property?.compReportUrl || valuationDocFile || compReportFile || (useCompAnalysis && verifiedComps.length >= 1));
+    const totalPhotos = totalPhotoCount;
+    const hasVideo = !!(property?.videoTourUrl || (Array.isArray(property?.videoFiles) && property.videoFiles.length > 0) || (Array.isArray(property?.videos) && property.videos.length > 0) || videoFiles.length > 0);
+    const hasFloorPlan = !!(property?.floorPlanUrl || floorPlanFile);
+    const hasMatterport = !!(matterportTourUrl.trim() || property?.matterportTourUrl);
+    const hasProPhotos = professionalPhotos || property?.professionalPhotos === true;
+    const hasDisclosure = !!(property?.disclosureFormsUrl || disclosureFormsFile);
+    const hasInspection = !!(property?.inspectionReportUrl || inspectionReportFile);
+    const hasMortgageDocs = hasMortgage === 'yes'
+      ? !!(property?.mortgageDocUrl || mortgageFile || property?.payoffOrLienReleaseUrl || payoffFile)
+      : (hasMortgage === 'no');
+    const insuranceAnswered = hasInsuranceClaims === 'yes' || hasInsuranceClaims === 'no';
+    const insuranceSatisfied = hasInsuranceClaims === 'yes'
+      ? !!((insuranceClaimsDescription || '').trim() && (property?.insuranceClaimsReportUrl || insuranceClaimsFile))
+      : (hasInsuranceClaims === 'no');
+    const thirdPartyReviewSatisfied = !!(
+      (thirdPartyReviewConfirmed && thirdPartyReviewVendorId) ||
+      property?.valuationDocUrl || valuationDocFile ||
+      property?.compReportUrl || compReportFile
+    );
+
+    if (currentTier === 'verified') {
+      inc(!!(property?.deedUrl || deedFile));
+      if (hasHOA === 'yes') inc(!!(property?.hoaDocsUrl || hoaDocsFile));
+      inc(hasVerifiedPricing);
+      inc(hasProPhotos);
+      inc(totalPhotos >= 30);
+      inc(hasFloorPlan);
+      inc(hasVideo);
+    } else if (currentTier === 'enhanced') {
+      inc(hasDisclosure);
+      inc(hasMatterport);
+    } else if (currentTier === 'premium') {
+      inc(hasMortgageDocs);
+      inc(hasInspection);
+      inc(insuranceAnswered);
+      inc(insuranceSatisfied);
+      inc(thirdPartyReviewSatisfied);
+    } else {
+      return { completed: 1, total: 1, percentage: 100 };
+    }
 
     const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
     return { completed, total, percentage };
@@ -201,33 +216,48 @@ const GetVerified = () => {
 
   const validateAndCollect = () => {
     const errs = [];
+    if (currentTier === 'verified') {
+      if (!step1Confirmed) errs.push('Confirm documents (Step 1)');
+      if (!step2Confirmed) errs.push('Confirm verified pricing (Step 2)');
+      if (!step3Confirmed) errs.push('Confirm professional assets (Step 3)');
 
-    if (!step1Confirmed) errs.push('Confirm property basics (Step 1)');
-    if (!step2Confirmed) errs.push('Confirm documents (Step 2)');
-    if (!step3Confirmed) errs.push('Confirm pricing (Step 3)');
-
-    if (!bedrooms.trim()) errs.push('Bedrooms');
-    if (!bathrooms.trim()) errs.push('Bathrooms');
-    if (!propertyTaxEstimate.trim() || isNaN(parseFloat(propertyTaxEstimate))) errs.push('Property taxes estimate');
-    if (!hasHOA) errs.push('HOA (Yes/No)');
-    if (hasHOA === 'yes') {
-      const fee = parseFloat(hoaFee);
-      if (isNaN(fee) || fee < 0) errs.push('HOA fees ($/month)');
+      if (!property.deedUrl && !deedFile) errs.push('Deed');
+      if (hasHOA === 'yes' && !property.hoaDocsUrl && !hoaDocsFile) errs.push('HOA documents');
+      const hasVerifiedPricing = !!(property.valuationDocUrl || property.compReportUrl || valuationDocFile || compReportFile || (useCompAnalysis && verifiedComps.length >= 1));
+      if (!hasVerifiedPricing) errs.push('Verified pricing (comps or appraisal)');
+      const totalPhotos = totalPhotoCount;
+      const hasFloorPlan = !!(property.floorPlanUrl || floorPlanFile);
+      const hasVideo = !!(property.videoTourUrl || (Array.isArray(property.videoFiles) && property.videoFiles.length > 0) || (Array.isArray(property.videos) && property.videos.length > 0) || videoFiles.length > 0);
+      if (!professionalPhotos && property.professionalPhotos !== true) errs.push('Professional photos checkbox');
+      if (totalPhotos < 30) errs.push('30+ photos');
+      if (!hasFloorPlan) errs.push('Floor plan');
+      if (!hasVideo) errs.push('Video');
     }
-    if (!hasInsurance) errs.push('Insurance (Yes/No)');
-    if (hasInsurance === 'yes' && (!insuranceApproximation.trim() || isNaN(parseFloat(insuranceApproximation)))) errs.push('Annual insurance approximation');
 
-    if (!property.deedUrl && !deedFile) errs.push('Deed');
-    if (!property.propertyTaxRecordUrl && !propertyTaxFile) errs.push('Property tax record');
-    if (hasHOA === 'yes' && !property.hoaDocsUrl && !hoaDocsFile) errs.push('HOA bylaws/covenants or critical HOA docs');
-    if (!hasMortgage) errs.push('Mortgage (Yes/No)');
-    if (hasMortgage === 'yes' && !remainingMortgage.trim()) errs.push('Approximate remaining mortgage');
-    if (lienTax === '' || lienHOA === '' || lienMechanic === '') errs.push('Liens/encumbrances (answer each)');
+    if (currentTier === 'enhanced') {
+      if (!step1Confirmed) errs.push('Confirm disclosures (Step 1)');
+      if (!step2Confirmed) errs.push('Confirm no additional info (Step 2)');
+      if (!step3Confirmed) errs.push('Confirm professional assets (Step 3)');
+      if (!property.disclosureFormsUrl && !disclosureFormsFile) errs.push('Disclosure forms');
+      if (!((matterportTourUrl || '').trim() || property.matterportTourUrl)) errs.push('Matterport URL');
+    }
 
-    if (!estimatedWorth.trim() || isNaN(parseFloat(estimatedWorth))) errs.push('What you think the property is worth');
-    if (!makeMeMovePrice.trim() || isNaN(parseFloat(makeMeMovePrice))) errs.push('Make me move price');
+    if (currentTier === 'premium') {
+      if (!step1Confirmed) errs.push('Confirm documents (Step 1)');
+      if (!step2Confirmed) errs.push('Confirm 3rd party value review (Step 2)');
+      if (!step3Confirmed) errs.push('Confirm professional assets (Step 3)');
 
-    if (totalPhotoCount < 1) errs.push('At least one photo or video');
+      if (hasMortgage !== 'yes' && hasMortgage !== 'no') errs.push('Mortgage (Yes/No)');
+      if (hasMortgage === 'yes' && !(property.mortgageDocUrl || mortgageFile || property.payoffOrLienReleaseUrl || payoffFile)) errs.push('Mortgage/payoff documents');
+      if (!property.inspectionReportUrl && !inspectionReportFile) errs.push('Inspection report');
+      if (hasInsuranceClaims !== 'yes' && hasInsuranceClaims !== 'no') errs.push('Insurance claims (Yes/No)');
+      if (hasInsuranceClaims === 'yes') {
+        if (!insuranceClaimsDescription.trim()) errs.push('Insurance claims description');
+        if (!property.insuranceClaimsReportUrl && !insuranceClaimsFile) errs.push('Insurance claims document');
+      }
+      const thirdPartySatisfied = (thirdPartyReviewConfirmed && thirdPartyReviewVendorId) || property.valuationDocUrl || valuationDocFile || property.compReportUrl || compReportFile;
+      if (!thirdPartySatisfied) errs.push('3rd party value review (vendor or appraisal)');
+    }
 
     return errs;
   };
@@ -332,6 +362,23 @@ const GetVerified = () => {
       if (matterportTourUrl.trim()) {
         updates.matterportTourUrl = matterportTourUrl.trim();
       }
+      if (hasInsuranceClaims === 'yes' || hasInsuranceClaims === 'no') {
+        updates.hasInsuranceClaims = hasInsuranceClaims === 'yes';
+      }
+      if (insuranceClaimsDescription.trim()) {
+        updates.insuranceClaimsDescription = insuranceClaimsDescription.trim();
+      }
+      if (insuranceClaimsFile) {
+        const url = await uploadFile(insuranceClaimsFile, `${prefix}/insuranceClaims_${Date.now()}.${ext(insuranceClaimsFile)}`);
+        updates.insuranceClaimsReportUrl = url;
+        setInsuranceClaimsFile(null);
+      }
+      updates.thirdPartyReviewConfirmed = !!thirdPartyReviewConfirmed;
+      if (thirdPartyReviewConfirmed && thirdPartyReviewVendorId) {
+        updates.thirdPartyReviewVendorId = thirdPartyReviewVendorId;
+      } else if (!thirdPartyReviewConfirmed) {
+        updates.thirdPartyReviewVendorId = null;
+      }
 
       if (Object.keys(updates).length > 0) {
         await updateProperty(id, updates);
@@ -397,6 +444,10 @@ const GetVerified = () => {
       if (!disclosureFormsUrl && disclosureFormsFile) {
         disclosureFormsUrl = await uploadFile(disclosureFormsFile, `${prefix}/disclosures_${Date.now()}.${ext(disclosureFormsFile)}`);
       }
+      let insuranceClaimsReportUrl = property.insuranceClaimsReportUrl;
+      if (!insuranceClaimsReportUrl && insuranceClaimsFile) {
+        insuranceClaimsReportUrl = await uploadFile(insuranceClaimsFile, `${prefix}/insuranceClaims_${Date.now()}.${ext(insuranceClaimsFile)}`);
+      }
 
       const updates = {
         verified: true,
@@ -436,6 +487,11 @@ const GetVerified = () => {
         disclosureFormsUrl: disclosureFormsUrl ?? property.disclosureFormsUrl ?? null,
         matterportTourUrl: matterportTourUrl.trim() || property.matterportTourUrl || null,
         professionalPhotos: professionalPhotos || property.professionalPhotos || null,
+        hasInsuranceClaims: hasInsuranceClaims === 'yes' ? true : hasInsuranceClaims === 'no' ? false : null,
+        insuranceClaimsDescription: insuranceClaimsDescription.trim() || property.insuranceClaimsDescription || null,
+        insuranceClaimsReportUrl: insuranceClaimsReportUrl ?? property.insuranceClaimsReportUrl ?? null,
+        thirdPartyReviewConfirmed: thirdPartyReviewConfirmed || property.thirdPartyReviewConfirmed || null,
+        thirdPartyReviewVendorId: thirdPartyReviewVendorId || property.thirdPartyReviewVendorId || null,
       };
       Object.keys(updates).forEach((key) => {
         if (updates[key] === undefined) delete updates[key];
@@ -473,8 +529,8 @@ const GetVerified = () => {
     return (
       <div className="get-verified-page">
         <div className="get-verified-container get-verified-success">
-          <h2>Your property is now verified</h2>
-          <p>Buyers will see a Verified badge on your property.</p>
+          <h2>Your property tier has been updated</h2>
+          <p>Your changes are saved and your tier will update based on requirements.</p>
           <Link to={`/property/${id}`} className="btn btn-primary btn-large">View Property</Link>
         </div>
       </div>
@@ -483,13 +539,27 @@ const GetVerified = () => {
   if (!property) return null;
 
   const { percentage } = getVerificationProgress();
+  const isVerifiedTier = currentTier === 'verified';
+  const isEnhancedTier = currentTier === 'enhanced';
+  const isPremiumTier = currentTier === 'premium';
+  const isEliteTier = currentTier === 'elite';
+  const stepLabels = isVerifiedTier
+    ? ['Documents', 'Verified Pricing', 'Professional Assets']
+    : isEnhancedTier
+    ? ['Disclosure Forms', 'No Additional Info', 'Matterport']
+    : isPremiumTier
+    ? ['Documents & Claims', '3rd Party Value Review', 'Confirm Assets']
+    : ['Complete', 'Complete', 'Complete'];
 
   return (
     <div className="get-verified-page">
       <div className="get-verified-container">
         <h1>Advance Property Tier</h1>
         <p className="get-verified-intro">
-          Upload documents and add advanced information to advance your property to Enhanced tier and beyond. Documents are required starting at Verified tier.
+          {isVerifiedTier && 'Complete the required documents, pricing verification, and professional assets to advance to Enhanced.'}
+          {isEnhancedTier && 'Complete disclosures and add a Matterport link to advance to Premium.'}
+          {isPremiumTier && 'Complete the required documents, claims info, and value review to advance to Elite.'}
+          {isEliteTier && 'Your property already meets Elite tier requirements.'}
         </p>
         <div className="verification-progress">
           <div className="verification-progress-bar">
@@ -498,92 +568,111 @@ const GetVerified = () => {
           <span className="verification-progress-text">{percentage}% complete</span>
         </div>
         <div className="step-indicator">
-          {currentTier === 'verified' ? (
-            // For Verified tier, skip Step 1 (property basics already complete)
-            <>
-              <div className={`step ${step >= 2 ? 'active' : ''}`}>1. Documents</div>
-              <div className={`step ${step >= 3 ? 'active' : ''}`}>2. Pricing & Comps</div>
-              <div className={`step ${step >= 4 ? 'active' : ''}`}>3. Advanced Assets</div>
-            </>
-          ) : (
-            // For Enhanced+, show all steps but may start at different step
-            <>
-              <div className={`step ${step >= 1 ? 'active' : ''} ${currentTier !== 'verified' && step < 1 ? 'skipped' : ''}`}>1. About Home</div>
-              <div className={`step ${step >= 2 ? 'active' : ''}`}>2. Documents</div>
-              <div className={`step ${step >= 3 ? 'active' : ''}`}>3. Pricing & Comps</div>
-              <div className={`step ${step >= 4 ? 'active' : ''}`}>4. Advanced Assets</div>
-            </>
-          )}
+          <div className={`step ${step >= 1 ? 'active' : ''}`}>1. {stepLabels[0]}</div>
+          <div className={`step ${step >= 2 ? 'active' : ''}`}>2. {stepLabels[1]}</div>
+          <div className={`step ${step >= 3 ? 'active' : ''}`}>3. {stepLabels[2]}</div>
         </div>
         {error && <div className="error-message">{error}</div>}
         {savedMessage && <div className="saved-message">{savedMessage}</div>}
         <form onSubmit={handleSubmit}>
           {step === 1 && (
             <div className="form-step">
-              <h2>About Home</h2>
-              <p className="form-note">Confirm the property basics to the best of your knowledge.</p>
-              <div className="form-grid-2">
-                <div className="form-group">
-                  <label>Bedrooms *</label>
-                  <input type="number" min="0" value={bedrooms} onChange={(e) => setBedrooms(e.target.value)} placeholder="e.g. 3" required />
-                </div>
-                <div className="form-group">
-                  <label>Bathrooms *</label>
-                  <input type="number" min="0" step="0.5" value={bathrooms} onChange={(e) => setBathrooms(e.target.value)} placeholder="e.g. 2.5" required />
-                </div>
-                <div className="form-group">
-                  <label>Square footage</label>
-                  <input type="number" min="0" value={squareFeet} onChange={(e) => setSquareFeet(e.target.value)} placeholder="e.g. 2200" />
-                </div>
-                <div className="form-group">
-                  <label>Lot size (sq ft)</label>
-                  <input type="number" min="0" value={lotSize} onChange={(e) => setLotSize(e.target.value)} placeholder="e.g. 8000" />
-                </div>
-                <div className="form-group">
-                  <label>Year built</label>
-                  <input type="number" min="1800" max={new Date().getFullYear() + 1} value={yearBuilt} onChange={(e) => setYearBuilt(e.target.value)} placeholder="e.g. 1995" />
-                </div>
-              </div>
-              <div className="form-group">
-                <label>HOA? *</label>
-                <select value={hasHOA} onChange={(e) => setHasHOA(e.target.value)} required>
-                  <option value="">Select</option>
-                  <option value="yes">Yes</option>
-                  <option value="no">No</option>
-                </select>
-              </div>
-              {hasHOA === 'yes' && (
-                <div className="form-group">
-                  <label>HOA fees ($/month) *</label>
-                  <input type="number" min="0" step="1" value={hoaFee} onChange={(e) => setHoaFee(e.target.value)} placeholder="e.g. 150" />
-                </div>
+              {isVerifiedTier && (
+                <>
+                  <h2>Documents</h2>
+                  <p className="form-note">Upload deed and HOA documents (if applicable) to advance to Enhanced.</p>
+                  <div className="form-group">
+                    <label>Deed *</label>
+                    {property.deedUrl ? <p className="on-file">✓ Deed on file</p> : (
+                      <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setDeedFile(f || null)} hint="PDF, JPG, or PNG." placeholder="Drop deed here or click to browse" />
+                    )}
+                  </div>
+                  {hasHOA === 'yes' && (
+                    <div className="form-group">
+                      <label>HOA documents (if applicable) *</label>
+                      {property.hoaDocsUrl ? <p className="on-file">✓ HOA docs on file</p> : (
+                        <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setHoaDocsFile(f || null)} hint="PDF, JPG, or PNG." placeholder="Drop HOA docs here or click to browse" />
+                      )}
+                    </div>
+                  )}
+                </>
               )}
-              <div className="form-group">
-                <label>Property taxes estimate ($/year) *</label>
-                <input type="number" min="0" step="100" value={propertyTaxEstimate} onChange={(e) => setPropertyTaxEstimate(e.target.value)} placeholder="e.g. 6000" required />
-              </div>
-              <div className="form-group">
-                <label>Insurance? *</label>
-                <select value={hasInsurance} onChange={(e) => setHasInsurance(e.target.value)} required>
-                  <option value="">Select</option>
-                  <option value="yes">Yes</option>
-                  <option value="no">No</option>
-                </select>
-              </div>
-              {hasInsurance === 'yes' && (
-                <div className="form-group">
-                  <label>Annual insurance approximation ($/year)</label>
-                  <input type="number" min="0" step="100" value={insuranceApproximation} onChange={(e) => setInsuranceApproximation(e.target.value)} placeholder="e.g. 1800" />
-                </div>
+
+              {isEnhancedTier && (
+                <>
+                  <h2>Disclosure Forms</h2>
+                  <p className="form-note">Disclosure forms are required to advance to Premium.</p>
+                  <div className="form-group">
+                    <label>Disclosure forms *</label>
+                    {property.disclosureFormsUrl ? <p className="on-file">✓ Disclosure forms on file</p> : (
+                      <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setDisclosureFormsFile(f || null)} placeholder="Drop disclosure forms here or click to browse" />
+                    )}
+                    {disclosureFormsFile && <span className="doc-filename">✓ {disclosureFormsFile.name} (new)</span>}
+                  </div>
+                </>
               )}
-              <div className="form-group">
-                <label>Features</label>
-                <div className="feature-chips">
-                  {commonFeaturesList.map((f) => (
-                    <button key={f} type="button" className={`feature-chip ${features.includes(f) ? 'active' : ''}`} onClick={() => toggleFeature(f)}>{f}</button>
-                  ))}
-                </div>
-              </div>
+
+              {isPremiumTier && (
+                <>
+                  <h2>Documents & Claims</h2>
+                  <p className="form-note">Add mortgage docs (if applicable), inspection report, and insurance claims info.</p>
+                  <div className="form-group">
+                    <label>Mortgage? *</label>
+                    <select value={hasMortgage} onChange={(e) => setHasMortgage(e.target.value)} required>
+                      <option value="">Select</option>
+                      <option value="yes">Yes</option>
+                      <option value="no">No</option>
+                    </select>
+                  </div>
+                  {hasMortgage === 'yes' && (
+                    <div className="form-group">
+                      <label>Mortgage / payoff document *</label>
+                      {(property.mortgageDocUrl || property.payoffOrLienReleaseUrl) ? <p className="on-file">✓ Document on file</p> : (
+                        <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setMortgageFile(f || null)} hint="PDF, JPG, or PNG." placeholder="Drop mortgage or payoff document here or click to browse" />
+                      )}
+                      {mortgageFile && <span className="doc-filename">✓ {mortgageFile.name} (new)</span>}
+                    </div>
+                  )}
+                  <div className="form-group">
+                    <label>Proactive inspection report *</label>
+                    {property.inspectionReportUrl ? <p className="on-file">✓ Inspection report on file</p> : (
+                      <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setInspectionReportFile(f || null)} placeholder="Drop inspection report here or click to browse" />
+                    )}
+                    {inspectionReportFile && <span className="doc-filename">✓ {inspectionReportFile.name} (new)</span>}
+                  </div>
+                  <div className="form-group">
+                    <label>Insurance claims in last 5 years? *</label>
+                    <select value={hasInsuranceClaims} onChange={(e) => setHasInsuranceClaims(e.target.value)} required>
+                      <option value="">Select</option>
+                      <option value="yes">Yes</option>
+                      <option value="no">No</option>
+                    </select>
+                  </div>
+                  {hasInsuranceClaims === 'yes' && (
+                    <>
+                      <div className="form-group">
+                        <label>Describe the claims *</label>
+                        <textarea value={insuranceClaimsDescription} onChange={(e) => setInsuranceClaimsDescription(e.target.value)} rows={3} placeholder="Describe the claims..." />
+                      </div>
+                      <div className="form-group">
+                        <label>Upload claims document *</label>
+                        {property.insuranceClaimsReportUrl ? <p className="on-file">✓ Claims document on file</p> : (
+                          <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setInsuranceClaimsFile(f || null)} placeholder="Drop claims document here or click to browse" />
+                        )}
+                        {insuranceClaimsFile && <span className="doc-filename">✓ {insuranceClaimsFile.name} (new)</span>}
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+
+              {isEliteTier && (
+                <>
+                  <h2>Elite Tier Complete</h2>
+                  <p className="form-note">Your property already meets Elite tier requirements.</p>
+                </>
+              )}
+
               <label className="confirm-checkbox">
                 <input type="checkbox" checked={step1Confirmed} onChange={(e) => setStep1Confirmed(e.target.checked)} />
                 <span>I confirm this is accurate to the best of my knowledge.</span>
@@ -591,75 +680,147 @@ const GetVerified = () => {
             </div>
           )}
 
+
           {step === 2 && (
             <div className="form-step">
-              <h2>Confirm the home</h2>
-              <p className="form-note">Upload documents to advance to Enhanced tier: deed, tax records, and HOA documents (if applicable). These documents verify ownership and are required to move beyond Verified tier.</p>
-              <div className="form-group">
-                <label>Deed *</label>
-                <p className="form-instruction">This was provided with the title company upon property closure and is likely recorded with your local municipality.</p>
-                {property.deedUrl ? <p className="on-file">✓ Deed on file</p> : (
-                  <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setDeedFile(f || null)} hint="PDF, JPG, or PNG." placeholder="Drop deed here or click to browse" />
-                )}
-              </div>
-              <div className="form-group">
-                <label>Property tax record *</label>
-                <p className="form-instruction">Available via your municipality assessor portal.</p>
-                {property.propertyTaxRecordUrl ? <p className="on-file">✓ Property tax record on file</p> : (
-                  <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setPropertyTaxFile(f || null)} hint="PDF, JPG, or PNG." placeholder="Drop property tax record here or click to browse" />
-                )}
-              </div>
-              {hasHOA === 'yes' && (
+              {isVerifiedTier && (
                 <>
+                  <h2>Verified Pricing</h2>
+                  <p className="form-note">Provide verified pricing via comps or an appraisal report.</p>
                   <div className="form-group">
-                    <label>HOA bylaws and covenants / critical HOA docs *</label>
-                    <p className="form-instruction">Obtain and upload HOA bylaws, covenants, and other critical HOA documents.</p>
-                    {property.hoaDocsUrl ? <p className="on-file">✓ HOA docs on file</p> : (
-                      <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setHoaDocsFile(f || null)} hint="PDF, JPG, or PNG." placeholder="Drop HOA docs here or click to browse" />
+                    <label className="toggle-label">
+                      <input type="checkbox" checked={useCompAnalysis} onChange={(e) => setUseCompAnalysis(e.target.checked)} />
+                      <span>Use comparative property analysis (select recent sales)</span>
+                    </label>
+                    {useCompAnalysis && (
+                      <div className="comps-section">
+                        <p className="form-hint">Select comparable recent sales on the map (up to 5). Set the sale price for each comp below.</p>
+                        <div className="get-verified-comps-map">
+                          <CompsMap
+                            center={property?.latitude != null && property?.longitude != null ? { lat: property.latitude, lng: property.longitude } : null}
+                            selectedComps={verifiedComps}
+                            onCompSelect={(parcel) => {
+                              const existing = verifiedComps.find((c) => (c.parcelId || c.attomId) === (parcel.attomId || parcel.parcelId));
+                              if (existing) {
+                                setVerifiedComps(verifiedComps.filter((c) => (c.parcelId || c.attomId) !== (parcel.attomId || parcel.parcelId)));
+                              } else if (verifiedComps.length < 5) {
+                                const newComp = {
+                                  parcelId: parcel.attomId || parcel.parcelId,
+                                  attomId: parcel.attomId || parcel.parcelId,
+                                  address: parcel.address || 'Address unknown',
+                                  latitude: parcel.latitude,
+                                  longitude: parcel.longitude,
+                                  closingValue: String(parcel.estimate ?? parcel.closingValue ?? ''),
+                                };
+                                setVerifiedComps([...verifiedComps, newComp]);
+                                setCompPriceModal({ index: verifiedComps.length, address: newComp.address, closingValue: newComp.closingValue });
+                              }
+                            }}
+                          />
+                        </div>
+                        {verifiedComps.length > 0 && (
+                          <div className="comps-list-verified">
+                            {verifiedComps.map((comp, idx) => (
+                              <div key={comp.parcelId || comp.attomId || idx} className="comp-row">
+                                <span className="comp-address">{comp.address}</span>
+                                <span className="comp-price">
+                                  {comp.closingValue ? `$${Number(comp.closingValue).toLocaleString()}` : 'Price not set'}
+                                </span>
+                                <button type="button" className="btn btn-outline btn-small" onClick={() => setCompPriceModal({ index: idx, address: comp.address, closingValue: comp.closingValue || '' })}>
+                                  {comp.closingValue ? 'Edit price' : 'Set price'}
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        <p className="form-hint">Selected: {verifiedComps.length} of 5 comps.</p>
+                      </div>
                     )}
+                    {compPriceModal != null && (
+                      <div className="comp-price-modal-overlay" onClick={() => setCompPriceModal(null)} role="presentation">
+                        <div className="comp-price-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-labelledby="comp-price-modal-title">
+                          <h3 id="comp-price-modal-title">Set sale price for comparable</h3>
+                          <p className="comp-price-modal-address">{compPriceModal.address}</p>
+                          <div className="form-group">
+                            <label>Sale / closing price ($) *</label>
+                            <input
+                              type="number"
+                              min="0"
+                              step="1000"
+                              value={compPriceModal.closingValue}
+                              onChange={(e) => setCompPriceModal((m) => ({ ...m, closingValue: e.target.value }))}
+                              placeholder="e.g. 425000"
+                              autoFocus
+                            />
+                          </div>
+                          <div className="comp-price-modal-actions">
+                            <button type="button" className="btn btn-secondary" onClick={() => setCompPriceModal(null)}>Cancel</button>
+                            <button
+                              type="button"
+                              className="btn btn-primary"
+                              onClick={() => {
+                                const val = compPriceModal.closingValue.trim();
+                                setVerifiedComps((prev) => {
+                                  const next = [...prev];
+                                  if (next[compPriceModal.index]) next[compPriceModal.index] = { ...next[compPriceModal.index], closingValue: val };
+                                  return next;
+                                });
+                                setCompPriceModal(null);
+                              }}
+                            >
+                              Save
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                  <div className="form-group">
+                    <label>Appraisal report (optional alternative)</label>
+                    <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setValuationDocFile(f || null)} placeholder="Drop appraisal report here or click to browse" />
+                    {property?.valuationDocUrl && <span className="doc-filename">✓ Current file attached</span>}
+                    {valuationDocFile && <span className="doc-filename">✓ {valuationDocFile.name} (new)</span>}
                   </div>
                 </>
               )}
-              <div className="form-group">
-                <label>Mortgage? *</label>
-                <select value={hasMortgage} onChange={(e) => setHasMortgage(e.target.value)} required>
-                  <option value="">Select</option>
-                  <option value="yes">Yes</option>
-                  <option value="no">No</option>
-                </select>
-              </div>
-              {hasMortgage === 'yes' && (
+
+              {isEnhancedTier && (
                 <>
-                  <div className="form-group">
-                    <label>Approximate remaining mortgage balance ($) *</label>
-                    <input type="number" min="0" step="1000" value={remainingMortgage} onChange={(e) => setRemainingMortgage(e.target.value)} placeholder="e.g. 250000" />
-                  </div>
-                  <div className="form-group">
-                    <label>Mortgage document (optional)</label>
-                    {property.mortgageDocUrl ? <p className="on-file">✓ Mortgage doc on file</p> : (
-                      <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setMortgageFile(f || null)} hint="PDF, JPG, or PNG." placeholder="Drop mortgage doc here or click to browse" />
-                    )}
-                  </div>
+                  <h2>No Additional Information</h2>
+                  <p className="form-note">No extra information is needed on this step.</p>
                 </>
               )}
-              <div className="form-group">
-                <label>Known liens or encumbrances</label>
-                <p className="form-instruction">Toggle yes or no for each; describe any other in the box below.</p>
-                <div className="lien-toggles">
-                  <label><span>Tax lien?</span> <select value={lienTax} onChange={(e) => setLienTax(e.target.value)}><option value="">—</option><option value="yes">Yes</option><option value="no">No</option></select></label>
-                  <label><span>HOA lien?</span> <select value={lienHOA} onChange={(e) => setLienHOA(e.target.value)}><option value="">—</option><option value="yes">Yes</option><option value="no">No</option></select></label>
-                  <label><span>Mechanic&apos;s lien?</span> <select value={lienMechanic} onChange={(e) => setLienMechanic(e.target.value)}><option value="">—</option><option value="yes">Yes</option><option value="no">No</option></select></label>
-                </div>
-                <textarea value={lienOther} onChange={(e) => setLienOther(e.target.value)} rows={2} placeholder="Describe any other liens or encumbrances..." className="lien-other-input" />
-              </div>
-              {(lienTax === 'yes' || lienHOA === 'yes' || lienMechanic === 'yes' || lienOther.trim()) && (
-                <div className="form-group">
-                  <label>Payoff statement or lien release (if applicable)</label>
-                  {property.payoffOrLienReleaseUrl ? <p className="on-file">✓ Document on file</p> : (
-                    <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setPayoffFile(f || null)} hint="PDF, JPG, or PNG." placeholder="Drop payoff or lien release here or click to browse" />
+
+              {isPremiumTier && (
+                <>
+                  <h2>3rd Party Value Review</h2>
+                  <p className="form-note">Confirm a certified vendor reviewed the value, or upload an appraisal report.</p>
+                  <div className="form-group">
+                    <label className="toggle-label">
+                      <input type="checkbox" checked={thirdPartyReviewConfirmed} onChange={(e) => setThirdPartyReviewConfirmed(e.target.checked)} />
+                      <span>Certified vendor reviewed the property value</span>
+                    </label>
+                  </div>
+                  {thirdPartyReviewConfirmed && (
+                    <div className="form-group">
+                      <label>Link the vendor *</label>
+                      <select value={thirdPartyReviewVendorId} onChange={(e) => setThirdPartyReviewVendorId(e.target.value)}>
+                        <option value="">Select vendor</option>
+                        {vendors.map((v) => (
+                          <option key={v.id} value={v.id}>{v.vendorName || 'Vendor'}</option>
+                        ))}
+                      </select>
+                    </div>
                   )}
-                </div>
+                  <div className="form-group">
+                    <label>Appraisal report (optional alternative)</label>
+                    <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setValuationDocFile(f || null)} placeholder="Drop appraisal report here or click to browse" />
+                    {property?.valuationDocUrl && <span className="doc-filename">✓ Current file attached</span>}
+                    {valuationDocFile && <span className="doc-filename">✓ {valuationDocFile.name} (new)</span>}
+                  </div>
+                </>
               )}
+
               <label className="confirm-checkbox">
                 <input type="checkbox" checked={step2Confirmed} onChange={(e) => setStep2Confirmed(e.target.checked)} />
                 <span>I confirm this is accurate to the best of my knowledge.</span>
@@ -669,111 +830,70 @@ const GetVerified = () => {
 
           {step === 3 && (
             <div className="form-step">
-              <h2>Price the home</h2>
-              <p className="form-note">
-                {currentTier === 'verified' 
-                  ? 'Add pricing information and comparables to advance to Enhanced tier. At least one comparable is required.'
-                  : currentTier === 'premium'
-                  ? 'Add more comparables (3+ total) to advance to Elite tier.'
-                  : 'What you think the property is worth and your "make me move" price.'}
-              </p>
-              <div className="form-group">
-                <label>What do you think the property is worth? ($) *</label>
-                <input type="number" min="0" step="1000" value={estimatedWorth} onChange={(e) => setEstimatedWorth(e.target.value)} placeholder="e.g. 450000" required />
-              </div>
-              <div className="form-group">
-                <label>Make me move price ($) *</label>
-                <p className="form-hint">If I got this, I would pack my bags tomorrow.</p>
-                <input type="number" min="0" step="1000" value={makeMeMovePrice} onChange={(e) => setMakeMeMovePrice(e.target.value)} placeholder="e.g. 500000" required />
-              </div>
-              <div className="form-group">
-                <label className="toggle-label">
-                  <input type="checkbox" checked={useCompAnalysis} onChange={(e) => setUseCompAnalysis(e.target.checked)} />
-                  <span>Use comparative property analysis (select recent sales)</span>
-                </label>
-                {useCompAnalysis && (
-                  <div className="comps-section">
-                    <p className="form-hint">Select comparable recent sales on the map (up to 5). Set the sale price for each comp below.</p>
-                    <div className="get-verified-comps-map">
-                      <CompsMap
-                        center={property?.latitude != null && property?.longitude != null ? { lat: property.latitude, lng: property.longitude } : null}
-                        selectedComps={verifiedComps}
-                        onCompSelect={(parcel) => {
-                          const existing = verifiedComps.find((c) => (c.parcelId || c.attomId) === (parcel.attomId || parcel.parcelId));
-                          if (existing) {
-                            setVerifiedComps(verifiedComps.filter((c) => (c.parcelId || c.attomId) !== (parcel.attomId || parcel.parcelId)));
-                          } else if (verifiedComps.length < 5) {
-                            const newComp = {
-                              parcelId: parcel.attomId || parcel.parcelId,
-                              attomId: parcel.attomId || parcel.parcelId,
-                              address: parcel.address || 'Address unknown',
-                              latitude: parcel.latitude,
-                              longitude: parcel.longitude,
-                              closingValue: String(parcel.estimate ?? parcel.closingValue ?? ''),
-                            };
-                            setVerifiedComps([...verifiedComps, newComp]);
-                            setCompPriceModal({ index: verifiedComps.length, address: newComp.address, closingValue: newComp.closingValue });
-                          }
-                        }}
-                      />
-                    </div>
-                    {verifiedComps.length > 0 && (
-                      <div className="comps-list-verified">
-                        {verifiedComps.map((comp, idx) => (
-                          <div key={comp.parcelId || comp.attomId || idx} className="comp-row">
-                            <span className="comp-address">{comp.address}</span>
-                            <span className="comp-price">
-                              {comp.closingValue ? `$${Number(comp.closingValue).toLocaleString()}` : 'Price not set'}
-                            </span>
-                            <button type="button" className="btn btn-outline btn-small" onClick={() => setCompPriceModal({ index: idx, address: comp.address, closingValue: comp.closingValue || '' })}>
-                              {comp.closingValue ? 'Edit price' : 'Set price'}
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    <p className="form-hint">Selected: {verifiedComps.length} of 5 comps.</p>
+              {isVerifiedTier && (
+                <>
+                  <h2>Professional Assets</h2>
+                  <p className="form-note">Add professional photos (30+), a floor plan, and a video to reach Enhanced.</p>
+                  <div className="form-group">
+                    <label>Professional Photos *</label>
+                    <label className="toggle-label">
+                      <input type="checkbox" checked={professionalPhotos} onChange={(e) => setProfessionalPhotos(e.target.checked)} />
+                      <span>I certify these were shot by a professional</span>
+                    </label>
                   </div>
-                )}
-                {compPriceModal != null && (
-                  <div className="comp-price-modal-overlay" onClick={() => setCompPriceModal(null)} role="presentation">
-                    <div className="comp-price-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-labelledby="comp-price-modal-title">
-                      <h3 id="comp-price-modal-title">Set sale price for comparable</h3>
-                      <p className="comp-price-modal-address">{compPriceModal.address}</p>
-                      <div className="form-group">
-                        <label>Sale / closing price ($) *</label>
-                        <input
-                          type="number"
-                          min="0"
-                          step="1000"
-                          value={compPriceModal.closingValue}
-                          onChange={(e) => setCompPriceModal((m) => ({ ...m, closingValue: e.target.value }))}
-                          placeholder="e.g. 425000"
-                          autoFocus
-                        />
-                      </div>
-                      <div className="comp-price-modal-actions">
-                        <button type="button" className="btn btn-secondary" onClick={() => setCompPriceModal(null)}>Cancel</button>
-                        <button
-                          type="button"
-                          className="btn btn-primary"
-                          onClick={() => {
-                            const val = compPriceModal.closingValue.trim();
-                            setVerifiedComps((prev) => {
-                              const next = [...prev];
-                              if (next[compPriceModal.index]) next[compPriceModal.index] = { ...next[compPriceModal.index], closingValue: val };
-                              return next;
-                            });
-                            setCompPriceModal(null);
-                          }}
-                        >
-                          Save
-                        </button>
-                      </div>
-                    </div>
+                  <div className="form-group">
+                    <label>Photos *</label>
+                    <p className="form-hint">At least 30 photos required.</p>
+                    <DragDropFileInput multiple accept="image/*" onChange={(files) => handlePhotoFiles(files || [])} placeholder="Drop photos here or click to browse" />
+                    <p className="form-hint">Total photos: {totalPhotoCount} / 30 minimum</p>
                   </div>
-                )}
-              </div>
+                  <div className="form-group">
+                    <label>Floor plan *</label>
+                    <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setFloorPlanFile(f || null)} placeholder="Drop floor plan here or click to browse" />
+                    {property?.floorPlanUrl && <span className="doc-filename">✓ Current file attached</span>}
+                    {floorPlanFile && <span className="doc-filename">✓ {floorPlanFile.name} (new)</span>}
+                  </div>
+                  <div className="form-group">
+                    <label>Video *</label>
+                    <DragDropFileInput multiple accept="video/*" onChange={(files) => setVideoFiles(Array.isArray(files) ? files : files ? [files] : [])} placeholder="Drop videos here or click to browse" />
+                    {videoFiles.length > 0 && <p className="form-hint">{videoFiles.length} video(s) selected</p>}
+                  </div>
+                </>
+              )}
+
+              {isEnhancedTier && (
+                <>
+                  <h2>Matterport</h2>
+                  <p className="form-note">Add a Matterport link to reach Premium.</p>
+                  <div className="form-group">
+                    <label>Matterport URL *</label>
+                    <input type="url" placeholder="https://..." value={matterportTourUrl || property?.matterportTourUrl || ''} onChange={(e) => setMatterportTourUrl(e.target.value)} className="form-input" />
+                    {(matterportTourUrl || property?.matterportTourUrl) && <span className="doc-filename">✓ Matterport tour linked</span>}
+                  </div>
+                </>
+              )}
+
+              {isPremiumTier && (
+                <>
+                  <h2>Confirm Assets</h2>
+                  <p className="form-note">Confirm all professional assets are present.</p>
+                  <div className="form-group">
+                    <p className={totalPhotoCount >= 30 ? 'on-file' : 'form-hint form-hint--warn'}>
+                      {totalPhotoCount >= 30 ? `✓ ${totalPhotoCount} photos` : '30+ photos required'}
+                    </p>
+                    <p className={property?.floorPlanUrl ? 'on-file' : 'form-hint form-hint--warn'}>
+                      {property?.floorPlanUrl ? '✓ Floor plan on file' : 'Floor plan required'}
+                    </p>
+                    <p className={(property?.videoTourUrl || (Array.isArray(property?.videos) && property.videos.length > 0)) ? 'on-file' : 'form-hint form-hint--warn'}>
+                      {(property?.videoTourUrl || (Array.isArray(property?.videos) && property.videos.length > 0)) ? '✓ Video on file' : 'Video required'}
+                    </p>
+                    <p className={property?.matterportTourUrl ? 'on-file' : 'form-hint form-hint--warn'}>
+                      {property?.matterportTourUrl ? '✓ Matterport linked' : 'Matterport URL required'}
+                    </p>
+                  </div>
+                </>
+              )}
+
               <label className="confirm-checkbox">
                 <input type="checkbox" checked={step3Confirmed} onChange={(e) => setStep3Confirmed(e.target.checked)} />
                 <span>I confirm this is accurate to the best of my knowledge.</span>
@@ -781,101 +901,9 @@ const GetVerified = () => {
             </div>
           )}
 
-          {step === 4 && (
-            <div className="form-step">
-              <h2>Advanced Assets</h2>
-              <p className="form-note">
-                {currentTier === 'enhanced' 
-                  ? 'Upload advanced assets (inspection report, floor plan, Matterport tour, valuation, or comp report) and disclosure forms to advance to Premium tier.'
-                  : currentTier === 'premium'
-                  ? 'Upload more advanced assets (3+ total), confirm professional photos, and add video/drone footage to advance to Elite tier.'
-                  : 'Upload current photos and videos of the property. Home readiness is addressed in the listing checklist when you\'re ready to list.'}
-              </p>
-              <div className="form-group">
-                <label>Photos</label>
-                <p className="form-hint">Upload one or more current photos.</p>
-                <p className={totalPhotoCount >= 1 ? 'on-file' : 'form-hint form-hint--warn'}>{totalPhotoCount >= 1 ? `✓ ${totalPhotoCount} photo(s)` : 'Add at least one photo'}</p>
-                <DragDropFileInput multiple accept="image/*" onChange={(files) => handlePhotoFiles(files || [])} placeholder="Drop photos here or click to browse" />
-              </div>
-              <div className="form-group">
-                <label>Videos (optional)</label>
-                <DragDropFileInput multiple accept="video/*" onChange={(files) => setVideoFiles(Array.isArray(files) ? files : files ? [files] : [])} placeholder="Drop videos here or click to browse" />
-                {videoFiles.length > 0 && <p className="form-hint">{videoFiles.length} video(s) selected</p>}
-              </div>
-              {((property?.photos?.length ?? 0) > 0 || photoPreviews.length > 0) && (
-                <div className="photo-previews">
-                  {property?.photos?.map((url, i) => <div key={`ex-${i}`} className="photo-preview"><img src={url} alt={`Photo ${i + 1}`} /></div>)}
-                  {photoPreviews.map((url, i) => <div key={`new-${i}`} className="photo-preview"><img src={url} alt={`New ${i + 1}`} /></div>)}
-                </div>
-              )}
-              
-              {/* Advanced Assets - shown for Enhanced+ tiers */}
-              {(currentTier === 'enhanced' || currentTier === 'premium') && (
-                <>
-                  <div className="form-group" style={{ marginTop: 32 }}>
-                    <label>Professional Photos</label>
-                    <label className="toggle-label">
-                      <input type="checkbox" checked={professionalPhotos} onChange={(e) => setProfessionalPhotos(e.target.checked)} />
-                      <span>I confirm these are professional photos</span>
-                    </label>
-                    <p className="form-hint">Or upload 10+ photos total to meet this requirement.</p>
-                  </div>
-                  
-                  <div className="form-group" style={{ marginTop: 24 }}>
-                    <label>Advanced Assets</label>
-                    <p className="form-hint">
-                      {currentTier === 'enhanced' 
-                        ? 'Upload at least one advanced asset to advance to Premium tier.'
-                        : 'Upload at least 3 advanced assets total to advance to Elite tier.'}
-                    </p>
-                    <div className="document-uploads">
-                      <div className="doc-row">
-                        <label className="doc-label">Inspection Report</label>
-                        <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setInspectionReportFile(f || null)} placeholder="Drop or click" className="doc-drag-drop" />
-                        {property?.inspectionReportUrl && <span className="doc-filename">✓ Current file attached</span>}
-                        {inspectionReportFile && <span className="doc-filename">✓ {inspectionReportFile.name} (new)</span>}
-                      </div>
-                      <div className="doc-row">
-                        <label className="doc-label">Floor Plan</label>
-                        <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setFloorPlanFile(f || null)} placeholder="Drop or click" className="doc-drag-drop" />
-                        {property?.floorPlanUrl && <span className="doc-filename">✓ Current file attached</span>}
-                        {floorPlanFile && <span className="doc-filename">✓ {floorPlanFile.name} (new)</span>}
-                      </div>
-                      <div className="doc-row">
-                        <label className="doc-label">Matterport Tour URL</label>
-                        <input type="url" placeholder="https://..." value={matterportTourUrl || property?.matterportTourUrl || ''} onChange={(e) => setMatterportTourUrl(e.target.value)} className="form-input" />
-                        {(matterportTourUrl || property?.matterportTourUrl) && <span className="doc-filename">✓ Matterport tour linked</span>}
-                      </div>
-                      <div className="doc-row">
-                        <label className="doc-label">Valuation / CMA Document</label>
-                        <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setValuationDocFile(f || null)} placeholder="Drop or click" className="doc-drag-drop" />
-                        {property?.valuationDocUrl && <span className="doc-filename">✓ Current file attached</span>}
-                        {valuationDocFile && <span className="doc-filename">✓ {valuationDocFile.name} (new)</span>}
-                      </div>
-                      <div className="doc-row">
-                        <label className="doc-label">Comp Report</label>
-                        <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setCompReportFile(f || null)} placeholder="Drop or click" className="doc-drag-drop" />
-                        {property?.compReportUrl && <span className="doc-filename">✓ Current file attached</span>}
-                        {compReportFile && <span className="doc-filename">✓ {compReportFile.name} (new)</span>}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="form-group" style={{ marginTop: 24 }}>
-                    <label>Disclosure Forms</label>
-                    <p className="form-hint">Required for Premium tier and above.</p>
-                    <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setDisclosureFormsFile(f || null)} placeholder="Drop disclosure forms here or click to browse" />
-                    {property?.disclosureFormsUrl && <span className="doc-filename">✓ Current file attached</span>}
-                    {disclosureFormsFile && <span className="doc-filename">✓ {disclosureFormsFile.name} (new)</span>}
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-
           <div className="form-actions">
             {step > 1 && <button type="button" onClick={() => setStep((s) => s - 1)} className="btn-secondary">Back</button>}
-            {step < 4 ? (
+            {step < 3 ? (
               <button
                 type="button"
                 onClick={() => setStep((s) => s + 1)}
@@ -885,8 +913,8 @@ const GetVerified = () => {
                 Next
               </button>
             ) : (
-              <button type="submit" disabled={saving || totalPhotoCount < 1} className="btn-primary">
-                {saving ? 'Completing...' : 'Complete verification'}
+              <button type="submit" disabled={saving} className="btn-primary">
+                {saving ? 'Completing...' : 'Complete update'}
               </button>
             )}
             <button type="button" onClick={handleSaveProgress} disabled={saving} className="btn-secondary">Save progress</button>

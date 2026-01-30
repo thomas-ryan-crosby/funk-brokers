@@ -558,8 +558,15 @@ const PropertyDetail = () => {
 
             {(() => {
               const prog = getListingTierProgress(property);
-              const tiers = ['Basic', 'Complete', 'Verified', 'Enhanced', 'Premium', 'Elite'];
-              const currentTierIndex = tiers.findIndex((t) => t.toLowerCase() === prog.tier);
+              const tiers = [
+                { id: 'basic', label: 'Just Claimed' },
+                { id: 'complete', label: 'Complete' },
+                { id: 'verified', label: 'Verified' },
+                { id: 'enhanced', label: 'Enhanced' },
+                { id: 'premium', label: 'Premium' },
+                { id: 'elite', label: 'Elite' },
+              ];
+              const currentTierIndex = tiers.findIndex((t) => t.id === prog.tier);
               return (
                 <div className="property-tier-progress-card">
                   <h3>Property tier</h3>
@@ -602,7 +609,15 @@ const PropertyDetail = () => {
                           : `/property/${property.id}/edit`;
                         let advanceText;
                         if (needsDocuments) {
-                          advanceText = 'Add documents & verify';
+                          if (prog.tier === 'verified') {
+                            advanceText = 'Advance to Enhanced';
+                          } else if (prog.tier === 'enhanced') {
+                            advanceText = 'Advance to Premium';
+                          } else if (prog.tier === 'premium') {
+                            advanceText = 'Advance to Elite';
+                          } else {
+                            advanceText = 'Add documents & verify';
+                          }
                         } else if (prog.tier === 'basic') {
                           advanceText = 'Advance to Complete';
                         } else if (prog.tier === 'complete') {
@@ -621,9 +636,9 @@ const PropertyDetail = () => {
                   {!prog.nextTier && <p className="tier-complete">All requirements for Elite tier are met.</p>}
                   <div className="tier-timeline">
                     {tiers.map((tier, idx) => (
-                      <div key={tier} className={`tier-timeline-item ${idx === currentTierIndex ? 'tier-timeline-item--current' : idx < currentTierIndex ? 'tier-timeline-item--completed' : 'tier-timeline-item--upcoming'}`}>
+                      <div key={tier.id} className={`tier-timeline-item ${idx === currentTierIndex ? 'tier-timeline-item--current' : idx < currentTierIndex ? 'tier-timeline-item--completed' : 'tier-timeline-item--upcoming'}`}>
                         <div className="tier-timeline-dot" />
-                        <span className="tier-timeline-label">{tier}</span>
+                        <span className="tier-timeline-label">{tier.label}</span>
                         {idx < tiers.length - 1 && <div className="tier-timeline-line" />}
                       </div>
                     ))}
