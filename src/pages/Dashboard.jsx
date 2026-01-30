@@ -670,7 +670,7 @@ const Dashboard = () => {
           <div className="dashboard-brand">
             <img
               className="dashboard-logo"
-              src="/brand/opento-logo.png"
+              src={`${import.meta.env.BASE_URL}brand/opento-logo.png`}
               alt="OpenTo"
             />
             <div>
