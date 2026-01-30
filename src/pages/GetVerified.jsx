@@ -329,6 +329,11 @@ const GetVerified = () => {
         setPhotoFiles([]);
         setPhotoPreviews([]);
       }
+      if (videoFiles.length > 0) {
+        const urls = await uploadMultipleFiles(videoFiles, `properties/${id}/videos`);
+        updates.videoFiles = [...(property.videoFiles || []), ...urls];
+        setVideoFiles([]);
+      }
       
       // Advanced assets
       if (inspectionReportFile) {
@@ -422,6 +427,11 @@ const GetVerified = () => {
         const urls = await uploadMultipleFiles(photoFiles, `properties/${id}/photos`);
         photos = [...photos, ...urls];
       }
+      let videos = property.videoFiles || [];
+      if (videoFiles.length > 0) {
+        const urls = await uploadMultipleFiles(videoFiles, `properties/${id}/videos`);
+        videos = [...videos, ...urls];
+      }
 
       // Upload advanced assets if provided
       let inspectionReportUrl = property.inspectionReportUrl;
@@ -479,6 +489,7 @@ const GetVerified = () => {
         verifiedComps: useCompAnalysis ? verifiedComps : [],
         price: estimatedWorth !== '' ? parseFloat(estimatedWorth) : property.price,
         photos,
+        videoFiles: videos,
         // Advanced assets
         inspectionReportUrl: inspectionReportUrl ?? property.inspectionReportUrl ?? null,
         floorPlanUrl: floorPlanUrl ?? property.floorPlanUrl ?? null,
@@ -583,16 +594,20 @@ const GetVerified = () => {
                   <p className="form-note">Upload deed and HOA documents (if applicable) to advance to Enhanced.</p>
                   <div className="form-group">
                     <label>Deed *</label>
-                    {property.deedUrl ? <p className="on-file">✓ Deed on file</p> : (
-                      <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setDeedFile(f || null)} hint="PDF, JPG, or PNG." placeholder="Drop deed here or click to browse" />
+                    <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setDeedFile(f || null)} hint="PDF, JPG, or PNG." placeholder="Drop deed here or click to browse" />
+                    {property.deedUrl && (
+                      <a className="doc-filename" href={property.deedUrl} target="_blank" rel="noreferrer">✓ Deed on file</a>
                     )}
+                    {deedFile && <span className="doc-filename">✓ {deedFile.name} (selected)</span>}
                   </div>
                   {hasHOA === 'yes' && (
                     <div className="form-group">
                       <label>HOA documents (if applicable) *</label>
-                      {property.hoaDocsUrl ? <p className="on-file">✓ HOA docs on file</p> : (
-                        <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setHoaDocsFile(f || null)} hint="PDF, JPG, or PNG." placeholder="Drop HOA docs here or click to browse" />
+                      <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setHoaDocsFile(f || null)} hint="PDF, JPG, or PNG." placeholder="Drop HOA docs here or click to browse" />
+                      {property.hoaDocsUrl && (
+                        <a className="doc-filename" href={property.hoaDocsUrl} target="_blank" rel="noreferrer">✓ HOA docs on file</a>
                       )}
+                      {hoaDocsFile && <span className="doc-filename">✓ {hoaDocsFile.name} (selected)</span>}
                     </div>
                   )}
                 </>
@@ -604,10 +619,11 @@ const GetVerified = () => {
                   <p className="form-note">Disclosure forms are required to advance to Premium.</p>
                   <div className="form-group">
                     <label>Disclosure forms *</label>
-                    {property.disclosureFormsUrl ? <p className="on-file">✓ Disclosure forms on file</p> : (
-                      <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setDisclosureFormsFile(f || null)} placeholder="Drop disclosure forms here or click to browse" />
+                    <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setDisclosureFormsFile(f || null)} placeholder="Drop disclosure forms here or click to browse" />
+                    {property.disclosureFormsUrl && (
+                      <a className="doc-filename" href={property.disclosureFormsUrl} target="_blank" rel="noreferrer">✓ Disclosure forms on file</a>
                     )}
-                    {disclosureFormsFile && <span className="doc-filename">✓ {disclosureFormsFile.name} (new)</span>}
+                    {disclosureFormsFile && <span className="doc-filename">✓ {disclosureFormsFile.name} (selected)</span>}
                   </div>
                 </>
               )}
@@ -627,18 +643,20 @@ const GetVerified = () => {
                   {hasMortgage === 'yes' && (
                     <div className="form-group">
                       <label>Mortgage / payoff document *</label>
-                      {(property.mortgageDocUrl || property.payoffOrLienReleaseUrl) ? <p className="on-file">✓ Document on file</p> : (
-                        <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setMortgageFile(f || null)} hint="PDF, JPG, or PNG." placeholder="Drop mortgage or payoff document here or click to browse" />
+                      <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setMortgageFile(f || null)} hint="PDF, JPG, or PNG." placeholder="Drop mortgage or payoff document here or click to browse" />
+                      {(property.mortgageDocUrl || property.payoffOrLienReleaseUrl) && (
+                        <a className="doc-filename" href={property.mortgageDocUrl || property.payoffOrLienReleaseUrl} target="_blank" rel="noreferrer">✓ Document on file</a>
                       )}
-                      {mortgageFile && <span className="doc-filename">✓ {mortgageFile.name} (new)</span>}
+                      {mortgageFile && <span className="doc-filename">✓ {mortgageFile.name} (selected)</span>}
                     </div>
                   )}
                   <div className="form-group">
                     <label>Proactive inspection report *</label>
-                    {property.inspectionReportUrl ? <p className="on-file">✓ Inspection report on file</p> : (
-                      <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setInspectionReportFile(f || null)} placeholder="Drop inspection report here or click to browse" />
+                    <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setInspectionReportFile(f || null)} placeholder="Drop inspection report here or click to browse" />
+                    {property.inspectionReportUrl && (
+                      <a className="doc-filename" href={property.inspectionReportUrl} target="_blank" rel="noreferrer">✓ Inspection report on file</a>
                     )}
-                    {inspectionReportFile && <span className="doc-filename">✓ {inspectionReportFile.name} (new)</span>}
+                    {inspectionReportFile && <span className="doc-filename">✓ {inspectionReportFile.name} (selected)</span>}
                   </div>
                   <div className="form-group">
                     <label>Insurance claims in last 5 years? *</label>
@@ -656,10 +674,11 @@ const GetVerified = () => {
                       </div>
                       <div className="form-group">
                         <label>Upload claims document *</label>
-                        {property.insuranceClaimsReportUrl ? <p className="on-file">✓ Claims document on file</p> : (
-                          <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setInsuranceClaimsFile(f || null)} placeholder="Drop claims document here or click to browse" />
+                        <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setInsuranceClaimsFile(f || null)} placeholder="Drop claims document here or click to browse" />
+                        {property.insuranceClaimsReportUrl && (
+                          <a className="doc-filename" href={property.insuranceClaimsReportUrl} target="_blank" rel="noreferrer">✓ Claims document on file</a>
                         )}
-                        {insuranceClaimsFile && <span className="doc-filename">✓ {insuranceClaimsFile.name} (new)</span>}
+                        {insuranceClaimsFile && <span className="doc-filename">✓ {insuranceClaimsFile.name} (selected)</span>}
                       </div>
                     </>
                   )}
@@ -778,8 +797,10 @@ const GetVerified = () => {
                   <div className="form-group">
                     <label>Appraisal report (optional alternative)</label>
                     <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setValuationDocFile(f || null)} placeholder="Drop appraisal report here or click to browse" />
-                    {property?.valuationDocUrl && <span className="doc-filename">✓ Current file attached</span>}
-                    {valuationDocFile && <span className="doc-filename">✓ {valuationDocFile.name} (new)</span>}
+                    {property?.valuationDocUrl && (
+                      <a className="doc-filename" href={property.valuationDocUrl} target="_blank" rel="noreferrer">✓ Appraisal on file</a>
+                    )}
+                    {valuationDocFile && <span className="doc-filename">✓ {valuationDocFile.name} (selected)</span>}
                   </div>
                 </>
               )}
@@ -815,8 +836,10 @@ const GetVerified = () => {
                   <div className="form-group">
                     <label>Appraisal report (optional alternative)</label>
                     <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setValuationDocFile(f || null)} placeholder="Drop appraisal report here or click to browse" />
-                    {property?.valuationDocUrl && <span className="doc-filename">✓ Current file attached</span>}
-                    {valuationDocFile && <span className="doc-filename">✓ {valuationDocFile.name} (new)</span>}
+                    {property?.valuationDocUrl && (
+                      <a className="doc-filename" href={property.valuationDocUrl} target="_blank" rel="noreferrer">✓ Appraisal on file</a>
+                    )}
+                    {valuationDocFile && <span className="doc-filename">✓ {valuationDocFile.name} (selected)</span>}
                   </div>
                 </>
               )}
@@ -850,13 +873,18 @@ const GetVerified = () => {
                   <div className="form-group">
                     <label>Floor plan *</label>
                     <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setFloorPlanFile(f || null)} placeholder="Drop floor plan here or click to browse" />
-                    {property?.floorPlanUrl && <span className="doc-filename">✓ Current file attached</span>}
-                    {floorPlanFile && <span className="doc-filename">✓ {floorPlanFile.name} (new)</span>}
+                    {property?.floorPlanUrl && (
+                      <a className="doc-filename" href={property.floorPlanUrl} target="_blank" rel="noreferrer">✓ Floor plan on file</a>
+                    )}
+                    {floorPlanFile && <span className="doc-filename">✓ {floorPlanFile.name} (selected)</span>}
                   </div>
                   <div className="form-group">
                     <label>Video *</label>
                     <DragDropFileInput multiple accept="video/*" onChange={(files) => setVideoFiles(Array.isArray(files) ? files : files ? [files] : [])} placeholder="Drop videos here or click to browse" />
-                    {videoFiles.length > 0 && <p className="form-hint">{videoFiles.length} video(s) selected</p>}
+                    {(property?.videoFiles?.length || property?.videos?.length) && (
+                      <p className="doc-filename">✓ {((property?.videoFiles?.length ?? 0) + (property?.videos?.length ?? 0))} video(s) on file</p>
+                    )}
+                    {videoFiles.length > 0 && <p className="doc-filename">✓ {videoFiles.length} video(s) selected</p>}
                   </div>
                 </>
               )}
