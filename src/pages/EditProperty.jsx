@@ -317,6 +317,7 @@ const EditProperty = () => {
         hasInsurance: hasInsurance === 'yes',
         insuranceApproximation: hasInsurance === 'yes' && insuranceApproximation ? parseFloat(insuranceApproximation) : null,
         propertyTax: formData.propertyTax ? parseFloat(formData.propertyTax) : null,
+        description: (formData.description || '').trim(),
         photos,
         ...docUrls,
         acceptingCommunications: !!formData.acceptingCommunications,
