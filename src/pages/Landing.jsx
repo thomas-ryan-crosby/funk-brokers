@@ -23,38 +23,38 @@ const Landing = () => {
         <div className="hero-container">
           <div className="hero-content">
             <h1 className="hero-title">
-              Real Estate Transactions
-              <span className="title-highlight"> Without the Middleman</span>
+              Where real estate
+              <span className="title-highlight"> conversations start</span>
             </h1>
             <p className="hero-description">
-              Connect directly with buyers and sellers. Save thousands in commission fees while 
-              maintaining full control of your transaction. Our platform guides you through every step.
+              OpenTo lets buyers and owners explore intent early before a listing goes live.
+              Start quietly, share selectively, and decide when to move forward.
             </p>
             <div className="hero-cta">
               <button onClick={handleBrowseClick} className="btn btn-primary">
-                Browse Properties
+                Start a conversation
               </button>
               <button onClick={handleListClick} className="btn btn-secondary">
-                Add Property to Platform
+                Share a home quietly
               </button>
             </div>
             <button onClick={handleLearnProcessClick} className="hero-learn-more">
-              Learn more about our process
+              See how OpenTo works
             </button>
             <div className="hero-stats">
               <div className="stat">
-                <span className="stat-value">$0</span>
-                <span className="stat-label">Broker Fees</span>
+                <span className="stat-value">Private</span>
+                <span className="stat-label">By default</span>
               </div>
               <div className="stat-divider"></div>
               <div className="stat">
-                <span className="stat-value">100%</span>
-                <span className="stat-label">Direct</span>
+                <span className="stat-value">Verified</span>
+                <span className="stat-label">Introductions</span>
               </div>
               <div className="stat-divider"></div>
               <div className="stat">
-                <span className="stat-value">24/7</span>
-                <span className="stat-label">Access</span>
+                <span className="stat-value">On</span>
+                <span className="stat-label">Your timing</span>
               </div>
             </div>
           </div>
@@ -65,9 +65,9 @@ const Landing = () => {
       <section className="features-section">
         <div className="container">
           <div className="section-header">
-            <h2 className="section-title">Everything You Need to Succeed</h2>
+            <h2 className="section-title">Built for the earliest stage</h2>
             <p className="section-subtitle">
-              A complete platform designed to make real estate transactions simple, secure, and cost-effective
+              A calm, private space to explore interest before a listing goes public.
             </p>
           </div>
           <div className="features-grid">
@@ -77,8 +77,8 @@ const Landing = () => {
                   <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
                 </svg>
               </div>
-              <h3>Zero Commission</h3>
-              <p>Save thousands by eliminating traditional broker fees. Keep more of your money when buying or selling.</p>
+              <h3>Choice of approach</h3>
+              <p>Proceed on your own, with an agent, or not at all. OpenTo supports every path.</p>
             </div>
             <div className="feature-card">
               <div className="feature-icon">
@@ -88,8 +88,8 @@ const Landing = () => {
                   <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
                 </svg>
               </div>
-              <h3>Direct Communication</h3>
-              <p>Connect directly with buyers and sellers. No intermediaries, no delays, no miscommunication.</p>
+              <h3>Quiet connections</h3>
+              <p>Open a private thread when interest is real. No mass blasts, no noise.</p>
             </div>
             <div className="feature-card">
               <div className="feature-icon">
@@ -101,8 +101,8 @@ const Landing = () => {
                   <polyline points="10 9 9 9 8 9"/>
                 </svg>
               </div>
-              <h3>Guided Process</h3>
-              <p>Step-by-step guidance through every phase of your transaction. We've got you covered from listing to closing.</p>
+              <h3>Clarity on demand</h3>
+              <p>Guidance is there when you want it, from first signal to a formal path forward.</p>
             </div>
             <div className="feature-card">
               <div className="feature-icon">
@@ -111,8 +111,8 @@ const Landing = () => {
                   <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                 </svg>
               </div>
-              <h3>Secure & Verified</h3>
-              <p>All parties are verified before transactions begin. Your documents and personal information are protected.</p>
+              <h3>Safe by design</h3>
+              <p>Verified profiles before sensitive details are shared. You control who sees what.</p>
             </div>
             <div className="feature-card">
               <div className="feature-icon">
@@ -121,8 +121,8 @@ const Landing = () => {
                   <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
                 </svg>
               </div>
-              <h3>Educational Resources</h3>
-              <p>Comprehensive guides and resources to help you understand every aspect of real estate transactions.</p>
+              <h3>Early answers</h3>
+              <p>Straight guidance on pricing, timing, and next steps before you commit.</p>
             </div>
             <div className="feature-card">
               <div className="feature-icon">
@@ -130,8 +130,8 @@ const Landing = () => {
                   <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
                 </svg>
               </div>
-              <h3>Fast & Efficient</h3>
-              <p>Streamlined process from listing to closing. Get deals done faster without unnecessary bureaucracy.</p>
+              <h3>Timing control</h3>
+              <p>Move quickly when it matters, or stay quiet until it does.</p>
             </div>
           </div>
         </div>
@@ -142,28 +142,28 @@ const Landing = () => {
         <div className="container">
           <div className="section-header">
             <h2 className="section-title">How It Works</h2>
-            <p className="section-subtitle">Simple, straightforward, and designed for success</p>
+            <p className="section-subtitle">Curiosity → connection → clarity.</p>
           </div>
           <div className="steps-wrapper">
             <div className="step-card">
               <div className="step-number">01</div>
               <div className="step-content">
-                <h3>List or Browse</h3>
-                <p>Sellers complete a simple checklist and list their property. Buyers browse our marketplace of verified listings.</p>
+                <h3>Signal interest</h3>
+                <p>Owners can share intent without going live. Buyers explore homes they would never see on Zillow.</p>
               </div>
             </div>
             <div className="step-card">
               <div className="step-number">02</div>
               <div className="step-content">
-                <h3>Connect & Verify</h3>
-                <p>Buyers verify their credentials and submit offers directly. Sellers review offers from verified buyers.</p>
+                <h3>Open a private thread</h3>
+                <p>Verified introductions create trust before any documents or offers are shared.</p>
               </div>
             </div>
             <div className="step-card">
               <div className="step-number">03</div>
               <div className="step-content">
-                <h3>Complete Transaction</h3>
-                <p>Our platform guides you through due diligence, inspections, negotiations, and closing—every step of the way.</p>
+                <h3>Decide when to formalize</h3>
+                <p>When timing is right, OpenTo helps you formalize or keep exploring.</p>
               </div>
             </div>
           </div>
@@ -174,14 +174,14 @@ const Landing = () => {
       <section className="cta-section">
         <div className="container">
           <div className="cta-content">
-            <h2>Ready to Get Started?</h2>
-            <p>Join the future of real estate transactions. No brokers, no hidden fees, just direct connections.</p>
+            <h2>Start earlier. Decide later.</h2>
+            <p>OpenTo is the quiet place where interest begins, before days-on-market and stale listing stigma set in.</p>
             <div className="cta-buttons">
               <button onClick={handleBrowseClick} className="btn btn-primary btn-large">
-                Browse Properties
+                Start a conversation
               </button>
               <button onClick={handleListClick} className="btn btn-outline btn-large">
-                Add Property to Platform
+                Share a home quietly
               </button>
             </div>
           </div>
