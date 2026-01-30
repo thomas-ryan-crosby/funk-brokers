@@ -49,10 +49,12 @@ This script will **permanently delete** all data from your Firebase Firestore da
 10. **`preListingChecklists`** - All pre-listing checklists
     - 7-step checklist data for each property
 
-11. **`users`** - All user profiles
-    - User account information
-    - Display names, phone numbers, roles
-    - ⚠️ **NOTE:** This does NOT delete Firebase Authentication accounts, only Firestore user documents
+### Collections That Are NOT Deleted
+
+- **`users`** - User profiles are preserved
+  - User account information remains intact
+  - Display names, phone numbers, roles are kept
+  - Firebase Authentication accounts are also preserved
 
 ### Firebase Storage (Optional)
 
