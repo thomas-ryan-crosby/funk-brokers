@@ -667,9 +667,16 @@ const Dashboard = () => {
     <div className="dashboard-page">
       <div className="dashboard-container">
         <div className="dashboard-header">
-          <div>
-            <h1>Welcome back, {userProfile?.name || user?.displayName || 'User'}!</h1>
-            <p>Manage your properties and favorites</p>
+          <div className="dashboard-brand">
+            <img
+              className="dashboard-logo"
+              src="/brand/opento-logo.png"
+              alt="OpenTo"
+            />
+            <div>
+              <h1>Welcome back, {userProfile?.name || user?.displayName || 'User'}!</h1>
+              <p>Manage your properties and favorites</p>
+            </div>
           </div>
         </div>
 

@@ -69,6 +69,7 @@ const GetVerified = () => {
   const [professionalPhotos, setProfessionalPhotos] = useState(false);
   const [matterportTourUrl, setMatterportTourUrl] = useState('');
   const [savedMessage, setSavedMessage] = useState('');
+  const [uploadingMessage, setUploadingMessage] = useState('');
   const [hasInsuranceClaims, setHasInsuranceClaims] = useState('');
   const [insuranceClaimsDescription, setInsuranceClaimsDescription] = useState('');
   const [insuranceClaimsFile, setInsuranceClaimsFile] = useState(null);
@@ -216,6 +217,17 @@ const GetVerified = () => {
 
   const validateAndCollect = () => {
     const errs = [];
+    console.debug('[GetVerified] validateAndCollect start', {
+      id,
+      currentTier,
+      step,
+      hasHOA,
+      hasMortgage,
+      hasInsuranceClaims,
+      photoFiles: photoFiles.length,
+      videoFiles: videoFiles.length,
+      verifiedComps: verifiedComps.length,
+    });
     if (currentTier === 'verified') {
       if (!step1Confirmed) errs.push('Confirm documents (Step 1)');
       if (!step2Confirmed) errs.push('Confirm verified pricing (Step 2)');
@@ -232,14 +244,26 @@ const GetVerified = () => {
       if (totalPhotos < 30) errs.push('30+ photos');
       if (!hasFloorPlan) errs.push('Floor plan');
       if (!hasVideo) errs.push('Video');
+      console.debug('[GetVerified] Verified tier checks', {
+        hasDeed: !!(property.deedUrl || deedFile),
+        hasHoaDocs: hasHOA === 'yes' ? !!(property.hoaDocsUrl || hoaDocsFile) : true,
+        hasVerifiedPricing,
+        totalPhotos,
+        hasFloorPlan,
+        hasVideo,
+        professionalPhotos: professionalPhotos || property.professionalPhotos === true,
+      });
     }
 
     if (currentTier === 'enhanced') {
       if (!step1Confirmed) errs.push('Confirm disclosures (Step 1)');
       if (!step2Confirmed) errs.push('Confirm no additional info (Step 2)');
       if (!step3Confirmed) errs.push('Confirm professional assets (Step 3)');
-      if (!property.disclosureFormsUrl && !disclosureFormsFile) errs.push('Disclosure forms');
-      if (!((matterportTourUrl || '').trim() || property.matterportTourUrl)) errs.push('Matterport URL');
+      const hasDisclosures = !!(property.disclosureFormsUrl || disclosureFormsFile);
+      const hasMatterport = !!((matterportTourUrl || '').trim() || property.matterportTourUrl);
+      if (!hasDisclosures) errs.push('Disclosure forms');
+      if (!hasMatterport) errs.push('Matterport URL');
+      console.debug('[GetVerified] Enhanced tier checks', { hasDisclosures, hasMatterport });
     }
 
     if (currentTier === 'premium') {
@@ -247,9 +271,11 @@ const GetVerified = () => {
       if (!step2Confirmed) errs.push('Confirm 3rd party value review (Step 2)');
       if (!step3Confirmed) errs.push('Confirm professional assets (Step 3)');
 
+      const hasMortgageDocs = !!(property.mortgageDocUrl || mortgageFile || property.payoffOrLienReleaseUrl || payoffFile);
+      const hasInspection = !!(property.inspectionReportUrl || inspectionReportFile);
       if (hasMortgage !== 'yes' && hasMortgage !== 'no') errs.push('Mortgage (Yes/No)');
-      if (hasMortgage === 'yes' && !(property.mortgageDocUrl || mortgageFile || property.payoffOrLienReleaseUrl || payoffFile)) errs.push('Mortgage/payoff documents');
-      if (!property.inspectionReportUrl && !inspectionReportFile) errs.push('Inspection report');
+      if (hasMortgage === 'yes' && !hasMortgageDocs) errs.push('Mortgage/payoff documents');
+      if (!hasInspection) errs.push('Inspection report');
       if (hasInsuranceClaims !== 'yes' && hasInsuranceClaims !== 'no') errs.push('Insurance claims (Yes/No)');
       if (hasInsuranceClaims === 'yes') {
         if (!insuranceClaimsDescription.trim()) errs.push('Insurance claims description');
@@ -257,8 +283,17 @@ const GetVerified = () => {
       }
       const thirdPartySatisfied = (thirdPartyReviewConfirmed && thirdPartyReviewVendorId) || property.valuationDocUrl || valuationDocFile || property.compReportUrl || compReportFile;
       if (!thirdPartySatisfied) errs.push('3rd party value review (vendor or appraisal)');
+      console.debug('[GetVerified] Premium tier checks', {
+        hasMortgageDocs,
+        hasInspection,
+        hasInsuranceClaims: hasInsuranceClaims,
+        hasClaimsDoc: !!(property.insuranceClaimsReportUrl || insuranceClaimsFile),
+        hasClaimsDesc: !!insuranceClaimsDescription.trim(),
+        thirdPartySatisfied,
+      });
     }
 
+    console.debug('[GetVerified] validateAndCollect result', { errs });
     return errs;
   };
 
@@ -267,6 +302,7 @@ const GetVerified = () => {
     setSaving(true);
     setError(null);
     setSavedMessage('');
+    console.debug('[GetVerified] Save progress start', { id, currentTier });
     try {
       const prefix = `properties/${id}/verification`;
       const ext = (f) => (f?.name?.split('.').pop() || 'pdf');
@@ -324,12 +360,14 @@ const GetVerified = () => {
       updates.verifiedComps = useCompAnalysis ? verifiedComps : [];
 
       if (photoFiles.length > 0) {
+        console.debug('[GetVerified] Saving photos', { count: photoFiles.length });
         const urls = await uploadMultipleFiles(photoFiles, `properties/${id}/photos`);
         updates.photos = [...(property.photos || []), ...urls];
         setPhotoFiles([]);
         setPhotoPreviews([]);
       }
       if (videoFiles.length > 0) {
+        console.debug('[GetVerified] Saving videos', { count: videoFiles.length });
         const urls = await uploadMultipleFiles(videoFiles, `properties/${id}/videos`);
         updates.videoFiles = [...(property.videoFiles || []), ...urls];
         setVideoFiles([]);
@@ -386,14 +424,17 @@ const GetVerified = () => {
       }
 
       if (Object.keys(updates).length > 0) {
+        console.debug('[GetVerified] Save progress update payload', updates);
         await updateProperty(id, updates);
         await loadProperty();
         setSavedMessage('Progress saved');
         setTimeout(() => setSavedMessage(''), 3000);
+      } else {
+        console.debug('[GetVerified] Save progress skipped: no updates');
       }
     } catch (err) {
       setError('Failed to save progress. Please try again.');
-      console.error(err);
+      console.error('[GetVerified] Save progress error', err);
     } finally {
       setSaving(false);
     }
@@ -404,10 +445,27 @@ const GetVerified = () => {
     const errs = validateAndCollect();
     if (errs.length > 0) {
       setError('Please complete: ' + errs.join(', '));
+      console.warn('[GetVerified] Submit blocked', { errs, currentTier });
       return;
     }
     setSaving(true);
     setError(null);
+    setSavedMessage('');
+    if (videoFiles.length > 0) {
+      setUploadingMessage(`Uploading ${videoFiles.length} video(s)… please keep this tab open.`);
+    } else if (photoFiles.length > 0) {
+      setUploadingMessage(`Uploading ${photoFiles.length} photo(s)…`);
+    } else {
+      setUploadingMessage('Completing update…');
+    }
+    console.debug('[GetVerified] Submit start', {
+      id,
+      currentTier,
+      step,
+      photoFiles: photoFiles.length,
+      videoFiles: videoFiles.length,
+      verifiedComps: verifiedComps.length,
+    });
     try {
       const prefix = `properties/${id}/verification`;
       const ext = (f) => (f?.name?.split('.').pop() || 'pdf');
@@ -429,8 +487,10 @@ const GetVerified = () => {
       }
       let videos = property.videoFiles || [];
       if (videoFiles.length > 0) {
+        console.debug('[GetVerified] Uploading videos', { count: videoFiles.length });
         const urls = await uploadMultipleFiles(videoFiles, `properties/${id}/videos`);
         videos = [...videos, ...urls];
+        console.debug('[GetVerified] Video upload complete', { count: urls.length });
       }
 
       // Upload advanced assets if provided
@@ -508,12 +568,15 @@ const GetVerified = () => {
         if (updates[key] === undefined) delete updates[key];
       });
 
+      console.debug('[GetVerified] Submit update payload', updates);
       await updateProperty(id, updates);
+      console.debug('[GetVerified] Submit update complete', { id });
       setSuccess(true);
     } catch (err) {
       setError('Failed to complete verification. Please try again.');
-      console.error(err);
+      console.error('[GetVerified] Submit error', err);
     } finally {
+      setUploadingMessage('');
       setSaving(false);
     }
   };
@@ -585,6 +648,7 @@ const GetVerified = () => {
         </div>
         {error && <div className="error-message">{error}</div>}
         {savedMessage && <div className="saved-message">{savedMessage}</div>}
+        {uploadingMessage && <div className="saved-message">{uploadingMessage}</div>}
         <form onSubmit={handleSubmit}>
           {step === 1 && (
             <div className="form-step">

@@ -1895,3 +1895,220 @@
     align-items: center;
   }
 }
+
+/* --- OpenTo Alternate Dark Theme Overrides (Dashboard only) --- */
+.dashboard-page {
+  background: #0b1020;
+  color: #e2e8f0;
+}
+
+.dashboard-container {
+  color: inherit;
+}
+
+.dashboard-header {
+  border-bottom-color: rgba(148, 163, 184, 0.25);
+}
+
+.dashboard-brand {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.dashboard-logo {
+  height: 36px;
+  width: auto;
+  display: block;
+  filter: drop-shadow(0 4px 18px rgba(255, 0, 153, 0.25));
+}
+
+.dashboard-header h1 {
+  color: #f8fafc;
+}
+
+.dashboard-header p,
+.form-hint,
+.empty-message,
+.search-item-date,
+.deal-offer-meta,
+.deal-offer-received,
+.transaction-card-meta,
+.vendor-center-subtitle {
+  color: #94a3b8;
+}
+
+.dashboard-content {
+  background: #0f172a;
+  box-shadow: 0 10px 30px rgba(2, 6, 23, 0.35);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+.dashboard-buyer-status,
+.search-item,
+.deal-property-block,
+.transaction-card,
+.buying-power-card,
+.vendor-center-table-wrapper,
+.vendor-table-details-section,
+.vendor-table-contacts-section,
+.vendor-center-empty,
+.modal-content {
+  background: #0b1224;
+  border-color: rgba(148, 163, 184, 0.2);
+  color: #e2e8f0;
+}
+
+.dashboard-buyer-status-badge,
+.dashboard-buyer-status-score {
+  color: #f472b6;
+}
+
+.dashboard-buyer-status-label,
+.dashboard-buyer-status-value {
+  color: #cbd5f5;
+}
+
+.dashboard-buyer-status-link,
+.empty-message a,
+.deal-property-title,
+.transaction-card-title,
+.doc-link,
+.vendor-table-link,
+.vendor-table-contact-link {
+  color: #f472b6;
+}
+
+.dashboard-buyer-status-link:hover,
+.empty-message a:hover,
+.deal-property-title:hover,
+.transaction-card-title:hover,
+.doc-link:hover,
+.vendor-table-link:hover,
+.vendor-table-contact-link:hover {
+  color: #f9a8d4;
+}
+
+.dashboard-tabs,
+.deal-center-subtabs,
+.vendor-center-header,
+.vendor-table-details-header,
+.vendor-table-contacts-header,
+.archived-section,
+.deal-property-header {
+  border-bottom-color: rgba(148, 163, 184, 0.2);
+}
+
+.tab,
+.deal-center-subtab {
+  color: #94a3b8;
+}
+
+.tab.active,
+.deal-center-subtab.active {
+  color: #f9a8d4;
+  border-bottom-color: #f472b6;
+}
+
+.tab:hover,
+.deal-center-subtab:hover {
+  color: #f9a8d4;
+}
+
+.btn-primary,
+.btn-process-buy,
+.btn-process-sell {
+  background: linear-gradient(135deg, #ff3ea5 0%, #7c3aed 100%);
+  border-color: transparent;
+}
+
+.btn-primary:hover,
+.btn-process-buy:hover,
+.btn-process-sell:hover {
+  filter: brightness(1.05);
+}
+
+.btn-secondary,
+.btn-outline {
+  background: transparent;
+  color: #cbd5e1;
+  border-color: rgba(148, 163, 184, 0.35);
+}
+
+.btn-secondary:hover,
+.btn-outline:hover {
+  background: rgba(148, 163, 184, 0.12);
+  color: #f8fafc;
+  border-color: rgba(248, 250, 252, 0.4);
+}
+
+.property-item {
+  background: #0b1224;
+  border-color: rgba(148, 163, 184, 0.2);
+  box-shadow: 0 12px 24px rgba(2, 6, 23, 0.45);
+}
+
+.property-actions {
+  background: #0b1224;
+  border-top-color: rgba(148, 163, 184, 0.15);
+}
+
+.property-tier-nudge {
+  background: rgba(255, 62, 165, 0.08);
+  border-top-color: rgba(255, 62, 165, 0.25);
+  color: #f9a8d4;
+}
+
+.property-tier-nudge-hint,
+.property-tier-nudge-link {
+  color: #f472b6;
+}
+
+.status-badge {
+  background: rgba(148, 163, 184, 0.15);
+  color: #e2e8f0;
+}
+
+.status-active {
+  background: rgba(16, 185, 129, 0.2);
+  color: #a7f3d0;
+}
+
+.status-contract {
+  background: rgba(251, 191, 36, 0.2);
+  color: #fde68a;
+}
+
+.status-sold {
+  background: rgba(59, 130, 246, 0.2);
+  color: #bfdbfe;
+}
+
+.status-draft {
+  background: rgba(236, 72, 153, 0.2);
+  color: #fbcfe8;
+}
+
+.vendor-center-search-input,
+.vendor-center-type-filter,
+.buying-power-input,
+.form-input {
+  background: #0f172a;
+  color: #e2e8f0;
+  border-color: rgba(148, 163, 184, 0.25);
+}
+
+.vendor-center-search-input:focus,
+.vendor-center-type-filter:focus,
+.buying-power-input:focus,
+.form-input:focus {
+  border-color: #f472b6;
+  box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.15);
+}
+
+.offer-event-badge--received-offer,
+.offer-event-badge--received-counter,
+.offer-event-badge--sent-offer,
+.offer-event-badge--sent-counter {
+  border-color: rgba(248, 250, 252, 0.1);
+}
