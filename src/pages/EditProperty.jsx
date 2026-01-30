@@ -201,8 +201,8 @@ const EditProperty = () => {
     e.preventDefault();
     if (!formData) return;
     
-    // Determine if coming from tier advancement
-    const isTierAdvancement = currentTier === 'basic' || currentTier === 'complete';
+    // Determine if coming from tier advancement (safe check for null currentTier)
+    const isTierAdvancement = currentTier !== null && (currentTier === 'basic' || currentTier === 'complete');
     
     // If multi-step form and not on final step, handle next
     if (isTierAdvancement && step < 3) {
@@ -308,13 +308,13 @@ const EditProperty = () => {
   }
   if (!formData) return null;
 
-  // Determine if coming from tier advancement
-  const isTierAdvancement = currentTier === 'basic' || currentTier === 'complete';
+  // Determine if coming from tier advancement (safe check for null currentTier)
+  const isTierAdvancement = currentTier !== null && (currentTier === 'basic' || currentTier === 'complete');
   const advancementMessage = currentTier === 'basic' 
     ? 'Complete items below to advance to Complete tier'
-    : currentTier === 'complete'
+    : (currentTier === 'complete'
     ? 'Complete items below to advance to Verified tier'
-    : null;
+    : null);
 
   return (
     <div className="list-property-page">
