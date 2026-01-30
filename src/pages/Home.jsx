@@ -1,19 +1,30 @@
-import { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
-import { getAllProperties, searchProperties } from '../services/propertyService';
+import { useState, useEffect, useRef } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { loadGooglePlaces } from '../utils/loadGooglePlaces';
+import { getParcelsInViewport } from '../services/parcelService';
+import { claimProperty, getAllProperties, searchProperties } from '../services/propertyService';
 import PropertyCard from '../components/PropertyCard';
 import PropertyMap from '../components/PropertyMap';
 import SearchFilters from '../components/SearchFilters';
+import UnlistedPropertyModal from '../components/UnlistedPropertyModal';
 import './Home.css';
 
 const Home = () => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [filters, setFilters] = useState(() => location.state?.filters || {});
   const [viewMode, setViewMode] = useState('list'); // 'map' | 'list'
   const [propertiesInMapView, setPropertiesInMapView] = useState([]);
+  const [unlistedParcel, setUnlistedParcel] = useState(null);
+  const [unlistedLoading, setUnlistedLoading] = useState(false);
+  const [selectedUnlistedParcel, setSelectedUnlistedParcel] = useState(null);
+  const [claiming, setClaiming] = useState(false);
+  const unlistedRequestRef = useRef(0);
 
   useEffect(() => {
     // Always use searchProperties to support listedStatus filter
@@ -40,9 +51,17 @@ const Home = () => {
       setError(null);
       const data = await searchProperties(filters);
       setProperties(data);
+      const query = String(filters.query || '').trim();
+      if (!query || data.length > 0) {
+        setUnlistedParcel(null);
+        setUnlistedLoading(false);
+      } else {
+        await loadUnlistedForQuery(query);
+      }
     } catch (err) {
       setError('Failed to search properties. Please try again.');
       console.error(err);
+      setUnlistedParcel(null);
     } finally {
       setLoading(false);
     }
@@ -50,6 +69,75 @@ const Home = () => {
 
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
+  };
+
+  const loadUnlistedForQuery = async (query) => {
+    if (!/\d/.test(query)) {
+      setUnlistedParcel(null);
+      setUnlistedLoading(false);
+      return;
+    }
+    const requestId = unlistedRequestRef.current + 1;
+    unlistedRequestRef.current = requestId;
+    setUnlistedLoading(true);
+    try {
+      await loadGooglePlaces();
+      if (!window.google?.maps?.Geocoder) {
+        setUnlistedParcel(null);
+        return;
+      }
+      const geocoder = new window.google.maps.Geocoder();
+      const { location } = await new Promise((resolve, reject) => {
+        geocoder.geocode({ address: query }, (results, status) => {
+          if (status === 'OK' && results?.[0]?.geometry?.location) {
+            resolve({ location: results[0].geometry.location });
+          } else {
+            reject(new Error('Geocode failed'));
+          }
+        });
+      });
+      if (requestId !== unlistedRequestRef.current) return;
+      const lat = typeof location.lat === 'function' ? location.lat() : location.lat;
+      const lng = typeof location.lng === 'function' ? location.lng() : location.lng;
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+        setUnlistedParcel(null);
+        return;
+      }
+      const delta = 0.003;
+      const bounds = new window.google.maps.LatLngBounds(
+        new window.google.maps.LatLng(lat - delta, lng - delta),
+        new window.google.maps.LatLng(lat + delta, lng + delta)
+      );
+      const { parcels } = await getParcelsInViewport(bounds);
+      if (requestId !== unlistedRequestRef.current) return;
+      const normalized = query.toLowerCase();
+      const match = (parcels || []).find((p) => (p.address || '').toLowerCase().includes(normalized)) || (parcels || [])[0];
+      setUnlistedParcel(match || null);
+    } catch (err) {
+      console.error('Unlisted lookup failed:', err);
+      setUnlistedParcel(null);
+    } finally {
+      if (requestId === unlistedRequestRef.current) setUnlistedLoading(false);
+    }
+  };
+
+  const handleClaimUnlisted = async (parcel) => {
+    if (!isAuthenticated || !user?.uid) {
+      setSelectedUnlistedParcel(null);
+      navigate('/sign-up', { state: { returnTo: '/browse', message: 'Sign in to claim this property' } });
+      return;
+    }
+    setClaiming(true);
+    try {
+      const propertyId = await claimProperty(parcel, user.uid);
+      setSelectedUnlistedParcel(null);
+      navigate(`/property/${propertyId}`, { state: { fromClaim: true } });
+    } catch (err) {
+      console.error('Claim property failed:', err);
+      alert('Failed to claim property. Please try again.');
+    } finally {
+      setClaiming(false);
+    }
   };
 
   return (
@@ -117,7 +205,30 @@ const Home = () => {
               )}
               {viewMode === 'list' && properties.length === 0 && (
                 <div className="empty-state">
-                  <p>No properties found. Try adjusting your filters.</p>
+                  {unlistedLoading && <p>Searching public records for that address…</p>}
+                  {!unlistedLoading && unlistedParcel && (
+                    <div className="unlisted-search-card">
+                      <div className="unlisted-search-card__header">
+                        <div>
+                          <h3>{unlistedParcel.address || 'Address unknown'}</h3>
+                          <span className="unlisted-search-card__badge">Unclaimed</span>
+                        </div>
+                        <button
+                          type="button"
+                          className="unlisted-search-card__claim"
+                          onClick={() => setSelectedUnlistedParcel(unlistedParcel)}
+                        >
+                          Claim property
+                        </button>
+                      </div>
+                      <p className="unlisted-search-card__note">
+                        This address isn’t on OpenTo yet. Claiming lets you add it and manage the listing.
+                      </p>
+                    </div>
+                  )}
+                  {!unlistedLoading && !unlistedParcel && (
+                    <p>No properties found. Try adjusting your filters.</p>
+                  )}
                 </div>
               )}
               {viewMode === 'list' && properties.length > 0 && (
@@ -131,6 +242,12 @@ const Home = () => {
           )}
         </div>
       </div>
+      <UnlistedPropertyModal
+        parcel={selectedUnlistedParcel}
+        onClose={() => setSelectedUnlistedParcel(null)}
+        onClaim={handleClaimUnlisted}
+        claiming={claiming}
+      />
     </div>
   );
 };
