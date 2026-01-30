@@ -66,6 +66,70 @@ The script will:
 
 ---
 
+## Clear All Data
+
+⚠️ **DESTRUCTIVE OPERATION** - This script permanently deletes all application data from Firestore and optionally Firebase Storage.
+
+### ⚠️ WARNING
+
+**This action CANNOT BE UNDONE.** Always review the documentation before running.
+
+### Prerequisites
+
+1. Ensure you have `firebase-admin` installed:
+   ```bash
+   cd functions
+   npm install firebase-admin
+   ```
+
+2. Ensure `firebase/serviceAccountKey.json` exists and is valid
+
+### Documentation
+
+**READ THIS FIRST:** `scripts/CLEAR_ALL_DATA_README.md`
+
+The documentation explains:
+- What collections will be deleted
+- What data will be removed
+- Safety features and confirmation prompts
+- Recovery options (there are none!)
+
+### Running the Script
+
+```bash
+node scripts/clearAllData.js
+```
+
+### What Gets Deleted
+
+- All properties
+- All sale profiles
+- All purchase profiles (buying power info)
+- All saved searches
+- All vendors
+- All messages
+- All offers
+- All transactions
+- All favorites
+- All pre-listing checklists
+- All listing progress
+- All user profiles (Firestore only, not Auth accounts)
+
+### Configuration
+
+Edit the script to configure:
+- `DELETE_STORAGE_FILES`: Set to `true` to also delete Storage files (default: `false`)
+- `BATCH_SIZE`: Number of documents to delete per batch (default: 500)
+
+### Safety Features
+
+- Requires typing "DELETE ALL DATA" to confirm
+- Shows detailed progress for each collection
+- Provides summary report at the end
+- Continues even if one collection fails
+
+---
+
 ## Backfill Property Coordinates
 
 Adds `latitude` and `longitude` to existing properties that have an address but no coordinates, using the Google Geocoding API. Used for map search.
