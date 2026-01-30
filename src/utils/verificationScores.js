@@ -4,7 +4,7 @@
  * Verified Buyer Score: 0–100 from purchase profile completeness; 100 when buyerVerified.
  *
  * Property tiers (6-tier system):
- * - Basic (Just Claimed): Address + property type + 1 photo
+ * - Basic (Claimed): Address + property type + 1 photo
  * - Complete: Property basics + pricing + 1 photo
  * - Verified: Detailed description + 5+ photos (no docs)
  * - Enhanced: Deed + HOA docs (if applicable) + verified pricing + pro photos (30+) + floor plan + video
@@ -174,14 +174,14 @@ export function isListed(p) {
  */
 export function getListingTierLabel(tier) {
   const map = {
-    basic: 'Just Claimed',
+    basic: 'Claimed',
     complete: 'Complete',
     verified: 'Verified',
     enhanced: 'Enhanced',
     premium: 'Premium',
     elite: 'Elite',
   };
-  return map[tier] || 'Just Claimed';
+  return map[tier] || 'Claimed';
 }
 
 /**

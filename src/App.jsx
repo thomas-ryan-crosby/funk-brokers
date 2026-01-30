@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Landing from './pages/Landing';
@@ -20,10 +21,60 @@ import TransactionManager from './pages/TransactionManager';
 import Messages from './pages/Messages';
 import PreListingChecklist from './pages/PreListingChecklist';
 import { logout } from './services/authService';
+import { getMessagesForUser } from './services/messageService';
 import './App.css';
 
 function AppContent() {
   const { user, isAuthenticated } = useAuth();
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadLoading, setUnreadLoading] = useState(false);
+
+  const buildThreadKey = (otherUserId, propertyId) => `${otherUserId}_${propertyId || 'none'}`;
+  const getMessageDate = (m) => (m?.createdAt?.toDate ? m.createdAt.toDate() : new Date(m?.createdAt || 0));
+
+  const loadUnreadCount = useCallback(async () => {
+    if (!isAuthenticated || !user?.uid || unreadLoading) return;
+    setUnreadLoading(true);
+    try {
+      const list = await getMessagesForUser(user.uid);
+      const map = JSON.parse(localStorage.getItem('messageLastReadByThread') || '{}');
+      let count = 0;
+      for (const m of list) {
+        if (m.recipientId !== user.uid) continue;
+        const key = buildThreadKey(m.senderId, m.propertyId);
+        const lastReadRaw = map[key];
+        const lastRead = lastReadRaw ? new Date(lastReadRaw) : null;
+        const msgDate = getMessageDate(m);
+        if (!lastRead || msgDate > lastRead) count += 1;
+      }
+      setUnreadCount(count);
+    } catch (error) {
+      console.error('Error loading unread messages:', error);
+    } finally {
+      setUnreadLoading(false);
+    }
+  }, [isAuthenticated, user?.uid, unreadLoading]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !user?.uid) {
+      setUnreadCount(0);
+      return;
+    }
+    loadUnreadCount();
+  }, [isAuthenticated, user?.uid, loadUnreadCount]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !user?.uid) return;
+    const handler = () => loadUnreadCount();
+    window.addEventListener('messages:read', handler);
+    window.addEventListener('storage', handler);
+    const intervalId = setInterval(loadUnreadCount, 30_000);
+    return () => {
+      window.removeEventListener('messages:read', handler);
+      window.removeEventListener('storage', handler);
+      clearInterval(intervalId);
+    };
+  }, [isAuthenticated, user?.uid, loadUnreadCount]);
 
   const handleLogout = async () => {
     try {
@@ -51,6 +102,15 @@ function AppContent() {
               {isAuthenticated ? (
                 <>
                   <Link to="/dashboard">Dashboard</Link>
+                  <Link to="/messages" className="nav-messages" aria-label="Message center">
+                    <span className="nav-messages-icon" aria-hidden>💬</span>
+                    <span className="nav-messages-label">Messages</span>
+                    {unreadCount > 0 && (
+                      <span className="nav-messages-badge" aria-label={`${unreadCount} unread messages`}>
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </span>
+                    )}
+                  </Link>
                   <span className="nav-user">Hi, {user?.displayName || 'User'}</span>
                   <button onClick={handleLogout} className="nav-logout">
                     Sign Out

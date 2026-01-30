@@ -19,6 +19,9 @@ const formatListDate = (v) => {
   return isToday ? d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 
+const THREAD_READ_KEY = 'messageLastReadByThread';
+const buildThreadKey = (otherUserId, propertyId) => `${otherUserId}_${propertyId || 'none'}`;
+
 const Messages = () => {
   const { user, userProfile, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -131,6 +134,23 @@ const Messages = () => {
     }
     return Array.from(seen.entries()).map(([id, address]) => ({ id, address }));
   }, [threads]);
+
+  useEffect(() => {
+    if (!selectedThread || !uid) return;
+    const key = buildThreadKey(selectedThread.otherUserId, selectedThread.propertyId);
+    const latest = selectedThreadMessages[selectedThreadMessages.length - 1];
+    const latestDate = latest
+      ? (latest.createdAt?.toDate ? latest.createdAt.toDate() : new Date(latest.createdAt || Date.now()))
+      : new Date();
+    try {
+      const map = JSON.parse(localStorage.getItem(THREAD_READ_KEY) || '{}');
+      map[key] = latestDate.toISOString();
+      localStorage.setItem(THREAD_READ_KEY, JSON.stringify(map));
+      window.dispatchEvent(new Event('messages:read'));
+    } catch (e) {
+      console.error('Failed to store message read state', e);
+    }
+  }, [selectedThread, selectedThreadMessages, uid]);
 
   const selectedThreadMessages = useMemo(() => {
     if (!selectedThread) return [];

@@ -553,7 +553,7 @@ const PropertyDetail = () => {
             {(() => {
               const prog = getListingTierProgress(property);
               const tiers = [
-                { id: 'basic', label: 'Just Claimed' },
+                { id: 'basic', label: 'Claimed' },
                 { id: 'complete', label: 'Complete' },
                 { id: 'verified', label: 'Verified' },
                 { id: 'enhanced', label: 'Enhanced' },
