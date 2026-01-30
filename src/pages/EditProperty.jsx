@@ -201,6 +201,9 @@ const EditProperty = () => {
     e.preventDefault();
     if (!formData) return;
     
+    // Determine if coming from tier advancement
+    const isTierAdvancement = currentTier === 'basic' || currentTier === 'complete';
+    
     // If multi-step form and not on final step, handle next
     if (isTierAdvancement && step < 3) {
       handleNext();
