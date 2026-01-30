@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getPropertyById, updateProperty } from '../services/propertyService';
 import { uploadFile, uploadMultipleFiles } from '../services/storageService';
+import { getListingTier } from '../utils/verificationScores';
 import CompsMap from '../components/CompsMap';
 import DragDropFileInput from '../components/DragDropFileInput';
 import './GetVerified.css';
@@ -17,6 +18,7 @@ const GetVerified = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
   const [step, setStep] = useState(1);
+  const [currentTier, setCurrentTier] = useState(null);
 
   // Step 1 – About Home (property basics)
   const [bedrooms, setBedrooms] = useState('');
@@ -54,10 +56,18 @@ const GetVerified = () => {
   const [step3Confirmed, setStep3Confirmed] = useState(false);
   const [compPriceModal, setCompPriceModal] = useState(null); // { index, address, closingValue }
 
-  // Step 4 – Content (photos/videos)
+  // Step 4 – Content (photos/videos) and Advanced Assets
   const [photoFiles, setPhotoFiles] = useState([]);
   const [photoPreviews, setPhotoPreviews] = useState([]);
   const [videoFiles, setVideoFiles] = useState([]);
+  const [inspectionReportFile, setInspectionReportFile] = useState(null);
+  const [floorPlanFile, setFloorPlanFile] = useState(null);
+  const [matterportTourFile, setMatterportTourFile] = useState(null);
+  const [valuationDocFile, setValuationDocFile] = useState(null);
+  const [compReportFile, setCompReportFile] = useState(null);
+  const [disclosureFormsFile, setDisclosureFormsFile] = useState(null);
+  const [professionalPhotos, setProfessionalPhotos] = useState(false);
+  const [matterportTourUrl, setMatterportTourUrl] = useState('');
   const [savedMessage, setSavedMessage] = useState('');
 
   useEffect(() => {
@@ -80,12 +90,44 @@ const GetVerified = () => {
         setLoading(false);
         return;
       }
-      if (p.verified) {
-        setError('This property is already verified.');
+      // Check current tier - GetVerified is for Verified tier+ to advance with documents
+      const tier = getListingTier(p);
+      setCurrentTier(tier);
+      if (tier === 'basic' || tier === 'complete') {
+        setError('Please add property information first using "Edit Property". Documents are only needed after reaching Verified tier.');
         setLoading(false);
         return;
       }
       setProperty(p);
+      
+      // For Verified tier, start at Step 2 (documents) since property info is already complete
+      // For Enhanced+, check what's missing and start at appropriate step
+      if (tier === 'verified') {
+        setStep(2); // Skip Step 1 (property basics) - they already have Verified tier
+      } else if (tier === 'enhanced' || tier === 'premium') {
+        // Enhanced/Premium may need pricing/comps or advanced assets
+        // Check what's missing for next tier
+        const hasPricing = !!(p.estimatedWorth || p.makeMeMovePrice);
+        const hasComps = (p.verifiedComps?.length ?? 0) >= (tier === 'premium' ? 3 : 1);
+        const hasAdvancedAssets = !!(p.inspectionReportUrl || p.valuationDocUrl || p.matterportTourUrl || p.floorPlanUrl || p.compReportUrl);
+        const hasDisclosures = !!p.disclosureFormsUrl;
+        
+        if (tier === 'enhanced') {
+          // Enhanced → Premium: needs advanced assets, disclosures, 300+ char description
+          if (!hasAdvancedAssets || !hasDisclosures) {
+            setStep(4); // Go to content step for advanced assets
+          } else {
+            setStep(3); // Or pricing/comps if missing
+          }
+        } else if (tier === 'premium') {
+          // Premium → Elite: needs 3+ advanced assets, 3+ comps, video/drone
+          if (!hasComps || (p.verifiedComps?.length ?? 0) < 3) {
+            setStep(3); // Need more comps
+          } else {
+            setStep(4); // Need advanced assets/video
+          }
+        }
+      }
       setBedrooms(p.bedrooms != null ? String(p.bedrooms) : '');
       setBathrooms(p.bathrooms != null ? String(p.bathrooms) : '');
       setSquareFeet(p.squareFeet != null ? String(p.squareFeet) : '');
@@ -257,6 +299,39 @@ const GetVerified = () => {
         setPhotoFiles([]);
         setPhotoPreviews([]);
       }
+      
+      // Advanced assets
+      if (inspectionReportFile) {
+        const url = await uploadFile(inspectionReportFile, `${prefix}/inspection_${Date.now()}.${ext(inspectionReportFile)}`);
+        updates.inspectionReportUrl = url;
+        setInspectionReportFile(null);
+      }
+      if (floorPlanFile) {
+        const url = await uploadFile(floorPlanFile, `${prefix}/floorPlan_${Date.now()}.${ext(floorPlanFile)}`);
+        updates.floorPlanUrl = url;
+        setFloorPlanFile(null);
+      }
+      if (valuationDocFile) {
+        const url = await uploadFile(valuationDocFile, `${prefix}/valuation_${Date.now()}.${ext(valuationDocFile)}`);
+        updates.valuationDocUrl = url;
+        setValuationDocFile(null);
+      }
+      if (compReportFile) {
+        const url = await uploadFile(compReportFile, `${prefix}/compReport_${Date.now()}.${ext(compReportFile)}`);
+        updates.compReportUrl = url;
+        setCompReportFile(null);
+      }
+      if (disclosureFormsFile) {
+        const url = await uploadFile(disclosureFormsFile, `${prefix}/disclosures_${Date.now()}.${ext(disclosureFormsFile)}`);
+        updates.disclosureFormsUrl = url;
+        setDisclosureFormsFile(null);
+      }
+      if (professionalPhotos) {
+        updates.professionalPhotos = true;
+      }
+      if (matterportTourUrl.trim()) {
+        updates.matterportTourUrl = matterportTourUrl.trim();
+      }
 
       if (Object.keys(updates).length > 0) {
         await updateProperty(id, updates);
@@ -301,6 +376,28 @@ const GetVerified = () => {
         photos = [...photos, ...urls];
       }
 
+      // Upload advanced assets if provided
+      let inspectionReportUrl = property.inspectionReportUrl;
+      if (!inspectionReportUrl && inspectionReportFile) {
+        inspectionReportUrl = await uploadFile(inspectionReportFile, `${prefix}/inspection_${Date.now()}.${ext(inspectionReportFile)}`);
+      }
+      let floorPlanUrl = property.floorPlanUrl;
+      if (!floorPlanUrl && floorPlanFile) {
+        floorPlanUrl = await uploadFile(floorPlanFile, `${prefix}/floorPlan_${Date.now()}.${ext(floorPlanFile)}`);
+      }
+      let valuationDocUrl = property.valuationDocUrl;
+      if (!valuationDocUrl && valuationDocFile) {
+        valuationDocUrl = await uploadFile(valuationDocFile, `${prefix}/valuation_${Date.now()}.${ext(valuationDocFile)}`);
+      }
+      let compReportUrl = property.compReportUrl;
+      if (!compReportUrl && compReportFile) {
+        compReportUrl = await uploadFile(compReportFile, `${prefix}/compReport_${Date.now()}.${ext(compReportFile)}`);
+      }
+      let disclosureFormsUrl = property.disclosureFormsUrl;
+      if (!disclosureFormsUrl && disclosureFormsFile) {
+        disclosureFormsUrl = await uploadFile(disclosureFormsFile, `${prefix}/disclosures_${Date.now()}.${ext(disclosureFormsFile)}`);
+      }
+
       const updates = {
         verified: true,
         verifiedAt: new Date(),
@@ -331,6 +428,14 @@ const GetVerified = () => {
         verifiedComps: useCompAnalysis ? verifiedComps : [],
         price: estimatedWorth !== '' ? parseFloat(estimatedWorth) : property.price,
         photos,
+        // Advanced assets
+        inspectionReportUrl: inspectionReportUrl ?? property.inspectionReportUrl ?? null,
+        floorPlanUrl: floorPlanUrl ?? property.floorPlanUrl ?? null,
+        valuationDocUrl: valuationDocUrl ?? property.valuationDocUrl ?? null,
+        compReportUrl: compReportUrl ?? property.compReportUrl ?? null,
+        disclosureFormsUrl: disclosureFormsUrl ?? property.disclosureFormsUrl ?? null,
+        matterportTourUrl: matterportTourUrl.trim() || property.matterportTourUrl || null,
+        professionalPhotos: professionalPhotos || property.professionalPhotos || null,
       };
       Object.keys(updates).forEach((key) => {
         if (updates[key] === undefined) delete updates[key];
@@ -382,9 +487,9 @@ const GetVerified = () => {
   return (
     <div className="get-verified-page">
       <div className="get-verified-container">
-        <h1>Get your property verified</h1>
+        <h1>Advance Property Tier</h1>
         <p className="get-verified-intro">
-          Complete the steps below so buyers see a Verified badge. Confirm each section to the best of your knowledge before continuing.
+          Upload documents and add advanced information to advance your property to Enhanced tier and beyond. Documents are required starting at Verified tier.
         </p>
         <div className="verification-progress">
           <div className="verification-progress-bar">
@@ -393,10 +498,22 @@ const GetVerified = () => {
           <span className="verification-progress-text">{percentage}% complete</span>
         </div>
         <div className="step-indicator">
-          <div className={`step ${step >= 1 ? 'active' : ''}`}>1. About Home</div>
-          <div className={`step ${step >= 2 ? 'active' : ''}`}>2. Confirm the home</div>
-          <div className={`step ${step >= 3 ? 'active' : ''}`}>3. Price the home</div>
-          <div className={`step ${step >= 4 ? 'active' : ''}`}>4. Content</div>
+          {currentTier === 'verified' ? (
+            // For Verified tier, skip Step 1 (property basics already complete)
+            <>
+              <div className={`step ${step >= 2 ? 'active' : ''}`}>1. Documents</div>
+              <div className={`step ${step >= 3 ? 'active' : ''}`}>2. Pricing & Comps</div>
+              <div className={`step ${step >= 4 ? 'active' : ''}`}>3. Advanced Assets</div>
+            </>
+          ) : (
+            // For Enhanced+, show all steps but may start at different step
+            <>
+              <div className={`step ${step >= 1 ? 'active' : ''} ${currentTier !== 'verified' && step < 1 ? 'skipped' : ''}`}>1. About Home</div>
+              <div className={`step ${step >= 2 ? 'active' : ''}`}>2. Documents</div>
+              <div className={`step ${step >= 3 ? 'active' : ''}`}>3. Pricing & Comps</div>
+              <div className={`step ${step >= 4 ? 'active' : ''}`}>4. Advanced Assets</div>
+            </>
+          )}
         </div>
         {error && <div className="error-message">{error}</div>}
         {savedMessage && <div className="saved-message">{savedMessage}</div>}
@@ -477,7 +594,7 @@ const GetVerified = () => {
           {step === 2 && (
             <div className="form-step">
               <h2>Confirm the home</h2>
-              <p className="form-note">Upload documents and confirm ownership, taxes, HOA (if applicable), mortgage, and liens.</p>
+              <p className="form-note">Upload documents to advance to Enhanced tier: deed, tax records, and HOA documents (if applicable). These documents verify ownership and are required to move beyond Verified tier.</p>
               <div className="form-group">
                 <label>Deed *</label>
                 <p className="form-instruction">This was provided with the title company upon property closure and is likely recorded with your local municipality.</p>
@@ -553,7 +670,13 @@ const GetVerified = () => {
           {step === 3 && (
             <div className="form-step">
               <h2>Price the home</h2>
-              <p className="form-note">What you think the property is worth and your &quot;make me move&quot; price.</p>
+              <p className="form-note">
+                {currentTier === 'verified' 
+                  ? 'Add pricing information and comparables to advance to Enhanced tier. At least one comparable is required.'
+                  : currentTier === 'premium'
+                  ? 'Add more comparables (3+ total) to advance to Elite tier.'
+                  : 'What you think the property is worth and your "make me move" price.'}
+              </p>
               <div className="form-group">
                 <label>What do you think the property is worth? ($) *</label>
                 <input type="number" min="0" step="1000" value={estimatedWorth} onChange={(e) => setEstimatedWorth(e.target.value)} placeholder="e.g. 450000" required />
@@ -660,8 +783,14 @@ const GetVerified = () => {
 
           {step === 4 && (
             <div className="form-step">
-              <h2>Content</h2>
-              <p className="form-note">Upload current photos and videos of the property. Home readiness is addressed in the listing checklist when you&apos;re ready to list.</p>
+              <h2>Advanced Assets</h2>
+              <p className="form-note">
+                {currentTier === 'enhanced' 
+                  ? 'Upload advanced assets (inspection report, floor plan, Matterport tour, valuation, or comp report) and disclosure forms to advance to Premium tier.'
+                  : currentTier === 'premium'
+                  ? 'Upload more advanced assets (3+ total), confirm professional photos, and add video/drone footage to advance to Elite tier.'
+                  : 'Upload current photos and videos of the property. Home readiness is addressed in the listing checklist when you\'re ready to list.'}
+              </p>
               <div className="form-group">
                 <label>Photos</label>
                 <p className="form-hint">Upload one or more current photos.</p>
@@ -678,6 +807,68 @@ const GetVerified = () => {
                   {property?.photos?.map((url, i) => <div key={`ex-${i}`} className="photo-preview"><img src={url} alt={`Photo ${i + 1}`} /></div>)}
                   {photoPreviews.map((url, i) => <div key={`new-${i}`} className="photo-preview"><img src={url} alt={`New ${i + 1}`} /></div>)}
                 </div>
+              )}
+              
+              {/* Advanced Assets - shown for Enhanced+ tiers */}
+              {(currentTier === 'enhanced' || currentTier === 'premium') && (
+                <>
+                  <div className="form-group" style={{ marginTop: 32 }}>
+                    <label>Professional Photos</label>
+                    <label className="toggle-label">
+                      <input type="checkbox" checked={professionalPhotos} onChange={(e) => setProfessionalPhotos(e.target.checked)} />
+                      <span>I confirm these are professional photos</span>
+                    </label>
+                    <p className="form-hint">Or upload 10+ photos total to meet this requirement.</p>
+                  </div>
+                  
+                  <div className="form-group" style={{ marginTop: 24 }}>
+                    <label>Advanced Assets</label>
+                    <p className="form-hint">
+                      {currentTier === 'enhanced' 
+                        ? 'Upload at least one advanced asset to advance to Premium tier.'
+                        : 'Upload at least 3 advanced assets total to advance to Elite tier.'}
+                    </p>
+                    <div className="document-uploads">
+                      <div className="doc-row">
+                        <label className="doc-label">Inspection Report</label>
+                        <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setInspectionReportFile(f || null)} placeholder="Drop or click" className="doc-drag-drop" />
+                        {property?.inspectionReportUrl && <span className="doc-filename">✓ Current file attached</span>}
+                        {inspectionReportFile && <span className="doc-filename">✓ {inspectionReportFile.name} (new)</span>}
+                      </div>
+                      <div className="doc-row">
+                        <label className="doc-label">Floor Plan</label>
+                        <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setFloorPlanFile(f || null)} placeholder="Drop or click" className="doc-drag-drop" />
+                        {property?.floorPlanUrl && <span className="doc-filename">✓ Current file attached</span>}
+                        {floorPlanFile && <span className="doc-filename">✓ {floorPlanFile.name} (new)</span>}
+                      </div>
+                      <div className="doc-row">
+                        <label className="doc-label">Matterport Tour URL</label>
+                        <input type="url" placeholder="https://..." value={matterportTourUrl || property?.matterportTourUrl || ''} onChange={(e) => setMatterportTourUrl(e.target.value)} className="form-input" />
+                        {(matterportTourUrl || property?.matterportTourUrl) && <span className="doc-filename">✓ Matterport tour linked</span>}
+                      </div>
+                      <div className="doc-row">
+                        <label className="doc-label">Valuation / CMA Document</label>
+                        <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setValuationDocFile(f || null)} placeholder="Drop or click" className="doc-drag-drop" />
+                        {property?.valuationDocUrl && <span className="doc-filename">✓ Current file attached</span>}
+                        {valuationDocFile && <span className="doc-filename">✓ {valuationDocFile.name} (new)</span>}
+                      </div>
+                      <div className="doc-row">
+                        <label className="doc-label">Comp Report</label>
+                        <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setCompReportFile(f || null)} placeholder="Drop or click" className="doc-drag-drop" />
+                        {property?.compReportUrl && <span className="doc-filename">✓ Current file attached</span>}
+                        {compReportFile && <span className="doc-filename">✓ {compReportFile.name} (new)</span>}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="form-group" style={{ marginTop: 24 }}>
+                    <label>Disclosure Forms</label>
+                    <p className="form-hint">Required for Premium tier and above.</p>
+                    <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setDisclosureFormsFile(f || null)} placeholder="Drop disclosure forms here or click to browse" />
+                    {property?.disclosureFormsUrl && <span className="doc-filename">✓ Current file attached</span>}
+                    {disclosureFormsFile && <span className="doc-filename">✓ {disclosureFormsFile.name} (new)</span>}
+                  </div>
+                </>
               )}
             </div>
           )}

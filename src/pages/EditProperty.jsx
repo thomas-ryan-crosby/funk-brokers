@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getPropertyById, updateProperty } from '../services/propertyService';
 import { uploadFile, uploadMultipleFiles } from '../services/storageService';
+import { getListingTier } from '../utils/verificationScores';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import DragDropFileInput from '../components/DragDropFileInput';
 import './ListProperty.css';
@@ -29,6 +30,7 @@ const EditProperty = () => {
     deed: null, propertyTaxRecord: null, hoaDocs: null, disclosureForms: null, inspectionReport: null,
   });
   const [existingDocUrls, setExistingDocUrls] = useState({});
+  const [currentTier, setCurrentTier] = useState(null);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -84,6 +86,9 @@ const EditProperty = () => {
         disclosureFormsUrl: p.disclosureFormsUrl || '',
         inspectionReportUrl: p.inspectionReportUrl || '',
       });
+      // Determine current tier
+      const tier = getListingTier(p);
+      setCurrentTier(tier);
     } catch (err) {
       setError('Property not found or failed to load.');
       console.error(err);
@@ -357,42 +362,53 @@ const EditProperty = () => {
               <textarea name="description" value={formData.description} onChange={handleInputChange} rows="5" placeholder="Describe your property, neighborhood, and what makes it special..." />
             </div>
 
-            <div className="form-group" style={{ marginTop: 24 }}>
-              <label>Documents</label>
-              <p className="form-note">Upload deed, tax records, disclosures, and inspection if you have them. New uploads replace existing.</p>
-              <div className="document-uploads">
-                <div className="doc-row">
-                  <label className="doc-label">Deed</label>
-                  <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => handleDocumentFileChange('deed', f || null)} placeholder="Drop or click" className="doc-drag-drop" />
-                  {existingDocUrls.deedUrl && <span className="doc-filename">✓ Current file attached</span>}
-                  {documentFiles.deed && <span className="doc-filename">✓ {documentFiles.deed.name} (new)</span>}
-                </div>
-                <div className="doc-row">
-                  <label className="doc-label">Property tax record</label>
-                  <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => handleDocumentFileChange('propertyTaxRecord', f || null)} placeholder="Drop or click" className="doc-drag-drop" />
-                  {existingDocUrls.propertyTaxRecordUrl && <span className="doc-filename">✓ Current file attached</span>}
-                  {documentFiles.propertyTaxRecord && <span className="doc-filename">✓ {documentFiles.propertyTaxRecord.name} (new)</span>}
-                </div>
-                <div className="doc-row">
-                  <label className="doc-label">HOA documents (if applicable)</label>
-                  <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => handleDocumentFileChange('hoaDocs', f || null)} placeholder="Drop or click" className="doc-drag-drop" />
-                  {existingDocUrls.hoaDocsUrl && <span className="doc-filename">✓ Current file attached</span>}
-                  {documentFiles.hoaDocs && <span className="doc-filename">✓ {documentFiles.hoaDocs.name} (new)</span>}
-                </div>
-                <div className="doc-row">
-                  <label className="doc-label">Disclosure forms</label>
-                  <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => handleDocumentFileChange('disclosureForms', f || null)} placeholder="Drop or click" className="doc-drag-drop" />
-                  {existingDocUrls.disclosureFormsUrl && <span className="doc-filename">✓ Current file attached</span>}
-                  {documentFiles.disclosureForms && <span className="doc-filename">✓ {documentFiles.disclosureForms.name} (new)</span>}
-                </div>
-                <div className="doc-row">
-                  <label className="doc-label">Inspection report</label>
-                  <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => handleDocumentFileChange('inspectionReport', f || null)} placeholder="Drop or click" className="doc-drag-drop" />
-                  {existingDocUrls.inspectionReportUrl && <span className="doc-filename">✓ Current file attached</span>}
-                  {documentFiles.inspectionReport && <span className="doc-filename">✓ {documentFiles.inspectionReport.name} (new)</span>}
+            {/* Documents section - only show for Verified tier and above */}
+            {(currentTier === 'verified' || currentTier === 'enhanced' || currentTier === 'premium' || currentTier === 'elite') && (
+              <div className="form-group" style={{ marginTop: 24 }}>
+                <label>Documents</label>
+                <p className="form-note">
+                  {currentTier === 'verified' 
+                    ? 'Upload documents to advance to Enhanced tier: deed, tax records, and HOA docs (if applicable).'
+                    : 'Upload additional documents: disclosures and inspection reports help advance to higher tiers.'}
+                </p>
+                <div className="document-uploads">
+                  <div className="doc-row">
+                    <label className="doc-label">Deed</label>
+                    <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => handleDocumentFileChange('deed', f || null)} placeholder="Drop or click" className="doc-drag-drop" />
+                    {existingDocUrls.deedUrl && <span className="doc-filename">✓ Current file attached</span>}
+                    {documentFiles.deed && <span className="doc-filename">✓ {documentFiles.deed.name} (new)</span>}
+                  </div>
+                  <div className="doc-row">
+                    <label className="doc-label">Property tax record</label>
+                    <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => handleDocumentFileChange('propertyTaxRecord', f || null)} placeholder="Drop or click" className="doc-drag-drop" />
+                    {existingDocUrls.propertyTaxRecordUrl && <span className="doc-filename">✓ Current file attached</span>}
+                    {documentFiles.propertyTaxRecord && <span className="doc-filename">✓ {documentFiles.propertyTaxRecord.name} (new)</span>}
+                  </div>
+                  <div className="doc-row">
+                    <label className="doc-label">HOA documents (if applicable)</label>
+                    <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => handleDocumentFileChange('hoaDocs', f || null)} placeholder="Drop or click" className="doc-drag-drop" />
+                    {existingDocUrls.hoaDocsUrl && <span className="doc-filename">✓ Current file attached</span>}
+                    {documentFiles.hoaDocs && <span className="doc-filename">✓ {documentFiles.hoaDocs.name} (new)</span>}
+                  </div>
+                  {(currentTier === 'enhanced' || currentTier === 'premium' || currentTier === 'elite') && (
+                    <>
+                      <div className="doc-row">
+                        <label className="doc-label">Disclosure forms</label>
+                        <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => handleDocumentFileChange('disclosureForms', f || null)} placeholder="Drop or click" className="doc-drag-drop" />
+                        {existingDocUrls.disclosureFormsUrl && <span className="doc-filename">✓ Current file attached</span>}
+                        {documentFiles.disclosureForms && <span className="doc-filename">✓ {documentFiles.disclosureForms.name} (new)</span>}
+                      </div>
+                      <div className="doc-row">
+                        <label className="doc-label">Inspection report</label>
+                        <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => handleDocumentFileChange('inspectionReport', f || null)} placeholder="Drop or click" className="doc-drag-drop" />
+                        {existingDocUrls.inspectionReportUrl && <span className="doc-filename">✓ Current file attached</span>}
+                        {documentFiles.inspectionReport && <span className="doc-filename">✓ {documentFiles.inspectionReport.name} (new)</span>}
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
-            </div>
+            )}
           </div>
 
           <div className="form-actions">

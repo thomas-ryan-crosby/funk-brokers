@@ -592,14 +592,26 @@ const PropertyDetail = () => {
                           </ul>
                         </div>
                       )}
-                      {isOwner && (
-                        <Link to={`/property/${property.id}/get-verified`} className="tier-advance-btn">
-                          Advance to next status
-                        </Link>
-                      )}
+                      {isOwner && (() => {
+                        // Determine the best route based on current tier and next tier
+                        // Basic/Complete → need property info (edit property)
+                        // Verified/Enhanced/Premium → need documents/advanced assets (get verified)
+                        const needsDocuments = prog.tier === 'verified' || prog.tier === 'enhanced' || prog.tier === 'premium';
+                        const advanceUrl = needsDocuments 
+                          ? `/property/${property.id}/get-verified`
+                          : `/property/${property.id}/edit`;
+                        const advanceText = needsDocuments 
+                          ? 'Add documents & verify'
+                          : 'Add property information';
+                        return (
+                          <Link to={advanceUrl} className="tier-advance-btn">
+                            {advanceText}
+                          </Link>
+                        );
+                      })()}
                     </>
                   )}
-                  {!prog.nextTier && <p className="tier-complete">All requirements for Premium are met.</p>}
+                  {!prog.nextTier && <p className="tier-complete">All requirements for Elite tier are met.</p>}
                   <div className="tier-timeline">
                     {tiers.map((tier, idx) => (
                       <div key={tier} className={`tier-timeline-item ${idx === currentTierIndex ? 'tier-timeline-item--current' : idx < currentTierIndex ? 'tier-timeline-item--completed' : 'tier-timeline-item--upcoming'}`}>

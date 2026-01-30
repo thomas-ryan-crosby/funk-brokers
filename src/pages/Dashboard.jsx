@@ -781,7 +781,16 @@ const Dashboard = () => {
                                 <span className="property-tier-nudge-hint"> — e.g. {tierProgress.missingItems.slice(0, 2).join(', ')}</span>
                               )}
                             </span>
-                            <Link to={`/property/${property.id}`} className="property-tier-nudge-link">Add info</Link>
+                            {(() => {
+                              // Determine the best route based on current tier and next tier
+                              const needsDocuments = tierProgress.tier === 'verified' || tierProgress.tier === 'enhanced' || tierProgress.tier === 'premium';
+                              const advanceUrl = needsDocuments 
+                                ? `/property/${property.id}/get-verified`
+                                : `/property/${property.id}/edit`;
+                              return (
+                                <Link to={advanceUrl} className="property-tier-nudge-link">Add info</Link>
+                              );
+                            })()}
                           </div>
                         )}
                         <div className="property-actions">
