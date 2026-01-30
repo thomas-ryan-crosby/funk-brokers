@@ -215,26 +215,3 @@ body {
   font-size: 14px;
 }
 
-.profile-modal {
-  max-width: 480px;
-}
-
-.profile-error {
-  background: rgba(220, 38, 38, 0.2);
-  color: #fecaca;
-  border: 1px solid rgba(220, 38, 38, 0.35);
-  padding: 10px 12px;
-  border-radius: 8px;
-  font-size: 13px;
-  margin-bottom: 12px;
-}
-
-.profile-saved {
-  background: rgba(16, 185, 129, 0.2);
-  color: #d1fae5;
-  border: 1px solid rgba(16, 185, 129, 0.35);
-  padding: 10px 12px;
-  border-radius: 8px;
-  font-size: 13px;
-  margin-bottom: 12px;
-}

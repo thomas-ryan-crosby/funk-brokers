@@ -5,6 +5,7 @@ import {
   signOut,
   onAuthStateChanged,
   updateProfile,
+  updatePassword,
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
@@ -118,6 +119,21 @@ export const updateUserProfile = async (uid, updates) => {
     );
   } catch (error) {
     console.error('Error updating user profile:', error);
+    throw error;
+  }
+};
+
+/**
+ * Update current user's password
+ */
+export const updateUserPassword = async (newPassword) => {
+  try {
+    if (!auth.currentUser) {
+      throw new Error('No authenticated user.');
+    }
+    await updatePassword(auth.currentUser, newPassword);
+  } catch (error) {
+    console.error('Error updating password:', error);
     throw error;
   }
 };

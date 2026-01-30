@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Landing from './pages/Landing';
@@ -16,11 +16,12 @@ import BeginSale from './pages/BeginSale';
 import CreateSearch from './pages/CreateSearch';
 import EditProperty from './pages/EditProperty';
 import GetVerified from './pages/GetVerified';
+import Profile from './pages/Profile';
 import VerifyBuyer from './pages/VerifyBuyer';
 import TransactionManager from './pages/TransactionManager';
 import Messages from './pages/Messages';
 import PreListingChecklist from './pages/PreListingChecklist';
-import { logout, updateUserProfile, getUserProfile } from './services/authService';
+import { logout } from './services/authService';
 import { getMessagesForUser } from './services/messageService';
 import './App.css';
 
@@ -28,12 +29,6 @@ function AppContent() {
   const { user, userProfile, isAuthenticated } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
   const [unreadLoading, setUnreadLoading] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
-  const [profileForm, setProfileForm] = useState({ name: '', phone: '' });
-  const [profileSaving, setProfileSaving] = useState(false);
-  const [profileError, setProfileError] = useState('');
-  const [profileSaved, setProfileSaved] = useState(false);
-  const [profileSnapshot, setProfileSnapshot] = useState(null);
 
   const buildThreadKey = (otherUserId, propertyId) => `${otherUserId}_${propertyId || 'none'}`;
   const getMessageDate = (m) => (m?.createdAt?.toDate ? m.createdAt.toDate() : new Date(m?.createdAt || 0));
@@ -60,55 +55,6 @@ function AppContent() {
       setUnreadLoading(false);
     }
   }, [isAuthenticated, user?.uid, unreadLoading]);
-
-  useEffect(() => {
-    if (!user?.uid) {
-      setProfileSnapshot(null);
-      setProfileForm({ name: '', phone: '' });
-      return;
-    }
-    const name = userProfile?.name || user?.displayName || '';
-    const phone = userProfile?.phone || '';
-    setProfileSnapshot({
-      name,
-      phone,
-      email: userProfile?.email || user?.email || '',
-    });
-    setProfileForm({ name, phone });
-  }, [user?.uid, user?.displayName, user?.email, userProfile]);
-
-  const profileDisplayName = useMemo(() => {
-    return profileSnapshot?.name || user?.displayName || 'Profile';
-  }, [profileSnapshot?.name, user?.displayName]);
-
-  const handleProfileSave = async () => {
-    if (!user?.uid || profileSaving) return;
-    const name = profileForm.name.trim();
-    const phone = profileForm.phone.trim();
-    setProfileError('');
-    setProfileSaved(false);
-    setProfileSaving(true);
-    try {
-      await updateUserProfile(user.uid, { name: name || null, phone: phone || null });
-      const updated = await getUserProfile(user.uid).catch(() => null);
-      if (updated) {
-        setProfileSnapshot({
-          name: updated.name || name,
-          phone: updated.phone || phone,
-          email: updated.email || user?.email || '',
-        });
-      } else {
-        setProfileSnapshot((prev) => (prev ? { ...prev, name, phone } : { name, phone, email: user?.email || '' }));
-      }
-      setProfileSaved(true);
-      window.setTimeout(() => setProfileSaved(false), 2500);
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      setProfileError('Failed to update profile. Please try again.');
-    } finally {
-      setProfileSaving(false);
-    }
-  };
 
   useEffect(() => {
     if (!isAuthenticated || !user?.uid) {
@@ -166,18 +112,14 @@ function AppContent() {
                       </span>
                     )}
                   </Link>
-                  <button
-                    type="button"
-                    className="nav-profile"
-                    onClick={() => setProfileOpen(true)}
-                  >
+                  <Link to="/profile" className="nav-profile">
                     <span className="nav-profile-avatar">
-                      {(profileDisplayName || 'U').charAt(0).toUpperCase()}
+                      {(userProfile?.name || user?.displayName || 'U').charAt(0).toUpperCase()}
                     </span>
                     <span className="nav-profile-text">
-                      {profileDisplayName}
+                      {userProfile?.name || user?.displayName || 'Profile'}
                     </span>
-                  </button>
+                  </Link>
                   <button onClick={handleLogout} className="nav-logout">
                     Sign Out
                   </button>
@@ -203,6 +145,7 @@ function AppContent() {
             <Route path="/verify-buyer" element={<VerifyBuyer />} />
             <Route path="/transaction/:id" element={<TransactionManager />} />
             <Route path="/messages" element={<Messages />} />
+            <Route path="/profile" element={<Profile />} />
             <Route path="/submit-offer/:propertyId" element={<SubmitOffer />} />
             <Route path="/sign-up" element={<SignUp />} />
             <Route path="/sign-in" element={<SignIn />} />
@@ -220,64 +163,6 @@ function AppContent() {
             <p>&copy; 2024 Funk Brokers. All rights reserved.</p>
           </div>
         </footer>
-        {profileOpen && (
-          <div className="modal-overlay" onClick={() => setProfileOpen(false)}>
-            <div className="modal-content profile-modal" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <h2>Profile</h2>
-                <button type="button" className="modal-close" onClick={() => setProfileOpen(false)}>
-                  ×
-                </button>
-              </div>
-              <div className="modal-body">
-                {profileError && <div className="profile-error">{profileError}</div>}
-                {profileSaved && <div className="profile-saved">Profile updated</div>}
-                <div className="form-group">
-                  <label>Full name</label>
-                  <input
-                    type="text"
-                    value={profileForm.name}
-                    onChange={(e) => setProfileForm((prev) => ({ ...prev, name: e.target.value }))}
-                    placeholder="Your name"
-                    className="form-input"
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Phone</label>
-                  <input
-                    type="tel"
-                    value={profileForm.phone}
-                    onChange={(e) => setProfileForm((prev) => ({ ...prev, phone: e.target.value }))}
-                    placeholder="(555) 123-4567"
-                    className="form-input"
-                  />
-                </div>
-                <div className="form-group">
-                  <label>Email</label>
-                  <input
-                    type="email"
-                    value={profileSnapshot?.email || user?.email || ''}
-                    disabled
-                    className="form-input"
-                  />
-                </div>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-outline" onClick={() => setProfileOpen(false)}>
-                  Close
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={handleProfileSave}
-                  disabled={profileSaving}
-                >
-                  {profileSaving ? 'Saving...' : 'Save changes'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </Router>
   );
