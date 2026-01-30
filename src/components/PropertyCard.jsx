@@ -58,9 +58,6 @@ const PropertyCard = ({ property, embedded, compact, listingTier }) => {
         {property.status === 'under_contract' && (
           <span className="property-card__badge property-card__badge--contract">Under Contract</span>
         )}
-        {property.verified && property.status !== 'under_contract' && (
-          <span className="property-card__badge property-card__badge--verified">Verified</span>
-        )}
       </div>
 
       <div className="property-card__body">

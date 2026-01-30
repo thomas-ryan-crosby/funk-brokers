@@ -92,11 +92,6 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-.property-card__badge--verified {
-  background: linear-gradient(135deg, #059669 0%, #10b981 100%);
-  color: #fff;
-}
-
 .property-card__badge--contract {
   background: linear-gradient(135deg, #d97706 0%, #f59e0b 100%);
   color: #fff;

@@ -548,12 +548,6 @@ const PropertyDetail = () => {
                   </span>
                 )}
               </div>
-              {property.verified && (
-                <div className="detail-row">
-                  <span className="detail-label">Verification</span>
-                  <span className="detail-value detail-value--verified">✓ Verified</span>
-                </div>
-              )}
             </div>
 
             {(() => {

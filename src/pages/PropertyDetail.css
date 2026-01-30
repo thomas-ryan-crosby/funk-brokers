@@ -951,3 +951,15 @@
   color: #fff;
   border-color: transparent;
 }
+
+.property-stats .stat-label,
+.property-stats .stat-value,
+.property-details-card .detail-label,
+.property-details-card .detail-value {
+  color: var(--color-text-primary, #f8fafc);
+}
+
+.property-stats .stat-label,
+.property-details-card .detail-label {
+  opacity: 0.75;
+}
