@@ -60,8 +60,7 @@ function meetsBasicTier(p) {
   const hasType = !!p.propertyType;
   const hasPrice = p.price != null && p.price > 0;
   const hasPhoto = (p.photos?.length ?? 0) >= 1;
-  const hasDescription = !!(p.description && p.description.trim().length >= 50);
-  return hasAddress && hasType && hasPrice && hasPhoto && hasDescription;
+  return hasAddress && hasType && hasPrice && hasPhoto;
 }
 
 /**
@@ -73,9 +72,9 @@ function meetsCompleteTier(p) {
   const hasBathrooms = p.bathrooms != null;
   const hasSqftOrLot = !!(p.squareFeet || p.lotSize);
   const hasEnoughPhotos = (p.photos?.length ?? 0) >= 3;
-  const hasGoodDescription = !!(p.description && p.description.trim().length >= 100);
   const hasFeatures = Array.isArray(p.features) && p.features.length >= 2;
-  return hasBedrooms && hasBathrooms && hasSqftOrLot && hasEnoughPhotos && hasGoodDescription && hasFeatures;
+  const hasPricing = !!(p.estimatedWorth || p.makeMeMovePrice);
+  return hasBedrooms && hasBathrooms && hasSqftOrLot && hasEnoughPhotos && hasFeatures && hasPricing;
 }
 
 /**
@@ -199,8 +198,8 @@ export function getListingTierProgress(p) {
       { done: !!(p?.bathrooms != null), label: 'Bathrooms' },
       { done: !!(p?.squareFeet || p?.lotSize), label: 'Square feet or lot size' },
       { done: photoCount >= 3, label: `Photos (${photoCount}/3 minimum)` },
-      { done: descLength >= 100, label: `Description (${descLength}/100 characters)` },
       { done: featureCount >= 2, label: `Features (${featureCount}/2 minimum)` },
+      { done: !!(p?.estimatedWorth || p?.makeMeMovePrice), label: 'Pricing information' },
     ];
     const completed = steps.filter((s) => s.done).length;
     const missingItems = steps.filter((s) => !s.done).map((s) => s.label);

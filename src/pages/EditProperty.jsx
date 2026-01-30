@@ -35,6 +35,10 @@ const EditProperty = () => {
   const [currentTier, setCurrentTier] = useState(null);
   const [showCelebration, setShowCelebration] = useState(false);
   const [celebratingTier, setCelebratingTier] = useState(null);
+  const [step, setStep] = useState(1); // For multi-step form when advancing tiers
+  const [hasHOA, setHasHOA] = useState('');
+  const [hasInsurance, setHasInsurance] = useState('');
+  const [insuranceApproximation, setInsuranceApproximation] = useState('');
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -70,17 +74,29 @@ const EditProperty = () => {
         longitude: p.longitude,
         propertyType: p.propertyType || '',
         price: p.price != null ? String(p.price) : '',
+        estimatedWorth: p.estimatedWorth != null ? String(p.estimatedWorth) : '',
+        makeMeMovePrice: p.makeMeMovePrice != null ? String(p.makeMeMovePrice) : '',
         squareFeet: p.squareFeet != null ? String(p.squareFeet) : '',
         lotSize: p.lotSize != null ? String(p.lotSize) : '',
         yearBuilt: p.yearBuilt != null ? String(p.yearBuilt) : '',
         bedrooms: p.bedrooms != null ? String(p.bedrooms) : '',
         bathrooms: p.bathrooms != null ? String(p.bathrooms) : '',
-        description: p.description || '',
         features: Array.isArray(p.features) ? p.features : [],
         hoaFee: p.hoaFee != null ? String(p.hoaFee) : '',
         propertyTax: p.propertyTax != null ? String(p.propertyTax) : '',
         acceptingCommunications: p.acceptingCommunications !== false,
       });
+      // Set HOA and Insurance toggles
+      if (p.hasHOA === true) setHasHOA('yes');
+      else if (p.hasHOA === false) setHasHOA('no');
+      if (p.hasInsurance === true) setHasInsurance('yes');
+      else if (p.hasInsurance === false) setHasInsurance('no');
+      setInsuranceApproximation(p.insuranceApproximation != null ? String(p.insuranceApproximation) : '');
+      
+      // If advancing from Basic tier, start at step 1
+      if (tier === 'basic') {
+        setStep(1);
+      }
       setAddressInputValue([p.address, p.city, p.state, p.zipCode].filter(Boolean).join(', '));
       setExistingPhotos(Array.isArray(p.photos) ? [...p.photos] : []);
       setExistingDocUrls({
@@ -138,13 +154,59 @@ const EditProperty = () => {
     setDocumentFiles((prev) => ({ ...prev, [field]: file || null }));
   };
 
+  const handleNext = () => {
+    if (step === 1) {
+      // Validate step 1
+      if (!formData.address?.trim() || !(formData.city?.trim() || formData.state?.trim() || formData.zipCode?.trim())) {
+        setError('Please select an address from the list.');
+        return;
+      }
+      if (!formData.propertyType || !formData.bedrooms || !formData.bathrooms) {
+        setError('Please fill in all required fields (Property Type, Bedrooms, Bathrooms).');
+        return;
+      }
+      if (hasHOA === 'yes' && (!formData.hoaFee || parseFloat(formData.hoaFee) <= 0)) {
+        setError('Please enter HOA fee amount.');
+        return;
+      }
+      if (hasInsurance === 'yes' && (!insuranceApproximation || parseFloat(insuranceApproximation) <= 0)) {
+        setError('Please enter insurance approximation amount.');
+        return;
+      }
+      setError(null);
+      setStep(2);
+    } else if (step === 2) {
+      // Validate step 2
+      if (!formData.estimatedWorth || parseFloat(formData.estimatedWorth) <= 0) {
+        setError('Please enter estimated property worth.');
+        return;
+      }
+      if (!formData.makeMeMovePrice || parseFloat(formData.makeMeMovePrice) <= 0) {
+        setError('Please enter make me move price.');
+        return;
+      }
+      setError(null);
+      setStep(3);
+    }
+  };
+
+  const handleBack = () => {
+    if (step > 1) {
+      setStep(step - 1);
+      setError(null);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData) return;
-    if (!formData.address?.trim() || !(formData.city?.trim() || formData.state?.trim() || formData.zipCode?.trim())) {
-      setError('Please select an address from the list.');
+    
+    // If multi-step form and not on final step, handle next
+    if (isTierAdvancement && step < 3) {
+      handleNext();
       return;
     }
+    
     setSaving(true);
     setError(null);
     try {
@@ -173,15 +235,19 @@ const EditProperty = () => {
         state: formData.state,
         zipCode: formData.zipCode,
         propertyType: formData.propertyType,
-        price: parseFloat(formData.price),
+        price: formData.price ? parseFloat(formData.price) : (formData.estimatedWorth ? parseFloat(formData.estimatedWorth) : null),
+        estimatedWorth: formData.estimatedWorth ? parseFloat(formData.estimatedWorth) : null,
+        makeMeMovePrice: formData.makeMeMovePrice ? parseFloat(formData.makeMeMovePrice) : null,
         squareFeet: formData.squareFeet ? parseFloat(formData.squareFeet) : null,
         lotSize: formData.lotSize ? parseFloat(formData.lotSize) : null,
         yearBuilt: formData.yearBuilt ? parseInt(formData.yearBuilt) : null,
         bedrooms: parseInt(formData.bedrooms),
         bathrooms: parseFloat(formData.bathrooms),
-        description: formData.description || null,
         features: formData.features || [],
-        hoaFee: formData.hoaFee ? parseFloat(formData.hoaFee) : null,
+        hasHOA: hasHOA === 'yes',
+        hoaFee: hasHOA === 'yes' && formData.hoaFee ? parseFloat(formData.hoaFee) : null,
+        hasInsurance: hasInsurance === 'yes',
+        insuranceApproximation: hasInsurance === 'yes' && insuranceApproximation ? parseFloat(insuranceApproximation) : null,
         propertyTax: formData.propertyTax ? parseFloat(formData.propertyTax) : null,
         photos,
         ...docUrls,
@@ -282,6 +348,13 @@ const EditProperty = () => {
       <div className="list-property-container edit-property-single">
         <h1>{isTierAdvancement ? 'Advance Property Tier' : 'Edit Property'}</h1>
         <p className="form-note">{advancementMessage || 'Update your listing. All sections from List Property are below.'}</p>
+        {isTierAdvancement && (
+          <div className="step-indicator" style={{ marginBottom: '2rem' }}>
+            <div className={`step-indicator-step ${step >= 1 ? 'active' : ''}`}>1. Property Info</div>
+            <div className={`step-indicator-step ${step >= 2 ? 'active' : ''}`}>2. Pricing</div>
+            <div className={`step-indicator-step ${step >= 3 ? 'active' : ''}`}>3. Photos</div>
+          </div>
+        )}
         {error && <div className="error-message">{error}</div>}
         <form onSubmit={handleSubmit}>
           {/* 1. Address — same as List Property */}
@@ -309,122 +382,173 @@ const EditProperty = () => {
             </div>
           </div>
 
-          {/* 2. About the home — same as List Property */}
-          <div className="form-step">
-            <h2>About the home</h2>
-            <p className="form-note">Beds, baths, size, and features.</p>
-            <div className="form-grid">
-              <div className="form-group">
-                <label>Property Type *</label>
-                <select name="propertyType" value={formData.propertyType} onChange={handleInputChange} required>
-                  <option value="">Select Type</option>
-                  {propertyTypes.map((t) => <option key={t} value={t.toLowerCase().replace(' ', '-')}>{t}</option>)}
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Bedrooms *</label>
-                <input type="number" name="bedrooms" value={formData.bedrooms} onChange={handleInputChange} min="0" required />
-              </div>
-              <div className="form-group">
-                <label>Bathrooms *</label>
-                <input type="number" name="bathrooms" value={formData.bathrooms} onChange={handleInputChange} min="0" step="0.5" required />
-              </div>
-              <div className="form-group">
-                <label>Square Feet</label>
-                <input type="number" name="squareFeet" value={formData.squareFeet} onChange={handleInputChange} min="0" />
-              </div>
-              <div className="form-group">
-                <label>Lot Size (sq ft)</label>
-                <input type="number" name="lotSize" value={formData.lotSize} onChange={handleInputChange} min="0" />
-              </div>
-              <div className="form-group">
-                <label>Year Built</label>
-                <input type="number" name="yearBuilt" value={formData.yearBuilt} onChange={handleInputChange} min="1800" max={new Date().getFullYear()} />
-              </div>
-              <div className="form-group">
-                <label>HOA Fee ($/month)</label>
-                <input type="number" name="hoaFee" value={formData.hoaFee} onChange={handleInputChange} min="0" />
-              </div>
-              <div className="form-group">
-                <label>Property Tax ($/year)</label>
-                <input type="number" name="propertyTax" value={formData.propertyTax} onChange={handleInputChange} min="0" />
-              </div>
-            </div>
-            <div className="form-group">
-              <label>Features</label>
-              <div className="features-grid">
-                {commonFeatures.map((f) => (
-                  <label key={f} className="feature-checkbox">
-                    <input type="checkbox" checked={formData.features.includes(f)} onChange={() => handleFeatureToggle(f)} />
-                    <span>{f}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* 3. Initial Pricing Info — same as List Property */}
-          <div className="form-step">
-            <h2>Initial Pricing Info</h2>
-            <p className="form-note">Set your asking price. You can update it later.</p>
-            <div className="form-group" style={{ maxWidth: 320 }}>
-              <label>Asking Price ($) *</label>
-              <input type="number" name="price" value={formData.price} onChange={handleInputChange} min="0" step="1000" placeholder="e.g. 450000" required />
-            </div>
-          </div>
-
-          {/* 4. Photos and additional documents — same as List Property + existing photos */}
-          <div className="form-step">
-            <h2>Photos and additional documents</h2>
-            <p className="form-note">Photos, description, and documents (deed, disclosures, etc.).</p>
-
-            <div className="form-group">
-              <div className="toggle-row">
-                <label className="toggle-row__label">Accepting communications from buyers</label>
-                <label className="toggle-switch">
-                  <input
-                    type="checkbox"
-                    checked={!!formData.acceptingCommunications}
-                    onChange={(e) => setFormData((prev) => prev ? { ...prev, acceptingCommunications: e.target.checked } : prev)}
-                    aria-label="Accepting communications from buyers"
-                  />
-                  <span className="toggle-switch__track" aria-hidden />
-                </label>
-              </div>
-              <p className="form-hint">When off, buyers will see that you are not accepting offers or inquiries at this time.</p>
-            </div>
-
-            <div className="form-group">
-              <label>Existing photos</label>
-              {existingPhotos.length > 0 ? (
-                <div className="photo-previews">
-                  {existingPhotos.map((url, i) => (
-                    <div key={`ex-${i}`} className="photo-preview">
-                      <img src={url} alt={`Photo ${i + 1}`} />
-                      <button type="button" className="photo-remove" onClick={() => removeExistingPhoto(i)} aria-label="Remove">×</button>
-                    </div>
-                  ))}
+          {/* Step 1: Property Info (shown when step === 1 or not tier advancement) */}
+          {(!isTierAdvancement || step === 1) && (
+            <>
+              {/* 2. About the home */}
+              <div className="form-step">
+                <h2>About the home</h2>
+                <p className="form-note">Beds, baths, size, and features.</p>
+                <div className="form-grid">
+                  <div className="form-group">
+                    <label>Property Type *</label>
+                    <select name="propertyType" value={formData.propertyType} onChange={handleInputChange} required>
+                      <option value="">Select Type</option>
+                      {propertyTypes.map((t) => <option key={t} value={t.toLowerCase().replace(' ', '-')}>{t}</option>)}
+                    </select>
+                  </div>
+                  <div className="form-group">
+                    <label>Bedrooms *</label>
+                    <input type="number" name="bedrooms" value={formData.bedrooms} onChange={handleInputChange} min="0" required />
+                  </div>
+                  <div className="form-group">
+                    <label>Bathrooms *</label>
+                    <input type="number" name="bathrooms" value={formData.bathrooms} onChange={handleInputChange} min="0" step="0.5" required />
+                  </div>
+                  <div className="form-group">
+                    <label>Square Feet</label>
+                    <input type="number" name="squareFeet" value={formData.squareFeet} onChange={handleInputChange} min="0" />
+                  </div>
+                  <div className="form-group">
+                    <label>Lot Size (sq ft)</label>
+                    <input type="number" name="lotSize" value={formData.lotSize} onChange={handleInputChange} min="0" />
+                  </div>
+                  <div className="form-group">
+                    <label>Year Built</label>
+                    <input type="number" name="yearBuilt" value={formData.yearBuilt} onChange={handleInputChange} min="1800" max={new Date().getFullYear()} />
+                  </div>
+                  <div className="form-group">
+                    <label>Property Tax ($/year)</label>
+                    <input type="number" name="propertyTax" value={formData.propertyTax} onChange={handleInputChange} min="0" />
+                  </div>
                 </div>
-              ) : <p className="form-hint">No photos yet. Add new photos below.</p>}
-            </div>
+                
+                {/* HOA Toggle */}
+                <div className="form-group">
+                  <label>HOA? *</label>
+                  <select value={hasHOA} onChange={(e) => setHasHOA(e.target.value)} required>
+                    <option value="">Select</option>
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                  </select>
+                </div>
+                {hasHOA === 'yes' && (
+                  <div className="form-group">
+                    <label>HOA Fee ($/month) *</label>
+                    <input type="number" name="hoaFee" value={formData.hoaFee} onChange={handleInputChange} min="0" step="1" placeholder="e.g. 150" required />
+                  </div>
+                )}
+                
+                {/* Insurance Toggle */}
+                <div className="form-group">
+                  <label>Insurance? *</label>
+                  <select value={hasInsurance} onChange={(e) => setHasInsurance(e.target.value)} required>
+                    <option value="">Select</option>
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                  </select>
+                </div>
+                {hasInsurance === 'yes' && (
+                  <div className="form-group">
+                    <label>Approximate Insurance Amount ($/year) *</label>
+                    <input type="number" value={insuranceApproximation} onChange={(e) => setInsuranceApproximation(e.target.value)} min="0" step="100" placeholder="e.g. 1800" required />
+                  </div>
+                )}
+                
+                <div className="form-group">
+                  <label>Features</label>
+                  <div className="features-grid">
+                    {commonFeatures.map((f) => (
+                      <label key={f} className="feature-checkbox">
+                        <input type="checkbox" checked={formData.features.includes(f)} onChange={() => handleFeatureToggle(f)} />
+                        <span>{f}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
 
-            <div className="form-group">
-              <label>Property Photos (optional)</label>
-              <p className="form-note">Add more photos. 5+ recommended when you have them.</p>
-              <DragDropFileInput multiple accept="image/*" onChange={(files) => handleNewPhotoFiles(files || [])} placeholder="Drop photos here or click to browse" />
-              {newPhotoPreviews.length > 0 && (
-                <div className="photo-previews">
-                  {newPhotoPreviews.map((url, i) => (
-                    <div key={`new-${i}`} className="photo-preview"><img src={url} alt={`New ${i + 1}`} /></div>
-                  ))}
+          {/* Step 2: Initial Pricing Info (shown when step === 2 or not tier advancement) */}
+          {(!isTierAdvancement || step === 2) && (
+            <div className="form-step">
+              <h2>Initial Pricing</h2>
+              <p className="form-note">What do you think your property is worth? (Just a guess, we will refine this later)</p>
+              <div className="form-group" style={{ maxWidth: 400 }}>
+                <label>Estimated Property Worth ($) *</label>
+                <input type="number" name="estimatedWorth" value={formData.estimatedWorth} onChange={handleInputChange} min="0" step="1000" placeholder="e.g. 450000" required />
+              </div>
+              <div className="form-group" style={{ maxWidth: 400 }}>
+                <label>Make Me Move Price ($) *</label>
+                <p className="form-hint">If I got this, I would pack my bags tomorrow.</p>
+                <input type="number" name="makeMeMovePrice" value={formData.makeMeMovePrice} onChange={handleInputChange} min="0" step="1000" placeholder="e.g. 500000" required />
+              </div>
+              {!isTierAdvancement && (
+                <div className="form-group" style={{ maxWidth: 400 }}>
+                  <label>Asking Price ($) *</label>
+                  <input type="number" name="price" value={formData.price} onChange={handleInputChange} min="0" step="1000" placeholder="e.g. 450000" required />
                 </div>
               )}
             </div>
+          )}
 
-            <div className="form-group">
-              <label>Property Description</label>
-              <textarea name="description" value={formData.description} onChange={handleInputChange} rows="5" placeholder="Describe your property, neighborhood, and what makes it special..." />
+          {/* Step 3: Photos (shown when step === 3 or not tier advancement) */}
+          {(!isTierAdvancement || step === 3) && (
+            <div className="form-step">
+              <h2>Property Photos</h2>
+              <p className="form-note">Upload photos of your property. 3+ photos recommended.</p>
+
+              <div className="form-group">
+                <label>Existing photos</label>
+                {existingPhotos.length > 0 ? (
+                  <div className="photo-previews">
+                    {existingPhotos.map((url, i) => (
+                      <div key={`ex-${i}`} className="photo-preview">
+                        <img src={url} alt={`Photo ${i + 1}`} />
+                        {!isTierAdvancement && (
+                          <button type="button" className="photo-remove" onClick={() => removeExistingPhoto(i)} aria-label="Remove">×</button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : <p className="form-hint">No photos yet. Add new photos below.</p>}
+              </div>
+
+              <div className="form-group">
+                <label>Property Photos *</label>
+                <p className="form-hint">Upload at least 3 photos to advance to Complete tier.</p>
+                <DragDropFileInput multiple accept="image/*" onChange={(files) => handleNewPhotoFiles(files || [])} placeholder="Drop photos here or click to browse" />
+                {newPhotoPreviews.length > 0 && (
+                  <div className="photo-previews">
+                    {newPhotoPreviews.map((url, i) => (
+                      <div key={`new-${i}`} className="photo-preview"><img src={url} alt={`New ${i + 1}`} /></div>
+                    ))}
+                  </div>
+                )}
+                <p className="form-hint">Total photos: {(existingPhotos.length + newPhotoPreviews.length)}</p>
+              </div>
             </div>
+          )}
+
+          {/* Additional sections for non-tier-advancement editing */}
+          {!isTierAdvancement && (
+            <>
+              <div className="form-group">
+                <div className="toggle-row">
+                  <label className="toggle-row__label">Accepting communications from buyers</label>
+                  <label className="toggle-switch">
+                    <input
+                      type="checkbox"
+                      checked={!!formData.acceptingCommunications}
+                      onChange={(e) => setFormData((prev) => prev ? { ...prev, acceptingCommunications: e.target.checked } : prev)}
+                      aria-label="Accepting communications from buyers"
+                    />
+                    <span className="toggle-switch__track" aria-hidden />
+                  </label>
+                </div>
+                <p className="form-hint">When off, buyers will see that you are not accepting offers or inquiries at this time.</p>
+              </div>
 
             {/* Documents section - only show for Verified tier and above */}
             {(currentTier === 'verified' || currentTier === 'enhanced' || currentTier === 'premium' || currentTier === 'elite') && (
@@ -473,11 +597,33 @@ const EditProperty = () => {
                 </div>
               </div>
             )}
-          </div>
+            </>
+          )}
 
           <div className="form-actions">
-            <button type="button" onClick={() => navigate(`/property/${id}`)} className="btn-secondary">Cancel</button>
-            <button type="submit" disabled={saving} className="btn-primary">{saving ? 'Saving...' : 'Save Changes'}</button>
+            {isTierAdvancement ? (
+              <>
+                {step > 1 && (
+                  <button type="button" onClick={handleBack} className="btn-secondary">Back</button>
+                )}
+                {step < 3 ? (
+                  <button type="button" onClick={handleNext} className="btn-primary">Next</button>
+                ) : (
+                  <button 
+                    type="submit" 
+                    disabled={saving || (existingPhotos.length + newPhotoPreviews.length) < 3} 
+                    className="btn-primary"
+                  >
+                    {saving ? 'Saving...' : 'Complete information to get to Complete Status'}
+                  </button>
+                )}
+              </>
+            ) : (
+              <>
+                <button type="button" onClick={() => navigate(`/property/${id}`)} className="btn-secondary">Cancel</button>
+                <button type="submit" disabled={saving} className="btn-primary">{saving ? 'Saving...' : 'Save Changes'}</button>
+              </>
+            )}
           </div>
         </form>
       </div>

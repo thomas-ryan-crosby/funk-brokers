@@ -99,3 +99,42 @@
   }
 }
 
+/* Step Indicator */
+.step-indicator {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding: 1rem 0;
+}
+
+.step-indicator-step {
+  padding: 0.5rem 1.5rem;
+  border-radius: 8px;
+  background: #f1f5f9;
+  color: #64748b;
+  font-weight: 500;
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.step-indicator-step.active {
+  background: #3b82f6;
+  color: white;
+}
+
+.step-indicator-step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  right: -1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0.5rem;
+  height: 2px;
+  background: #cbd5e1;
+}
+
+.step-indicator-step.active:not(:last-child)::after {
+  background: #3b82f6;
+}
+
