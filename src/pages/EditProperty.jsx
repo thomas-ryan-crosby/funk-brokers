@@ -89,6 +89,7 @@ const EditProperty = () => {
         features: Array.isArray(p.features) ? p.features : [],
         hoaFee: p.hoaFee != null ? String(p.hoaFee) : '',
         propertyTax: p.propertyTax != null ? String(p.propertyTax) : '',
+        description: p.description || '',
         acceptingCommunications: p.acceptingCommunications !== false,
       });
       // Set HOA and Insurance toggles
@@ -207,10 +208,11 @@ const EditProperty = () => {
     if (!formData) return;
     
     // Determine if coming from tier advancement
-    const isTierAdvancement = currentTier === 'basic' || currentTier === 'complete';
+    const isBasicToComplete = currentTier === 'basic';
+    const isCompleteToVerified = currentTier === 'complete';
     
-    // If multi-step form and not on final step, handle next
-    if (isTierAdvancement && step < 3) {
+    // If Basic → Complete multi-step form and not on final step, handle next
+    if (isBasicToComplete && step < 3) {
       handleNext();
       return;
     }
@@ -313,13 +315,16 @@ const EditProperty = () => {
   }
   if (!formData) return null;
 
-  // Determine if coming from tier advancement (safe check for null currentTier)
-  // Only show tier advancement mode if currentTier is explicitly 'basic' or 'complete'
-  const isTierAdvancement = currentTier === 'basic' || currentTier === 'complete';
-  const advancementMessage = currentTier === 'basic' 
+  // Determine if coming from tier advancement
+  // Basic → Complete: needs property info (multi-step form)
+  // Complete → Verified: needs ONLY additional fields (description, more photos, year built, lot size, features, HOA)
+  const isBasicToComplete = currentTier === 'basic';
+  const isCompleteToVerified = currentTier === 'complete';
+  const isTierAdvancement = isBasicToComplete || isCompleteToVerified;
+  const advancementMessage = isBasicToComplete 
     ? 'Complete items below to advance to Complete tier'
-    : (currentTier === 'complete'
-    ? 'Complete items below to advance to Verified tier'
+    : (isCompleteToVerified
+    ? 'Complete the additional items below to advance to Verified tier'
     : null);
 
   return (
@@ -357,7 +362,7 @@ const EditProperty = () => {
       <div className="list-property-container edit-property-single">
         <h1>{isTierAdvancement ? 'Advance Property Tier' : 'Edit Property'}</h1>
         <p className="form-note">{advancementMessage || 'Update your listing. All sections from List Property are below.'}</p>
-        {isTierAdvancement && (
+        {isBasicToComplete && (
           <div className="step-indicator" style={{ marginBottom: '2rem' }}>
             <div className={`step-indicator-step ${step >= 1 ? 'active' : ''}`}>1. Property Info</div>
             <div className={`step-indicator-step ${step >= 2 ? 'active' : ''}`}>2. Pricing</div>
@@ -366,8 +371,10 @@ const EditProperty = () => {
         )}
         {error && <div className="error-message">{error}</div>}
         <form onSubmit={handleSubmit}>
-          {/* Step 1: Address + Property Info (only shown when step === 1 if tier advancement, or always if not tier advancement) */}
-          {((isTierAdvancement && step === 1) || !isTierAdvancement) && (
+          {/* Basic → Complete: Multi-step form with property info, pricing, photos */}
+          {/* Complete → Verified: Only show additional fields needed (description, photos, year built, lot size, features, HOA) */}
+          {/* Step 1: Address + Property Info (only for Basic → Complete step 1, or always if not tier advancement) */}
+          {((isBasicToComplete && step === 1) || (!isTierAdvancement)) && (
             <>
               {/* Address */}
               <div className="form-step">
@@ -502,8 +509,8 @@ const EditProperty = () => {
             </div>
           )}
 
-          {/* Step 3: Photos (only shown when step === 3 if tier advancement, or always if not tier advancement) */}
-          {((isTierAdvancement && step === 3) || !isTierAdvancement) && (
+          {/* Step 3: Photos (only for Basic → Complete step 3, or always if not tier advancement) */}
+          {((isBasicToComplete && step === 3) || (!isTierAdvancement)) && (
             <div className="form-step">
               <h2>Property Photos</h2>
               <p className="form-note">Upload photos of your property. 3+ photos recommended.</p>
@@ -610,7 +617,7 @@ const EditProperty = () => {
           )}
 
           <div className="form-actions">
-            {isTierAdvancement ? (
+            {isBasicToComplete ? (
               <>
                 {step > 1 && (
                   <button type="button" onClick={handleBack} className="btn-secondary">Back</button>
@@ -627,6 +634,14 @@ const EditProperty = () => {
                   </button>
                 )}
               </>
+            ) : isCompleteToVerified ? (
+              <button 
+                type="submit" 
+                disabled={saving} 
+                className="btn-primary"
+              >
+                {saving ? 'Saving...' : 'Advance to Verified'}
+              </button>
             ) : (
               <>
                 <button type="button" onClick={() => navigate(`/property/${id}`)} className="btn-secondary">Cancel</button>
