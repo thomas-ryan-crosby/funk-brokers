@@ -29,6 +29,7 @@ const AddressAutocomplete = ({
   disabled,
   className,
   name = 'address',
+  ...inputProps
 }) => {
   const inputRef = useRef(null);
   const [ready, setReady] = useState(false);
@@ -181,6 +182,7 @@ const AddressAutocomplete = ({
       disabled={disabled}
       className={className}
       autoComplete="off"
+      {...inputProps}
     />
   );
 };

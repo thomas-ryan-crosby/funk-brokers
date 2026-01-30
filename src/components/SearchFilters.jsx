@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import AddressAutocomplete from './AddressAutocomplete';
 import CityStateAutocomplete from './CityStateAutocomplete';
 import './SearchFilters.css';
 
@@ -88,6 +89,12 @@ const SearchFilters = ({ onFilterChange, initialFilters = {} }) => {
   const formatPrice = (v) =>
     v ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(Number(v)) : '';
 
+  const formatLocationValue = (obj) => {
+    if (!obj) return '';
+    const formatted = [obj.address, obj.city, obj.state, obj.zipCode].filter(Boolean).join(', ');
+    return formatted || obj.address || '';
+  };
+
   const priceLabel = () => {
     const min = formatPrice(filters.minPrice);
     const max = formatPrice(filters.maxPrice);
@@ -129,10 +136,14 @@ const SearchFilters = ({ onFilterChange, initialFilters = {} }) => {
     <div className="search-filters search-filters--top" ref={barRef}>
       <div className="search-filters-row">
         <div className="search-filters-location">
-          <input
-            type="text"
+          <AddressAutocomplete
             value={locationInput}
-            onChange={(e) => setLocationInput(e.target.value)}
+            onAddressChange={setLocationInput}
+            onAddressSelect={(obj) => {
+              const value = formatLocationValue(obj);
+              setLocationInput(value);
+              if (value.trim()) update({ ...filters, query: value.trim() });
+            }}
             onKeyDown={(e) => e.key === 'Enter' && handleLocationSearch()}
             placeholder="Address, neighborhood, city, ZIP"
             className="search-filters-location-input"
