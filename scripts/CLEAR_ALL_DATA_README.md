@@ -65,6 +65,7 @@ If you choose to delete Storage files, the script will delete:
 
 ### What Is NOT Deleted
 
+- **`users` collection** - User profiles are preserved (user account information, display names, phone numbers, roles)
 - **Firebase Authentication accounts** - User login accounts remain intact
 - **Firestore Security Rules** - Database rules remain unchanged
 - **Firebase Storage files** - Unless explicitly enabled (see script options)
@@ -127,7 +128,8 @@ This will delete ALL data from:
 - favorites
 - preListingChecklists
 - listingProgress
-- users
+
+**Note:** User profiles (`users` collection) are preserved and will NOT be deleted.
 
 Storage files: NOT DELETED (set DELETE_STORAGE_FILES=true to enable)
 

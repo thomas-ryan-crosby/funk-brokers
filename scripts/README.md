@@ -113,7 +113,8 @@ node scripts/clearAllData.js
 - All favorites
 - All pre-listing checklists
 - All listing progress
-- All user profiles (Firestore only, not Auth accounts)
+
+**Note:** User profiles (`users` collection) are preserved and will NOT be deleted.
 
 ### Configuration
 

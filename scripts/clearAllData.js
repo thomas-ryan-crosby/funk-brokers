@@ -30,7 +30,7 @@ const COLLECTIONS_TO_CLEAR = [
   'favorites',
   'preListingChecklists',
   'listingProgress',
-  'users',
+  // Note: 'users' collection is NOT deleted - user accounts are preserved
 ];
 
 // Initialize Firebase Admin
