@@ -206,8 +206,8 @@ const EditProperty = () => {
     e.preventDefault();
     if (!formData) return;
     
-    // Determine if coming from tier advancement (safe check for null currentTier)
-    const isTierAdvancement = currentTier !== null && (currentTier === 'basic' || currentTier === 'complete');
+    // Determine if coming from tier advancement
+    const isTierAdvancement = currentTier === 'basic' || currentTier === 'complete';
     
     // If multi-step form and not on final step, handle next
     if (isTierAdvancement && step < 3) {
@@ -314,7 +314,8 @@ const EditProperty = () => {
   if (!formData) return null;
 
   // Determine if coming from tier advancement (safe check for null currentTier)
-  const isTierAdvancement = currentTier !== null && (currentTier === 'basic' || currentTier === 'complete');
+  // Only show tier advancement mode if currentTier is explicitly 'basic' or 'complete'
+  const isTierAdvancement = currentTier === 'basic' || currentTier === 'complete';
   const advancementMessage = currentTier === 'basic' 
     ? 'Complete items below to advance to Complete tier'
     : (currentTier === 'complete'
@@ -365,8 +366,8 @@ const EditProperty = () => {
         )}
         {error && <div className="error-message">{error}</div>}
         <form onSubmit={handleSubmit}>
-          {/* Step 1: Address + Property Info (only shown when step === 1 or not tier advancement) */}
-          {(!isTierAdvancement || step === 1) && (
+          {/* Step 1: Address + Property Info (only shown when step === 1 if tier advancement, or always if not tier advancement) */}
+          {((isTierAdvancement && step === 1) || !isTierAdvancement) && (
             <>
               {/* Address */}
               <div className="form-step">
@@ -478,8 +479,8 @@ const EditProperty = () => {
             </>
           )}
 
-          {/* Step 2: Initial Pricing Info (ONLY shown when step === 2, or always shown if NOT tier advancement) */}
-          {(!isTierAdvancement || step === 2) && (
+          {/* Step 2: Initial Pricing Info (only shown when step === 2 if tier advancement, or always if not tier advancement) */}
+          {((isTierAdvancement && step === 2) || !isTierAdvancement) && (
             <div className="form-step">
               <h2>Initial Pricing</h2>
               <p className="form-note">What do you think your property is worth? (Just a guess, we will refine this later)</p>
@@ -501,8 +502,8 @@ const EditProperty = () => {
             </div>
           )}
 
-          {/* Step 3: Photos (ONLY shown when step === 3, or always shown if NOT tier advancement) */}
-          {(!isTierAdvancement || step === 3) && (
+          {/* Step 3: Photos (only shown when step === 3 if tier advancement, or always if not tier advancement) */}
+          {((isTierAdvancement && step === 3) || !isTierAdvancement) && (
             <div className="form-step">
               <h2>Property Photos</h2>
               <p className="form-note">Upload photos of your property. 3+ photos recommended.</p>
