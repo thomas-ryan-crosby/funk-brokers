@@ -822,9 +822,9 @@
 
 /* Vendor Center Table Styles */
 .vendor-center-table-wrapper {
-  background: white;
+  background: #0b1224;
   border-radius: 12px;
-  border: 2px solid #e2e8f0;
+  border: 1px solid rgba(148, 163, 184, 0.2);
   overflow: hidden;
   margin-bottom: 32px;
 }
@@ -836,8 +836,8 @@
 }
 
 .vendor-center-table thead {
-  background: #f8fafc;
-  border-bottom: 2px solid #e2e8f0;
+  background: rgba(148, 163, 184, 0.08);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
 }
 
 .vendor-center-table th {
@@ -845,19 +845,19 @@
   text-align: left;
   font-size: 13px;
   font-weight: 700;
-  color: #475569;
+  color: #cbd5e1;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  border-bottom: 2px solid #e2e8f0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
 }
 
 .vendor-center-table tbody tr {
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
   transition: background-color 0.15s;
 }
 
 .vendor-center-table tbody tr:hover {
-  background: #f8fafc;
+  background: rgba(148, 163, 184, 0.08);
 }
 
 .vendor-center-table tbody tr:last-child {
@@ -867,6 +867,15 @@
 .vendor-center-table td {
   padding: 16px 20px;
   vertical-align: middle;
+}
+
+.vendor-table-col-website,
+.vendor-table-col-phone,
+.vendor-table-col-email,
+.vendor-table-col-address,
+.vendor-table-col-contacts {
+  color: #cbd5e1;
+  font-size: 14px;
 }
 
 .vendor-table-col-name {
@@ -905,12 +914,12 @@
 .vendor-table-name {
   font-size: 16px;
   font-weight: 600;
-  color: #1e293b;
+  color: #f8fafc;
 }
 
 .vendor-table-address {
   display: inline-block;
-  color: #475569;
+  color: #cbd5e1;
   font-size: 14px;
   line-height: 1.4;
 }
@@ -921,9 +930,9 @@
   font-size: 13px;
   font-weight: 600;
   border-radius: 6px;
-  background: #f1f5f9;
-  color: #475569;
-  border: 1px solid #e2e8f0;
+  background: rgba(148, 163, 184, 0.12);
+  color: #e2e8f0;
+  border: 1px solid rgba(148, 163, 184, 0.25);
 }
 
 .vendor-table-type-badge--title_company {
@@ -1101,10 +1110,10 @@
 }
 
 .vendor-table-contacts-section {
-  background: white;
-  border-radius: 8px;
-  padding: 20px;
-  border: 1px solid #e2e8f0;
+  background: transparent;
+  border-radius: 10px;
+  padding: 0;
+  border: none;
 }
 
 .vendor-table-expanded-cell {
@@ -1181,14 +1190,14 @@
 }
 
 .vendor-table-link {
-  color: #3b82f6;
+  color: #f472b6;
   text-decoration: none;
   transition: color 0.2s;
   display: inline-block;
 }
 
 .vendor-table-link:hover {
-  color: #2563eb;
+  color: #f9a8d4;
   text-decoration: underline;
 }
 
@@ -1221,9 +1230,9 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 16px;
-  border-bottom: 2px solid #e2e8f0;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.25);
 }
 
 .vendor-table-contacts-header h4 {
@@ -1236,14 +1245,14 @@
 .vendor-table-contacts-table {
   width: 100%;
   border-collapse: collapse;
-  background: white;
+  background: #0f172a;
   border-radius: 8px;
   overflow: hidden;
-  border: 1px solid #e2e8f0;
+  border: 1px solid rgba(148, 163, 184, 0.2);
 }
 
 .vendor-table-contacts-table thead {
-  background: #f1f5f9;
+  background: rgba(148, 163, 184, 0.08);
 }
 
 .vendor-table-contacts-table th {
@@ -1251,14 +1260,14 @@
   text-align: left;
   font-size: 12px;
   font-weight: 600;
-  color: #475569;
+  color: #cbd5e1;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
 }
 
 .vendor-table-contacts-table tbody tr {
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
 }
 
 .vendor-table-contacts-table tbody tr:last-child {
@@ -1266,13 +1275,13 @@
 }
 
 .vendor-table-contacts-table tbody tr:hover {
-  background: #f8fafc;
+  background: rgba(148, 163, 184, 0.08);
 }
 
 .vendor-table-contacts-table td {
   padding: 12px 16px;
   font-size: 14px;
-  color: #1e293b;
+  color: #e2e8f0;
 }
 
 .vendor-table-contact-link {
@@ -1327,16 +1336,16 @@
 }
 
 .vendor-table-contacts-empty {
-  text-align: center;
-  padding: 32px 20px;
-  background: white;
-  border: 2px dashed #e2e8f0;
+  text-align: left;
+  padding: 16px;
+  background: rgba(148, 163, 184, 0.08);
+  border: 1px dashed rgba(148, 163, 184, 0.3);
   border-radius: 8px;
 }
 
 .vendor-table-contacts-empty p {
   font-size: 14px;
-  color: #64748b;
+  color: #cbd5e1;
   margin: 0 0 16px 0;
 }
 

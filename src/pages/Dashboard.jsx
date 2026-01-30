@@ -1578,74 +1578,67 @@ const Dashboard = () => {
                                         + Add Contact
                                       </button>
                                     </div>
-                                {v.contacts && v.contacts.length > 0 ? (
-                                  <table className="vendor-table-contacts-table">
-                                    <thead>
-                                      <tr>
-                                        <th>Name</th>
-                                        <th>Phone</th>
-                                        <th>Email</th>
-                                        <th>Actions</th>
-                                      </tr>
-                                    </thead>
-                                    <tbody>
-                                      {v.contacts.map((contact) => (
-                                        <tr key={contact.id}>
-                                          <td><strong>{contact.name}</strong></td>
-                                          <td>
-                                            {contact.phone ? (
-                                              <a href={`tel:${contact.phone}`} className="vendor-table-contact-link">
-                                                {contact.phone}
-                                              </a>
-                                            ) : (
-                                              <span className="vendor-table-empty">—</span>
-                                            )}
-                                          </td>
-                                          <td>
-                                            {contact.email ? (
-                                              <a href={`mailto:${contact.email}`} className="vendor-table-contact-link">
-                                                {contact.email}
-                                              </a>
-                                            ) : (
-                                              <span className="vendor-table-empty">—</span>
-                                            )}
-                                          </td>
-                                          <td>
-                                            <div className="vendor-table-contact-actions">
-                                              <button
-                                                type="button"
-                                                className="vendor-table-contact-action"
-                                                onClick={() => handleEditContact(v.id, contact)}
-                                                title="Edit contact"
-                                              >
-                                                Edit
-                                              </button>
-                                              <button
-                                                type="button"
-                                                className="vendor-table-contact-action vendor-table-contact-action--danger"
-                                                onClick={() => handleContactDelete(v.id, contact.id)}
-                                                title="Delete contact"
-                                              >
-                                                Delete
-                                              </button>
-                                            </div>
-                                          </td>
-                                        </tr>
-                                      ))}
-                                    </tbody>
-                                  </table>
-                                ) : (
-                                  <div className="vendor-table-contacts-empty">
-                                    <p>No contacts yet. Add your first contact to get started.</p>
-                                    <button
-                                      type="button"
-                                      className="btn btn-outline btn-small"
-                                      onClick={() => handleNewContact(v.id)}
-                                    >
-                                      + Add Contact
-                                    </button>
-                                  </div>
-                                )}
+                                    {v.contacts && v.contacts.length > 0 ? (
+                                      <table className="vendor-table-contacts-table">
+                                        <thead>
+                                          <tr>
+                                            <th>Name</th>
+                                            <th>Phone</th>
+                                            <th>Email</th>
+                                            <th>Actions</th>
+                                          </tr>
+                                        </thead>
+                                        <tbody>
+                                          {v.contacts.map((contact) => (
+                                            <tr key={contact.id}>
+                                              <td><strong>{contact.name}</strong></td>
+                                              <td>
+                                                {contact.phone ? (
+                                                  <a href={`tel:${contact.phone}`} className="vendor-table-contact-link">
+                                                    {contact.phone}
+                                                  </a>
+                                                ) : (
+                                                  <span className="vendor-table-empty">—</span>
+                                                )}
+                                              </td>
+                                              <td>
+                                                {contact.email ? (
+                                                  <a href={`mailto:${contact.email}`} className="vendor-table-contact-link">
+                                                    {contact.email}
+                                                  </a>
+                                                ) : (
+                                                  <span className="vendor-table-empty">—</span>
+                                                )}
+                                              </td>
+                                              <td>
+                                                <div className="vendor-table-contact-actions">
+                                                  <button
+                                                    type="button"
+                                                    className="vendor-table-contact-action"
+                                                    onClick={() => handleEditContact(v.id, contact)}
+                                                    title="Edit contact"
+                                                  >
+                                                    Edit
+                                                  </button>
+                                                  <button
+                                                    type="button"
+                                                    className="vendor-table-contact-action vendor-table-contact-action--danger"
+                                                    onClick={() => handleContactDelete(v.id, contact.id)}
+                                                    title="Delete contact"
+                                                  >
+                                                    Delete
+                                                  </button>
+                                                </div>
+                                              </td>
+                                            </tr>
+                                          ))}
+                                        </tbody>
+                                      </table>
+                                    ) : (
+                                      <div className="vendor-table-contacts-empty">
+                                        <p>No contacts yet. Add your first contact to get started.</p>
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                               </td>
