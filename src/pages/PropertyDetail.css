@@ -179,6 +179,19 @@
   color: #475569;
 }
 
+.owner-stat-button {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+.owner-stat-button:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
 .property-owner-actions .owner-archived-note {
   font-size: 14px;
   color: #64748b;
@@ -950,6 +963,95 @@
   background: var(--gradient-brand, linear-gradient(135deg, #ff3ea5 0%, #7c3aed 100%));
   color: #fff;
   border-color: transparent;
+}
+
+.favorites-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(2, 6, 23, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1200;
+  padding: 20px;
+}
+
+.favorites-modal {
+  width: 100%;
+  max-width: 420px;
+  background: var(--color-bg-dark, #0b1224);
+  border: 1px solid var(--color-border-light, rgba(148, 163, 184, 0.2));
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(2, 6, 23, 0.5);
+  padding: 20px;
+}
+
+.favorites-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.favorites-modal-header h3 {
+  margin: 0;
+  color: var(--color-text-primary, #f8fafc);
+  font-size: 18px;
+}
+
+.favorites-modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border-light, rgba(148, 163, 184, 0.2));
+  background: transparent;
+  color: var(--color-text-secondary, #cbd5e1);
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.favorites-modal-close:hover {
+  color: var(--color-text-primary, #f8fafc);
+  border-color: rgba(248, 250, 252, 0.4);
+}
+
+.favorites-modal-empty {
+  margin: 0;
+  color: var(--color-text-secondary, #cbd5e1);
+  font-size: 14px;
+}
+
+.favorites-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.favorites-item {
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--color-bg-secondary, #0f172a);
+  border: 1px solid var(--color-border-light, rgba(148, 163, 184, 0.2));
+}
+
+.favorites-item-main {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.favorites-item-name {
+  color: var(--color-text-primary, #f8fafc);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.favorites-item-date {
+  color: var(--color-text-secondary, #cbd5e1);
+  font-size: 12px;
+  white-space: nowrap;
 }
 
 .property-stats .stat-label,

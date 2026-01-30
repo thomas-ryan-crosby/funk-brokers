@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { updateUserProfile, getUserProfile, updateUserPassword } from '../services/authService';
+import { updateUserProfile, getUserProfile, updateUserPassword, logout } from '../services/authService';
 import './Profile.css';
 
 const Profile = () => {
@@ -20,6 +20,7 @@ const Profile = () => {
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [passwordError, setPasswordError] = useState('');
   const [passwordSaved, setPasswordSaved] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -48,7 +49,9 @@ const Profile = () => {
       const name = form.name.trim();
       const phone = form.phone.trim();
       const anonymousProfile = !!form.anonymousProfile;
-      const publicUsername = anonymousProfile ? 'Anonymous' : (form.publicUsername || '').trim() || null;
+      const publicUsername = anonymousProfile
+        ? ((form.publicUsername || '').trim() || 'Anonymous')
+        : ((form.publicUsername || '').trim() || null);
       await updateUserProfile(user.uid, {
         name: name || null,
         phone: phone || null,
@@ -91,6 +94,20 @@ const Profile = () => {
       setPasswordError('Failed to update password. You may need to sign in again.');
     } finally {
       setPasswordSaving(false);
+    }
+  };
+
+  const handleSignOut = async () => {
+    if (signingOut) return;
+    setSigningOut(true);
+    try {
+      await logout();
+      navigate('/sign-in');
+    } catch (err) {
+      console.error('Error signing out:', err);
+      setError('Failed to sign out. Please try again.');
+    } finally {
+      setSigningOut(false);
     }
   };
 
@@ -147,16 +164,15 @@ const Profile = () => {
               />
               Keep my profile anonymous
             </label>
-            <p>When enabled, other users will see you as “Anonymous”.</p>
+            <p>When enabled, other users will see your public display name instead of your real name.</p>
           </div>
-          <label className={`profile-field ${form.anonymousProfile ? 'profile-field--disabled' : ''}`}>
+          <label className="profile-field">
             <span>Public display name</span>
             <input
               type="text"
               value={form.publicUsername}
               onChange={(e) => setForm((prev) => ({ ...prev, publicUsername: e.target.value }))}
               placeholder="Shown to other users"
-              disabled={form.anonymousProfile}
             />
           </label>
           <div className="profile-actions">
@@ -198,6 +214,16 @@ const Profile = () => {
           <p className="profile-footnote">
             If this fails, please sign out and sign back in before trying again.
           </p>
+        </div>
+
+        <div className="profile-section">
+          <h2>Sign out</h2>
+          <p className="profile-footnote">Sign out of your account on this device.</p>
+          <div className="profile-actions">
+            <button type="button" className="btn btn-outline" onClick={handleSignOut} disabled={signingOut}>
+              {signingOut ? 'Signing out...' : 'Sign out'}
+            </button>
+          </div>
         </div>
       </div>
     </div>

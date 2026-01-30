@@ -7,6 +7,7 @@ import {
   doc,
   query,
   where,
+  getDoc,
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
@@ -115,5 +116,40 @@ export const getFavoriteCountForProperty = async (propertyId) => {
   } catch (error) {
     console.error('Error getting favorite count:', error);
     return 0;
+  }
+};
+
+/**
+ * Get favorites for a property with user profile info
+ */
+export const getFavoritesForProperty = async (propertyId) => {
+  try {
+    const q = query(
+      collection(db, FAVORITES_COLLECTION),
+      where('propertyId', '==', propertyId)
+    );
+    const snap = await getDocs(q);
+    const favorites = await Promise.all(
+      snap.docs.map(async (d) => {
+        const fav = { id: d.id, ...d.data() };
+        let userProfile = null;
+        try {
+          const userDoc = await getDoc(doc(db, 'users', fav.userId));
+          if (userDoc.exists()) userProfile = { id: userDoc.id, ...userDoc.data() };
+        } catch (e) {
+          console.error('Error loading favorite user profile:', e);
+        }
+        return { ...fav, userProfile };
+      })
+    );
+    favorites.sort((a, b) => {
+      const aDate = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+      const bDate = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+      return bDate - aDate;
+    });
+    return favorites;
+  } catch (error) {
+    console.error('Error getting favorites for property:', error);
+    return [];
   }
 };

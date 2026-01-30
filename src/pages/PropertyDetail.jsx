@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getPropertyById, updateProperty, archiveProperty, restoreProperty, deletePropertyPermanently } from '../services/propertyService';
-import { addToFavorites, removeFromFavorites, isFavorited, getFavoriteCountForProperty } from '../services/favoritesService';
+import { addToFavorites, removeFromFavorites, isFavorited, getFavoriteCountForProperty, getFavoritesForProperty } from '../services/favoritesService';
 import { getPreListingChecklist, isPreListingChecklistComplete } from '../services/preListingChecklistService';
 import { calculateListingReadiness } from '../services/listingProgressService';
 import { getListingTierProgress, getListingTierLabel } from '../utils/verificationScores';
@@ -19,6 +19,9 @@ const PropertyDetail = () => {
   const [favorited, setFavorited] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [favoriteCount, setFavoriteCount] = useState(null);
+  const [favoritesList, setFavoritesList] = useState([]);
+  const [favoritesLoading, setFavoritesLoading] = useState(false);
+  const [favoritesOpen, setFavoritesOpen] = useState(false);
   const [commsUpdating, setCommsUpdating] = useState(false);
   const [availableForSaleUpdating, setAvailableForSaleUpdating] = useState(false);
   const [listingReadiness, setListingReadiness] = useState(0);
@@ -53,6 +56,37 @@ const PropertyDetail = () => {
       getFavoriteCountForProperty(property.id).then(setFavoriteCount);
     }
   }, [property?.id, isOwner]);
+
+  const loadFavoritesList = async () => {
+    if (!property?.id || !isOwner || favoritesLoading) return;
+    setFavoritesLoading(true);
+    try {
+      const list = await getFavoritesForProperty(property.id);
+      setFavoritesList(list);
+    } catch (err) {
+      console.error('Error loading favorites list:', err);
+      setFavoritesList([]);
+    } finally {
+      setFavoritesLoading(false);
+    }
+  };
+
+  const handleOpenFavorites = async () => {
+    await loadFavoritesList();
+    setFavoritesOpen(true);
+  };
+
+  const formatFavoriteDate = (v) => {
+    const d = v?.toDate ? v.toDate() : new Date(v || 0);
+    if (Number.isNaN(d.getTime())) return '—';
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  const getFavoriteDisplayName = (fav) => {
+    const profile = fav?.userProfile;
+    if (profile?.anonymousProfile) return profile.publicUsername || 'Anonymous';
+    return profile?.publicUsername || profile?.name || 'Unknown';
+  };
 
   const checkFavoriteStatus = async () => {
     if (!user || !property) return;
@@ -360,13 +394,18 @@ const PropertyDetail = () => {
           <div className="property-sidebar">
             {isOwner ? (
               <div className="property-owner-actions">
-                <p className="owner-stat">
+                <button
+                  type="button"
+                  className="owner-stat owner-stat-button"
+                  onClick={favoriteCount > 0 ? handleOpenFavorites : undefined}
+                  disabled={!favoriteCount || favoriteCount === 0}
+                >
                   {favoriteCount !== null
                     ? favoriteCount === 0
                       ? 'No favorites yet'
                       : `${favoriteCount} ${favoriteCount === 1 ? 'favorite' : 'favorites'}`
                     : '—'}
-                </p>
+                </button>
                 {property.archived && (
                   <p className="owner-archived-note">This listing is archived and hidden from browse.</p>
                 )}
@@ -642,6 +681,32 @@ const PropertyDetail = () => {
             })()}
           </div>
         </div>
+        {favoritesOpen && (
+          <div className="favorites-modal-overlay" onClick={() => setFavoritesOpen(false)}>
+            <div className="favorites-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="favorites-modal-header">
+                <h3>Favorites</h3>
+                <button type="button" className="favorites-modal-close" onClick={() => setFavoritesOpen(false)}>×</button>
+              </div>
+              {favoritesLoading ? (
+                <p className="favorites-modal-empty">Loading favorites...</p>
+              ) : favoritesList.length === 0 ? (
+                <p className="favorites-modal-empty">No favorites yet.</p>
+              ) : (
+                <div className="favorites-list">
+                  {favoritesList.map((fav) => (
+                    <div key={fav.id} className="favorites-item">
+                      <div className="favorites-item-main">
+                        <span className="favorites-item-name">{getFavoriteDisplayName(fav)}</span>
+                        <span className="favorites-item-date">{formatFavoriteDate(fav.createdAt)}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

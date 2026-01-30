@@ -21,7 +21,6 @@ import VerifyBuyer from './pages/VerifyBuyer';
 import TransactionManager from './pages/TransactionManager';
 import Messages from './pages/Messages';
 import PreListingChecklist from './pages/PreListingChecklist';
-import { logout } from './services/authService';
 import { getMessagesForUser } from './services/messageService';
 import './App.css';
 
@@ -77,14 +76,6 @@ function AppContent() {
     };
   }, [isAuthenticated, user?.uid, loadUnreadCount]);
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-    } catch (error) {
-      console.error('Error logging out:', error);
-    }
-  };
-
   return (
     <Router basename="/funk-brokers">
       <div className="App">
@@ -120,9 +111,6 @@ function AppContent() {
                       {userProfile?.name || user?.displayName || 'Profile'}
                     </span>
                   </Link>
-                  <button onClick={handleLogout} className="nav-logout">
-                    Sign Out
-                  </button>
                 </>
               ) : (
                 <>
