@@ -55,6 +55,11 @@ const EditProperty = () => {
       setLoading(true);
       setError(null);
       const p = await getPropertyById(id);
+      if (!p) {
+        setError('Property not found.');
+        setLoading(false);
+        return;
+      }
       if (p.sellerId !== user?.uid) {
         setError('You can only edit your own listings.');
         setLoading(false);
@@ -92,11 +97,6 @@ const EditProperty = () => {
       if (p.hasInsurance === true) setHasInsurance('yes');
       else if (p.hasInsurance === false) setHasInsurance('no');
       setInsuranceApproximation(p.insuranceApproximation != null ? String(p.insuranceApproximation) : '');
-      
-      // If advancing from Basic tier, start at step 1
-      if (tier === 'basic') {
-        setStep(1);
-      }
       setAddressInputValue([p.address, p.city, p.state, p.zipCode].filter(Boolean).join(', '));
       setExistingPhotos(Array.isArray(p.photos) ? [...p.photos] : []);
       setExistingDocUrls({
@@ -109,9 +109,14 @@ const EditProperty = () => {
       // Determine current tier
       const tier = getListingTier(p);
       setCurrentTier(tier);
+      
+      // If advancing from Basic tier, start at step 1
+      if (tier === 'basic') {
+        setStep(1);
+      }
     } catch (err) {
-      setError('Property not found or failed to load.');
-      console.error(err);
+      console.error('Error loading property:', err);
+      setError('Property not found or failed to load. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -360,35 +365,35 @@ const EditProperty = () => {
         )}
         {error && <div className="error-message">{error}</div>}
         <form onSubmit={handleSubmit}>
-          {/* 1. Address — same as List Property */}
-          <div className="form-step">
-            <h2>Address</h2>
-            <div className="form-group">
-              <label>Address *</label>
-              <AddressAutocomplete
-                name="address"
-                value={addressInputValue}
-                onAddressChange={(v) => {
-                  setAddressInputValue(v);
-                  if (!v.trim()) setFormData((prev) => (prev ? { ...prev, address: '', city: '', state: '', zipCode: '', latitude: undefined, longitude: undefined } : prev));
-                }}
-                onAddressSelect={(obj) => {
-                  setFormData((prev) => (prev ? { ...prev, ...obj } : prev));
-                  setAddressInputValue([obj.address, obj.city, obj.state, obj.zipCode].filter(Boolean).join(', '));
-                }}
-                placeholder="Select an address from the list (start typing to search)"
-                required
-              />
-              {formData.address && (formData.city || formData.zipCode) && (
-                <p className="form-hint">✓ Address verified from selection</p>
-              )}
-            </div>
-          </div>
-
-          {/* Step 1: Property Info (shown when step === 1 or not tier advancement) */}
+          {/* Step 1: Address + Property Info (only shown when step === 1 or not tier advancement) */}
           {(!isTierAdvancement || step === 1) && (
             <>
-              {/* 2. About the home */}
+              {/* Address */}
+              <div className="form-step">
+                <h2>Address</h2>
+                <div className="form-group">
+                  <label>Address *</label>
+                  <AddressAutocomplete
+                    name="address"
+                    value={addressInputValue}
+                    onAddressChange={(v) => {
+                      setAddressInputValue(v);
+                      if (!v.trim()) setFormData((prev) => (prev ? { ...prev, address: '', city: '', state: '', zipCode: '', latitude: undefined, longitude: undefined } : prev));
+                    }}
+                    onAddressSelect={(obj) => {
+                      setFormData((prev) => (prev ? { ...prev, ...obj } : prev));
+                      setAddressInputValue([obj.address, obj.city, obj.state, obj.zipCode].filter(Boolean).join(', '));
+                    }}
+                    placeholder="Select an address from the list (start typing to search)"
+                    required
+                  />
+                  {formData.address && (formData.city || formData.zipCode) && (
+                    <p className="form-hint">✓ Address verified from selection</p>
+                  )}
+                </div>
+              </div>
+
+              {/* About the home */}
               <div className="form-step">
                 <h2>About the home</h2>
                 <p className="form-note">Beds, baths, size, and features.</p>
@@ -473,7 +478,7 @@ const EditProperty = () => {
             </>
           )}
 
-          {/* Step 2: Initial Pricing Info (shown when step === 2 or not tier advancement) */}
+          {/* Step 2: Initial Pricing Info (ONLY shown when step === 2, or always shown if NOT tier advancement) */}
           {(!isTierAdvancement || step === 2) && (
             <div className="form-step">
               <h2>Initial Pricing</h2>
@@ -496,7 +501,7 @@ const EditProperty = () => {
             </div>
           )}
 
-          {/* Step 3: Photos (shown when step === 3 or not tier advancement) */}
+          {/* Step 3: Photos (ONLY shown when step === 3, or always shown if NOT tier advancement) */}
           {(!isTierAdvancement || step === 3) && (
             <div className="form-step">
               <h2>Property Photos</h2>
