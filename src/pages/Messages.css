@@ -110,6 +110,18 @@
   font-weight: 600;
   color: var(--color-text-primary, #f8fafc);
   font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.thread-item-unread-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: #38bdf8;
+  box-shadow: 0 0 0 4px rgba(56, 189, 248, 0.15);
+  flex-shrink: 0;
 }
 
 .thread-item-date {

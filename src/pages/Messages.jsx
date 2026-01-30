@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getMessagesForUser, createMessage } from '../services/messageService';
@@ -21,6 +21,7 @@ const formatListDate = (v) => {
 
 const THREAD_READ_KEY = 'messageLastReadByThread';
 const buildThreadKey = (otherUserId, propertyId) => `${otherUserId}_${propertyId || 'none'}`;
+const getMessageDate = (m) => (m?.createdAt?.toDate ? m.createdAt.toDate() : new Date(m?.createdAt || 0));
 
 const Messages = () => {
   const { user, userProfile, isAuthenticated, loading: authLoading } = useAuth();
@@ -83,7 +84,9 @@ const Messages = () => {
   };
 
   const uid = user?.uid;
-  const myName = userProfile?.name || user?.displayName || 'You';
+  const myName = userProfile?.anonymousProfile
+    ? (userProfile?.publicUsername || 'Anonymous')
+    : (userProfile?.name || user?.displayName || 'You');
 
   const threads = useMemo(() => {
     if (!uid) return [];
@@ -119,6 +122,44 @@ const Messages = () => {
     return list;
   }, [threads, filterFromUserId, filterPropertyId]);
 
+  const [unreadByThread, setUnreadByThread] = useState({});
+  const computeUnread = useCallback(() => {
+    if (!uid) return;
+    let stored = {};
+    try {
+      stored = JSON.parse(localStorage.getItem(THREAD_READ_KEY) || '{}');
+    } catch (_) {
+      stored = {};
+    }
+    const next = {};
+    for (const t of threads) {
+      const key = buildThreadKey(t.otherUserId, t.propertyId);
+      const lastReadRaw = stored[key];
+      const lastRead = lastReadRaw ? new Date(lastReadRaw) : null;
+      const hasUnread = t.messages.some((m) => {
+        if (m.recipientId !== uid) return false;
+        const msgDate = getMessageDate(m);
+        return !lastRead || msgDate > lastRead;
+      });
+      next[key] = hasUnread;
+    }
+    setUnreadByThread(next);
+  }, [threads, uid]);
+
+  useEffect(() => {
+    computeUnread();
+  }, [computeUnread]);
+
+  useEffect(() => {
+    const handler = () => computeUnread();
+    window.addEventListener('messages:read', handler);
+    window.addEventListener('storage', handler);
+    return () => {
+      window.removeEventListener('messages:read', handler);
+      window.removeEventListener('storage', handler);
+    };
+  }, [computeUnread]);
+
   const messageableUsers = useMemo(() => {
     const seen = new Map();
     for (const t of threads) {
@@ -145,9 +186,7 @@ const Messages = () => {
     if (!selectedThread || !uid) return;
     const key = buildThreadKey(selectedThread.otherUserId, selectedThread.propertyId);
     const latest = selectedThreadMessages[selectedThreadMessages.length - 1];
-    const latestDate = latest
-      ? (latest.createdAt?.toDate ? latest.createdAt.toDate() : new Date(latest.createdAt || Date.now()))
-      : new Date();
+    const latestDate = latest ? getMessageDate(latest) : new Date();
     try {
       const map = JSON.parse(localStorage.getItem(THREAD_READ_KEY) || '{}');
       map[key] = latestDate.toISOString();
@@ -271,6 +310,8 @@ const Messages = () => {
                 {filteredThreads.map((t) => {
                   const last = t.messages[t.messages.length - 1];
                   const isSelected = selectedThread && selectedThread.otherUserId === t.otherUserId && (selectedThread.propertyId || '') === (t.propertyId || '');
+                  const key = buildThreadKey(t.otherUserId, t.propertyId);
+                  const hasUnread = !!unreadByThread[key];
                   return (
                     <li
                       key={`${t.otherUserId}_${t.propertyId || 'none'}`}
@@ -281,7 +322,10 @@ const Messages = () => {
                       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedThread(t); setComposingNew(false); } }}
                     >
                       <div className="thread-item-head">
-                        <span className="thread-item-name">{t.otherUserName}</span>
+                        <span className="thread-item-name">
+                          {hasUnread && <span className="thread-item-unread-dot" aria-hidden />}
+                          {t.otherUserName}
+                        </span>
                         <span className="thread-item-date">{formatListDate(last?.createdAt)}</span>
                       </div>
                       <div className="thread-item-context">{t.propertyAddress || 'General'}</div>
