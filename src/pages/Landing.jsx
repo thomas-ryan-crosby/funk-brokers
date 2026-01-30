@@ -35,7 +35,7 @@ const Landing = () => {
                 Start a conversation
               </button>
               <button onClick={handleListClick} className="btn btn-secondary">
-                Share a home quietly
+                Add your property to the platform
               </button>
             </div>
             <button onClick={handleLearnProcessClick} className="hero-learn-more">
@@ -181,7 +181,7 @@ const Landing = () => {
                 Start a conversation
               </button>
               <button onClick={handleListClick} className="btn btn-outline btn-large">
-                Share a home quietly
+                Add your property to the platform
               </button>
             </div>
           </div>

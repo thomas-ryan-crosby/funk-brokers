@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { updateUserProfile, getUserProfile, updateUserPassword, logout } from '../services/authService';
+import { updateUserProfile, updateUserPassword, logout } from '../services/authService';
 import './Profile.css';
 
 const Profile = () => {
-  const { user, userProfile, isAuthenticated, loading: authLoading } = useAuth();
+  const { user, userProfile, isAuthenticated, loading: authLoading, refreshUserProfile } = useAuth();
   const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -58,7 +58,7 @@ const Profile = () => {
         publicUsername,
         anonymousProfile,
       });
-      await getUserProfile(user.uid).catch(() => null);
+      await refreshUserProfile?.(user.uid);
       setSaved(true);
       window.setTimeout(() => setSaved(false), 2500);
     } catch (err) {

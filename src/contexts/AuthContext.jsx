@@ -41,6 +41,17 @@ export const AuthProvider = ({ children }) => {
   const value = {
     user,
     userProfile,
+    refreshUserProfile: async (uid = user?.uid) => {
+      if (!uid) return null;
+      try {
+        const profile = await getUserProfile(uid);
+        setUserProfile(profile);
+        return profile;
+      } catch (error) {
+        console.error('Error refreshing user profile:', error);
+        return null;
+      }
+    },
     loading,
     isAuthenticated: !!user,
   };
