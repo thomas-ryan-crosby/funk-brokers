@@ -71,6 +71,26 @@ const Home = () => {
     setFilters(newFilters);
   };
 
+  const fallbackUnlistedParcel = (query) => ({
+    address: query,
+    estimate: null,
+    lastSaleDate: null,
+    lastSalePrice: null,
+    beds: null,
+    baths: null,
+    squareFeet: null,
+  });
+
+  const formatUnknown = (value) => (value == null || value === '' ? '?' : value);
+
+  const formatLastSale = (date, price) => {
+    const d = date ? String(date).slice(0, 10) : '';
+    const p = price != null && Number.isFinite(price) ? `$${Number(price).toLocaleString()}` : '';
+    if (!d && !p) return '?';
+    if (d && p) return `${d} · ${p}`;
+    return d || p || '?';
+  };
+
   const loadUnlistedForQuery = async (query) => {
     if (!/\d/.test(query)) {
       setUnlistedParcel(null);
@@ -83,7 +103,7 @@ const Home = () => {
     try {
       await loadGooglePlaces();
       if (!window.google?.maps?.Geocoder) {
-        setUnlistedParcel(null);
+        setUnlistedParcel(fallbackUnlistedParcel(query));
         return;
       }
       const geocoder = new window.google.maps.Geocoder();
@@ -100,7 +120,7 @@ const Home = () => {
       const lat = typeof location.lat === 'function' ? location.lat() : location.lat;
       const lng = typeof location.lng === 'function' ? location.lng() : location.lng;
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-        setUnlistedParcel(null);
+        setUnlistedParcel(fallbackUnlistedParcel(query));
         return;
       }
       const delta = 0.003;
@@ -112,10 +132,10 @@ const Home = () => {
       if (requestId !== unlistedRequestRef.current) return;
       const normalized = query.toLowerCase();
       const match = (parcels || []).find((p) => (p.address || '').toLowerCase().includes(normalized)) || (parcels || [])[0];
-      setUnlistedParcel(match || null);
+      setUnlistedParcel(match || fallbackUnlistedParcel(query));
     } catch (err) {
       console.error('Unlisted lookup failed:', err);
-      setUnlistedParcel(null);
+      setUnlistedParcel(fallbackUnlistedParcel(query));
     } finally {
       if (requestId === unlistedRequestRef.current) setUnlistedLoading(false);
     }
@@ -220,6 +240,16 @@ const Home = () => {
                         >
                           Claim property
                         </button>
+                      </div>
+                      <div className="unlisted-search-card__details">
+                        <div>
+                          <span>Funk Estimate</span>
+                          <strong>{formatUnknown(unlistedParcel.estimate != null && Number.isFinite(unlistedParcel.estimate) ? `$${Number(unlistedParcel.estimate).toLocaleString()}` : null)}</strong>
+                        </div>
+                        <div>
+                          <span>Last sale</span>
+                          <strong>{formatLastSale(unlistedParcel.lastSaleDate, unlistedParcel.lastSalePrice)}</strong>
+                        </div>
                       </div>
                       <p className="unlisted-search-card__note">
                         This address isn’t on OpenTo yet. Claiming lets you add it and manage the listing.
