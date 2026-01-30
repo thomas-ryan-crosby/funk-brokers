@@ -879,6 +879,14 @@
   min-width: 150px;
 }
 
+.vendor-table-col-website,
+.vendor-table-col-phone,
+.vendor-table-col-email,
+.vendor-table-col-address {
+  width: 18%;
+  min-width: 160px;
+}
+
 .vendor-table-col-contacts {
   width: 30%;
   min-width: 180px;
@@ -898,6 +906,13 @@
   font-size: 16px;
   font-weight: 600;
   color: #1e293b;
+}
+
+.vendor-table-address {
+  display: inline-block;
+  color: #475569;
+  font-size: 14px;
+  line-height: 1.4;
 }
 
 .vendor-table-type-badge {

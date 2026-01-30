@@ -1459,6 +1459,10 @@ const Dashboard = () => {
                       <tr>
                         <th className="vendor-table-col-name">Vendor Name</th>
                         <th className="vendor-table-col-type">Type</th>
+                        <th className="vendor-table-col-website">Website</th>
+                        <th className="vendor-table-col-phone">Phone</th>
+                        <th className="vendor-table-col-email">Email</th>
+                        <th className="vendor-table-col-address">Address</th>
                         <th className="vendor-table-col-contacts">Contacts</th>
                         <th className="vendor-table-col-actions">Actions</th>
                       </tr>
@@ -1474,6 +1478,40 @@ const Dashboard = () => {
                               <span className={`vendor-table-type-badge vendor-table-type-badge--${v.type}`}>
                                 {v.type === 'other' && v.customType ? v.customType : (VENDOR_TYPES.find((t) => t.id === v.type)?.label || v.type)}
                               </span>
+                            </td>
+                            <td className="vendor-table-col-website">
+                              {v.website ? (
+                                <a href={v.website.startsWith('http') ? v.website : `https://${v.website}`} target="_blank" rel="noopener noreferrer" className="vendor-table-link">
+                                  {v.website}
+                                </a>
+                              ) : (
+                                <span className="vendor-table-empty">—</span>
+                              )}
+                            </td>
+                            <td className="vendor-table-col-phone">
+                              {v.phone ? (
+                                <a href={`tel:${v.phone}`} className="vendor-table-link">
+                                  {v.phone}
+                                </a>
+                              ) : (
+                                <span className="vendor-table-empty">—</span>
+                              )}
+                            </td>
+                            <td className="vendor-table-col-email">
+                              {v.email ? (
+                                <a href={`mailto:${v.email}`} className="vendor-table-link">
+                                  {v.email}
+                                </a>
+                              ) : (
+                                <span className="vendor-table-empty">—</span>
+                              )}
+                            </td>
+                            <td className="vendor-table-col-address">
+                              {v.address ? (
+                                <span className="vendor-table-address">{v.address}</span>
+                              ) : (
+                                <span className="vendor-table-empty">—</span>
+                              )}
                             </td>
                             <td className="vendor-table-col-contacts">
                               <div className="vendor-table-contacts-cell">
@@ -1527,75 +1565,8 @@ const Dashboard = () => {
                           </tr>
                           {expandedVendorId === v.id && (
                             <tr key={`${v.id}-expanded`} className="vendor-table-row-expanded">
-                              <td colSpan="4" className="vendor-table-expanded-cell">
+                              <td colSpan="8" className="vendor-table-expanded-cell">
                                 <div className="vendor-table-expanded-content">
-                                  <div className="vendor-table-details-section">
-                                    <div className="vendor-table-details-header">
-                                      <h4>Vendor Details</h4>
-                                      <button
-                                        type="button"
-                                        className="btn btn-outline btn-small"
-                                        onClick={() => handleVendorEdit(v)}
-                                      >
-                                        Edit Details
-                                      </button>
-                                    </div>
-                                    <div className="vendor-table-details-grid">
-                                      <div className="vendor-table-detail-item">
-                                        <label>Website</label>
-                                        <div>
-                                          {v.website ? (
-                                            <a href={v.website.startsWith('http') ? v.website : `https://${v.website}`} target="_blank" rel="noopener noreferrer" className="vendor-table-link">
-                                              {v.website}
-                                            </a>
-                                          ) : (
-                                            <span className="vendor-table-empty">—</span>
-                                          )}
-                                        </div>
-                                      </div>
-                                      <div className="vendor-table-detail-item">
-                                        <label>Phone</label>
-                                        <div>
-                                          {v.phone ? (
-                                            <a href={`tel:${v.phone}`} className="vendor-table-link">
-                                              {v.phone}
-                                            </a>
-                                          ) : (
-                                            <span className="vendor-table-empty">—</span>
-                                          )}
-                                        </div>
-                                      </div>
-                                      <div className="vendor-table-detail-item">
-                                        <label>Email</label>
-                                        <div>
-                                          {v.email ? (
-                                            <a href={`mailto:${v.email}`} className="vendor-table-link">
-                                              {v.email}
-                                            </a>
-                                          ) : (
-                                            <span className="vendor-table-empty">—</span>
-                                          )}
-                                        </div>
-                                      </div>
-                                      <div className="vendor-table-detail-item vendor-table-detail-item--full">
-                                        <label>Address</label>
-                                        <div>
-                                          {v.address ? (
-                                            <span>{v.address}</span>
-                                          ) : (
-                                            <span className="vendor-table-empty">—</span>
-                                          )}
-                                        </div>
-                                      </div>
-                                      {v.notes && (
-                                        <div className="vendor-table-detail-item vendor-table-detail-item--full">
-                                          <label>Notes</label>
-                                          <div className="vendor-table-notes">{v.notes}</div>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-
                                   <div className="vendor-table-contacts-section">
                                     <div className="vendor-table-contacts-header">
                                       <h4>Contacts</h4>
