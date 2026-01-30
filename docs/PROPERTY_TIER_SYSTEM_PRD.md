@@ -5,15 +5,15 @@ The Property Tier System gamifies property listing completion by creating a clea
 
 ## Goals
 1. **Encourage data-rich listings** - Motivate sellers to provide comprehensive property information
-2. **Easy entry point** - Make "Just Claimed" tier achievable with minimal effort
+2. **Easy entry point** - Make "Claimed" tier achievable with minimal effort
 3. **Clear progression** - Provide visible milestones and achievements with structured 3-screen flows
 4. **Document requirements** - Introduce document uploads gradually, starting at Enhanced tier
 5. **Gamification** - Create a sense of achievement and progress
 
 ## Tier Structure
 
-### Tier 1: Basic - "Just Claimed"
-**Badge:** ⚪ Just Claimed  
+### Tier 1: Basic - "Claimed"
+**Badge:** ⚪ Claimed  
 **Color:** Gray  
 **Purpose:** Minimal entry point - user has claimed/created the property listing
 
@@ -261,7 +261,7 @@ getPropertyTier(property) {
   if (meetsEnhancedRequirements(property)) return 'enhanced';
   if (meetsVerifiedRequirements(property)) return 'verified';
   if (meetsCompleteRequirements(property)) return 'complete';
-  return 'basic'; // "Just Claimed"
+  return 'basic'; // "Claimed"
 }
 ```
 
@@ -285,7 +285,7 @@ For each tier, calculate progress toward the next tier:
    - "Advance to next tier" button/link
 
 3. **Timeline Visualization**
-   - Visual timeline showing: Just Claimed → Complete → Verified → Enhanced → Premium → Elite
+   - Visual timeline showing: Claimed → Complete → Verified → Enhanced → Premium → Elite
    - Highlight current tier
    - Show completed tiers (green)
    - Show upcoming tiers (gray)
@@ -301,7 +301,7 @@ For each tier, calculate progress toward the next tier:
 
 ## User Experience Flow
 
-1. **User claims property** → Starts at "Just Claimed" (Basic) tier
+1. **User claims property** → Starts at "Claimed" (Basic) tier
 2. **User completes 3-screen flow** → Progresses to Complete
    - Screen 1: Property Basics
    - Screen 2: Initial Pricing
@@ -389,7 +389,7 @@ For each tier, calculate progress toward the next tier:
 - [ ] Create tier requirement check functions for each tier
 - [ ] Update `getListingTier()` function
 - [ ] Update `getListingTierProgress()` function
-- [ ] Update `getListingTierLabel()` function (change "Basic" to "Just Claimed")
+- [ ] Update `getListingTierLabel()` function (change "Basic" to "Claimed")
 - [ ] Add new tier badges (Complete, Enhanced, Elite)
 - [ ] Update PropertyDetail.jsx tier display
 - [ ] Update PropertyCard.jsx tier badges
@@ -423,7 +423,7 @@ For each tier, calculate progress toward the next tier:
 - Conditional fields (like HOA Fee) are required only if parent field is selected (e.g., HOA Fee required if HOA = Yes)
 
 ### Photo Requirements
-- Basic (Just Claimed): 1+ photo
+- Basic (Claimed): 1+ photo
 - Complete: 1+ photo
 - Verified: 5+ photos
 - Enhanced: 30+ high quality professional photos

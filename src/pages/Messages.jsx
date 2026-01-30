@@ -135,6 +135,12 @@ const Messages = () => {
     return Array.from(seen.entries()).map(([id, address]) => ({ id, address }));
   }, [threads]);
 
+  const selectedThreadMessages = useMemo(() => {
+    if (!selectedThread) return [];
+    const t = threads.find((x) => x.otherUserId === selectedThread.otherUserId && (x.propertyId || '') === (selectedThread.propertyId || ''));
+    return t ? t.messages : [];
+  }, [threads, selectedThread]);
+
   useEffect(() => {
     if (!selectedThread || !uid) return;
     const key = buildThreadKey(selectedThread.otherUserId, selectedThread.propertyId);
@@ -151,12 +157,6 @@ const Messages = () => {
       console.error('Failed to store message read state', e);
     }
   }, [selectedThread, selectedThreadMessages, uid]);
-
-  const selectedThreadMessages = useMemo(() => {
-    if (!selectedThread) return [];
-    const t = threads.find((x) => x.otherUserId === selectedThread.otherUserId && (x.propertyId || '') === (selectedThread.propertyId || ''));
-    return t ? t.messages : [];
-  }, [threads, selectedThread]);
 
   const handleSendReply = async () => {
     if (!selectedThread || !replyBody.trim() || !uid || sending) return;
