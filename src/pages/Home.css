@@ -1,6 +1,6 @@
 .home-page {
   min-height: 100vh;
-  background: #f5f5f5;
+  background: var(--color-bg-primary, #0b1020);
 }
 
 .home-filters-bar {
@@ -29,7 +29,7 @@
 .home-view-count {
   font-size: 20px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--color-text-primary, #f8fafc);
   margin: 0;
 }
 
@@ -37,8 +37,8 @@
   display: flex;
   border-radius: 8px;
   overflow: hidden;
-  border: 1px solid #cbd5e1;
-  background: #fff;
+  border: 1px solid var(--color-border-light, rgba(148, 163, 184, 0.2));
+  background: var(--color-bg-secondary, #0f172a);
 }
 
 .home-view-toggle button {
@@ -47,18 +47,18 @@
   font-weight: 500;
   border: none;
   background: transparent;
-  color: #64748b;
+  color: var(--color-text-secondary, #cbd5e1);
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
 }
 
 .home-view-toggle button:hover {
-  color: #1e293b;
-  background: #f1f5f9;
+  color: var(--color-text-primary, #f8fafc);
+  background: rgba(148, 163, 184, 0.12);
 }
 
 .home-view-toggle button.active {
-  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+  background: var(--gradient-brand, linear-gradient(135deg, #ff3ea5 0%, #7c3aed 100%));
   color: #fff;
 }
 
@@ -83,8 +83,8 @@
   margin-bottom: 24px;
   border-radius: 8px;
   overflow: hidden;
-  border: 1px solid #e2e8f0;
-  background: #fff;
+  border: 1px solid var(--color-border-light, rgba(148, 163, 184, 0.2));
+  background: var(--color-bg-secondary, #0f172a);
 }
 
 .home-map-split__map {
@@ -109,7 +109,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   padding: 12px 14px;
-  background: #f8fafc;
+  background: var(--color-bg-dark, #0b1224);
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 12px;
@@ -128,7 +128,7 @@
 }
 
 .home-map-split__empty {
-  color: #64748b;
+  color: var(--color-text-secondary, #cbd5e1);
   font-size: 14px;
   margin: 0;
   padding: 24px 0;
@@ -141,7 +141,7 @@
 
 .properties-header h2 {
   font-size: 24px;
-  color: #1a1a1a;
+  color: var(--color-text-primary, #f8fafc);
   margin: 0;
 }
 
@@ -156,26 +156,26 @@
 .empty-state {
   text-align: center;
   padding: 60px 20px;
-  color: #666;
+  color: var(--color-text-secondary, #cbd5e1);
 }
 
 .error-state button {
   margin-top: 16px;
   padding: 10px 20px;
-  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  background: var(--gradient-brand, linear-gradient(135deg, #ff3ea5 0%, #7c3aed 100%));
   color: white;
   border: none;
   border-radius: 8px;
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
-  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 6px 20px rgba(2, 6, 23, 0.45);
   transition: all 0.2s ease;
 }
 
 .error-state button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 10px 24px rgba(2, 6, 23, 0.55);
 }
 
 

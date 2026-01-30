@@ -1,28 +1,28 @@
 .submit-offer-page {
   min-height: 100vh;
-  background: #f5f5f5;
+  background: var(--color-bg-primary, #0b1020);
   padding: 40px 20px;
 }
 
 .submit-offer-container {
   max-width: 900px;
   margin: 0 auto;
-  background: white;
+  background: var(--color-bg-dark, #0b1224);
   padding: 40px;
   border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 12px 24px rgba(2, 6, 23, 0.35);
 }
 
 .offer-header {
   margin-bottom: 32px;
   padding-bottom: 24px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid var(--color-border-light, rgba(148, 163, 184, 0.2));
 }
 
 .offer-header h1 {
   font-size: 32px;
   margin: 0 0 16px 0;
-  color: #1a1a1a;
+  color: var(--color-text-primary, #f8fafc);
 }
 
 .property-summary {
@@ -31,14 +31,14 @@
 
 .property-address {
   font-size: 18px;
-  color: #666;
+  color: var(--color-text-secondary, #cbd5e1);
   margin: 0 0 8px 0;
 }
 
 .property-price {
   font-size: 24px;
   font-weight: 700;
-  color: #3b82f6;
+  color: var(--color-yellow-primary, #f9a8d4);
   margin: 0;
 }
 
@@ -53,8 +53,8 @@
 
 .offer-attention {
   padding: 32px 24px;
-  background: #fff8e6;
-  border: 1px solid #f59e0b;
+  background: rgba(255, 62, 165, 0.12);
+  border: 1px solid rgba(255, 62, 165, 0.3);
   border-radius: 8px;
   margin-bottom: 24px;
 }
@@ -62,14 +62,14 @@
 .offer-attention-title {
   margin: 0 0 16px 0;
   font-size: 20px;
-  color: #92400e;
+  color: var(--color-text-primary, #f8fafc);
 }
 
 .offer-attention-text {
   margin: 0 0 16px 0;
   font-size: 15px;
   line-height: 1.6;
-  color: #78350f;
+  color: var(--color-text-secondary, #cbd5e1);
 }
 
 .offer-attention-checklist {
@@ -77,7 +77,7 @@
   padding-left: 24px;
   font-size: 14px;
   line-height: 1.6;
-  color: #78350f;
+  color: var(--color-text-secondary, #cbd5e1);
 }
 
 .offer-attention-checklist li {
@@ -86,8 +86,8 @@
 
 .offer-disclosures {
   padding: 32px 24px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--color-bg-secondary, #0f172a);
+  border: 1px solid var(--color-border-light, rgba(148, 163, 184, 0.2));
   border-radius: 8px;
   margin-bottom: 24px;
 }
@@ -95,20 +95,20 @@
 .offer-disclosures-title {
   margin: 0 0 12px 0;
   font-size: 20px;
-  color: #1e293b;
+  color: var(--color-text-primary, #f8fafc);
 }
 
 .offer-disclosures-intro {
   margin: 0 0 20px 0;
   font-size: 15px;
-  color: #475569;
+  color: var(--color-text-secondary, #cbd5e1);
 }
 
 .offer-disclosures-content {
   margin-bottom: 24px;
   padding: 20px;
-  background: #fff;
-  border: 1px solid #e2e8f0;
+  background: var(--color-bg-dark, #0b1224);
+  border: 1px solid var(--color-border-light, rgba(148, 163, 184, 0.2));
   border-radius: 8px;
   max-height: 320px;
   overflow-y: auto;
@@ -117,7 +117,7 @@
 .offer-disclosures-content h3 {
   margin: 16px 0 8px 0;
   font-size: 15px;
-  color: #334155;
+  color: var(--color-text-primary, #f8fafc);
 }
 
 .offer-disclosures-content h3:first-child {
@@ -128,7 +128,7 @@
   margin: 0 0 12px 0;
   font-size: 14px;
   line-height: 1.6;
-  color: #475569;
+  color: var(--color-text-secondary, #cbd5e1);
 }
 
 .offer-disclosures-ack {
@@ -138,14 +138,14 @@
   margin-bottom: 20px;
   font-size: 14px;
   line-height: 1.5;
-  color: #334155;
+  color: var(--color-text-secondary, #cbd5e1);
   cursor: pointer;
 }
 
 .offer-disclosures-ack input[type="checkbox"] {
   margin-top: 3px;
   flex-shrink: 0;
-  accent-color: #3b82f6;
+  accent-color: #f472b6;
 }
 
 .offer-disclosures .btn-primary:disabled {
@@ -160,53 +160,53 @@
 .offer-review-title {
   margin: 0 0 8px 0;
   font-size: 22px;
-  color: #1a1a1a;
+  color: var(--color-text-primary, #f8fafc);
 }
 
 .offer-review-hint {
   margin: 0 0 24px 0;
   font-size: 14px;
-  color: #666;
+  color: var(--color-text-secondary, #cbd5e1);
 }
 
 .offer-review-section {
   margin-bottom: 20px;
   padding: 16px;
-  background: #f8f9ff;
+  background: var(--color-bg-secondary, #0f172a);
   border-radius: 8px;
 }
 
 .offer-review-section h3 {
   margin: 0 0 8px 0;
   font-size: 16px;
-  color: #333;
+  color: var(--color-text-primary, #f8fafc);
 }
 
 .offer-review-section p {
   margin: 0;
   font-size: 14px;
-  color: #555;
+  color: var(--color-text-secondary, #cbd5e1);
 }
 
 .offer-review-list {
   margin: 0;
   padding-left: 20px;
   font-size: 14px;
-  color: #555;
+  color: var(--color-text-secondary, #cbd5e1);
   line-height: 1.6;
 }
 
 .offer-review-message {
   white-space: pre-wrap;
   font-size: 14px;
-  color: #555;
+  color: var(--color-text-secondary, #cbd5e1);
 }
 
 .offer-review-sign {
   margin: 24px 0;
   padding: 20px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--color-bg-secondary, #0f172a);
+  border: 1px solid var(--color-border-light, rgba(148, 163, 184, 0.2));
   border-radius: 8px;
 }
 
@@ -214,7 +214,7 @@
   display: block;
   font-size: 14px;
   font-weight: 600;
-  color: #334155;
+  color: var(--color-text-primary, #f8fafc);
   margin-bottom: 8px;
 }
 
@@ -222,15 +222,15 @@
   width: 100%;
   max-width: 360px;
   padding: 12px;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--color-border-light, rgba(148, 163, 184, 0.2));
   border-radius: 6px;
   font-size: 16px;
 }
 
 .offer-review-sign-input:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+  border-color: var(--color-yellow-primary, #f9a8d4);
+  box-shadow: 0 0 0 2px rgba(236, 72, 153, 0.15);
 }
 
 .offer-form {
@@ -241,14 +241,14 @@
 
 .form-section {
   padding: 24px;
-  background: #f8f9ff;
+  background: var(--color-bg-secondary, #0f172a);
   border-radius: 8px;
 }
 
 .form-section h2 {
   font-size: 20px;
   margin: 0 0 20px 0;
-  color: #1a1a1a;
+  color: var(--color-text-primary, #f8fafc);
 }
 
 .form-grid {
@@ -265,7 +265,7 @@
 .form-group label {
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: var(--color-text-primary, #f8fafc);
   margin-bottom: 8px;
 }
 
@@ -280,7 +280,7 @@
 .form-group select,
 .form-group textarea {
   padding: 12px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border-light, rgba(148, 163, 184, 0.2));
   border-radius: 4px;
   font-size: 14px;
   font-family: inherit;
@@ -290,8 +290,8 @@
 .form-group select:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.1);
+  border-color: var(--color-yellow-primary, #f9a8d4);
+  box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.15);
 }
 
 .form-group textarea {
@@ -300,14 +300,14 @@
 
 .form-hint {
   font-size: 12px;
-  color: #666;
+  color: var(--color-text-secondary, #cbd5e1);
   margin-top: 4px;
 }
 
 .contingencies-intro {
   margin: 0 0 16px 0;
   font-size: 14px;
-  color: #555;
+  color: var(--color-text-secondary, #cbd5e1);
   line-height: 1.5;
 }
 
@@ -319,8 +319,8 @@
 
 .contingency-item {
   padding: 16px;
-  background: white;
-  border: 1px solid #ddd;
+  background: var(--color-bg-dark, #0b1224);
+  border: 1px solid var(--color-border-light, rgba(148, 163, 184, 0.2));
   border-radius: 4px;
 }
 
@@ -330,7 +330,7 @@
   gap: 8px;
   font-size: 16px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--color-text-primary, #f8fafc);
   cursor: pointer;
   margin-bottom: 6px;
 }
@@ -338,7 +338,7 @@
 .contingency-desc {
   margin: 0 0 0 26px;
   font-size: 13px;
-  color: #666;
+  color: var(--color-text-secondary, #cbd5e1);
   line-height: 1.45;
 }
 
@@ -351,7 +351,7 @@
 .contingency-details {
   margin-top: 12px;
   padding-top: 12px;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--color-border-light, rgba(148, 163, 184, 0.2));
 }
 
 .contingency-details label {
@@ -366,7 +366,7 @@
   width: 80px;
   min-width: 80px;
   padding: 6px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--color-border-light, rgba(148, 163, 184, 0.2));
   border-radius: 4px;
 }
 
@@ -382,7 +382,7 @@
   gap: 16px;
   justify-content: flex-end;
   padding-top: 24px;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--color-border-light, rgba(148, 163, 184, 0.2));
 }
 
 .btn-primary,
@@ -397,12 +397,12 @@
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  background: var(--gradient-brand, linear-gradient(135deg, #ff3ea5 0%, #7c3aed 100%));
   color: white;
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+  filter: brightness(1.05);
 }
 
 .btn-primary:disabled {
@@ -411,26 +411,26 @@
 }
 
 .btn-secondary {
-  background: #f5f5f5;
-  color: #333;
-  border: 1px solid #ddd;
+  background: rgba(148, 163, 184, 0.12);
+  color: var(--color-text-secondary, #cbd5e1);
+  border: 1px solid var(--color-border-light, rgba(148, 163, 184, 0.2));
 }
 
 .btn-secondary:hover {
-  background: #e8e8e8;
+  background: rgba(148, 163, 184, 0.2);
 }
 
 .loading-state,
 .error-state {
   text-align: center;
   padding: 60px 20px;
-  color: #666;
+  color: var(--color-text-secondary, #cbd5e1);
 }
 
 .error-state button {
   margin-top: 16px;
   padding: 10px 20px;
-  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  background: var(--gradient-brand, linear-gradient(135deg, #ff3ea5 0%, #7c3aed 100%));
   color: white;
   border: none;
   border-radius: 4px;
@@ -444,7 +444,7 @@
 }
 
 .success-message h2 {
-  color: #3b82f6;
+  color: var(--color-yellow-primary, #f9a8d4);
   margin-bottom: 16px;
   font-size: 28px;
 }
@@ -458,7 +458,7 @@
 
 .success-actions button {
   padding: 12px 24px;
-  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  background: var(--gradient-brand, linear-gradient(135deg, #ff3ea5 0%, #7c3aed 100%));
   color: white;
   border: none;
   border-radius: 4px;
@@ -470,7 +470,7 @@
 }
 
 .success-actions button:hover {
-  background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+  filter: brightness(1.05);
 }
 
 @media (max-width: 768px) {

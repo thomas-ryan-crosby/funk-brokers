@@ -39,7 +39,12 @@ function AppContent() {
         <nav className="app-nav">
           <div className="nav-container">
             <Link to="/" className="nav-logo">
-              <h1>Funk Brokers</h1>
+              <img
+                className="nav-logo-img"
+                src={`${import.meta.env.BASE_URL}brand/opento-logo.png`}
+                alt="OpenTo"
+              />
+              <span className="nav-logo-text">OpenTo</span>
             </Link>
             <div className="nav-links">
               <Link to="/browse">Browse Properties</Link>

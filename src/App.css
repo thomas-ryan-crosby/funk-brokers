@@ -19,8 +19,8 @@ body {
 }
 
 .app-nav {
-  background: white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: var(--color-bg-secondary, #0f172a);
+  box-shadow: 0 6px 18px rgba(2, 6, 23, 0.35);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -38,16 +38,23 @@ body {
 .nav-logo {
   text-decoration: none;
   color: inherit;
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-.nav-logo h1 {
-  font-size: 24px;
-  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin: 0;
+.nav-logo-img {
+  height: 28px;
+  width: auto;
+  display: block;
+  filter: drop-shadow(0 4px 18px rgba(255, 0, 153, 0.35));
+}
+
+.nav-logo-text {
+  font-size: 20px;
   font-weight: 700;
+  color: var(--color-text-primary, #f8fafc);
+  letter-spacing: 0.02em;
 }
 
 .nav-links {
@@ -58,23 +65,23 @@ body {
 
 .nav-links a {
   text-decoration: none;
-  color: #333;
+  color: var(--color-text-secondary, #cbd5e1);
   font-weight: 500;
   transition: color 0.2s;
 }
 
 .nav-links a:hover {
-  color: #3b82f6;
+  color: var(--color-yellow-primary, #f9a8d4);
 }
 
 .nav-user {
-  color: #64748b;
+  color: var(--color-text-secondary, #cbd5e1);
   font-size: 14px;
   padding: 0 8px;
 }
 
 .nav-signin {
-  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  background: var(--gradient-brand, linear-gradient(135deg, #ff3ea5 0%, #7c3aed 100%));
   color: white !important;
   padding: 8px 16px;
   border-radius: 6px;
@@ -88,8 +95,8 @@ body {
 
 .nav-logout {
   background: transparent;
-  border: 1px solid #e2e8f0;
-  color: #64748b;
+  border: 1px solid var(--color-border-light, rgba(148, 163, 184, 0.2));
+  color: var(--color-text-secondary, #cbd5e1);
   padding: 8px 16px;
   border-radius: 6px;
   font-size: 14px;
@@ -100,8 +107,8 @@ body {
 }
 
 .nav-logout:hover {
-  border-color: #3b82f6;
-  color: #3b82f6;
+  border-color: var(--color-yellow-primary, #f9a8d4);
+  color: var(--color-yellow-primary, #f9a8d4);
 }
 
 .app-main {
@@ -109,8 +116,8 @@ body {
 }
 
 .app-footer {
-  background: #1a1a1a;
-  color: white;
+  background: var(--color-bg-secondary, #0f172a);
+  color: var(--color-text-secondary, #cbd5e1);
   padding: 24px 20px;
   margin-top: auto;
 }
@@ -123,6 +130,6 @@ body {
 
 .footer-container p {
   margin: 0;
-  color: #999;
+  color: var(--color-text-secondary, #cbd5e1);
   font-size: 14px;
 }

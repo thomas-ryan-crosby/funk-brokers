@@ -835,3 +835,119 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* --- OpenTo Alternate Dark Theme Overrides --- */
+.property-detail-page {
+  background: var(--color-bg-primary, #0b1020);
+}
+
+.property-detail-container {
+  background: var(--color-bg-dark, #0b1224);
+  box-shadow: 0 12px 24px rgba(2, 6, 23, 0.35);
+}
+
+.property-detail-header,
+.detail-row,
+.property-details-card,
+.property-tier-progress-card {
+  border-color: var(--color-border-light, rgba(148, 163, 184, 0.2));
+}
+
+.property-detail-header h1,
+.property-overview h2,
+.property-description h2,
+.property-features h2,
+.property-details-card h3,
+.detail-value {
+  color: var(--color-text-primary, #f8fafc);
+}
+
+.property-address,
+.stat-label,
+.property-description p,
+.detail-label,
+.property-owner-actions .owner-stat,
+.property-owner-actions .owner-archived-note,
+.tier-progress-label,
+.tier-missing-title,
+.tier-missing-list,
+.tier-timeline-label {
+  color: var(--color-text-secondary, #cbd5e1);
+}
+
+.stat,
+.property-details-card,
+.property-tier-progress-card,
+.property-main-photo {
+  background: var(--color-bg-secondary, #0f172a);
+}
+
+.feature-tag {
+  background: rgba(255, 62, 165, 0.12);
+  color: var(--color-yellow-primary, #f9a8d4);
+}
+
+.property-actions .btn-primary,
+.property-owner-actions .btn,
+.property-actions .btn-primary:hover,
+.property-owner-actions .btn:hover {
+  background: var(--gradient-brand, linear-gradient(135deg, #ff3ea5 0%, #7c3aed 100%));
+}
+
+.property-actions .btn-secondary {
+  background: rgba(148, 163, 184, 0.12);
+  color: var(--color-text-secondary, #cbd5e1);
+  border-color: var(--color-border-light, rgba(148, 163, 184, 0.2));
+}
+
+.property-actions .btn-secondary:hover {
+  background: rgba(148, 163, 184, 0.2);
+}
+
+.property-owner-actions .btn-outline {
+  color: var(--color-yellow-primary, #f9a8d4);
+  border-color: var(--color-yellow-primary, #f9a8d4);
+}
+
+.property-owner-actions .btn-outline:hover {
+  background: var(--color-yellow-primary, #f9a8d4);
+  color: #0b1020;
+}
+
+.property-actions .btn-outline.favorited {
+  background: var(--gradient-yellow, linear-gradient(135deg, #f472b6 0%, #a855f7 100%));
+  color: #0b1020;
+  border-color: transparent;
+}
+
+.tier-progress-track,
+.tier-timeline-line {
+  background: rgba(148, 163, 184, 0.3);
+}
+
+.tier-progress-fill {
+  background: var(--gradient-brand, linear-gradient(90deg, #ff3ea5, #7c3aed));
+}
+
+.tier-timeline-dot {
+  background: rgba(148, 163, 184, 0.35);
+  border-color: #0b1224;
+}
+
+.tier-timeline-item--current .tier-timeline-dot,
+.tier-timeline-item--completed .tier-timeline-dot {
+  background: #f472b6;
+  border-color: #f472b6;
+}
+
+.tier-advance-btn {
+  border-color: #ff3ea5;
+  background: transparent;
+  color: var(--color-yellow-primary, #f9a8d4);
+}
+
+.tier-advance-btn:hover {
+  background: var(--gradient-brand, linear-gradient(135deg, #ff3ea5 0%, #7c3aed 100%));
+  color: #fff;
+  border-color: transparent;
+}

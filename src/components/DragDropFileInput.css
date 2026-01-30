@@ -6,7 +6,7 @@
   display: block;
   font-size: 14px;
   font-weight: 600;
-  color: #334155;
+  color: var(--color-text-primary, #f8fafc);
   margin-bottom: 8px;
 }
 
@@ -14,9 +14,9 @@
   position: relative;
   min-height: 80px;
   padding: 16px 20px;
-  border: 2px dashed #cbd5e1;
+  border: 2px dashed var(--color-border-medium, rgba(148, 163, 184, 0.35));
   border-radius: 8px;
-  background: #f8fafc;
+  background: var(--color-bg-secondary, #0f172a);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -25,13 +25,13 @@
 }
 
 .drag-drop-file-input__zone:hover:not(.disabled) {
-  border-color: #94a3b8;
-  background: #f1f5f9;
+  border-color: rgba(248, 250, 252, 0.3);
+  background: rgba(148, 163, 184, 0.12);
 }
 
 .drag-drop-file-input__zone.drag-over {
-  border-color: #3b82f6;
-  background: #eff6ff;
+  border-color: #ff3ea5;
+  background: rgba(255, 62, 165, 0.12);
 }
 
 .drag-drop-file-input__zone.disabled {
@@ -55,20 +55,20 @@
 .drag-drop-file-input__placeholder,
 .drag-drop-file-input__message {
   font-size: 14px;
-  color: #64748b;
+  color: var(--color-text-secondary, #cbd5e1);
   pointer-events: none;
 }
 
 .drag-drop-file-input__zone.drag-over .drag-drop-file-input__placeholder {
-  color: #3b82f6;
+  color: var(--color-yellow-primary, #f9a8d4);
 }
 
 .drag-drop-file-input__message {
-  color: #0ea5e9;
+  color: var(--color-yellow-primary, #f9a8d4);
 }
 
 .drag-drop-file-input__hint {
   font-size: 12px;
-  color: #64748b;
+  color: var(--color-text-secondary, #cbd5e1);
   margin: 8px 0 0 0;
 }

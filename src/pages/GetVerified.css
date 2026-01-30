@@ -585,3 +585,102 @@
   color: #64748b;
   font-size: 16px;
 }
+
+/* --- OpenTo Alternate Dark Theme Overrides --- */
+.get-verified-page {
+  background: var(--color-bg-primary, #0b1020);
+}
+
+.get-verified-container {
+  background: var(--color-bg-dark, #0b1224);
+  box-shadow: 0 12px 24px rgba(2, 6, 23, 0.35);
+}
+
+.get-verified-container h1,
+.form-step h2,
+.read-only-value {
+  color: var(--color-text-primary, #f8fafc);
+}
+
+.get-verified-intro,
+.verification-progress-text,
+.upload-progress__label,
+.form-note,
+.form-instruction,
+.form-hint,
+.comp-price-modal-address {
+  color: var(--color-text-secondary, #cbd5e1);
+}
+
+.verification-progress-bar,
+.step-indicator {
+  border-color: var(--color-border-light, rgba(148, 163, 184, 0.2));
+}
+
+.verification-progress-bar {
+  background: rgba(148, 163, 184, 0.3);
+}
+
+.verification-progress-fill,
+.step.active:not(:last-child)::after {
+  background: var(--gradient-brand, linear-gradient(90deg, #ff3ea5, #7c3aed));
+}
+
+.step.active {
+  color: var(--color-yellow-primary, #f9a8d4);
+}
+
+.feature-chip {
+  background: var(--color-bg-secondary, #0f172a);
+  border-color: var(--color-border-light, rgba(148, 163, 184, 0.2));
+  color: var(--color-text-secondary, #cbd5e1);
+}
+
+.feature-chip.active {
+  background: rgba(255, 62, 165, 0.12);
+  border-color: #ff3ea5;
+  color: var(--color-yellow-primary, #f9a8d4);
+}
+
+.comp-row,
+.comps-section,
+.comp-price-modal,
+.step-indicator-step {
+  background: var(--color-bg-secondary, #0f172a);
+  border-color: var(--color-border-light, rgba(148, 163, 184, 0.2));
+}
+
+.comp-price-modal {
+  box-shadow: 0 20px 40px rgba(2, 6, 23, 0.5);
+}
+
+.comp-address,
+.form-group label,
+.confirm-checkbox,
+.form-hint a,
+.get-verified-container .btn-outline {
+  color: var(--color-text-primary, #f8fafc);
+}
+
+.get-verified-container .btn-outline {
+  background: transparent;
+  border-color: var(--color-border-medium, rgba(148, 163, 184, 0.35));
+}
+
+.get-verified-container .btn-outline:hover {
+  background: rgba(148, 163, 184, 0.12);
+  border-color: rgba(248, 250, 252, 0.4);
+}
+
+.celebration-container {
+  background: var(--color-bg-dark, #0b1224);
+  box-shadow: 0 20px 40px rgba(2, 6, 23, 0.5);
+}
+
+.celebration-title {
+  color: var(--color-yellow-primary, #f9a8d4);
+}
+
+.celebration-message {
+  color: var(--color-text-secondary, #cbd5e1);
+}
