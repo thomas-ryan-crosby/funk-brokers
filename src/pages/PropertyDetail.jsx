@@ -600,9 +600,16 @@ const PropertyDetail = () => {
                         const advanceUrl = needsDocuments 
                           ? `/property/${property.id}/get-verified`
                           : `/property/${property.id}/edit`;
-                        const advanceText = needsDocuments 
-                          ? 'Add documents & verify'
-                          : 'Add property information';
+                        let advanceText;
+                        if (needsDocuments) {
+                          advanceText = 'Add documents & verify';
+                        } else if (prog.tier === 'basic') {
+                          advanceText = 'Advance to Complete';
+                        } else if (prog.tier === 'complete') {
+                          advanceText = 'Advance to Verified';
+                        } else {
+                          advanceText = 'Add property information';
+                        }
                         return (
                           <Link to={advanceUrl} className="tier-advance-btn">
                             {advanceText}

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getPropertyById, updateProperty } from '../services/propertyService';
 import { uploadFile, uploadMultipleFiles } from '../services/storageService';
@@ -7,6 +7,7 @@ import { getListingTier } from '../utils/verificationScores';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import DragDropFileInput from '../components/DragDropFileInput';
 import './ListProperty.css';
+import './EditProperty.css';
 
 const propertyTypes = ['Single Family', 'Condo', 'Townhouse', 'Multi-Family', 'Land'];
 const commonFeatures = [
@@ -17,6 +18,7 @@ const commonFeatures = [
 const EditProperty = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -31,6 +33,8 @@ const EditProperty = () => {
   });
   const [existingDocUrls, setExistingDocUrls] = useState({});
   const [currentTier, setCurrentTier] = useState(null);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [celebratingTier, setCelebratingTier] = useState(null);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -188,7 +192,29 @@ const EditProperty = () => {
         updates.longitude = formData.longitude;
       }
       await updateProperty(id, updates);
-      navigate(`/property/${id}`);
+      
+      // Check if property advanced to next tier
+      const updatedProperty = await getPropertyById(id);
+      const newTier = getListingTier(updatedProperty);
+      
+      // Show celebration if tier advanced
+      if (currentTier === 'basic' && newTier === 'complete') {
+        setCelebratingTier('Complete');
+        setShowCelebration(true);
+        setTimeout(() => {
+          setShowCelebration(false);
+          navigate(`/property/${id}`);
+        }, 2500);
+      } else if (currentTier === 'complete' && newTier === 'verified') {
+        setCelebratingTier('Verified');
+        setShowCelebration(true);
+        setTimeout(() => {
+          setShowCelebration(false);
+          navigate(`/property/${id}`);
+        }, 2500);
+      } else {
+        navigate(`/property/${id}`);
+      }
     } catch (err) {
       setError('Failed to update. Please try again.');
       console.error(err);
@@ -213,11 +239,49 @@ const EditProperty = () => {
   }
   if (!formData) return null;
 
+  // Determine if coming from tier advancement
+  const isTierAdvancement = currentTier === 'basic' || currentTier === 'complete';
+  const advancementMessage = currentTier === 'basic' 
+    ? 'Complete items below to advance to Complete tier'
+    : currentTier === 'complete'
+    ? 'Complete items below to advance to Verified tier'
+    : null;
+
   return (
     <div className="list-property-page">
+      {showCelebration && (
+        <div className="celebration-overlay">
+          <div className="celebration-container">
+            <div className="celebration-checks">
+              {[
+                { x: '80px', y: '0' },
+                { x: '69px', y: '40px' },
+                { x: '40px', y: '69px' },
+                { x: '0', y: '80px' },
+                { x: '-40px', y: '69px' },
+                { x: '-69px', y: '40px' },
+                { x: '-80px', y: '0' },
+                { x: '-69px', y: '-40px' },
+                { x: '-40px', y: '-69px' },
+                { x: '0', y: '-80px' },
+                { x: '40px', y: '-69px' },
+                { x: '69px', y: '-40px' },
+              ].map((pos, i) => (
+                <span key={i} className="celebration-check" style={{
+                  '--delay': `${i * 0.1}s`,
+                  '--final-x': `calc(-50% + ${pos.x})`,
+                  '--final-y': `calc(-50% + ${pos.y})`,
+                }}>✓</span>
+              ))}
+            </div>
+            <h2 className="celebration-title">Congratulations!</h2>
+            <p className="celebration-message">Your property is now {celebratingTier} tier!</p>
+          </div>
+        </div>
+      )}
       <div className="list-property-container edit-property-single">
-        <h1>Edit Property</h1>
-        <p className="form-note">Update your listing. All sections from List Property are below.</p>
+        <h1>{isTierAdvancement ? 'Advance Property Tier' : 'Edit Property'}</h1>
+        <p className="form-note">{advancementMessage || 'Update your listing. All sections from List Property are below.'}</p>
         {error && <div className="error-message">{error}</div>}
         <form onSubmit={handleSubmit}>
           {/* 1. Address — same as List Property */}
