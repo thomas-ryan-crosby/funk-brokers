@@ -46,6 +46,7 @@ const Messages = () => {
   const [activeTab, setActiveTab] = useState('notifications');
   const [notifications, setNotifications] = useState([]);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [expandedPingId, setExpandedPingId] = useState(null);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -204,15 +205,15 @@ const Messages = () => {
   const pingLabel = (type) => {
     switch (type) {
       case 'vendor':
-        return 'Pinged you for a vendor';
+        return 'Pinged for vendor';
       case 'materials':
-        return 'Pinged you about a product';
+        return 'Pinged about product';
       case 'sale_interest':
-        return 'Pinged you about a sale';
+        return 'Pinged about selling';
       case 'conversation':
-        return 'Pinged you for a quick chat';
+        return 'Pinged for quick chat';
       case 'neighborhood':
-        return 'Pinged you about the neighborhood';
+        return 'Pinged about neighborhood';
       default:
         return 'Pinged you';
     }
@@ -235,6 +236,7 @@ const Messages = () => {
           createdAt: ping.createdAt,
           actorName: ping.senderName || 'Anonymous',
           label: pingLabel(ping.reasonType),
+          note: ping.note || '',
         }));
         setNotifications(pingItems);
         return;
@@ -261,6 +263,7 @@ const Messages = () => {
         createdAt: ping.createdAt,
         actorName: ping.senderName || 'Anonymous',
         label: pingLabel(ping.reasonType),
+        note: ping.note || '',
       }));
       const items = favoritesByProperty.flat().concat(pingItems);
       items.sort((a, b) => {
@@ -430,24 +433,66 @@ const Messages = () => {
               ) : notifications.length === 0 ? (
                 <p className="messages-empty">No notifications yet.</p>
               ) : (
-                <ul className="notifications-list">
-                  {notifications.map((n) => (
-                    <li key={n.id} className="notification-item">
-                      <div className="notification-item-main">
-                        <span className="notification-item-title">
-                          {n.actorName} {n.label}
-                        </span>
-                        <span className={`notification-item-tag notification-item-tag--${n.type || 'favorite'}`}>
-                          {n.type === 'ping' ? 'Ping' : 'Favorite'}
-                        </span>
-                        <span className="notification-item-date">{formatListDate(n.createdAt)}</span>
-                      </div>
-                      <div className="notification-item-context">
-                        {n.propertyAddress || 'Property'}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+                <>
+                  {notifications.filter((n) => n.type === 'ping').length > 0 && (
+                    <div className="notifications-group">
+                      <h3>Pings</h3>
+                      <ul className="notifications-list">
+                        {notifications.filter((n) => n.type === 'ping').map((n) => {
+                          const isExpanded = expandedPingId === n.id;
+                          return (
+                            <li key={n.id} className="notification-item">
+                              <div className="notification-item-main">
+                                <span className="notification-item-title">
+                                  {n.actorName} {n.label}
+                                </span>
+                                <span className="notification-item-tag notification-item-tag--ping">Ping</span>
+                                <span className="notification-item-date">{formatListDate(n.createdAt)}</span>
+                              </div>
+                              <div className="notification-item-context">
+                                {n.propertyAddress || 'Property'}
+                              </div>
+                              <button
+                                type="button"
+                                className="notification-item-toggle"
+                                onClick={() => setExpandedPingId(isExpanded ? null : n.id)}
+                              >
+                                {isExpanded ? 'Hide details' : 'View details'}
+                              </button>
+                              {isExpanded && (
+                                <div className="notification-item-details">
+                                  <div><strong>Reason:</strong> {n.label}</div>
+                                  <div><strong>Message:</strong> {n.note?.trim() || '—'}</div>
+                                </div>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  )}
+                  {notifications.filter((n) => n.type !== 'ping').length > 0 && (
+                    <div className="notifications-group">
+                      <h3>Favorites</h3>
+                      <ul className="notifications-list">
+                        {notifications.filter((n) => n.type !== 'ping').map((n) => (
+                          <li key={n.id} className="notification-item">
+                            <div className="notification-item-main">
+                              <span className="notification-item-title">
+                                {n.actorName} {n.label}
+                              </span>
+                              <span className="notification-item-tag notification-item-tag--favorite">Favorite</span>
+                              <span className="notification-item-date">{formatListDate(n.createdAt)}</span>
+                            </div>
+                            <div className="notification-item-context">
+                              {n.propertyAddress || 'Property'}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}

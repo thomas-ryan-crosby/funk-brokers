@@ -286,6 +286,8 @@
   box-shadow: none;
   cursor: not-allowed;
   opacity: 0.85;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .property-actions .btn-disabled:hover {
@@ -325,14 +327,10 @@
   border: 1px solid #fde68a;
 }
 
-.property-not-listed-note {
-  padding: 14px 20px;
-  background: #f1f5f9;
-  color: #475569;
-  border-radius: 8px;
-  font-size: 14px;
-  margin: 0 0 12px 0;
-  border: 1px solid #cbd5e1;
+.property-actions .btn-note {
+  font-size: 12px;
+  font-weight: 500;
+  color: #64748b;
 }
 
 .property-details-card {

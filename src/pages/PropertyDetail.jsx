@@ -499,6 +499,7 @@ const PropertyDetail = () => {
                     ) : (
                       <button type="button" className="btn btn-primary btn-large btn-disabled" disabled>
                         Submit Offer
+                        <span className="btn-note">Not currently listed for sale</span>
                       </button>
                     )}
                     {property.availableForSale !== false && (
@@ -510,9 +511,6 @@ const PropertyDetail = () => {
                       >
                         Schedule Tour
                       </button>
-                    )}
-                    {property.availableForSale === false && (
-                      <p className="property-not-listed-note">Not currently listed for sale.</p>
                     )}
                     {property.sellerId && (
                       <Link
