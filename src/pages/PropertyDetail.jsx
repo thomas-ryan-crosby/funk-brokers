@@ -6,12 +6,14 @@ import { addToFavorites, removeFromFavorites, isFavorited, getFavoriteCountForPr
 import { getPreListingChecklist, isPreListingChecklistComplete } from '../services/preListingChecklistService';
 import { calculateListingReadiness } from '../services/listingProgressService';
 import { getListingTierProgress, getListingTierLabel } from '../utils/verificationScores';
+import { createPing } from '../services/pingService';
+import PingOwnerModal from '../components/PingOwnerModal';
 import './PropertyDetail.css';
 
 const PropertyDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
+  const { user, userProfile, isAuthenticated } = useAuth();
   const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -26,6 +28,8 @@ const PropertyDetail = () => {
   const [availableForSaleUpdating, setAvailableForSaleUpdating] = useState(false);
   const [listingReadiness, setListingReadiness] = useState(0);
   const [checklistComplete, setChecklistComplete] = useState(false);
+  const [pingOpen, setPingOpen] = useState(false);
+  const [pingSending, setPingSending] = useState(false);
 
   const isOwner = !!(property && user && property.sellerId === user.uid);
 
@@ -226,6 +230,41 @@ const PropertyDetail = () => {
   const formatAddress = (property) => {
     const parts = [property.address, property.city, property.state, property.zipCode].filter(Boolean);
     return parts.join(', ');
+  };
+
+  const getSenderDisplayName = () => {
+    if (userProfile?.anonymousProfile) return userProfile?.publicUsername || 'Anonymous';
+    return userProfile?.name || user?.displayName || 'User';
+  };
+
+  const handlePingOwner = () => {
+    if (!isAuthenticated) {
+      navigate('/sign-in?redirect=' + encodeURIComponent(`/property/${id}`));
+      return;
+    }
+    setPingOpen(true);
+  };
+
+  const handleSendPing = async ({ reasonType, note }) => {
+    if (!user?.uid || !property?.sellerId || pingSending) return;
+    setPingSending(true);
+    try {
+      await createPing({
+        propertyId: property.id,
+        propertyAddress: formatAddress(property),
+        sellerId: property.sellerId,
+        senderId: user.uid,
+        senderName: getSenderDisplayName(),
+        reasonType,
+        note,
+      });
+      setPingOpen(false);
+    } catch (err) {
+      console.error('Failed to send ping', err);
+      alert('Failed to send ping. Please try again.');
+    } finally {
+      setPingSending(false);
+    }
   };
 
   const commissionRange = formatCommissionRange(property?.price);
@@ -447,6 +486,12 @@ const PropertyDetail = () => {
                   <p className="property-comms-closed">This seller is not accepting offers or inquiries at this time.</p>
                 ) : (
                   <>
+                    <button
+                      className="btn btn-outline btn-large"
+                      onClick={handlePingOwner}
+                    >
+                      Ping owner
+                    </button>
                     {property.availableForSale !== false && (
                       <Link to={`/submit-offer/${property.id}`} className="btn btn-primary btn-large">
                         Submit Offer
@@ -701,6 +746,13 @@ const PropertyDetail = () => {
             })()}
           </div>
         </div>
+        <PingOwnerModal
+          open={pingOpen}
+          propertyAddress={formatAddress(property)}
+          onClose={() => setPingOpen(false)}
+          onSend={handleSendPing}
+          sending={pingSending}
+        />
         {favoritesOpen && (
           <div className="favorites-modal-overlay" onClick={() => setFavoritesOpen(false)}>
             <div className="favorites-modal" onClick={(e) => e.stopPropagation()}>

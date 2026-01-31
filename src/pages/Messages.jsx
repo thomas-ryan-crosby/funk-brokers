@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { getMessagesForUser, createMessage } from '../services/messageService';
 import { getPropertiesBySeller } from '../services/propertyService';
 import { getFavoritesForProperty } from '../services/favoritesService';
+import { getPingsForSeller } from '../services/pingService';
 import './Messages.css';
 
 const formatDate = (v) => {
@@ -194,13 +195,42 @@ const Messages = () => {
     return profile?.publicUsername || profile?.name || 'Unknown';
   };
 
+  const pingLabel = (type) => {
+    switch (type) {
+      case 'vendor':
+        return 'Pinged you for a vendor';
+      case 'materials':
+        return 'Pinged you about a product';
+      case 'sale_interest':
+        return 'Pinged you about a sale';
+      case 'conversation':
+        return 'Pinged you for a quick chat';
+      case 'neighborhood':
+        return 'Pinged you about the neighborhood';
+      default:
+        return 'Pinged you';
+    }
+  };
+
   const loadNotifications = async () => {
     if (!user?.uid || notificationsLoading) return;
     setNotificationsLoading(true);
     try {
-      const properties = await getPropertiesBySeller(user.uid);
+      const [properties, pings] = await Promise.all([
+        getPropertiesBySeller(user.uid),
+        getPingsForSeller(user.uid),
+      ]);
       if (properties.length === 0) {
-        setNotifications([]);
+        const pingItems = (pings || []).map((ping) => ({
+          id: `ping_${ping.id}`,
+          type: 'ping',
+          propertyId: ping.propertyId,
+          propertyAddress: ping.propertyAddress,
+          createdAt: ping.createdAt,
+          actorName: ping.senderName || 'Anonymous',
+          label: pingLabel(ping.reasonType),
+        }));
+        setNotifications(pingItems);
         return;
       }
       const favoritesByProperty = await Promise.all(
@@ -213,10 +243,20 @@ const Messages = () => {
             propertyAddress: formatAddress(property),
             createdAt: fav.createdAt,
             actorName: getFavoriteDisplayName(fav),
+            label: 'Favorited your property',
           }));
         })
       );
-      const items = favoritesByProperty.flat();
+      const pingItems = (pings || []).map((ping) => ({
+        id: `ping_${ping.id}`,
+        type: 'ping',
+        propertyId: ping.propertyId,
+        propertyAddress: ping.propertyAddress,
+        createdAt: ping.createdAt,
+        actorName: ping.senderName || 'Anonymous',
+        label: pingLabel(ping.reasonType),
+      }));
+      const items = favoritesByProperty.flat().concat(pingItems);
       items.sort((a, b) => {
         const aDate = getMessageDate(a);
         const bDate = getMessageDate(b);
@@ -389,7 +429,7 @@ const Messages = () => {
                     <li key={n.id} className="notification-item">
                       <div className="notification-item-main">
                         <span className="notification-item-title">
-                          {n.actorName} favorited your property
+                          {n.actorName} {n.label}
                         </span>
                         <span className="notification-item-date">{formatListDate(n.createdAt)}</span>
                       </div>
