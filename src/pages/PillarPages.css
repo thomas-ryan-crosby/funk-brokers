@@ -1,0 +1,101 @@
+.pillar-page {
+  min-height: 100vh;
+  background: var(--color-bg-primary, #0b1020);
+  color: #f8fafc;
+}
+
+.pillar-hero {
+  padding: 96px 20px 64px;
+  background: var(--color-bg-secondary, #0f172a);
+}
+
+.pillar-container {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.pillar-hero h1 {
+  font-size: clamp(34px, 4.5vw, 56px);
+  margin: 0 0 16px 0;
+  letter-spacing: -0.02em;
+}
+
+.pillar-hero p {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.7;
+  color: rgba(248, 250, 252, 0.85);
+  max-width: 760px;
+}
+
+.pillar-cta {
+  margin-top: 32px;
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.pillar-section {
+  padding: 64px 20px 32px;
+}
+
+.pillar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+.pillar-card {
+  background: var(--color-bg-dark, #0b1224);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 10px 24px rgba(2, 6, 23, 0.35);
+}
+
+.pillar-card h2 {
+  margin: 0 0 12px 0;
+  font-size: 18px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(248, 250, 252, 0.9);
+}
+
+.pillar-card p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: rgba(248, 250, 252, 0.78);
+}
+
+.pillar-back {
+  padding: 16px 0 48px;
+  text-align: center;
+}
+
+.pillar-back-btn {
+  background: none;
+  border: none;
+  color: rgba(248, 250, 252, 0.8);
+  font-size: 15px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.pillar-back-btn:hover {
+  color: #f9a8d4;
+}
+
+@media (max-width: 640px) {
+  .pillar-hero {
+    padding: 80px 20px 48px;
+  }
+
+  .pillar-cta {
+    flex-direction: column;
+  }
+
+  .pillar-cta .btn {
+    width: 100%;
+  }
+}

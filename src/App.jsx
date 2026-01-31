@@ -12,6 +12,9 @@ import Dashboard from './pages/Dashboard';
 import HowSellingWorks from './pages/HowSellingWorks';
 import HowBuyingWorks from './pages/HowBuyingWorks';
 import HowItWorks from './pages/HowItWorks';
+import PillarShare from './pages/PillarShare';
+import PillarHub from './pages/PillarHub';
+import PillarTransaction from './pages/PillarTransaction';
 import BeginSale from './pages/BeginSale';
 import CreateSearch from './pages/CreateSearch';
 import EditProperty from './pages/EditProperty';
@@ -145,6 +148,9 @@ function AppContent() {
             <Route path="/how-it-works" element={<HowItWorks />} />
             <Route path="/how-selling-works" element={<HowSellingWorks />} />
             <Route path="/how-buying-works" element={<HowBuyingWorks />} />
+            <Route path="/pillar-share" element={<PillarShare />} />
+            <Route path="/pillar-hub" element={<PillarHub />} />
+            <Route path="/pillar-transaction" element={<PillarTransaction />} />
             <Route path="/begin-sale" element={<BeginSale />} />
             <Route path="/pre-listing-checklist" element={<PreListingChecklist />} />
             <Route path="/create-search" element={<CreateSearch />} />
