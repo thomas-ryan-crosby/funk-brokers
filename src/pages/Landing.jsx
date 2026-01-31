@@ -68,6 +68,9 @@ const Landing = () => {
               A Radically Different
               <span className="title-highlight"> Real Estate Platform</span>
             </h1>
+            <p className="hero-callout">
+              <strong>Access homes never seen on traditional platforms.</strong>
+            </p>
             <p className="hero-description">
               OpenTo lets homeowners, prospective purchasers, or real estate lovers share, organize, and explore interest — without pressure, timelines, or intermediaries.
             </p>
