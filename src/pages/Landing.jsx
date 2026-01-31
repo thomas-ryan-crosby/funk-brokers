@@ -99,7 +99,7 @@ const Landing = () => {
             <div className="hero-pillars">
               <div className="hero-pillar">
                 <h3>Share your home on your terms.</h3>
-                <p>No pressure property showcasing. No listings. No deadlines. No public exposure unless you want it.</p>
+                <p>No pressure property showcasing. No deadlines. No public exposure unless you want it.</p>
               </div>
               <div className="hero-pillar">
                 <h3>A Centralized Home Hub</h3>
@@ -107,7 +107,7 @@ const Landing = () => {
               </div>
               <div className="hero-pillar">
                 <h3>You Control the Transaction</h3>
-                <p>If you decide to buy or sell, you control the entire process — pace, partners, and outcome. We guarantee <span className="hero-underline">it’s a lot easier than you think</span>.</p>
+                <p>If you decide to buy or sell, you control the entire process. We guarantee <span className="hero-underline">it’s a lot easier than you think</span>.</p>
               </div>
             </div>
             <div className="hero-cta">
