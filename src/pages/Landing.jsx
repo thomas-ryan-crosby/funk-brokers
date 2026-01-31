@@ -46,7 +46,11 @@ const Landing = () => {
 
   const handleDragStart = (e) => {
     if (!e.currentTarget) return;
-    const rect = e.currentTarget.getBoundingClientRect();
+    e.preventDefault();
+    e.stopPropagation();
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    const rect = e.currentTarget.closest('.landing-tweet-card')?.getBoundingClientRect();
+    if (!rect) return;
     dragOffsetRef.current = {
       x: e.clientX - rect.left,
       y: e.clientY - rect.top,
@@ -56,6 +60,7 @@ const Landing = () => {
 
   const handleDragMove = (e) => {
     if (!dragging) return;
+    e.preventDefault();
     const x = e.clientX - dragOffsetRef.current.x;
     const y = e.clientY - dragOffsetRef.current.y;
     setTweetPos({ x, y });
@@ -110,12 +115,17 @@ const Landing = () => {
             <div
               className={`landing-tweet-card landing-tweet-card--hero ${dragging ? 'dragging' : ''}`}
               style={{ transform: `translate(${tweetPos.x}px, ${tweetPos.y}px)` }}
-              onPointerDown={handleDragStart}
-              onPointerMove={handleDragMove}
-              onPointerUp={handleDragEnd}
-              onPointerCancel={handleDragEnd}
             >
-              <div className="landing-tweet-handle">Drag</div>
+              <button
+                type="button"
+                className="landing-tweet-handle"
+                onPointerDown={handleDragStart}
+                onPointerMove={handleDragMove}
+                onPointerUp={handleDragEnd}
+                onPointerCancel={handleDragEnd}
+              >
+                Drag
+              </button>
               <button
                 type="button"
                 className="landing-tweet-close"
