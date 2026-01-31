@@ -803,18 +803,6 @@ const Dashboard = () => {
                             })()}
                           </div>
                         )}
-                        <div className="property-actions">
-                          {getStatusBadge(property)}
-                          <div className="action-buttons">
-                            <Link to={`/property/${property.id}`} className="action-btn btn btn-secondary" title="View">View</Link>
-                            <Link to={`/property/${property.id}/edit`} className="action-btn btn btn-outline" title="Edit">Edit</Link>
-                            {!property.verified && (
-                              <Link to={`/property/${property.id}/get-verified`} className="action-btn btn btn-outline" title="Verify">Verify</Link>
-                            )}
-                            <button type="button" className="action-btn btn btn-outline" title="Archive" onClick={() => handleArchive(property.id)}>Arch</button>
-                            <button type="button" className="action-btn btn btn-danger" title="Delete" onClick={() => handleDeletePermanently(property.id)}>Del</button>
-                          </div>
-                        </div>
                       </div>
                     );
                   })}
@@ -829,17 +817,6 @@ const Dashboard = () => {
                     {archivedList.map((property) => (
                       <div key={property.id} className="property-item property-item-archived">
                         <PropertyCard property={property} embedded listingTier={getListingTier(property)} />
-                        <div className="property-actions">
-                          {getStatusBadge(property)}
-                          <div className="action-buttons">
-                            <Link to={`/property/${property.id}`} className="action-btn btn btn-secondary" title="View">View</Link>
-                            {!property.verified && (
-                              <Link to={`/property/${property.id}/get-verified`} className="action-btn btn btn-outline" title="Verify">Verify</Link>
-                            )}
-                            <button type="button" className="action-btn btn btn-outline" title="Restore" onClick={() => handleRestore(property.id)}>Rest</button>
-                            <button type="button" className="action-btn btn btn-danger" title="Delete" onClick={() => handleDeletePermanently(property.id)}>Del</button>
-                          </div>
-                        </div>
                       </div>
                     ))}
                   </div>
