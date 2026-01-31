@@ -24,6 +24,7 @@ import VerifyBuyer from './pages/VerifyBuyer';
 import TransactionManager from './pages/TransactionManager';
 import Messages from './pages/Messages';
 import PreListingChecklist from './pages/PreListingChecklist';
+import UserProfile from './pages/UserProfile';
 import { getMessagesForUser } from './services/messageService';
 import './App.css';
 
@@ -141,6 +142,7 @@ function AppContent() {
             <Route path="/verify-buyer" element={<VerifyBuyer />} />
             <Route path="/transaction/:id" element={<TransactionManager />} />
             <Route path="/messages" element={<Messages />} />
+            <Route path="/user/:userId" element={<UserProfile />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/submit-offer/:propertyId" element={<SubmitOffer />} />
             <Route path="/sign-up" element={<SignUp />} />

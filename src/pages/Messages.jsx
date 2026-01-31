@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getMessagesForUser, createMessage } from '../services/messageService';
 import { getPropertiesBySeller } from '../services/propertyService';
@@ -607,7 +607,14 @@ const Messages = () => {
             {!composingNew && selectedThread && (
               <div className="thread-view">
                 <div className="thread-view-header">
-                  <h2>{selectedThread.otherUserName}</h2>
+                  <div className="thread-view-title">
+                    <h2>{selectedThread.otherUserName}</h2>
+                    {selectedThread.otherUserId && (
+                      <Link to={`/user/${selectedThread.otherUserId}`} className="thread-view-profile">
+                        View profile
+                      </Link>
+                    )}
+                  </div>
                   <div className="thread-view-context">{selectedThread.propertyAddress || 'General'}</div>
                 </div>
                 <div className="thread-messages">

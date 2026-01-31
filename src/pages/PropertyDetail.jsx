@@ -521,6 +521,14 @@ const PropertyDetail = () => {
                         Message seller
                       </Link>
                     )}
+                    {property.sellerId && (
+                      <Link
+                        to={`/user/${property.sellerId}`}
+                        className="btn btn-outline btn-large"
+                      >
+                        View seller profile
+                      </Link>
+                    )}
                     <button
                       className={`btn btn-outline btn-large ${favorited ? 'favorited' : ''}`}
                       onClick={handleFavoriteToggle}
