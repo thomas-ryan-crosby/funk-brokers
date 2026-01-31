@@ -5,7 +5,12 @@ import './Landing.css';
 const Landing = () => {
   const navigate = useNavigate();
   const [showTweet, setShowTweet] = useState(true);
+  const [heroCopyVariant, setHeroCopyVariant] = useState(0);
   const tweetRef = useRef(null);
+  const heroCopyVariants = [
+    'Access homes never seen on traditional platforms! Explore the market freely, privately, and confidently — without realtor fees.',
+    'Access homes never seen on traditional platforms! Explore the market freely, privately, and confidently — without early commitments.',
+  ];
 
   const handleBrowseClick = () => {
     navigate('/browse');
@@ -17,6 +22,17 @@ const Landing = () => {
 
   const handleLearnProcessClick = () => {
     navigate('/how-it-works');
+  };
+
+  const handleHeroCopyToggle = () => {
+    setHeroCopyVariant((prev) => (prev + 1) % heroCopyVariants.length);
+  };
+
+  const handleHeroCopyKeyDown = (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleHeroCopyToggle();
+    }
   };
 
   useEffect(() => {
@@ -58,7 +74,15 @@ const Landing = () => {
             <div className="hero-pillars">
               <div className="hero-pillar">
                 <h3>A space to share or browse — on your terms.</h3>
-                <p>No pressure. No listing contracts. No representation contracts. No public exposure unless you want it.</p>
+                <p
+                  className="hero-pillar-toggle"
+                  role="button"
+                  tabIndex={0}
+                  onClick={handleHeroCopyToggle}
+                  onKeyDown={handleHeroCopyKeyDown}
+                >
+                  {heroCopyVariants[heroCopyVariant]}
+                </p>
               </div>
               <div className="hero-pillar">
                 <h3>A Centralized Home Hub</h3>
