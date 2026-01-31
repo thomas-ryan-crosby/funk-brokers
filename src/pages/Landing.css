@@ -262,6 +262,7 @@
   border-radius: 999px;
   padding: 4px 10px;
   cursor: grab;
+  user-select: none;
 }
 
 .landing-tweet-close {

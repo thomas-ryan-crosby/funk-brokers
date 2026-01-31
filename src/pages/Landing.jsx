@@ -9,6 +9,7 @@ const Landing = () => {
   const [tweetPos, setTweetPos] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
   const dragOffsetRef = useRef({ x: 0, y: 0 });
+  const draggingRef = useRef(false);
 
   const handleBrowseClick = () => {
     navigate('/browse');
@@ -48,7 +49,6 @@ const Landing = () => {
     if (!e.currentTarget) return;
     e.preventDefault();
     e.stopPropagation();
-    e.currentTarget.setPointerCapture?.(e.pointerId);
     const rect = e.currentTarget.closest('.landing-tweet-card')?.getBoundingClientRect();
     if (!rect) return;
     dragOffsetRef.current = {
@@ -56,19 +56,31 @@ const Landing = () => {
       y: e.clientY - rect.top,
     };
     setDragging(true);
+    draggingRef.current = true;
   };
 
-  const handleDragMove = (e) => {
-    if (!dragging) return;
-    e.preventDefault();
-    const x = e.clientX - dragOffsetRef.current.x;
-    const y = e.clientY - dragOffsetRef.current.y;
-    setTweetPos({ x, y });
-  };
-
-  const handleDragEnd = () => {
-    setDragging(false);
-  };
+  useEffect(() => {
+    const handleMove = (e) => {
+      if (!draggingRef.current) return;
+      e.preventDefault();
+      const x = e.clientX - dragOffsetRef.current.x;
+      const y = e.clientY - dragOffsetRef.current.y;
+      setTweetPos({ x, y });
+    };
+    const handleUp = () => {
+      if (!draggingRef.current) return;
+      draggingRef.current = false;
+      setDragging(false);
+    };
+    window.addEventListener('pointermove', handleMove);
+    window.addEventListener('pointerup', handleUp);
+    window.addEventListener('pointercancel', handleUp);
+    return () => {
+      window.removeEventListener('pointermove', handleMove);
+      window.removeEventListener('pointerup', handleUp);
+      window.removeEventListener('pointercancel', handleUp);
+    };
+  }, []);
 
   return (
     <div className="landing-page">
@@ -116,20 +128,24 @@ const Landing = () => {
               className={`landing-tweet-card landing-tweet-card--hero ${dragging ? 'dragging' : ''}`}
               style={{ transform: `translate(${tweetPos.x}px, ${tweetPos.y}px)` }}
             >
-              <button
-                type="button"
+              <div
                 className="landing-tweet-handle"
                 onPointerDown={handleDragStart}
-                onPointerMove={handleDragMove}
-                onPointerUp={handleDragEnd}
-                onPointerCancel={handleDragEnd}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
               >
                 Drag
-              </button>
+              </div>
               <button
                 type="button"
                 className="landing-tweet-close"
-                onClick={(e) => { e.stopPropagation(); setShowTweet(false); }}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowTweet(false);
+                }}
                 aria-label="Close video"
               >
                 ×
