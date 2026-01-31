@@ -39,6 +39,24 @@
   padding: 64px 20px 32px;
 }
 
+.pillar-section-header {
+  margin-bottom: 24px;
+  max-width: 760px;
+}
+
+.pillar-section-header h2 {
+  margin: 0 0 8px 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.pillar-section-header p {
+  margin: 0;
+  color: rgba(248, 250, 252, 0.78);
+  line-height: 1.6;
+}
+
 .pillar-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -66,6 +84,72 @@
   font-size: 14px;
   line-height: 1.6;
   color: rgba(248, 250, 252, 0.78);
+}
+
+.pillar-step-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.pillar-step-card {
+  text-align: left;
+  background: var(--color-bg-dark, #0b1224);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 16px;
+  padding: 24px;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  font-family: inherit;
+  color: inherit;
+}
+
+.pillar-step-card:hover {
+  border-color: rgba(248, 250, 252, 0.3);
+  box-shadow: 0 10px 24px rgba(2, 6, 23, 0.35);
+  transform: translateY(-2px);
+}
+
+.pillar-step-card h3 {
+  margin: 0 0 10px 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #f8fafc;
+}
+
+.pillar-step-card p {
+  margin: 0 0 14px 0;
+  font-size: 14px;
+  line-height: 1.6;
+  color: rgba(248, 250, 252, 0.78);
+}
+
+.pillar-step-link {
+  font-size: 14px;
+  font-weight: 600;
+  color: #f9a8d4;
+}
+
+.pillar-intent {
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(248, 250, 252, 0.16);
+  border-radius: 16px;
+  padding: 24px;
+  margin-top: 28px;
+}
+
+.pillar-intent h3 {
+  margin: 0 0 10px 0;
+  font-size: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(248, 250, 252, 0.85);
+}
+
+.pillar-intent p {
+  margin: 0;
+  color: rgba(248, 250, 252, 0.78);
+  line-height: 1.6;
 }
 
 .pillar-back {

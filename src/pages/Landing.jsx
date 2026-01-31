@@ -19,17 +19,6 @@ const Landing = () => {
     navigate('/how-it-works');
   };
 
-  const handlePillarClick = (path) => {
-    navigate(path);
-  };
-
-  const handlePillarKeyDown = (event, path) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      navigate(path);
-    }
-  };
-
 
   useEffect(() => {
     if (!showTweet || !tweetRef.current) return;
@@ -71,33 +60,15 @@ const Landing = () => {
               OpenTo is for homeowners, buyers, and anyone who wants to explore real estate — a calm place to share, organize, and explore interest without pressure, timelines, or intermediaries.
             </p>
             <div className="hero-pillars">
-              <div
-                className="hero-pillar hero-pillar--link"
-                onClick={() => handlePillarClick('/pillar-share')}
-                onKeyDown={(event) => handlePillarKeyDown(event, '/pillar-share')}
-                role="button"
-                tabIndex={0}
-              >
+              <div className="hero-pillar">
                 <h3>A space to share or browse — on your terms.</h3>
                 <p>Explore the market freely, privately, and confidently — without realtor fees.</p>
               </div>
-              <div
-                className="hero-pillar hero-pillar--link"
-                onClick={() => handlePillarClick('/pillar-hub')}
-                onKeyDown={(event) => handlePillarKeyDown(event, '/pillar-hub')}
-                role="button"
-                tabIndex={0}
-              >
+              <div className="hero-pillar">
                 <h3>A Centralized Home Hub</h3>
                 <p>One place for your home’s key documents, vendors, and history — organized and private.</p>
               </div>
-              <div
-                className="hero-pillar hero-pillar--link"
-                onClick={() => handlePillarClick('/pillar-transaction')}
-                onKeyDown={(event) => handlePillarKeyDown(event, '/pillar-transaction')}
-                role="button"
-                tabIndex={0}
-              >
+              <div className="hero-pillar">
                 <h3>You Control the Transaction</h3>
                 <p>If you decide to buy or sell, you control the entire process. We guarantee <span className="hero-underline">it’s a lot easier than you think</span>.</p>
               </div>

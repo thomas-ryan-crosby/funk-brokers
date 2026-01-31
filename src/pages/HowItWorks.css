@@ -88,17 +88,6 @@
   color: var(--color-yellow-primary, #f9a8d4);
 }
 
-.hiw-transaction {
-  padding-top: 8px;
-}
-
-.hiw-transaction h2 {
-  font-size: 24px;
-  font-weight: 700;
-  color: var(--color-text-primary, #f8fafc);
-  margin: 0 0 24px 0;
-  text-align: center;
-}
 
 .hiw-cards {
   display: grid;
