@@ -10,6 +10,7 @@ import { getOffersByProperty, getOffersByBuyer, acceptOffer, rejectOffer, withdr
 import { getTransactionsByUser, getTransactionByOfferId, createTransaction } from '../services/transactionService';
 import { getVendorsByUser, createVendor, updateVendor, deleteVendor, addVendorContact, updateVendorContact, removeVendorContact, VENDOR_TYPES } from '../services/vendorService';
 import { updateUserProfile, getUserProfile } from '../services/authService';
+import { uploadFile } from '../services/storageService';
 import { deleteField } from 'firebase/firestore';
 import { getVerifiedBuyerScore, getListingTier, getListingTierLabel, getListingTierProgress, meetsVerifiedBuyerCriteria } from '../utils/verificationScores';
 import PropertyCard from '../components/PropertyCard';
