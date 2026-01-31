@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getPropertiesBySeller, getPropertyById, archiveProperty, restoreProperty, deletePropertyPermanently } from '../services/propertyService';
-import { getUserFavoriteIds, removeFromFavorites } from '../services/favoritesService';
+import { getUserFavoriteIds, removeFromFavorites, getFavoritesForProperty } from '../services/favoritesService';
 import { getAllProperties } from '../services/propertyService';
 import { getSavedSearches, removeSavedSearch, getPurchaseProfile, setPurchaseProfile } from '../services/profileService';
 import { getOffersByProperty, getOffersByBuyer, acceptOffer, rejectOffer, withdrawOffer, counterOffer } from '../services/offerService';
@@ -55,14 +55,21 @@ function formatCountdown(expiryMs, now) {
   return { text: '< 1 min', expired: false };
 }
 
+function getPublicName(profile) {
+  if (!profile) return 'Someone';
+  if (profile.anonymousProfile) return profile.publicUsername || 'Anonymous';
+  return profile.publicUsername || profile.name || 'Someone';
+}
+
 const Dashboard = () => {
   const { user, userProfile, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('my-properties'); // 'my-properties' | 'favorites' | 'my-searches'
+  const [activeTab, setActiveTab] = useState('my-profile'); // 'my-profile' | 'favorites' | 'my-searches'
   const [myProperties, setMyProperties] = useState([]);
   const [favoriteProperties, setFavoriteProperties] = useState([]);
   const [mySearches, setMySearches] = useState([]);
   const [purchaseProfile, setPurchaseProfileState] = useState(null);
+  const [activityFeed, setActivityFeed] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editingBuyingPower, setEditingBuyingPower] = useState(false);
@@ -132,6 +139,28 @@ const Dashboard = () => {
       );
       const offersByPropertyMap = Object.fromEntries(properties.map((p, i) => [p.id, offerArrays[i] || []]));
       setOffersByProperty(offersByPropertyMap);
+
+      // Build activity feed (recent likes on your properties)
+      const propertiesForActivity = properties.slice(0, 10);
+      const favoriteActivityArrays = await Promise.all(
+        propertiesForActivity.map(async (p) => {
+          const favorites = await getFavoritesForProperty(p.id).catch(() => []);
+          return favorites.map((fav) => ({
+            type: 'favorite',
+            propertyId: p.id,
+            propertyAddress: p.address || 'Property',
+            userName: getPublicName(fav.userProfile),
+            createdAt: fav.createdAt,
+          }));
+        })
+      );
+      const favoriteActivity = favoriteActivityArrays.flat();
+      favoriteActivity.sort((a, b) => {
+        const aDate = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+        const bDate = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+        return bDate - aDate;
+      });
+      setActivityFeed(favoriteActivity.slice(0, 10));
 
       // Load offers sent by user (Deal Center – sent) with property details
       const sent = await getOffersByBuyer(user.uid).catch(() => []);
@@ -681,7 +710,7 @@ const Dashboard = () => {
             </picture>
             <div>
               <h1>Welcome back, {userProfile?.name || user?.displayName || 'User'}!</h1>
-              <p>Manage your properties and favorites</p>
+              <p>Manage your profile, properties, and activity</p>
             </div>
           </div>
         </div>
@@ -719,10 +748,10 @@ const Dashboard = () => {
 
         <div className="dashboard-tabs">
           <button
-            className={`tab ${activeTab === 'my-properties' ? 'active' : ''}`}
-            onClick={() => setActiveTab('my-properties')}
+            className={`tab ${activeTab === 'my-profile' ? 'active' : ''}`}
+            onClick={() => setActiveTab('my-profile')}
           >
-            My Properties ({activeList.length})
+            My Profile
           </button>
           <button
             className={`tab ${activeTab === 'favorites' ? 'active' : ''}`}
@@ -749,12 +778,6 @@ const Dashboard = () => {
             Transactions ({transactions.length})
           </button>
           <button
-            className={`tab ${activeTab === 'buying-power' ? 'active' : ''}`}
-            onClick={() => setActiveTab('buying-power')}
-          >
-            Buying Power
-          </button>
-          <button
             className={`tab ${activeTab === 'vendor-center' ? 'active' : ''}`}
             onClick={() => setActiveTab('vendor-center')}
           >
@@ -763,7 +786,7 @@ const Dashboard = () => {
         </div>
 
         <div className="dashboard-content">
-          {activeTab === 'my-properties' && (
+          {activeTab === 'my-profile' && (
             <div className="dashboard-section">
               <div className="section-header">
                 <h2>My Properties</h2>
@@ -1207,7 +1230,7 @@ const Dashboard = () => {
             </div>
           )}
 
-          {activeTab === 'buying-power' && (
+          {activeTab === 'my-profile' && (
             <div className="dashboard-section buying-power-section">
               <div className="section-header">
                 <h2>Buying Power</h2>
@@ -1387,6 +1410,29 @@ const Dashboard = () => {
                   );
                 })}
               </div>
+            </div>
+          )}
+
+          {activeTab === 'my-profile' && (
+            <div className="dashboard-section activity-section">
+              <div className="section-header">
+                <h2>Activity Feed</h2>
+                <p className="form-hint">Recent likes and activity around your properties.</p>
+              </div>
+              {activityFeed.length === 0 ? (
+                <p className="empty-message">No recent activity yet.</p>
+              ) : (
+                <div className="activity-list">
+                  {activityFeed.map((entry, idx) => (
+                    <div key={`${entry.propertyId}-${entry.createdAt}-${idx}`} className="activity-item">
+                      <div className="activity-item-title">
+                        {entry.userName} liked {entry.propertyAddress}
+                      </div>
+                      <div className="activity-item-meta">{formatDate(entry.createdAt)}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
