@@ -72,6 +72,7 @@ const Dashboard = () => {
   const [mySearches, setMySearches] = useState([]);
   const [purchaseProfile, setPurchaseProfileState] = useState(null);
   const [activityFeed, setActivityFeed] = useState([]);
+  const [allPropertiesCache, setAllPropertiesCache] = useState([]);
   const [activityTab, setActivityTab] = useState('received'); // 'received' | 'mine'
   const [myPosts, setMyPosts] = useState([]);
   const [receivedPosts, setReceivedPosts] = useState([]);
@@ -200,9 +201,11 @@ const Dashboard = () => {
 
       // Load favorite properties
       const favoriteIds = await getUserFavoriteIds(user.uid);
+      let allProperties = [];
       if (favoriteIds.length > 0) {
         // Fetch all properties and filter by favorite IDs
-        const allProperties = await getAllProperties();
+        allProperties = await getAllProperties();
+        setAllPropertiesCache(allProperties);
         const favorites = allProperties.filter((p) => favoriteIds.includes(p.id));
         setFavoriteProperties(favorites);
       } else {
@@ -306,16 +309,9 @@ const Dashboard = () => {
 
   const handlePostAddressChange = (value) => {
     setPostAddress(value);
-    const normalized = normalizeAddress(value);
-    if (!normalized) {
-      setPostPropertyId('');
-      return;
-    }
-    const match = myProperties.find((p) => normalizeAddress(formatAddress(p)) === normalized);
-    setPostPropertyId(match?.id || '');
   };
 
-  const handlePostAddressSelect = (parsed) => {
+  const handlePostAddressSelect = async (parsed) => {
     const addressText = parsed?.address || '';
     if (addressText) {
       setPostAddress(addressText);
@@ -325,7 +321,17 @@ const Dashboard = () => {
       setPostPropertyId('');
       return;
     }
-    const match = myProperties.find((p) => normalizeAddress(formatAddress(p)) === normalized);
+    let propertiesToMatch = allPropertiesCache;
+    if (!propertiesToMatch || propertiesToMatch.length === 0) {
+      try {
+        propertiesToMatch = await getAllProperties();
+        setAllPropertiesCache(propertiesToMatch);
+      } catch (_) {
+        propertiesToMatch = myProperties;
+      }
+    }
+    const match = propertiesToMatch.find((p) => normalizeAddress(formatAddress(p)) === normalized)
+      || myProperties.find((p) => normalizeAddress(formatAddress(p)) === normalized);
     setPostPropertyId(match?.id || '');
   };
 
