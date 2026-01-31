@@ -404,6 +404,7 @@ const Messages = () => {
           )}
 
           {activeTab === 'messages' && (
+          <>
           <aside className="messages-list">
             {loading ? (
               <p className="messages-empty">Loading...</p>
@@ -520,6 +521,7 @@ const Messages = () => {
               </div>
             )}
           </main>
+          </>
           )}
         </div>
       </div>
