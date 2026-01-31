@@ -31,7 +31,20 @@ const PropertyCard = ({ property, embedded, compact, listingTier }) => {
     return type.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
   };
 
+  const formatCommissionRange = (price) => {
+    if (price == null || !Number.isFinite(Number(price))) return null;
+    const low = Number(price) * 0.05;
+    const high = Number(price) * 0.06;
+    const fmt = new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      maximumFractionDigits: 0,
+    });
+    return `${fmt.format(low)}–${fmt.format(high)}`;
+  };
+
   const showImage = photoUrl && !imgError;
+  const commissionRange = formatCommissionRange(property.price);
 
   return (
     <Link
@@ -67,6 +80,9 @@ const PropertyCard = ({ property, embedded, compact, listingTier }) => {
             <span className="property-card__type">{formatPropertyType(property.propertyType)}</span>
           )}
         </div>
+        {commissionRange && (
+          <p className="property-card__commission">Typical agent commission (5–6%): {commissionRange}</p>
+        )}
         <p className="property-card__address">{formatAddress(property)}</p>
         <div className="property-card__meta">
           <span className="property-card__meta-item">

@@ -211,10 +211,24 @@ const PropertyDetail = () => {
     }).format(price);
   };
 
+  const formatCommissionRange = (price) => {
+    if (price == null || !Number.isFinite(Number(price))) return null;
+    const low = Number(price) * 0.05;
+    const high = Number(price) * 0.06;
+    const fmt = new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      maximumFractionDigits: 0,
+    });
+    return `${fmt.format(low)}–${fmt.format(high)}`;
+  };
+
   const formatAddress = (property) => {
     const parts = [property.address, property.city, property.state, property.zipCode].filter(Boolean);
     return parts.join(', ');
   };
+
+  const commissionRange = formatCommissionRange(property?.price);
 
   if (loading) {
     return (
@@ -478,6 +492,12 @@ const PropertyDetail = () => {
                 <span className="detail-label">Price</span>
                 <span className="detail-value">{formatPrice(property.price)}</span>
               </div>
+              {commissionRange && (
+                <div className="detail-row">
+                  <span className="detail-label">Typical agent commission (5–6%)</span>
+                  <span className="detail-value">{commissionRange}</span>
+                </div>
+              )}
               {property.hoaFee && (
                 <div className="detail-row">
                   <span className="detail-label">HOA Fee</span>
