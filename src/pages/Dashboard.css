@@ -385,6 +385,12 @@
   font-size: 12px;
 }
 
+.activity-item-link {
+  color: #3b82f6;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .property-item {
   display: flex;
   flex-direction: column;

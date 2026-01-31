@@ -799,7 +799,12 @@ const PropertyDetail = () => {
                       <span className="property-post-author">{post.authorName || 'Someone'}</span>
                       <span className="property-post-date">{formatPostDate(post.createdAt)}</span>
                     </div>
-                    <div className="property-post-body">{post.body}</div>
+                  <div className="property-post-body">{post.body}</div>
+                  {post.propertyAddress && post.propertyId && (
+                    <div className="property-post-link">
+                      <Link to={`/property/${post.propertyId}`}>{post.propertyAddress}</Link>
+                    </div>
+                  )}
                   {(post.hashtags?.length || post.userTags?.length) && (
                     <div className="property-post-tags">
                       {post.hashtags?.map((tag) => (

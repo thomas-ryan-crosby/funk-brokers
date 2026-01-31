@@ -361,6 +361,31 @@ const Dashboard = () => {
     }
   };
 
+  const resolvePropertyMatch = async (addressText) => {
+    const normalized = normalizeAddress(addressText);
+    if (!normalized) return null;
+    let propertiesToMatch = allPropertiesCache;
+    if (!propertiesToMatch || propertiesToMatch.length === 0) {
+      try {
+        propertiesToMatch = await getAllProperties();
+        setAllPropertiesCache(propertiesToMatch);
+      } catch (_) {
+        propertiesToMatch = myProperties;
+      }
+    }
+    return (
+      propertiesToMatch.find((p) => {
+        const prop = normalizeAddress(formatAddress(p));
+        return prop === normalized || prop.includes(normalized) || normalized.includes(prop);
+      }) ||
+      myProperties.find((p) => {
+        const prop = normalizeAddress(formatAddress(p));
+        return prop === normalized || prop.includes(normalized) || normalized.includes(prop);
+      }) ||
+      null
+    );
+  };
+
   const handlePostAddressSelect = async (parsed) => {
     const fullAddress = [parsed?.address, parsed?.city, parsed?.state, parsed?.zipCode]
       .filter(Boolean)
@@ -420,9 +445,11 @@ const Dashboard = () => {
     }
     try {
       setPosting(true);
-      const property = myProperties.find((p) => p.id === postPropertyId) || null;
+      const property =
+        myProperties.find((p) => p.id === postPropertyId) ||
+        (postPropertyId ? null : await resolvePropertyMatch(postAddress));
       const addressText = (postAddress || '').trim();
-      const linkedAddress = property?.address || addressText || null;
+      const linkedAddress = property ? formatAddress(property) : addressText || null;
       const hashtags = parseTagList(postHashtags, '#');
       const userTags = parseTagList(postUserTags, '@');
       await createPost({
@@ -1775,7 +1802,16 @@ const Dashboard = () => {
                         <div key={post.id} className="activity-item activity-item--post">
                           <div className="activity-item-title">{post.authorName || 'Someone'} posted</div>
                           {post.propertyAddress && (
-                            <div className="activity-item-meta">About {post.propertyAddress}</div>
+                            <div className="activity-item-meta">
+                              About{' '}
+                              {post.propertyId ? (
+                                <Link to={`/property/${post.propertyId}`} className="activity-item-link">
+                                  {post.propertyAddress}
+                                </Link>
+                              ) : (
+                                post.propertyAddress
+                              )}
+                            </div>
                           )}
                           <div className="activity-item-body">{post.body}</div>
                           {(post.hashtags?.length || post.userTags?.length) && (
@@ -1806,7 +1842,16 @@ const Dashboard = () => {
                         <div key={post.id} className="activity-item activity-item--post">
                           <div className="activity-item-title">You posted</div>
                           {post.propertyAddress && (
-                            <div className="activity-item-meta">About {post.propertyAddress}</div>
+                            <div className="activity-item-meta">
+                              About{' '}
+                              {post.propertyId ? (
+                                <Link to={`/property/${post.propertyId}`} className="activity-item-link">
+                                  {post.propertyAddress}
+                                </Link>
+                              ) : (
+                                post.propertyAddress
+                              )}
+                            </div>
                           )}
                           <div className="activity-item-body">{post.body}</div>
                           {(post.hashtags?.length || post.userTags?.length) && (
