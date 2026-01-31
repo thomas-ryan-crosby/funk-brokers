@@ -94,7 +94,7 @@ const Landing = () => {
               </div>
               <div className="hero-pillar">
                 <h3>You Control the Transaction</h3>
-                <p>If you decide to sell, you control the entire process — pace, partners, and outcome.</p>
+                <p>If you decide to buy or sell, you control the entire process — pace, partners, and outcome. We guarantee it’s a lot easier than you think.</p>
               </div>
             </div>
             <div className="hero-cta">
