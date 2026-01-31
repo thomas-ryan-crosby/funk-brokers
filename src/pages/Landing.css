@@ -204,7 +204,12 @@
   margin: 0 0 16px 0;
   color: #ffffff;
   letter-spacing: -0.02em;
-  text-shadow: 0 6px 18px rgba(2, 6, 23, 0.45);
+  text-shadow: 0 8px 24px rgba(2, 6, 23, 0.65);
+}
+
+.features-section .section-title {
+  color: #f8fafc;
+  text-shadow: 0 10px 30px rgba(2, 6, 23, 0.75);
 }
 
 .section-subtitle {
