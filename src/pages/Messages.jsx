@@ -47,6 +47,8 @@ const Messages = () => {
   const [notifications, setNotifications] = useState([]);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [expandedPingId, setExpandedPingId] = useState(null);
+  const [pings, setPings] = useState([]);
+  const [pingsLoading, setPingsLoading] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -58,12 +60,19 @@ const Messages = () => {
     if (isAuthenticated && user) {
       loadMessages();
       loadNotifications();
+      loadPings();
     }
   }, [isAuthenticated, user]);
 
   useEffect(() => {
     if (activeTab === 'notifications' && isAuthenticated && user) {
       loadNotifications();
+    }
+  }, [activeTab, isAuthenticated, user]);
+
+  useEffect(() => {
+    if (activeTab === 'pings' && isAuthenticated && user) {
+      loadPings();
     }
   }, [activeTab, isAuthenticated, user]);
 
@@ -223,22 +232,9 @@ const Messages = () => {
     if (!user?.uid || notificationsLoading) return;
     setNotificationsLoading(true);
     try {
-      const [properties, pings] = await Promise.all([
-        getPropertiesBySeller(user.uid),
-        getPingsForSeller(user.uid),
-      ]);
+      const properties = await getPropertiesBySeller(user.uid);
       if (properties.length === 0) {
-        const pingItems = (pings || []).map((ping) => ({
-          id: `ping_${ping.id}`,
-          type: 'ping',
-          propertyId: ping.propertyId,
-          propertyAddress: ping.propertyAddress,
-          createdAt: ping.createdAt,
-          actorName: ping.senderName || 'Anonymous',
-          label: pingLabel(ping.reasonType),
-          note: ping.note || '',
-        }));
-        setNotifications(pingItems);
+        setNotifications([]);
         return;
       }
       const favoritesByProperty = await Promise.all(
@@ -255,17 +251,7 @@ const Messages = () => {
           }));
         })
       );
-      const pingItems = (pings || []).map((ping) => ({
-        id: `ping_${ping.id}`,
-        type: 'ping',
-        propertyId: ping.propertyId,
-        propertyAddress: ping.propertyAddress,
-        createdAt: ping.createdAt,
-        actorName: ping.senderName || 'Anonymous',
-        label: pingLabel(ping.reasonType),
-        note: ping.note || '',
-      }));
-      const items = favoritesByProperty.flat().concat(pingItems);
+      const items = favoritesByProperty.flat();
       items.sort((a, b) => {
         const aDate = getMessageDate(a);
         const bDate = getMessageDate(b);
@@ -277,6 +263,35 @@ const Messages = () => {
       setNotifications([]);
     } finally {
       setNotificationsLoading(false);
+    }
+  };
+
+  const loadPings = async () => {
+    if (!user?.uid || pingsLoading) return;
+    setPingsLoading(true);
+    try {
+      const list = await getPingsForSeller(user.uid);
+      const items = (list || []).map((ping) => ({
+        id: `ping_${ping.id}`,
+        type: 'ping',
+        propertyId: ping.propertyId,
+        propertyAddress: ping.propertyAddress,
+        createdAt: ping.createdAt,
+        actorName: ping.senderName || 'Anonymous',
+        label: pingLabel(ping.reasonType),
+        note: ping.note || '',
+      }));
+      items.sort((a, b) => {
+        const aDate = getMessageDate(a);
+        const bDate = getMessageDate(b);
+        return bDate - aDate;
+      });
+      setPings(items);
+    } catch (e) {
+      console.error('Failed to load pings', e);
+      setPings([]);
+    } finally {
+      setPingsLoading(false);
     }
   };
 
@@ -391,6 +406,15 @@ const Messages = () => {
             >
               Messages
             </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'pings'}
+              className={`messages-tab ${activeTab === 'pings' ? 'active' : ''}`}
+              onClick={() => setActiveTab('pings')}
+            >
+              Pings
+            </button>
           </div>
           {activeTab === 'messages' && (
             <div className="messages-filters">
@@ -433,66 +457,71 @@ const Messages = () => {
               ) : notifications.length === 0 ? (
                 <p className="messages-empty">No notifications yet.</p>
               ) : (
-                <>
-                  {notifications.filter((n) => n.type === 'ping').length > 0 && (
-                    <div className="notifications-group">
-                      <h3>Pings</h3>
-                      <ul className="notifications-list">
-                        {notifications.filter((n) => n.type === 'ping').map((n) => {
-                          const isExpanded = expandedPingId === n.id;
-                          return (
-                            <li key={n.id} className="notification-item">
-                              <div className="notification-item-main">
-                                <span className="notification-item-title">
-                                  {n.actorName} {n.label}
-                                </span>
-                                <span className="notification-item-tag notification-item-tag--ping">Ping</span>
-                                <span className="notification-item-date">{formatListDate(n.createdAt)}</span>
-                              </div>
-                              <div className="notification-item-context">
-                                {n.propertyAddress || 'Property'}
-                              </div>
-                              <button
-                                type="button"
-                                className="notification-item-toggle"
-                                onClick={() => setExpandedPingId(isExpanded ? null : n.id)}
-                              >
-                                {isExpanded ? 'Hide details' : 'View details'}
-                              </button>
-                              {isExpanded && (
-                                <div className="notification-item-details">
-                                  <div><strong>Reason:</strong> {n.label}</div>
-                                  <div><strong>Message:</strong> {n.note?.trim() || '—'}</div>
-                                </div>
-                              )}
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    </div>
-                  )}
-                  {notifications.filter((n) => n.type !== 'ping').length > 0 && (
-                    <div className="notifications-group">
-                      <h3>Favorites</h3>
-                      <ul className="notifications-list">
-                        {notifications.filter((n) => n.type !== 'ping').map((n) => (
-                          <li key={n.id} className="notification-item">
-                            <div className="notification-item-main">
-                              <span className="notification-item-title">
-                                {n.actorName} {n.label}
-                              </span>
-                              <span className="notification-item-tag notification-item-tag--favorite">Favorite</span>
-                              <span className="notification-item-date">{formatListDate(n.createdAt)}</span>
+                <div className="notifications-group">
+                  <h3>Favorites</h3>
+                  <ul className="notifications-list">
+                    {notifications.map((n) => (
+                      <li key={n.id} className="notification-item">
+                        <div className="notification-item-main">
+                          <span className="notification-item-title">
+                            {n.actorName} {n.label}
+                          </span>
+                          <span className="notification-item-tag notification-item-tag--favorite">Favorite</span>
+                          <span className="notification-item-date">{formatListDate(n.createdAt)}</span>
+                        </div>
+                        <div className="notification-item-context">
+                          {n.propertyAddress || 'Property'}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'pings' && (
+            <div className="notifications-panel">
+              {pingsLoading ? (
+                <p className="messages-empty">Loading pings...</p>
+              ) : pings.length === 0 ? (
+                <p className="messages-empty">No pings yet.</p>
+              ) : (
+                <div className="notifications-group">
+                  <h3>Pings</h3>
+                  <ul className="notifications-list">
+                    {pings.map((n) => {
+                      const isExpanded = expandedPingId === n.id;
+                      return (
+                        <li key={n.id} className="notification-item">
+                          <div className="notification-item-main">
+                            <span className="notification-item-title">
+                              {n.actorName} {n.label}
+                            </span>
+                            <span className="notification-item-tag notification-item-tag--ping">Ping</span>
+                            <span className="notification-item-date">{formatListDate(n.createdAt)}</span>
+                          </div>
+                          <div className="notification-item-context">
+                            {n.propertyAddress || 'Property'}
+                          </div>
+                          <button
+                            type="button"
+                            className="notification-item-toggle"
+                            onClick={() => setExpandedPingId(isExpanded ? null : n.id)}
+                          >
+                            {isExpanded ? 'Hide details' : 'View details'}
+                          </button>
+                          {isExpanded && (
+                            <div className="notification-item-details">
+                              <div><strong>Reason:</strong> {n.label}</div>
+                              <div><strong>Message:</strong> {n.note?.trim() || '—'}</div>
                             </div>
-                            <div className="notification-item-context">
-                              {n.propertyAddress || 'Property'}
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
               )}
             </div>
           )}
