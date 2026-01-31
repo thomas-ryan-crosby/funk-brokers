@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getMessagesForUser, createMessage } from '../services/messageService';
+import { getPropertiesBySeller } from '../services/propertyService';
+import { getFavoritesForProperty } from '../services/favoritesService';
 import './Messages.css';
 
 const formatDate = (v) => {
@@ -40,6 +42,9 @@ const Messages = () => {
   const [newTo, setNewTo] = useState('');
   const [newPropertyId, setNewPropertyId] = useState('');
   const [newBody, setNewBody] = useState('');
+  const [activeTab, setActiveTab] = useState('notifications');
+  const [notifications, setNotifications] = useState([]);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -50,6 +55,7 @@ const Messages = () => {
   useEffect(() => {
     if (isAuthenticated && user) {
       loadMessages();
+      loadNotifications();
     }
   }, [isAuthenticated, user]);
 
@@ -64,6 +70,7 @@ const Messages = () => {
         propertyId,
         propertyAddress: state.propertyAddress || null,
       });
+      setActiveTab('messages');
       setComposingNew(false);
     }
   }, [searchParams, location.state]);
@@ -87,6 +94,11 @@ const Messages = () => {
   const myName = userProfile?.anonymousProfile
     ? (userProfile?.publicUsername || 'Anonymous')
     : (userProfile?.name || user?.displayName || 'You');
+
+  const formatAddress = (property) => {
+    const parts = [property.address, property.city, property.state, property.zipCode].filter(Boolean);
+    return parts.join(', ');
+  };
 
   const threads = useMemo(() => {
     if (!uid) return [];
@@ -175,6 +187,49 @@ const Messages = () => {
     }
     return Array.from(seen.entries()).map(([id, address]) => ({ id, address }));
   }, [threads]);
+
+  const getFavoriteDisplayName = (fav) => {
+    const profile = fav?.userProfile;
+    if (profile?.anonymousProfile) return profile.publicUsername || 'Anonymous';
+    return profile?.publicUsername || profile?.name || 'Unknown';
+  };
+
+  const loadNotifications = async () => {
+    if (!user?.uid || notificationsLoading) return;
+    setNotificationsLoading(true);
+    try {
+      const properties = await getPropertiesBySeller(user.uid);
+      if (properties.length === 0) {
+        setNotifications([]);
+        return;
+      }
+      const favoritesByProperty = await Promise.all(
+        properties.map(async (property) => {
+          const favorites = await getFavoritesForProperty(property.id);
+          return favorites.map((fav) => ({
+            id: `${property.id}_${fav.id}`,
+            type: 'favorite',
+            propertyId: property.id,
+            propertyAddress: formatAddress(property),
+            createdAt: fav.createdAt,
+            actorName: getFavoriteDisplayName(fav),
+          }));
+        })
+      );
+      const items = favoritesByProperty.flat();
+      items.sort((a, b) => {
+        const aDate = getMessageDate(a);
+        const bDate = getMessageDate(b);
+        return bDate - aDate;
+      });
+      setNotifications(items);
+    } catch (e) {
+      console.error('Failed to load notifications', e);
+      setNotifications([]);
+    } finally {
+      setNotificationsLoading(false);
+    }
+  };
 
   const selectedThreadMessages = useMemo(() => {
     if (!selectedThread) return [];
@@ -267,39 +322,88 @@ const Messages = () => {
     <div className="messages-page">
       <div className="messages-container">
         <header className="messages-header">
-          <h1>Messages</h1>
-          <div className="messages-filters">
-            <select
-              value={filterFromUserId}
-              onChange={(e) => setFilterFromUserId(e.target.value)}
-              className="messages-filter-select"
-              aria-label="Filter by user"
+          <h1>Notification Center</h1>
+          <div className="messages-tabs" role="tablist" aria-label="Notification center tabs">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'notifications'}
+              className={`messages-tab ${activeTab === 'notifications' ? 'active' : ''}`}
+              onClick={() => setActiveTab('notifications')}
             >
-              <option value="">All users</option>
-              {messageableUsers.map((u) => (
-                <option key={u.id} value={u.id}>{u.name}</option>
-              ))}
-            </select>
-            <select
-              value={filterPropertyId}
-              onChange={(e) => setFilterPropertyId(e.target.value)}
-              className="messages-filter-select"
-              aria-label="Filter by property"
+              Notifications
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === 'messages'}
+              className={`messages-tab ${activeTab === 'messages' ? 'active' : ''}`}
+              onClick={() => setActiveTab('messages')}
             >
-              <option value="">All properties</option>
-              {messageableProperties.map((p) => (
-                <option key={p.id} value={p.id}>{p.address}</option>
-              ))}
-            </select>
-            <button type="button" className="btn btn-primary btn-small" onClick={() => { setComposingNew(true); setSelectedThread(null); }}>
-              New message
+              Messages
             </button>
           </div>
+          {activeTab === 'messages' && (
+            <div className="messages-filters">
+              <select
+                value={filterFromUserId}
+                onChange={(e) => setFilterFromUserId(e.target.value)}
+                className="messages-filter-select"
+                aria-label="Filter by user"
+              >
+                <option value="">All users</option>
+                {messageableUsers.map((u) => (
+                  <option key={u.id} value={u.id}>{u.name}</option>
+                ))}
+              </select>
+              <select
+                value={filterPropertyId}
+                onChange={(e) => setFilterPropertyId(e.target.value)}
+                className="messages-filter-select"
+                aria-label="Filter by property"
+              >
+                <option value="">All properties</option>
+                {messageableProperties.map((p) => (
+                  <option key={p.id} value={p.id}>{p.address}</option>
+                ))}
+              </select>
+              <button type="button" className="btn btn-primary btn-small" onClick={() => { setComposingNew(true); setSelectedThread(null); }}>
+                New message
+              </button>
+            </div>
+          )}
         </header>
 
         {error && <div className="messages-error">{error}</div>}
 
         <div className="messages-body">
+          {activeTab === 'notifications' && (
+            <div className="notifications-panel">
+              {notificationsLoading ? (
+                <p className="messages-empty">Loading notifications...</p>
+              ) : notifications.length === 0 ? (
+                <p className="messages-empty">No notifications yet.</p>
+              ) : (
+                <ul className="notifications-list">
+                  {notifications.map((n) => (
+                    <li key={n.id} className="notification-item">
+                      <div className="notification-item-main">
+                        <span className="notification-item-title">
+                          {n.actorName} favorited your property
+                        </span>
+                        <span className="notification-item-date">{formatListDate(n.createdAt)}</span>
+                      </div>
+                      <div className="notification-item-context">
+                        {n.propertyAddress || 'Property'}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+
+          {activeTab === 'messages' && (
           <aside className="messages-list">
             {loading ? (
               <p className="messages-empty">Loading...</p>
@@ -416,6 +520,7 @@ const Messages = () => {
               </div>
             )}
           </main>
+          )}
         </div>
       </div>
     </div>
