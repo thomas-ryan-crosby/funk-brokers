@@ -227,6 +227,82 @@
   gap: 12px;
 }
 
+.activity-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.activity-tab {
+  border: 1px solid #e2e8f0;
+  background: #fff;
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 13px;
+  cursor: pointer;
+  color: #64748b;
+}
+
+.activity-tab.active {
+  border-color: #3b82f6;
+  color: #1e293b;
+}
+
+.activity-composer {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  background: #fff;
+  margin-bottom: 20px;
+}
+
+.activity-composer h3 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+}
+
+.activity-composer-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.activity-composer label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.activity-composer select,
+.activity-composer input,
+.activity-composer textarea {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.activity-composer textarea {
+  margin-bottom: 12px;
+}
+
+.poll-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.activity-composer-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
 .activity-item {
   background: #f8fafc;
   border: 1px solid #e2e8f0;
@@ -243,6 +319,16 @@
 .activity-item-meta {
   font-size: 13px;
   color: #64748b;
+}
+
+.activity-item--post {
+  background: #ffffff;
+}
+
+.activity-item-body {
+  margin: 8px 0;
+  color: #475569;
+  font-size: 14px;
 }
 
 .property-item {

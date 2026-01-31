@@ -5,6 +5,7 @@ import { getPropertiesBySeller, getPropertyById, archiveProperty, restorePropert
 import { getUserFavoriteIds, removeFromFavorites, getFavoritesForProperty } from '../services/favoritesService';
 import { getAllProperties } from '../services/propertyService';
 import { getSavedSearches, removeSavedSearch, getPurchaseProfile, setPurchaseProfile } from '../services/profileService';
+import { createPost, getPostsByAuthor, getPostsForProperties } from '../services/postService';
 import { getOffersByProperty, getOffersByBuyer, acceptOffer, rejectOffer, withdrawOffer, counterOffer } from '../services/offerService';
 import { getTransactionsByUser, getTransactionByOfferId, createTransaction } from '../services/transactionService';
 import { getVendorsByUser, createVendor, updateVendor, deleteVendor, addVendorContact, updateVendorContact, removeVendorContact, VENDOR_TYPES } from '../services/vendorService';
@@ -70,6 +71,15 @@ const Dashboard = () => {
   const [mySearches, setMySearches] = useState([]);
   const [purchaseProfile, setPurchaseProfileState] = useState(null);
   const [activityFeed, setActivityFeed] = useState([]);
+  const [activityTab, setActivityTab] = useState('received'); // 'received' | 'mine'
+  const [myPosts, setMyPosts] = useState([]);
+  const [receivedPosts, setReceivedPosts] = useState([]);
+  const [postType, setPostType] = useState('tweet'); // 'tweet' | 'poll' | 'instagram'
+  const [postBody, setPostBody] = useState('');
+  const [postPropertyId, setPostPropertyId] = useState('');
+  const [postImageUrl, setPostImageUrl] = useState('');
+  const [pollOptions, setPollOptions] = useState(['', '']);
+  const [posting, setPosting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editingBuyingPower, setEditingBuyingPower] = useState(false);
@@ -162,6 +172,14 @@ const Dashboard = () => {
       });
       setActivityFeed(favoriteActivity.slice(0, 10));
 
+      // Load posts for activity tabs
+      const [mine, received] = await Promise.all([
+        getPostsByAuthor(user.uid),
+        getPostsForProperties(properties.map((p) => p.id)),
+      ]);
+      setMyPosts(mine || []);
+      setReceivedPosts((received || []).filter((p) => p.authorId !== user.uid));
+
       // Load offers sent by user (Deal Center – sent) with property details
       const sent = await getOffersByBuyer(user.uid).catch(() => []);
       const sentWithProperty = await Promise.all(
@@ -251,6 +269,52 @@ const Dashboard = () => {
 
   const handleBrowseSearch = (filters) => {
     navigate('/browse', { state: { filters } });
+  };
+
+  const resetPostForm = () => {
+    setPostType('tweet');
+    setPostBody('');
+    setPostPropertyId('');
+    setPostImageUrl('');
+    setPollOptions(['', '']);
+  };
+
+  const handlePostSubmit = async () => {
+    if (!postBody.trim()) return;
+    if (posting) return;
+    if (postType === 'poll') {
+      const filled = pollOptions.map((o) => o.trim()).filter(Boolean);
+      if (filled.length < 2) {
+        alert('Please add at least two poll options.');
+        return;
+      }
+    }
+    try {
+      setPosting(true);
+      const property = myProperties.find((p) => p.id === postPropertyId) || null;
+      await createPost({
+        authorId: user.uid,
+        authorName: userProfile?.publicUsername || userProfile?.name || user?.displayName || 'User',
+        type: postType,
+        body: postBody.trim(),
+        propertyId: property?.id || null,
+        propertyAddress: property?.address || null,
+        imageUrl: postType === 'instagram' ? postImageUrl.trim() || null : null,
+        pollOptions: postType === 'poll' ? pollOptions.map((o) => o.trim()).filter(Boolean) : [],
+      });
+      resetPostForm();
+      const [mine, received] = await Promise.all([
+        getPostsByAuthor(user.uid),
+        getPostsForProperties(myProperties.map((p) => p.id)),
+      ]);
+      setMyPosts(mine || []);
+      setReceivedPosts((received || []).filter((p) => p.authorId !== user.uid));
+    } catch (err) {
+      console.error('Failed to create post', err);
+      alert('Failed to create post. Please try again.');
+    } finally {
+      setPosting(false);
+    }
   };
 
   const getStatusBadge = (p) => {
@@ -1419,19 +1483,140 @@ const Dashboard = () => {
                 <h2>Activity Feed</h2>
                 <p className="form-hint">Recent likes and activity around your properties.</p>
               </div>
-              {activityFeed.length === 0 ? (
-                <p className="empty-message">No recent activity yet.</p>
-              ) : (
-                <div className="activity-list">
-                  {activityFeed.map((entry, idx) => (
-                    <div key={`${entry.propertyId}-${entry.createdAt}-${idx}`} className="activity-item">
-                      <div className="activity-item-title">
-                        {entry.userName} liked {entry.propertyAddress}
-                      </div>
-                      <div className="activity-item-meta">{formatDate(entry.createdAt)}</div>
-                    </div>
-                  ))}
+              <div className="activity-tabs">
+                <button
+                  type="button"
+                  className={`activity-tab ${activityTab === 'received' ? 'active' : ''}`}
+                  onClick={() => setActivityTab('received')}
+                >
+                  Received activity
+                </button>
+                <button
+                  type="button"
+                  className={`activity-tab ${activityTab === 'mine' ? 'active' : ''}`}
+                  onClick={() => setActivityTab('mine')}
+                >
+                  My activity
+                </button>
+              </div>
+
+              <div className="activity-composer">
+                <h3>Create a post</h3>
+                <div className="activity-composer-row">
+                  <label>
+                    Type
+                    <select value={postType} onChange={(e) => setPostType(e.target.value)}>
+                      <option value="tweet">Tweet style</option>
+                      <option value="instagram">Instagram style</option>
+                      <option value="poll">Poll</option>
+                    </select>
+                  </label>
+                  <label>
+                    Link to property (optional)
+                    <select value={postPropertyId} onChange={(e) => setPostPropertyId(e.target.value)}>
+                      <option value="">General</option>
+                      {myProperties.map((p) => (
+                        <option key={p.id} value={p.id}>{p.address || 'Property'}</option>
+                      ))}
+                    </select>
+                  </label>
                 </div>
+                <textarea
+                  value={postBody}
+                  onChange={(e) => setPostBody(e.target.value)}
+                  placeholder="Ask a question, share an update, or start a conversation..."
+                  rows={3}
+                />
+                {postType === 'instagram' && (
+                  <input
+                    type="url"
+                    value={postImageUrl}
+                    onChange={(e) => setPostImageUrl(e.target.value)}
+                    placeholder="Image URL (optional)"
+                  />
+                )}
+                {postType === 'poll' && (
+                  <div className="poll-options">
+                    {pollOptions.map((opt, idx) => (
+                      <input
+                        key={`poll-${idx}`}
+                        type="text"
+                        value={opt}
+                        onChange={(e) => {
+                          const next = [...pollOptions];
+                          next[idx] = e.target.value;
+                          setPollOptions(next);
+                        }}
+                        placeholder={`Option ${idx + 1}`}
+                      />
+                    ))}
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-small"
+                      onClick={() => setPollOptions([...pollOptions, ''])}
+                    >
+                      + Add option
+                    </button>
+                  </div>
+                )}
+                <div className="activity-composer-actions">
+                  <button type="button" className="btn btn-outline" onClick={resetPostForm} disabled={posting}>
+                    Clear
+                  </button>
+                  <button type="button" className="btn btn-primary" onClick={handlePostSubmit} disabled={posting || !postBody.trim()}>
+                    {posting ? 'Posting...' : 'Post'}
+                  </button>
+                </div>
+              </div>
+
+              {activityTab === 'received' && (
+                <>
+                  {activityFeed.length === 0 && receivedPosts.length === 0 ? (
+                    <p className="empty-message">No recent activity yet.</p>
+                  ) : (
+                    <div className="activity-list">
+                      {activityFeed.map((entry, idx) => (
+                        <div key={`${entry.propertyId}-${entry.createdAt}-${idx}`} className="activity-item">
+                          <div className="activity-item-title">
+                            {entry.userName} liked {entry.propertyAddress}
+                          </div>
+                          <div className="activity-item-meta">{formatDate(entry.createdAt)}</div>
+                        </div>
+                      ))}
+                      {receivedPosts.map((post) => (
+                        <div key={post.id} className="activity-item activity-item--post">
+                          <div className="activity-item-title">{post.authorName || 'Someone'} posted</div>
+                          {post.propertyAddress && (
+                            <div className="activity-item-meta">About {post.propertyAddress}</div>
+                          )}
+                          <div className="activity-item-body">{post.body}</div>
+                          <div className="activity-item-meta">{formatDate(post.createdAt)}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+
+              {activityTab === 'mine' && (
+                <>
+                  {myPosts.length === 0 ? (
+                    <p className="empty-message">You have not posted yet.</p>
+                  ) : (
+                    <div className="activity-list">
+                      {myPosts.map((post) => (
+                        <div key={post.id} className="activity-item activity-item--post">
+                          <div className="activity-item-title">You posted</div>
+                          {post.propertyAddress && (
+                            <div className="activity-item-meta">About {post.propertyAddress}</div>
+                          )}
+                          <div className="activity-item-body">{post.body}</div>
+                          <div className="activity-item-meta">{formatDate(post.createdAt)}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}
