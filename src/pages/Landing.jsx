@@ -72,7 +72,7 @@ const Landing = () => {
               <strong>Access homes never seen on traditional platforms.</strong>
             </p>
             <p className="hero-description">
-              OpenTo lets homeowners, prospective purchasers, or real estate lovers share, organize, and explore interest — without pressure, timelines, or intermediaries.
+              OpenTo is for homeowners, buyers, and anyone who wants to explore real estate — a calm place to share, organize, and explore interest without pressure, timelines, or intermediaries.
             </p>
             <div className="hero-pillars">
               <div className="hero-pillar">
