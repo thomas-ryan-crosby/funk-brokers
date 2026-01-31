@@ -5,7 +5,7 @@ import { getPropertiesBySeller, getPropertyById, archiveProperty, restorePropert
 import { getUserFavoriteIds, removeFromFavorites, getFavoritesForProperty } from '../services/favoritesService';
 import { getAllProperties } from '../services/propertyService';
 import { getSavedSearches, removeSavedSearch, getPurchaseProfile, setPurchaseProfile } from '../services/profileService';
-import { createPost, getPostsByAuthor, getPostsForProperties } from '../services/postService';
+import { createPost, deletePost, getPostsByAuthor, getPostsForProperties } from '../services/postService';
 import { getOffersByProperty, getOffersByBuyer, acceptOffer, rejectOffer, withdrawOffer, counterOffer } from '../services/offerService';
 import { getTransactionsByUser, getTransactionByOfferId, createTransaction } from '../services/transactionService';
 import { getVendorsByUser, createVendor, updateVendor, deleteVendor, addVendorContact, updateVendorContact, removeVendorContact, VENDOR_TYPES } from '../services/vendorService';
@@ -490,6 +490,23 @@ const Dashboard = () => {
       alert('Failed to create post. Please try again.');
     } finally {
       setPosting(false);
+    }
+  };
+
+  const handleDeletePost = async (postId) => {
+    if (!postId || posting) return;
+    if (!window.confirm('Delete this post?')) return;
+    try {
+      await deletePost(postId);
+      const [mine, received] = await Promise.all([
+        getPostsByAuthor(user.uid),
+        getPostsForProperties(myProperties.map((p) => p.id)),
+      ]);
+      setMyPosts(mine || []);
+      setReceivedPosts((received || []).filter((p) => p.authorId !== user.uid));
+    } catch (err) {
+      console.error('Failed to delete post', err);
+      alert('Failed to delete post. Please try again.');
     }
   };
 
@@ -1854,7 +1871,16 @@ const Dashboard = () => {
                     <div className="activity-list">
                       {myPosts.map((post) => (
                         <div key={post.id} className="activity-item activity-item--post">
-                          <div className="activity-item-title">You posted</div>
+                          <div className="activity-item-title">
+                            You posted
+                            <button
+                              type="button"
+                              className="activity-item-delete"
+                              onClick={() => handleDeletePost(post.id)}
+                            >
+                              Delete
+                            </button>
+                          </div>
                           {post.propertyAddress && (
                             <div className="activity-item-meta">
                               About{' '}

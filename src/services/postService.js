@@ -1,4 +1,4 @@
-import { addDoc, collection, getDocs, orderBy, query, where } from 'firebase/firestore';
+import { addDoc, collection, deleteDoc, doc, getDocs, orderBy, query, where } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
 const POSTS_COLLECTION = 'posts';
@@ -103,4 +103,9 @@ export const getPostsForPropertyOrAddress = async (propertyId, address) => {
     return byAddress;
   }
   return [];
+};
+
+export const deletePost = async (postId) => {
+  if (!postId) return;
+  await deleteDoc(doc(db, POSTS_COLLECTION, postId));
 };

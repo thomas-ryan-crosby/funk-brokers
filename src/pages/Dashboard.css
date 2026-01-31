@@ -338,11 +338,27 @@
   font-weight: 600;
   color: #1e293b;
   margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .activity-item-meta {
   font-size: 13px;
   color: #64748b;
+}
+
+.activity-item-delete {
+  margin-left: auto;
+  border: none;
+  background: none;
+  color: #ef4444;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.activity-item-delete:hover {
+  text-decoration: underline;
 }
 
 .activity-item--post {
