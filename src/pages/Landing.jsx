@@ -1,8 +1,11 @@
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Landing.css';
 
 const Landing = () => {
   const navigate = useNavigate();
+  const [showTweet, setShowTweet] = useState(true);
+  const tweetRef = useRef(null);
 
   const handleBrowseClick = () => {
     navigate('/browse');
@@ -15,6 +18,28 @@ const Landing = () => {
   const handleLearnProcessClick = () => {
     navigate('/how-it-works');
   };
+
+  useEffect(() => {
+    if (!showTweet || !tweetRef.current) return;
+    const load = () => {
+      if (window.twttr?.widgets?.load) {
+        window.twttr.widgets.load(tweetRef.current);
+      }
+    };
+    if (window.twttr?.widgets?.load) {
+      load();
+      return;
+    }
+    if (!document.querySelector('script[data-twitter-wjs]')) {
+      const script = document.createElement('script');
+      script.src = 'https://platform.twitter.com/widgets.js';
+      script.async = true;
+      script.defer = true;
+      script.setAttribute('data-twitter-wjs', 'true');
+      script.onload = load;
+      document.body.appendChild(script);
+    }
+  }, [showTweet]);
 
   return (
     <div className="landing-page">
@@ -62,6 +87,34 @@ const Landing = () => {
       </section>
 
       {/* Features Section */}
+      {showTweet && (
+        <section className="landing-tweet-section">
+          <div className="container">
+            <div className="landing-tweet-card">
+              <button
+                type="button"
+                className="landing-tweet-close"
+                onClick={() => setShowTweet(false)}
+                aria-label="Close video"
+              >
+                ×
+              </button>
+              <div ref={tweetRef} className="landing-tweet-embed">
+                <blockquote className="twitter-tweet" data-media-max-width="560">
+                  <p lang="en" dir="ltr">
+                    Tell me this isn’t how it actually works...{' '}
+                    <a href="https://t.co/UBzyHZk1VL">pic.twitter.com/UBzyHZk1VL</a>
+                  </p>
+                  &mdash; Dr. Clown, PhD (@DrClownPhD){' '}
+                  <a href="https://twitter.com/DrClownPhD/status/2011294704344727726?ref_src=twsrc%5Etfw">
+                    January 14, 2026
+                  </a>
+                </blockquote>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
       <section className="features-section">
         <div className="container">
           <div className="section-header">

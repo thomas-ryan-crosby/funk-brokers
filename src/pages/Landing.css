@@ -221,6 +221,46 @@
   background: var(--color-bg-secondary, #0f172a);
 }
 
+.landing-tweet-section {
+  padding: 60px 0;
+  background: var(--color-bg-secondary, #0f172a);
+}
+
+.landing-tweet-card {
+  position: relative;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 24px;
+  border-radius: 16px;
+  border: 1px solid var(--color-border-light, rgba(148, 163, 184, 0.2));
+  background: var(--color-bg-dark, #0b1224);
+  box-shadow: 0 16px 30px rgba(2, 6, 23, 0.4);
+}
+
+.landing-tweet-close {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.2);
+  color: #e2e8f0;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.landing-tweet-close:hover {
+  background: rgba(148, 163, 184, 0.35);
+}
+
+.landing-tweet-embed {
+  display: flex;
+  justify-content: center;
+}
+
 .features-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
