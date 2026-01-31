@@ -799,6 +799,16 @@ const PropertyDetail = () => {
                       <span className="property-post-date">{formatPostDate(post.createdAt)}</span>
                     </div>
                     <div className="property-post-body">{post.body}</div>
+                  {(post.hashtags?.length || post.userTags?.length) && (
+                    <div className="property-post-tags">
+                      {post.hashtags?.map((tag) => (
+                        <span key={`${post.id}-hash-${tag}`} className="property-post-tag">#{tag}</span>
+                      ))}
+                      {post.userTags?.map((tag) => (
+                        <span key={`${post.id}-user-${tag}`} className="property-post-tag">@{tag}</span>
+                      ))}
+                    </div>
+                  )}
                     {post.imageUrl && (
                       <div className="property-post-media">
                         <img src={post.imageUrl} alt="Post media" />

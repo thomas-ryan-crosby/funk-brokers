@@ -17,6 +17,7 @@ import PropertyCard from '../components/PropertyCard';
 import CounterOfferModal from '../components/CounterOfferModal';
 import ViewOfferModal from '../components/ViewOfferModal';
 import DragDropFileInput from '../components/DragDropFileInput';
+import { uploadFile } from '../services/storageService';
 import './Dashboard.css';
 
 function getExpiryMs(offer) {
@@ -79,7 +80,10 @@ const Dashboard = () => {
   const [postPropertyId, setPostPropertyId] = useState('');
   const [postAddress, setPostAddress] = useState('');
   const [postImageUrl, setPostImageUrl] = useState('');
+  const [postImageUploading, setPostImageUploading] = useState(false);
   const [pollOptions, setPollOptions] = useState(['', '']);
+  const [postHashtags, setPostHashtags] = useState('');
+  const [postUserTags, setPostUserTags] = useState('');
   const [posting, setPosting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -278,7 +282,34 @@ const Dashboard = () => {
     setPostPropertyId('');
     setPostAddress('');
     setPostImageUrl('');
+    setPostImageUploading(false);
     setPollOptions(['', '']);
+    setPostHashtags('');
+    setPostUserTags('');
+  };
+
+  const parseTagList = (value, prefix) => {
+    return (value || '')
+      .split(/[,\s]+/)
+      .map((token) => token.trim())
+      .filter(Boolean)
+      .map((token) => (token.startsWith(prefix) ? token.slice(1) : token))
+      .filter(Boolean);
+  };
+
+  const handleUploadPostImage = async (file) => {
+    if (!file || !user?.uid) return;
+    try {
+      setPostImageUploading(true);
+      const safeName = file.name.replace(/\s+/g, '-');
+      const url = await uploadFile(file, `posts/${user.uid}/${Date.now()}_${safeName}`);
+      setPostImageUrl(url);
+    } catch (err) {
+      console.error('Failed to upload post image', err);
+      alert('Failed to upload image. Please try again.');
+    } finally {
+      setPostImageUploading(false);
+    }
   };
 
   const handlePostSubmit = async () => {
@@ -296,6 +327,8 @@ const Dashboard = () => {
       const property = myProperties.find((p) => p.id === postPropertyId) || null;
       const addressText = (postAddress || '').trim();
       const linkedAddress = property?.address || addressText || null;
+      const hashtags = parseTagList(postHashtags, '#');
+      const userTags = parseTagList(postUserTags, '@');
       await createPost({
         authorId: user.uid,
         authorName: userProfile?.publicUsername || userProfile?.name || user?.displayName || 'User',
@@ -305,6 +338,8 @@ const Dashboard = () => {
         propertyAddress: linkedAddress,
         imageUrl: postType === 'instagram' ? postImageUrl.trim() || null : null,
         pollOptions: postType === 'poll' ? pollOptions.map((o) => o.trim()).filter(Boolean) : [],
+        hashtags,
+        userTags,
       });
       resetPostForm();
       const [mine, received] = await Promise.all([
@@ -1505,16 +1540,27 @@ const Dashboard = () => {
               </div>
 
               <div className="activity-composer">
-                <h3>Create a post</h3>
+                <h3>Create Post</h3>
+                <div className="post-type-wheel" role="tablist" aria-label="Post type">
+                  {[
+                    { id: 'post', label: 'Post' },
+                    { id: 'tweet', label: 'Tweet' },
+                    { id: 'poll', label: 'Poll' },
+                    { id: 'instagram', label: 'Instagram' },
+                  ].map((type) => (
+                    <button
+                      key={type.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={postType === type.id}
+                      className={`post-type-pill ${postType === type.id ? 'active' : ''}`}
+                      onClick={() => setPostType(type.id)}
+                    >
+                      {type.label}
+                    </button>
+                  ))}
+                </div>
                 <div className="activity-composer-row">
-                  <label>
-                    Type
-                    <select value={postType} onChange={(e) => setPostType(e.target.value)}>
-                      <option value="tweet">Tweet style</option>
-                      <option value="instagram">Instagram style</option>
-                      <option value="poll">Poll</option>
-                    </select>
-                  </label>
                   <label>
                     Link to property (optional)
                     <select value={postPropertyId} onChange={(e) => setPostPropertyId(e.target.value)}>
@@ -1540,13 +1586,45 @@ const Dashboard = () => {
                   placeholder="Ask a question, share an update, or start a conversation..."
                   rows={3}
                 />
+                <div className="activity-composer-row">
+                  <label>
+                    Hashtags
+                    <input
+                      type="text"
+                      value={postHashtags}
+                      onChange={(e) => setPostHashtags(e.target.value)}
+                      placeholder="#renovation #kitchen"
+                    />
+                  </label>
+                  <label>
+                    Tag users
+                    <input
+                      type="text"
+                      value={postUserTags}
+                      onChange={(e) => setPostUserTags(e.target.value)}
+                      placeholder="@alex, @chris"
+                    />
+                  </label>
+                </div>
                 {postType === 'instagram' && (
-                  <input
-                    type="url"
-                    value={postImageUrl}
-                    onChange={(e) => setPostImageUrl(e.target.value)}
-                    placeholder="Image URL (optional)"
-                  />
+                  <div className="post-media-upload">
+                    <DragDropFileInput
+                      accept=".png,.jpg,.jpeg,.webp"
+                      onChange={(f) => { if (f) handleUploadPostImage(f); }}
+                      disabled={postImageUploading}
+                      uploading={postImageUploading}
+                      placeholder={postImageUrl ? 'Drop to replace image' : 'Drop or click to upload image'}
+                      className="dashboard-doc-upload"
+                    />
+                    {postImageUrl && (
+                      <div className="post-media-preview">
+                        <img src={postImageUrl} alt="Post" />
+                        <button type="button" className="btn btn-outline btn-small" onClick={() => setPostImageUrl('')}>
+                          Remove image
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 )}
                 {postType === 'poll' && (
                   <div className="poll-options">
@@ -1570,6 +1648,15 @@ const Dashboard = () => {
                     >
                       + Add option
                     </button>
+                    {pollOptions.length > 2 && (
+                      <button
+                        type="button"
+                        className="btn btn-outline btn-small"
+                        onClick={() => setPollOptions(pollOptions.slice(0, -1))}
+                      >
+                        Remove last option
+                      </button>
+                    )}
                   </div>
                 )}
                 <div className="activity-composer-actions">
@@ -1603,6 +1690,16 @@ const Dashboard = () => {
                             <div className="activity-item-meta">About {post.propertyAddress}</div>
                           )}
                           <div className="activity-item-body">{post.body}</div>
+                          {(post.hashtags?.length || post.userTags?.length) && (
+                            <div className="activity-item-tags">
+                              {post.hashtags?.map((tag) => (
+                                <span key={`${post.id}-hash-${tag}`} className="activity-tag">#{tag}</span>
+                              ))}
+                              {post.userTags?.map((tag) => (
+                                <span key={`${post.id}-user-${tag}`} className="activity-tag">@{tag}</span>
+                              ))}
+                            </div>
+                          )}
                           <div className="activity-item-meta">{formatDate(post.createdAt)}</div>
                         </div>
                       ))}
@@ -1624,6 +1721,16 @@ const Dashboard = () => {
                             <div className="activity-item-meta">About {post.propertyAddress}</div>
                           )}
                           <div className="activity-item-body">{post.body}</div>
+                          {(post.hashtags?.length || post.userTags?.length) && (
+                            <div className="activity-item-tags">
+                              {post.hashtags?.map((tag) => (
+                                <span key={`${post.id}-hash-${tag}`} className="activity-tag">#{tag}</span>
+                              ))}
+                              {post.userTags?.map((tag) => (
+                                <span key={`${post.id}-user-${tag}`} className="activity-tag">@{tag}</span>
+                              ))}
+                            </div>
+                          )}
                           <div className="activity-item-meta">{formatDate(post.createdAt)}</div>
                         </div>
                       ))}

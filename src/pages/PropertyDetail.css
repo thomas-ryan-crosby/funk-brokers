@@ -71,6 +71,21 @@
   line-height: 1.6;
 }
 
+.property-post-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.property-post-tag {
+  background: #eef2ff;
+  color: #4f46e5;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 12px;
+}
+
 .property-post-media {
   margin-top: 10px;
 }
