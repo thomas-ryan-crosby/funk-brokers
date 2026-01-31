@@ -104,7 +104,7 @@ function AppContent() {
                   <Link to="/dashboard">Dashboard</Link>
                   <Link to="/messages" className="nav-messages" aria-label="Message center">
                     <span className="nav-messages-icon" aria-hidden>💬</span>
-                    <span className="nav-messages-label">Messages</span>
+                    <span className="nav-messages-label">Notification Center</span>
                     {unreadCount > 0 && (
                       <span className="nav-messages-badge" aria-label={`${unreadCount} unread messages`}>
                         {unreadCount > 99 ? '99+' : unreadCount}
