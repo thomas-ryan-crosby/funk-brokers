@@ -69,7 +69,7 @@ const Landing = () => {
               <span className="title-highlight"> Real Estate Platform</span>
             </h1>
             <p className="hero-description">
-              OpenTo lets homeowners share, organize, and explore interest — without pressure, timelines, or intermediaries.
+              OpenTo lets homeowners, prospective purchasers, or real estate lovers share, organize, and explore interest — without pressure, timelines, or intermediaries.
             </p>
             <div className="hero-pillars">
               <div className="hero-pillar">
