@@ -104,15 +104,6 @@
   color: rgba(248, 250, 252, 0.8);
 }
 
-.hero-pillar-toggle {
-  cursor: pointer;
-}
-
-.hero-pillar-toggle:focus-visible {
-  outline: 2px solid rgba(59, 130, 246, 0.7);
-  outline-offset: 3px;
-  border-radius: 6px;
-}
 
 .hero-underline {
   text-decoration: underline;
