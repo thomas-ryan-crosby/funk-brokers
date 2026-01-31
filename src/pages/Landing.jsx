@@ -5,6 +5,7 @@ import './Landing.css';
 const Landing = () => {
   const navigate = useNavigate();
   const [showTweet, setShowTweet] = useState(true);
+  const [lightTheme, setLightTheme] = useState(false);
   const tweetRef = useRef(null);
 
   const handleBrowseClick = () => {
@@ -44,10 +45,17 @@ const Landing = () => {
 
 
   return (
-    <div className="landing-page">
+    <div className={`landing-page${lightTheme ? ' landing-page--light' : ''}`}>
       {/* Hero Section */}
       <section className="landing-hero">
         <div className="hero-container">
+          <button
+            type="button"
+            className="landing-theme-toggle"
+            onClick={() => setLightTheme((prev) => !prev)}
+          >
+            {lightTheme ? 'Dark preview' : 'Light preview'}
+          </button>
           <div className="hero-content">
             <h1 className="hero-title">
               A Radically Different
