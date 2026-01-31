@@ -72,40 +72,37 @@ const Landing = () => {
         <div className="hero-container">
           <div className="hero-content">
             <h1 className="hero-title">
-              Where real estate
-              <span className="title-highlight"> conversations start</span>
+              A Radically Different
+              <span className="title-highlight"> Real Estate Platform</span>
             </h1>
             <p className="hero-description">
-              OpenTo lets buyers and owners explore intent early before a listing goes live.
-              Start quietly, share selectively, and decide when to move forward.
+              OpenTo lets homeowners share, organize, and explore interest — without pressure, timelines, or intermediaries.
             </p>
+            <div className="hero-pillars">
+              <div className="hero-pillar">
+                <h3>No-Pressure Property Showcasing</h3>
+                <p>Share your home on your terms. No listings. No deadlines. No public exposure unless you want it.</p>
+              </div>
+              <div className="hero-pillar">
+                <h3>A Centralized Home Hub</h3>
+                <p>One place for your home’s key documents, vendors, and history — organized and private.</p>
+              </div>
+              <div className="hero-pillar">
+                <h3>You Control the Transaction</h3>
+                <p>If you decide to sell, you control the entire process — pace, partners, and outcome.</p>
+              </div>
+            </div>
             <div className="hero-cta">
               <button onClick={handleBrowseClick} className="btn btn-primary">
-                Start a conversation
+                OpenTo Sharing
               </button>
               <button onClick={handleListClick} className="btn btn-secondary">
                 Add your property to the platform
               </button>
             </div>
             <button onClick={handleLearnProcessClick} className="hero-learn-more">
-              See how OpenTo works
+              Learn how it works
             </button>
-            <div className="hero-stats">
-              <div className="stat">
-                <span className="stat-value">Private</span>
-                <span className="stat-label">By default</span>
-              </div>
-              <div className="stat-divider"></div>
-              <div className="stat">
-                <span className="stat-value">Verified</span>
-                <span className="stat-label">Introductions</span>
-              </div>
-              <div className="stat-divider"></div>
-              <div className="stat">
-                <span className="stat-value">On</span>
-                <span className="stat-label">Your timing</span>
-              </div>
-            </div>
           </div>
         </div>
         {showTweet && (
