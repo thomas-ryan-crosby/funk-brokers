@@ -57,8 +57,8 @@ const Landing = () => {
             </p>
             <div className="hero-pillars">
               <div className="hero-pillar">
-                <h3>Share your home on your terms.</h3>
-                <p>No pressure property showcasing. No deadlines. No public exposure unless you want it.</p>
+                <h3>A space to share or browse — on your terms.</h3>
+                <p>No pressure. No listing contracts. No representation contracts. No public exposure unless you want it.</p>
               </div>
               <div className="hero-pillar">
                 <h3>A Centralized Home Hub</h3>
