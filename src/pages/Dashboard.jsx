@@ -77,6 +77,7 @@ const Dashboard = () => {
   const [postType, setPostType] = useState('tweet'); // 'tweet' | 'poll' | 'instagram'
   const [postBody, setPostBody] = useState('');
   const [postPropertyId, setPostPropertyId] = useState('');
+  const [postAddress, setPostAddress] = useState('');
   const [postImageUrl, setPostImageUrl] = useState('');
   const [pollOptions, setPollOptions] = useState(['', '']);
   const [posting, setPosting] = useState(false);
@@ -275,6 +276,7 @@ const Dashboard = () => {
     setPostType('tweet');
     setPostBody('');
     setPostPropertyId('');
+    setPostAddress('');
     setPostImageUrl('');
     setPollOptions(['', '']);
   };
@@ -292,13 +294,15 @@ const Dashboard = () => {
     try {
       setPosting(true);
       const property = myProperties.find((p) => p.id === postPropertyId) || null;
+      const addressText = (postAddress || '').trim();
+      const linkedAddress = property?.address || addressText || null;
       await createPost({
         authorId: user.uid,
         authorName: userProfile?.publicUsername || userProfile?.name || user?.displayName || 'User',
         type: postType,
         body: postBody.trim(),
         propertyId: property?.id || null,
-        propertyAddress: property?.address || null,
+        propertyAddress: linkedAddress,
         imageUrl: postType === 'instagram' ? postImageUrl.trim() || null : null,
         pollOptions: postType === 'poll' ? pollOptions.map((o) => o.trim()).filter(Boolean) : [],
       });
@@ -1519,6 +1523,15 @@ const Dashboard = () => {
                         <option key={p.id} value={p.id}>{p.address || 'Property'}</option>
                       ))}
                     </select>
+                  </label>
+                  <label>
+                    Address (optional)
+                    <input
+                      type="text"
+                      value={postAddress}
+                      onChange={(e) => setPostAddress(e.target.value)}
+                      placeholder="123 Main St, City"
+                    />
                   </label>
                 </div>
                 <textarea

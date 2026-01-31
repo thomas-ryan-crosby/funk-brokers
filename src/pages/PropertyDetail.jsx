@@ -7,6 +7,7 @@ import { getPreListingChecklist, isPreListingChecklistComplete } from '../servic
 import { calculateListingReadiness } from '../services/listingProgressService';
 import { getListingTierProgress, getListingTierLabel } from '../utils/verificationScores';
 import { createPing } from '../services/pingService';
+import { getPostsForProperty } from '../services/postService';
 import PingOwnerModal from '../components/PingOwnerModal';
 import './PropertyDetail.css';
 
@@ -30,6 +31,8 @@ const PropertyDetail = () => {
   const [checklistComplete, setChecklistComplete] = useState(false);
   const [pingOpen, setPingOpen] = useState(false);
   const [pingSending, setPingSending] = useState(false);
+  const [propertyPosts, setPropertyPosts] = useState([]);
+  const [propertyPostsLoading, setPropertyPostsLoading] = useState(false);
 
   const isOwner = !!(property && user && property.sellerId === user.uid);
 
@@ -48,6 +51,23 @@ const PropertyDetail = () => {
   useEffect(() => {
     loadProperty();
   }, [id]);
+
+  useEffect(() => {
+    if (!property?.id) return;
+    const loadPosts = async () => {
+      try {
+        setPropertyPostsLoading(true);
+        const posts = await getPostsForProperty(property.id);
+        setPropertyPosts(posts);
+      } catch (err) {
+        console.error('Failed to load property posts', err);
+        setPropertyPosts([]);
+      } finally {
+        setPropertyPostsLoading(false);
+      }
+    };
+    loadPosts();
+  }, [property?.id]);
 
   useEffect(() => {
     if (property && isAuthenticated && user) {
@@ -81,6 +101,12 @@ const PropertyDetail = () => {
   };
 
   const formatFavoriteDate = (v) => {
+    const d = v?.toDate ? v.toDate() : new Date(v || 0);
+    if (Number.isNaN(d.getTime())) return '—';
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  };
+
+  const formatPostDate = (v) => {
     const d = v?.toDate ? v.toDate() : new Date(v || 0);
     if (Number.isNaN(d.getTime())) return '—';
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -421,7 +447,6 @@ const PropertyDetail = () => {
                   </div>
                 )}
               </div>
-            </div>
 
             {property.description && (
               <div className="property-description">
@@ -754,6 +779,44 @@ const PropertyDetail = () => {
                 </div>
               );
             })()}
+          </div>
+
+          <div className="property-posts">
+            <div className="property-posts-header">
+              <h2>Community Posts</h2>
+              <p>Public posts linked to this property.</p>
+            </div>
+            {propertyPostsLoading ? (
+              <p className="property-posts-empty">Loading posts...</p>
+            ) : propertyPosts.length === 0 ? (
+              <p className="property-posts-empty">No posts yet for this property.</p>
+            ) : (
+              <div className="property-posts-list">
+                {propertyPosts.map((post) => (
+                  <div key={post.id} className="property-post">
+                    <div className="property-post-meta">
+                      <span className="property-post-author">{post.authorName || 'Someone'}</span>
+                      <span className="property-post-date">{formatPostDate(post.createdAt)}</span>
+                    </div>
+                    <div className="property-post-body">{post.body}</div>
+                    {post.imageUrl && (
+                      <div className="property-post-media">
+                        <img src={post.imageUrl} alt="Post media" />
+                      </div>
+                    )}
+                    {post.pollOptions && post.pollOptions.length > 0 && (
+                      <div className="property-post-poll">
+                        {post.pollOptions.map((opt, idx) => (
+                          <div key={`${post.id}-opt-${idx}`} className="property-post-poll-option">
+                            {opt}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
         <PingOwnerModal

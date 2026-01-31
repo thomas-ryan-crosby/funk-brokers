@@ -53,3 +53,18 @@ export const getPostsForProperties = async (propertyIds) => {
   });
   return list;
 };
+
+export const getPostsForProperty = async (propertyId) => {
+  if (!propertyId) return [];
+  const q = query(
+    collection(db, POSTS_COLLECTION),
+    where('propertyId', '==', propertyId),
+    orderBy('createdAt', 'desc')
+  );
+  const snap = await getDocs(q);
+  const list = [];
+  snap.forEach((d) => {
+    list.push({ id: d.id, ...d.data() });
+  });
+  return list;
+};
