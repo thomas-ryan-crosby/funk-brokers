@@ -302,11 +302,25 @@ const Dashboard = () => {
     return parts.join(', ');
   };
 
-  const normalizeAddress = (value) => (value || '').toLowerCase().replace(/[^\w\s]/g, '').trim();
+  const normalizeAddress = (value) => String(value ?? '').toLowerCase().replace(/[^\w\s]/g, '').trim();
 
   const handlePostAddressChange = (value) => {
     setPostAddress(value);
     const normalized = normalizeAddress(value);
+    if (!normalized) {
+      setPostPropertyId('');
+      return;
+    }
+    const match = myProperties.find((p) => normalizeAddress(formatAddress(p)) === normalized);
+    setPostPropertyId(match?.id || '');
+  };
+
+  const handlePostAddressSelect = (parsed) => {
+    const addressText = parsed?.address || '';
+    if (addressText) {
+      setPostAddress(addressText);
+    }
+    const normalized = normalizeAddress(addressText);
     if (!normalized) {
       setPostPropertyId('');
       return;
@@ -1583,7 +1597,8 @@ const Dashboard = () => {
                     Address (optional)
                     <AddressAutocomplete
                       value={postAddress}
-                      onChange={handlePostAddressChange}
+                      onAddressChange={handlePostAddressChange}
+                      onAddressSelect={handlePostAddressSelect}
                       placeholder="123 Main St, City"
                       inputProps={{ 'aria-label': 'Post address' }}
                     />
