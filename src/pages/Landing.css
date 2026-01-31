@@ -256,6 +256,10 @@
   cursor: grabbing;
 }
 
+.landing-tweet-card--hero.dragging .landing-tweet-close {
+  pointer-events: none;
+}
+
 .landing-tweet-handle {
   font-size: 11px;
   text-transform: uppercase;

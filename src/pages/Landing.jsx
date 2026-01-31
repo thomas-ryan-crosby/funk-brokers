@@ -49,6 +49,7 @@ const Landing = () => {
     if (!e.currentTarget) return;
     e.preventDefault();
     e.stopPropagation();
+    e.currentTarget.setPointerCapture?.(e.pointerId);
     const rect = e.currentTarget.closest('.landing-tweet-card')?.getBoundingClientRect();
     if (!rect) return;
     dragOffsetRef.current = {
@@ -144,7 +145,13 @@ const Landing = () => {
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
+                  if (draggingRef.current) return;
                   setShowTweet(false);
+                }}
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (draggingRef.current) return;
                 }}
                 aria-label="Close video"
               >
