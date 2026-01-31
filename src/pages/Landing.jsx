@@ -83,38 +83,36 @@ const Landing = () => {
               </div>
             </div>
           </div>
+          {showTweet && (
+            <div className="hero-media">
+              <div className="landing-tweet-card landing-tweet-card--hero">
+                <button
+                  type="button"
+                  className="landing-tweet-close"
+                  onClick={() => setShowTweet(false)}
+                  aria-label="Close video"
+                >
+                  ×
+                </button>
+                <div ref={tweetRef} className="landing-tweet-embed">
+                  <blockquote className="twitter-tweet" data-media-max-width="360">
+                    <p lang="en" dir="ltr">
+                      Tell me this isn’t how it actually works...{' '}
+                      <a href="https://t.co/UBzyHZk1VL">pic.twitter.com/UBzyHZk1VL</a>
+                    </p>
+                    &mdash; Dr. Clown, PhD (@DrClownPhD){' '}
+                    <a href="https://twitter.com/DrClownPhD/status/2011294704344727726?ref_src=twsrc%5Etfw">
+                      January 14, 2026
+                    </a>
+                  </blockquote>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
       {/* Features Section */}
-      {showTweet && (
-        <section className="landing-tweet-section">
-          <div className="container">
-            <div className="landing-tweet-card">
-              <button
-                type="button"
-                className="landing-tweet-close"
-                onClick={() => setShowTweet(false)}
-                aria-label="Close video"
-              >
-                ×
-              </button>
-              <div ref={tweetRef} className="landing-tweet-embed">
-                <blockquote className="twitter-tweet" data-media-max-width="560">
-                  <p lang="en" dir="ltr">
-                    Tell me this isn’t how it actually works...{' '}
-                    <a href="https://t.co/UBzyHZk1VL">pic.twitter.com/UBzyHZk1VL</a>
-                  </p>
-                  &mdash; Dr. Clown, PhD (@DrClownPhD){' '}
-                  <a href="https://twitter.com/DrClownPhD/status/2011294704344727726?ref_src=twsrc%5Etfw">
-                    January 14, 2026
-                  </a>
-                </blockquote>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
       <section className="features-section">
         <div className="container">
           <div className="section-header">
