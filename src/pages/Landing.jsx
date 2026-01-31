@@ -6,10 +6,6 @@ const Landing = () => {
   const navigate = useNavigate();
   const [showTweet, setShowTweet] = useState(true);
   const tweetRef = useRef(null);
-  const [tweetPos, setTweetPos] = useState({ x: 0, y: 0 });
-  const [dragging, setDragging] = useState(false);
-  const dragOffsetRef = useRef({ x: 0, y: 0 });
-  const draggingRef = useRef(false);
 
   const handleBrowseClick = () => {
     navigate('/browse');
@@ -45,43 +41,6 @@ const Landing = () => {
     }
   }, [showTweet]);
 
-  const handleDragStart = (e) => {
-    if (!e.currentTarget) return;
-    e.preventDefault();
-    e.stopPropagation();
-    e.currentTarget.setPointerCapture?.(e.pointerId);
-    const rect = e.currentTarget.closest('.landing-tweet-card')?.getBoundingClientRect();
-    if (!rect) return;
-    dragOffsetRef.current = {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    };
-    setDragging(true);
-    draggingRef.current = true;
-  };
-
-  useEffect(() => {
-    const handleMove = (e) => {
-      if (!draggingRef.current) return;
-      e.preventDefault();
-      const x = e.clientX - dragOffsetRef.current.x;
-      const y = e.clientY - dragOffsetRef.current.y;
-      setTweetPos({ x, y });
-    };
-    const handleUp = () => {
-      if (!draggingRef.current) return;
-      draggingRef.current = false;
-      setDragging(false);
-    };
-    window.addEventListener('pointermove', handleMove);
-    window.addEventListener('pointerup', handleUp);
-    window.addEventListener('pointercancel', handleUp);
-    return () => {
-      window.removeEventListener('pointermove', handleMove);
-      window.removeEventListener('pointerup', handleUp);
-      window.removeEventListener('pointercancel', handleUp);
-    };
-  }, []);
 
   return (
     <div className="landing-page">
@@ -125,33 +84,14 @@ const Landing = () => {
         </div>
         {showTweet && (
           <div className="hero-float-layer">
-            <div
-              className={`landing-tweet-card landing-tweet-card--hero ${dragging ? 'dragging' : ''}`}
-              style={{ transform: `translate(${tweetPos.x}px, ${tweetPos.y}px)` }}
-            >
-              <div
-                className="landing-tweet-handle"
-                onPointerDown={handleDragStart}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                }}
-              >
-                Drag
-              </div>
+            <div className="landing-tweet-card landing-tweet-card--hero">
               <button
                 type="button"
                 className="landing-tweet-close"
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  if (draggingRef.current) return;
                   setShowTweet(false);
-                }}
-                onPointerDown={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  if (draggingRef.current) return;
                 }}
                 aria-label="Close video"
               >
