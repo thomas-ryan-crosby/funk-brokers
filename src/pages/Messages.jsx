@@ -61,6 +61,12 @@ const Messages = () => {
   }, [isAuthenticated, user]);
 
   useEffect(() => {
+    if (activeTab === 'notifications' && isAuthenticated && user) {
+      loadNotifications();
+    }
+  }, [activeTab, isAuthenticated, user]);
+
+  useEffect(() => {
     const to = searchParams.get('to');
     const propertyId = searchParams.get('propertyId') || null;
     const state = location.state || {};
@@ -430,6 +436,9 @@ const Messages = () => {
                       <div className="notification-item-main">
                         <span className="notification-item-title">
                           {n.actorName} {n.label}
+                        </span>
+                        <span className={`notification-item-tag notification-item-tag--${n.type || 'favorite'}`}>
+                          {n.type === 'ping' ? 'Ping' : 'Favorite'}
                         </span>
                         <span className="notification-item-date">{formatListDate(n.createdAt)}</span>
                       </div>

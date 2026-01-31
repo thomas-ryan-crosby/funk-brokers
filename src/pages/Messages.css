@@ -73,6 +73,27 @@
   gap: 12px;
 }
 
+.notification-item-tag {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.2);
+  color: #e2e8f0;
+}
+
+.notification-item-tag--ping {
+  background: rgba(59, 130, 246, 0.2);
+  color: #bfdbfe;
+}
+
+.notification-item-tag--favorite {
+  background: rgba(251, 191, 36, 0.18);
+  color: #fde68a;
+}
+
 .notification-item-title {
   font-size: 14px;
   color: var(--color-text-primary, #f8fafc);
