@@ -54,7 +54,7 @@ const Landing = () => {
               <span className="title-highlight"> Real Estate Platform</span>
             </h1>
             <p className="hero-callout">
-              <strong>Explore the market freely, privately, and confidently — without realtor fees.</strong>
+              <strong>Access homes never seen on traditional platforms.</strong>
             </p>
             <p className="hero-description">
               OpenTo is for homeowners, buyers, and anyone who wants to explore real estate — a calm place to share, organize, and explore interest without pressure, timelines, or intermediaries.
@@ -62,7 +62,7 @@ const Landing = () => {
             <div className="hero-pillars">
               <div className="hero-pillar">
                 <h3>A space to share or browse — on your terms.</h3>
-                <p>No pressure. No listing contracts. No representation contracts. No public exposure unless you want it.</p>
+                <p>Explore the market freely, privately, and confidently — without realtor fees.</p>
               </div>
               <div className="hero-pillar">
                 <h3>A Centralized Home Hub</h3>
