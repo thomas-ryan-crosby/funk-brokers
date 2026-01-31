@@ -447,6 +447,7 @@ const PropertyDetail = () => {
                   </div>
                 )}
               </div>
+            </div>
 
             {property.description && (
               <div className="property-description">
