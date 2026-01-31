@@ -77,7 +77,7 @@ function AppContent() {
   }, [isAuthenticated, user?.uid, loadUnreadCount]);
 
   return (
-    <Router basename="/funk-brokers">
+    <Router>
       <div className="App">
         <nav className="app-nav">
           <div className="nav-container">
