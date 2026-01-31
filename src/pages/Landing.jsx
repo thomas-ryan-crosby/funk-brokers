@@ -16,45 +16,8 @@ const Landing = () => {
   };
 
   const handleLearnProcessClick = () => {
-    const corePillarsSection = document.getElementById('core-pillars');
-    if (corePillarsSection) {
-      corePillarsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      return;
-    }
     navigate('/how-it-works');
   };
-
-  const handleTransactionPillarClick = () => {
-    navigate('/how-it-works');
-  };
-
-  const handleTransactionPillarKeyDown = (event) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      handleTransactionPillarClick();
-    }
-  };
-
-  const corePillars = [
-    {
-      title: 'A space to share or browse — on your terms.',
-      body: 'Explore the market freely, privately, and confidently — without realtor fees.',
-    },
-    {
-      title: 'A Centralized Home Hub',
-      body: 'One place for your home’s key documents, vendors, and history — organized and private.',
-    },
-    {
-      title: 'You Control the Transaction',
-      body: (
-        <>
-          If you decide to buy or sell, you control the entire process. We guarantee{' '}
-          <span className="hero-underline">it’s a lot easier than you think</span>.
-        </>
-      ),
-      isTransaction: true,
-    },
-  ];
 
 
   useEffect(() => {
@@ -97,19 +60,18 @@ const Landing = () => {
               OpenTo is for homeowners, buyers, and anyone who wants to explore real estate — a calm place to share, organize, and explore interest without pressure, timelines, or intermediaries.
             </p>
             <div className="hero-pillars">
-              {corePillars.map((pillar) => (
-                <div
-                  key={pillar.title}
-                  className={`hero-pillar${pillar.isTransaction ? ' hero-pillar--link' : ''}`}
-                  onClick={pillar.isTransaction ? handleTransactionPillarClick : undefined}
-                  onKeyDown={pillar.isTransaction ? handleTransactionPillarKeyDown : undefined}
-                  role={pillar.isTransaction ? 'button' : undefined}
-                  tabIndex={pillar.isTransaction ? 0 : undefined}
-                >
-                  <h3>{pillar.title}</h3>
-                  <p>{pillar.body}</p>
-                </div>
-              ))}
+              <div className="hero-pillar">
+                <h3>A space to share or browse — on your terms.</h3>
+                <p>Explore the market freely, privately, and confidently — without realtor fees.</p>
+              </div>
+              <div className="hero-pillar">
+                <h3>A Centralized Home Hub</h3>
+                <p>One place for your home’s key documents, vendors, and history — organized and private.</p>
+              </div>
+              <div className="hero-pillar">
+                <h3>You Control the Transaction</h3>
+                <p>If you decide to buy or sell, you control the entire process. We guarantee <span className="hero-underline">it’s a lot easier than you think</span>.</p>
+              </div>
             </div>
             <div className="hero-cta">
               <button onClick={handleBrowseClick} className="btn btn-primary">
@@ -157,27 +119,6 @@ const Landing = () => {
       </section>
 
       {/* Features Section */}
-      <section id="core-pillars" className="core-pillars-section">
-        <div className="container">
-          <div className="hero-pillars">
-            {corePillars.map((pillar) => (
-              <div
-                key={`${pillar.title}-core`}
-                className={`hero-pillar${pillar.isTransaction ? ' hero-pillar--link' : ''}`}
-                onClick={pillar.isTransaction ? handleTransactionPillarClick : undefined}
-                onKeyDown={pillar.isTransaction ? handleTransactionPillarKeyDown : undefined}
-                role={pillar.isTransaction ? 'button' : undefined}
-                tabIndex={pillar.isTransaction ? 0 : undefined}
-              >
-                <h3>{pillar.title}</h3>
-                <p>{pillar.body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
       <section className="features-section">
         <div className="container">
           <div className="section-header">
@@ -193,8 +134,8 @@ const Landing = () => {
                   <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
                 </svg>
               </div>
-              <h3>Choice of approach</h3>
-              <p>Proceed on your own, with an agent, or not at all. OpenTo supports every path.</p>
+              <h3>Open Real Estate Marketplace</h3>
+              <p>Discover homes that aren’t publicly for sale and connect directly with owners when interest is mutual.</p>
             </div>
             <div className="feature-card">
               <div className="feature-icon">
@@ -204,8 +145,8 @@ const Landing = () => {
                   <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>
                 </svg>
               </div>
-              <h3>Quiet connections</h3>
-              <p>Open a private thread when interest is real. No mass blasts, no noise.</p>
+              <h3>Conversations, not broadcasts</h3>
+              <p>Message owners or buyers one-to-one when there’s real intent. No mass blasts. No pressure.</p>
             </div>
             <div className="feature-card">
               <div className="feature-icon">
@@ -217,8 +158,8 @@ const Landing = () => {
                   <polyline points="10 9 9 9 8 9"/>
                 </svg>
               </div>
-              <h3>Clarity on demand</h3>
-              <p>Guidance is there when you want it, from first signal to a formal path forward.</p>
+              <h3>Guidance on demand</h3>
+              <p>We support you every step of the way, with guidance when you want it and space when you don’t.</p>
             </div>
             <div className="feature-card">
               <div className="feature-icon">
@@ -237,8 +178,8 @@ const Landing = () => {
                   <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
                 </svg>
               </div>
-              <h3>Early answers</h3>
-              <p>Straight guidance on pricing, timing, and next steps before you commit.</p>
+              <h3>Advanced insights</h3>
+              <p>Data-rich tools and market insights help you evaluate options before you ever commit.</p>
             </div>
             <div className="feature-card">
               <div className="feature-icon">
@@ -246,8 +187,8 @@ const Landing = () => {
                   <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
                 </svg>
               </div>
-              <h3>Timing control</h3>
-              <p>Move quickly when it matters, or stay quiet until it does.</p>
+              <h3>Move when it feels right</h3>
+              <p>No days-on-market clock. No stale listing stigma. Go fast, slow, or not at all.</p>
             </div>
           </div>
         </div>
