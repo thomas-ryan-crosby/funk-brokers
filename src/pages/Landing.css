@@ -53,10 +53,11 @@
 }
 
 .hero-description {
-  font-size: clamp(18px, 2vw, 22px);
+  font-size: clamp(16px, 1.8vw, 20px);
   line-height: 1.7;
   margin: 0 0 40px 0;
-  opacity: 0.95;
+  opacity: 0.88;
+  color: rgba(248, 250, 252, 0.9);
   max-width: 700px;
   margin-left: auto;
   margin-right: auto;
@@ -200,8 +201,8 @@
 }
 
 .btn-blue:hover {
-  background: #2563eb;
-  border-color: #2563eb;
+  background: #ff3ea5;
+  border-color: #ff3ea5;
   transform: translateY(-2px);
   box-shadow: 0 16px 28px rgba(2, 6, 23, 0.45);
 }
@@ -251,15 +252,6 @@
 .features-section {
   padding: 100px 0;
   background: var(--color-bg-secondary, #0f172a);
-  /* Debug: center line to verify alignment */
-  background-image: linear-gradient(
-    to right,
-    rgba(248, 250, 252, 0.08) 50%,
-    rgba(248, 250, 252, 0) 50%
-  );
-  background-size: 2px 100%;
-  background-position: center;
-  background-repeat: no-repeat;
 }
 
 .features-section .container {
@@ -330,7 +322,6 @@
   margin: 0 auto;
   justify-content: center;
   justify-items: center;
-  outline: 1px dashed rgba(248, 250, 252, 0.2);
 }
 
 .feature-card {
@@ -345,7 +336,6 @@
   width: 360px;
   max-width: 100%;
   margin: 0 auto;
-  outline: 1px dashed rgba(248, 250, 252, 0.12);
 }
 
 .feature-card::before {
