@@ -415,6 +415,12 @@ const Dashboard = () => {
       const prop = normalizeAddress(formatAddress(p));
       return prop === normalized || prop.includes(normalized) || normalized.includes(prop);
     });
+    console.info('[PostAddressSelect]', {
+      addressText,
+      normalized,
+      matchedPropertyId: match?.id || null,
+      matchedAddress: match ? formatAddress(match) : null,
+    });
     setPostPropertyId(match?.id || '');
   };
 
@@ -452,6 +458,14 @@ const Dashboard = () => {
       const linkedAddress = property ? formatAddress(property) : addressText || null;
       const hashtags = parseTagList(postHashtags, '#');
       const userTags = parseTagList(postUserTags, '@');
+      console.info('[CreatePost]', {
+        postType,
+        postPropertyId,
+        resolvedPropertyId: property?.id || null,
+        linkedAddress,
+        hashtags,
+        userTags,
+      });
       await createPost({
         authorId: user.uid,
         authorName: userProfile?.publicUsername || userProfile?.name || user?.displayName || 'User',

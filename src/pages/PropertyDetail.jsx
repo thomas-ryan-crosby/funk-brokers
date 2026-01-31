@@ -7,7 +7,7 @@ import { getPreListingChecklist, isPreListingChecklistComplete } from '../servic
 import { calculateListingReadiness } from '../services/listingProgressService';
 import { getListingTierProgress, getListingTierLabel } from '../utils/verificationScores';
 import { createPing } from '../services/pingService';
-import { getPostsForProperty } from '../services/postService';
+import { getPostsForPropertyOrAddress } from '../services/postService';
 import PingOwnerModal from '../components/PingOwnerModal';
 import './PropertyDetail.css';
 
@@ -57,7 +57,10 @@ const PropertyDetail = () => {
     const loadPosts = async () => {
       try {
         setPropertyPostsLoading(true);
-        const posts = await getPostsForProperty(property.id);
+        const address = formatAddress(property);
+        console.info('[PropertyPosts] loading', { propertyId: property.id, address });
+        const posts = await getPostsForPropertyOrAddress(property.id, address);
+        console.info('[PropertyPosts] loaded', { count: posts.length, propertyId: property.id });
         setPropertyPosts(posts);
       } catch (err) {
         console.error('Failed to load property posts', err);
