@@ -120,7 +120,7 @@ const Landing = () => {
           <div className="section-header">
             <h2 className="section-title">Built for the earliest stage</h2>
             <p className="section-subtitle">
-              A calm, private space to explore interest before a listing goes public.
+              A calm, private space to explore buying or selling interest, before listings, agents, or fees enter the picture.
             </p>
           </div>
           <div className="features-grid">
