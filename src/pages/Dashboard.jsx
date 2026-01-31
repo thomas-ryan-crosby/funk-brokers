@@ -17,6 +17,7 @@ import PropertyCard from '../components/PropertyCard';
 import CounterOfferModal from '../components/CounterOfferModal';
 import ViewOfferModal from '../components/ViewOfferModal';
 import DragDropFileInput from '../components/DragDropFileInput';
+import AddressAutocomplete from '../components/AddressAutocomplete';
 import './Dashboard.css';
 
 function getExpiryMs(offer) {
@@ -294,6 +295,24 @@ const Dashboard = () => {
       .filter(Boolean)
       .map((token) => (token.startsWith(prefix) ? token.slice(1) : token))
       .filter(Boolean);
+  };
+
+  const formatAddress = (property) => {
+    const parts = [property.address, property.city, property.state, property.zipCode].filter(Boolean);
+    return parts.join(', ');
+  };
+
+  const normalizeAddress = (value) => (value || '').toLowerCase().replace(/[^\w\s]/g, '').trim();
+
+  const handlePostAddressChange = (value) => {
+    setPostAddress(value);
+    const normalized = normalizeAddress(value);
+    if (!normalized) {
+      setPostPropertyId('');
+      return;
+    }
+    const match = myProperties.find((p) => normalizeAddress(formatAddress(p)) === normalized);
+    setPostPropertyId(match?.id || '');
   };
 
   const handleUploadPostImage = async (file) => {
@@ -1561,21 +1580,12 @@ const Dashboard = () => {
                 </div>
                 <div className="activity-composer-row">
                   <label>
-                    Link to property (optional)
-                    <select value={postPropertyId} onChange={(e) => setPostPropertyId(e.target.value)}>
-                      <option value="">General</option>
-                      {myProperties.map((p) => (
-                        <option key={p.id} value={p.id}>{p.address || 'Property'}</option>
-                      ))}
-                    </select>
-                  </label>
-                  <label>
                     Address (optional)
-                    <input
-                      type="text"
+                    <AddressAutocomplete
                       value={postAddress}
-                      onChange={(e) => setPostAddress(e.target.value)}
+                      onChange={handlePostAddressChange}
                       placeholder="123 Main St, City"
+                      inputProps={{ 'aria-label': 'Post address' }}
                     />
                   </label>
                 </div>
