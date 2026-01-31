@@ -16,8 +16,45 @@ const Landing = () => {
   };
 
   const handleLearnProcessClick = () => {
+    const corePillarsSection = document.getElementById('core-pillars');
+    if (corePillarsSection) {
+      corePillarsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      return;
+    }
     navigate('/how-it-works');
   };
+
+  const handleTransactionPillarClick = () => {
+    navigate('/how-it-works');
+  };
+
+  const handleTransactionPillarKeyDown = (event) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      handleTransactionPillarClick();
+    }
+  };
+
+  const corePillars = [
+    {
+      title: 'A space to share or browse — on your terms.',
+      body: 'Explore the market freely, privately, and confidently — without realtor fees.',
+    },
+    {
+      title: 'A Centralized Home Hub',
+      body: 'One place for your home’s key documents, vendors, and history — organized and private.',
+    },
+    {
+      title: 'You Control the Transaction',
+      body: (
+        <>
+          If you decide to buy or sell, you control the entire process. We guarantee{' '}
+          <span className="hero-underline">it’s a lot easier than you think</span>.
+        </>
+      ),
+      isTransaction: true,
+    },
+  ];
 
 
   useEffect(() => {
@@ -60,18 +97,19 @@ const Landing = () => {
               OpenTo is for homeowners, buyers, and anyone who wants to explore real estate — a calm place to share, organize, and explore interest without pressure, timelines, or intermediaries.
             </p>
             <div className="hero-pillars">
-              <div className="hero-pillar">
-                <h3>A space to share or browse — on your terms.</h3>
-                <p>Explore the market freely, privately, and confidently — without realtor fees.</p>
-              </div>
-              <div className="hero-pillar">
-                <h3>A Centralized Home Hub</h3>
-                <p>One place for your home’s key documents, vendors, and history — organized and private.</p>
-              </div>
-              <div className="hero-pillar">
-                <h3>You Control the Transaction</h3>
-                <p>If you decide to buy or sell, you control the entire process. We guarantee <span className="hero-underline">it’s a lot easier than you think</span>.</p>
-              </div>
+              {corePillars.map((pillar) => (
+                <div
+                  key={pillar.title}
+                  className={`hero-pillar${pillar.isTransaction ? ' hero-pillar--link' : ''}`}
+                  onClick={pillar.isTransaction ? handleTransactionPillarClick : undefined}
+                  onKeyDown={pillar.isTransaction ? handleTransactionPillarKeyDown : undefined}
+                  role={pillar.isTransaction ? 'button' : undefined}
+                  tabIndex={pillar.isTransaction ? 0 : undefined}
+                >
+                  <h3>{pillar.title}</h3>
+                  <p>{pillar.body}</p>
+                </div>
+              ))}
             </div>
             <div className="hero-cta">
               <button onClick={handleBrowseClick} className="btn btn-primary">
@@ -116,6 +154,27 @@ const Landing = () => {
             </div>
           </div>
         )}
+      </section>
+
+      {/* Features Section */}
+      <section id="core-pillars" className="core-pillars-section">
+        <div className="container">
+          <div className="hero-pillars">
+            {corePillars.map((pillar) => (
+              <div
+                key={`${pillar.title}-core`}
+                className={`hero-pillar${pillar.isTransaction ? ' hero-pillar--link' : ''}`}
+                onClick={pillar.isTransaction ? handleTransactionPillarClick : undefined}
+                onKeyDown={pillar.isTransaction ? handleTransactionPillarKeyDown : undefined}
+                role={pillar.isTransaction ? 'button' : undefined}
+                tabIndex={pillar.isTransaction ? 0 : undefined}
+              >
+                <h3>{pillar.title}</h3>
+                <p>{pillar.body}</p>
+              </div>
+            ))}
+          </div>
+        </div>
       </section>
 
       {/* Features Section */}
