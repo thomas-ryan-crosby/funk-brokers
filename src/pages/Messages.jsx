@@ -43,6 +43,7 @@ const Messages = () => {
   const [newTo, setNewTo] = useState('');
   const [newPropertyId, setNewPropertyId] = useState('');
   const [newBody, setNewBody] = useState('');
+  const [userSearchQuery, setUserSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('notifications');
   const [notifications, setNotifications] = useState([]);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
@@ -196,6 +197,12 @@ const Messages = () => {
     }
     return Array.from(seen.entries()).map(([id, name]) => ({ id, name }));
   }, [threads]);
+
+  const filteredMessageableUsers = useMemo(() => {
+    const q = userSearchQuery.trim().toLowerCase();
+    if (!q) return messageableUsers;
+    return messageableUsers.filter((u) => (u?.name || '').toLowerCase().includes(q));
+  }, [messageableUsers, userSearchQuery]);
 
   const messageableProperties = useMemo(() => {
     const seen = new Map();
@@ -575,9 +582,15 @@ const Messages = () => {
                   <form className="compose-form" onSubmit={(e) => { e.preventDefault(); handleSendNew(); }}>
                     <div className="form-group">
                       <label>To *</label>
+                      <input
+                        type="text"
+                        value={userSearchQuery}
+                        onChange={(e) => setUserSearchQuery(e.target.value)}
+                        placeholder="Search users..."
+                      />
                       <select value={newTo} onChange={(e) => setNewTo(e.target.value)} required>
                         <option value="">Select user</option>
-                        {messageableUsers.map((u) => (
+                        {filteredMessageableUsers.map((u) => (
                           <option key={u.id} value={u.id}>{u.name}</option>
                         ))}
                       </select>

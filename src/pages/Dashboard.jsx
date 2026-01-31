@@ -305,14 +305,67 @@ const Dashboard = () => {
     return parts.join(', ');
   };
 
-  const normalizeAddress = (value) => String(value ?? '').toLowerCase().replace(/[^\w\s]/g, '').trim();
+  const normalizeAddress = (value) => {
+    const base = String(value ?? '')
+      .toLowerCase()
+      .replace(/[^\w\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    const replacements = [
+      ['north', 'n'],
+      ['south', 's'],
+      ['east', 'e'],
+      ['west', 'w'],
+      ['street', 'st'],
+      ['st', 'st'],
+      ['avenue', 'ave'],
+      ['ave', 'ave'],
+      ['road', 'rd'],
+      ['rd', 'rd'],
+      ['drive', 'dr'],
+      ['dr', 'dr'],
+      ['boulevard', 'blvd'],
+      ['blvd', 'blvd'],
+      ['place', 'pl'],
+      ['pl', 'pl'],
+      ['lane', 'ln'],
+      ['ln', 'ln'],
+      ['court', 'ct'],
+      ['ct', 'ct'],
+      ['circle', 'cir'],
+      ['cir', 'cir'],
+      ['parkway', 'pkwy'],
+      ['pkwy', 'pkwy'],
+      ['terrace', 'ter'],
+      ['ter', 'ter'],
+    ];
+    return replacements.reduce((acc, [from, to]) => {
+      return acc.replace(new RegExp(`\\b${from}\\b`, 'g'), to);
+    }, base);
+  };
 
   const handlePostAddressChange = (value) => {
-    setPostAddress(value);
+    const nextValue = typeof value === 'string' ? value : '';
+    setPostAddress(nextValue);
+    const normalized = normalizeAddress(nextValue);
+    if (!normalized) {
+      setPostPropertyId('');
+      return;
+    }
+    const match = allPropertiesCache.find((p) => {
+      const prop = normalizeAddress(formatAddress(p));
+      return prop === normalized || prop.includes(normalized) || normalized.includes(prop);
+    });
+    if (match) {
+      setPostPropertyId(match.id);
+    }
   };
 
   const handlePostAddressSelect = async (parsed) => {
-    const addressText = parsed?.address || '';
+    const fullAddress = [parsed?.address, parsed?.city, parsed?.state, parsed?.zipCode]
+      .filter(Boolean)
+      .join(', ');
+    const addressText = fullAddress || parsed?.address || '';
     if (addressText) {
       setPostAddress(addressText);
     }
@@ -330,8 +383,13 @@ const Dashboard = () => {
         propertiesToMatch = myProperties;
       }
     }
-    const match = propertiesToMatch.find((p) => normalizeAddress(formatAddress(p)) === normalized)
-      || myProperties.find((p) => normalizeAddress(formatAddress(p)) === normalized);
+    const match = propertiesToMatch.find((p) => {
+      const prop = normalizeAddress(formatAddress(p));
+      return prop === normalized || prop.includes(normalized) || normalized.includes(prop);
+    }) || myProperties.find((p) => {
+      const prop = normalizeAddress(formatAddress(p));
+      return prop === normalized || prop.includes(normalized) || normalized.includes(prop);
+    });
     setPostPropertyId(match?.id || '');
   };
 
