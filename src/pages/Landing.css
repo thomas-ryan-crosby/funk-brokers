@@ -203,8 +203,9 @@
 }
 
 .btn-blue:hover {
-  background: #ff3ea5;
-  border-color: #ff3ea5;
+  background: #ffffff;
+  border-color: #ffffff;
+  color: #ff3ea5;
   transform: translateY(-2px);
   box-shadow: 0 16px 28px rgba(2, 6, 23, 0.45);
 }
