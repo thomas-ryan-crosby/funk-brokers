@@ -73,7 +73,7 @@ const Landing = () => {
               <button onClick={handleBrowseClick} className="btn btn-primary">
                 Browse Properties
               </button>
-              <button onClick={handleListClick} className="btn btn-secondary">
+              <button onClick={handleListClick} className="btn btn-blue">
                 Add Property to Platform
               </button>
             </div>
@@ -233,7 +233,7 @@ const Landing = () => {
               <button onClick={handleBrowseClick} className="btn btn-primary btn-large">
                 Browse Properties
               </button>
-              <button onClick={handleListClick} className="btn btn-outline btn-large">
+              <button onClick={handleListClick} className="btn btn-blue btn-large">
                 Add Property to Platform
               </button>
             </div>

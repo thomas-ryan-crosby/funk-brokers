@@ -181,6 +181,20 @@
   transform: translateY(-2px);
 }
 
+.btn-blue {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+  box-shadow: 0 12px 24px rgba(2, 6, 23, 0.35);
+}
+
+.btn-blue:hover {
+  background: #2563eb;
+  border-color: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 16px 28px rgba(2, 6, 23, 0.45);
+}
+
 .btn-large {
   padding: 16px 40px;
   font-size: 18px;
