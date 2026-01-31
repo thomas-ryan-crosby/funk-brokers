@@ -492,10 +492,14 @@ const PropertyDetail = () => {
                     >
                       Ping owner
                     </button>
-                    {property.availableForSale !== false && (
+                    {property.availableForSale !== false ? (
                       <Link to={`/submit-offer/${property.id}`} className="btn btn-primary btn-large">
                         Submit Offer
                       </Link>
+                    ) : (
+                      <button type="button" className="btn btn-primary btn-large btn-disabled" disabled>
+                        Submit Offer
+                      </button>
                     )}
                     {property.availableForSale !== false && (
                       <button
@@ -508,7 +512,7 @@ const PropertyDetail = () => {
                       </button>
                     )}
                     {property.availableForSale === false && (
-                      <p className="property-not-listed-note">This property is not currently listed for sale. You can still reach out to the seller.</p>
+                      <p className="property-not-listed-note">Not currently listed for sale.</p>
                     )}
                     {property.sellerId && (
                       <Link

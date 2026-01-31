@@ -171,6 +171,10 @@
   flex-direction: column;
   gap: 12px;
   margin-bottom: 24px;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(15, 23, 42, 0.06);
 }
 
 .property-owner-actions .owner-stat {
@@ -255,7 +259,7 @@
   align-items: center;
   justify-content: center;
   padding: 14px 24px;
-  border: none;
+  border: 1px solid rgba(148, 163, 184, 0.35);
   border-radius: 8px;
   font-size: 16px;
   font-weight: 600;
@@ -273,6 +277,20 @@
 .property-actions .btn-primary:hover {
   transform: translateY(-2px);
   box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
+.property-actions .btn-disabled {
+  background: #e2e8f0;
+  color: #64748b;
+  border-color: #cbd5e1;
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 0.85;
+}
+
+.property-actions .btn-disabled:hover {
+  transform: none;
+  box-shadow: none;
 }
 
 .property-actions .btn-secondary {
@@ -309,12 +327,12 @@
 
 .property-not-listed-note {
   padding: 14px 20px;
-  background: #eff6ff;
-  color: #1e40af;
+  background: #f1f5f9;
+  color: #475569;
   border-radius: 8px;
   font-size: 14px;
   margin: 0 0 12px 0;
-  border: 1px solid #bfdbfe;
+  border: 1px solid #cbd5e1;
 }
 
 .property-details-card {
