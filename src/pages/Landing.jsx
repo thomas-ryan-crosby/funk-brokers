@@ -71,10 +71,10 @@ const Landing = () => {
             </div>
             <div className="hero-cta">
               <button onClick={handleBrowseClick} className="btn btn-primary">
-                OpenTo Sharing
+                Browse Properties
               </button>
               <button onClick={handleListClick} className="btn btn-secondary">
-                Add your property to the platform
+                Add Property to Platform
               </button>
             </div>
             <button onClick={handleLearnProcessClick} className="hero-learn-more">
@@ -231,10 +231,10 @@ const Landing = () => {
             <p>OpenTo is the quiet place where interest begins, before days-on-market and stale listing stigma set in.</p>
             <div className="cta-buttons">
               <button onClick={handleBrowseClick} className="btn btn-primary btn-large">
-                Start a conversation
+                Browse Properties
               </button>
               <button onClick={handleListClick} className="btn btn-outline btn-large">
-                Add your property to the platform
+                Add Property to Platform
               </button>
             </div>
           </div>
