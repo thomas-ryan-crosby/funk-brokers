@@ -664,6 +664,9 @@ const Dashboard = () => {
     return extractedName === profileName && extractedDob === profileDob;
   })();
 
+  const overallBuyingPowerVerified =
+    isGovernmentIdVerified && purchaseProfile?.buyingPowerValidationStatus === 'validated';
+
   const handleSaveBuyingPower = async () => {
     const parsed = buyingPowerForm.trim() === '' ? null : parseFloat(buyingPowerForm.replace(/,/g, ''));
     if (buyingPowerForm.trim() !== '' && !Number.isFinite(parsed)) {
@@ -1632,6 +1635,12 @@ const Dashboard = () => {
               <div className="section-header">
                 <h2>Buying Power</h2>
                 <p className="form-hint">Your verified buying power and the documents that support it. You can update these at any time.</p>
+              </div>
+
+              <div className="buying-power-overall-badge">
+                <span className={`buying-power-overall-pill ${overallBuyingPowerVerified ? 'verified' : 'unverified'}`}>
+                  Overall verification: {overallBuyingPowerVerified ? 'True' : 'False'}
+                </span>
               </div>
 
               <div className="buying-power-card">

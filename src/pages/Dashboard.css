@@ -918,6 +918,33 @@
   margin: 8px 0 0 0;
 }
 
+.buying-power-overall-badge {
+  display: flex;
+  justify-content: center;
+  margin: 8px 0 18px;
+}
+
+.buying-power-overall-pill {
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: rgba(148, 163, 184, 0.15);
+  color: var(--color-text-secondary, #cbd5e1);
+}
+
+.buying-power-overall-pill.verified {
+  background: rgba(16, 185, 129, 0.2);
+  color: #a7f3d0;
+}
+
+.buying-power-overall-pill.unverified {
+  background: rgba(220, 38, 38, 0.2);
+  color: #fecaca;
+}
+
 .buying-power-card {
   padding: 20px;
   background: #f8fafc;
