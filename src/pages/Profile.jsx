@@ -15,12 +15,14 @@ const Profile = () => {
     phone: '',
     publicUsername: '',
     anonymousProfile: false,
+    bankName: '',
   });
   const [passwordForm, setPasswordForm] = useState({ password: '', confirm: '' });
   const [passwordSaving, setPasswordSaving] = useState(false);
   const [passwordError, setPasswordError] = useState('');
   const [passwordSaved, setPasswordSaved] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  const [showBankLinkModal, setShowBankLinkModal] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -35,6 +37,7 @@ const Profile = () => {
       phone: userProfile?.phone || '',
       publicUsername: userProfile?.publicUsername || '',
       anonymousProfile: userProfile?.anonymousProfile === true,
+      bankName: userProfile?.bankName || '',
     });
   }, [user?.uid, user?.displayName, userProfile]);
 
@@ -48,6 +51,7 @@ const Profile = () => {
     try {
       const name = form.name.trim();
       const phone = form.phone.trim();
+      const bankName = form.bankName.trim();
       const anonymousProfile = !!form.anonymousProfile;
       const publicUsername = anonymousProfile
         ? ((form.publicUsername || '').trim() || 'Anonymous')
@@ -55,6 +59,7 @@ const Profile = () => {
       await updateUserProfile(user.uid, {
         name: name || null,
         phone: phone || null,
+        bankName: bankName || null,
         publicUsername,
         anonymousProfile,
       });
@@ -187,6 +192,27 @@ const Profile = () => {
         </div>
 
         <div className="profile-section">
+          <h2>Funding account</h2>
+          <p className="profile-footnote">Add your bank name now. Bank linking is coming soon.</p>
+          <div className="profile-grid">
+            <label className="profile-field">
+              <span>Bank name</span>
+              <input
+                type="text"
+                value={form.bankName}
+                onChange={(e) => setForm((prev) => ({ ...prev, bankName: e.target.value }))}
+                placeholder="e.g. Chase, Bank of America"
+              />
+            </label>
+          </div>
+          <div className="profile-actions">
+            <button type="button" className="btn btn-outline" onClick={() => setShowBankLinkModal(true)}>
+              Link bank account
+            </button>
+          </div>
+        </div>
+
+        <div className="profile-section">
           <h2>Change password</h2>
           {passwordError && <div className="profile-alert profile-alert--error">{passwordError}</div>}
           {passwordSaved && <div className="profile-alert profile-alert--success">Password updated</div>}
@@ -230,6 +256,20 @@ const Profile = () => {
           </div>
         </div>
       </div>
+
+      {showBankLinkModal && (
+        <div className="profile-modal-overlay" role="dialog" aria-modal="true">
+          <div className="profile-modal">
+            <h3>Bank linking</h3>
+            <p>This is where bank linking feature will be included in future version.</p>
+            <div className="profile-modal-actions">
+              <button type="button" className="btn btn-primary" onClick={() => setShowBankLinkModal(false)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

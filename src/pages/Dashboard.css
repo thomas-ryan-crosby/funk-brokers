@@ -1045,6 +1045,13 @@
   margin: 0 0 12px 0;
 }
 
+.buying-power-funding {
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .doc-row {
   display: flex;
   justify-content: space-between;

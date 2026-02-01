@@ -1633,6 +1633,13 @@ const Dashboard = () => {
                     );
                   })}
                 </div>
+
+                <div className="buying-power-funding">
+                  <p className="form-hint">Want to link a funding account?</p>
+                  <Link to="/profile" className="btn btn-outline btn-small">
+                    Link funding account
+                  </Link>
+                </div>
               </div>
             </div>
           )}
