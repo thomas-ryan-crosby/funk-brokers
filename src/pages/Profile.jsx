@@ -5,7 +5,6 @@ import { updateUserProfile, updateUserPassword, logout } from '../services/authS
 import { getPurchaseProfile, setPurchaseProfile } from '../services/profileService';
 import { uploadFile } from '../services/storageService';
 import DragDropFileInput from '../components/DragDropFileInput';
-import { extractGovernmentIdInfo } from '../utils/idExtraction';
 import './Profile.css';
 
 const Profile = () => {
@@ -166,6 +165,7 @@ const Profile = () => {
     setGovernmentIdUploading(true);
     setGovernmentIdError('');
     try {
+      const { extractGovernmentIdInfo } = await import('../utils/idExtraction');
       const { extractedName, extractedDob } = await extractGovernmentIdInfo(file);
       const ext = file.name.split('.').pop();
       const path = `government-ids/${user.uid}/${Date.now()}.${ext}`;
