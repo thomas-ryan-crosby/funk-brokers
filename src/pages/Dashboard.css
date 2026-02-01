@@ -397,7 +397,7 @@
 
 .activity-item-body {
   margin: 8px 0;
-  color: #475569;
+  color: var(--color-text-secondary, #cbd5e1);
   font-size: 14px;
 }
 
@@ -726,7 +726,7 @@
 
 .status-not-listed {
   background: #f1f5f9;
-  color: #475569;
+  color: var(--color-text-secondary, #cbd5e1);
 }
 
 .status-default {
@@ -804,7 +804,7 @@
 
 .btn-secondary {
   background: #f8fafc;
-  color: #475569;
+  color: var(--color-text-secondary, #cbd5e1);
   border: 1px solid #e2e8f0;
 }
 
@@ -841,7 +841,7 @@
 
 .btn-small.btn-secondary {
   background: #f1f5f9;
-  color: #475569;
+  color: var(--color-text-secondary, #cbd5e1);
   border-color: #e2e8f0;
 }
 
@@ -910,7 +910,7 @@
   font-size: 18px;
   font-weight: 600;
   margin: 0 0 8px 0;
-  color: #475569;
+  color: var(--color-text-secondary, #cbd5e1);
 }
 
 /* Buying Power tab (verified buyers) */
@@ -931,7 +931,7 @@
   font-size: 16px;
   font-weight: 600;
   margin: 0 0 12px 0;
-  color: #475569;
+  color: var(--color-text-secondary, #cbd5e1);
 }
 
 .buying-power-docs h3 {
@@ -1377,7 +1377,7 @@
   padding: 6px 14px;
   font-size: 13px;
   font-weight: 500;
-  color: #475569;
+  color: var(--color-text-secondary, #cbd5e1);
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 6px;
@@ -1591,7 +1591,7 @@
   white-space: pre-wrap;
   line-height: 1.6;
   font-size: 14px;
-  color: #475569;
+  color: var(--color-text-secondary, #cbd5e1);
   min-height: 60px;
 }
 
@@ -1691,7 +1691,7 @@
   padding: 4px 10px;
   font-size: 12px;
   font-weight: 500;
-  color: #475569;
+  color: var(--color-text-secondary, #cbd5e1);
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 4px;
@@ -1836,7 +1836,7 @@
   display: block;
   font-size: 14px;
   font-weight: 600;
-  color: #475569;
+  color: var(--color-text-secondary, #cbd5e1);
   margin-bottom: 8px;
 }
 
@@ -1956,7 +1956,7 @@
 .deal-subsection-title {
   font-size: 18px;
   font-weight: 600;
-  color: #475569;
+  color: var(--color-text-secondary, #cbd5e1);
   margin: 24px 0 12px 0;
 }
 
@@ -2138,7 +2138,7 @@
 
 .offer-default {
   background: #e2e8f0;
-  color: #475569;
+  color: var(--color-text-secondary, #cbd5e1);
 }
 
 /* Gamey event badges on each offer in Deal Center */
