@@ -109,3 +109,27 @@ export const deletePost = async (postId) => {
   if (!postId) return;
   await deleteDoc(doc(db, POSTS_COLLECTION, postId));
 };
+
+export const addComment = async (postId, data) => {
+  if (!postId) throw new Error('postId is required');
+  const payload = {
+    ...data,
+    createdAt: new Date(),
+  };
+  const ref = await addDoc(collection(db, POSTS_COLLECTION, postId, 'comments'), payload);
+  return ref.id;
+};
+
+export const getCommentsForPost = async (postId) => {
+  if (!postId) return [];
+  const q = query(
+    collection(db, POSTS_COLLECTION, postId, 'comments'),
+    orderBy('createdAt', 'asc')
+  );
+  const snap = await getDocs(q);
+  const list = [];
+  snap.forEach((d) => {
+    list.push({ id: d.id, ...d.data() });
+  });
+  return list;
+};

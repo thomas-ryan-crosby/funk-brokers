@@ -5,7 +5,7 @@ import { getPropertiesBySeller, getPropertyById, archiveProperty, restorePropert
 import { getUserFavoriteIds, removeFromFavorites, getFavoritesForProperty } from '../services/favoritesService';
 import { getAllProperties } from '../services/propertyService';
 import { getSavedSearches, removeSavedSearch, getPurchaseProfile, setPurchaseProfile } from '../services/profileService';
-import { createPost, deletePost, getPostsByAuthor, getPostsForProperties } from '../services/postService';
+import { addComment, createPost, deletePost, getCommentsForPost, getPostsByAuthor, getPostsForProperties } from '../services/postService';
 import { getOffersByProperty, getOffersByBuyer, acceptOffer, rejectOffer, withdrawOffer, counterOffer } from '../services/offerService';
 import { getTransactionsByUser, getTransactionByOfferId, createTransaction } from '../services/transactionService';
 import { getVendorsByUser, createVendor, updateVendor, deleteVendor, addVendorContact, updateVendorContact, removeVendorContact, VENDOR_TYPES } from '../services/vendorService';
@@ -76,6 +76,8 @@ const Dashboard = () => {
   const [activityTab, setActivityTab] = useState('received'); // 'received' | 'mine'
   const [myPosts, setMyPosts] = useState([]);
   const [receivedPosts, setReceivedPosts] = useState([]);
+  const [showPostModal, setShowPostModal] = useState(false);
+  const [postStage, setPostStage] = useState('type'); // 'type' | 'compose'
   const [postType, setPostType] = useState('tweet'); // 'tweet' | 'poll' | 'instagram'
   const [postBody, setPostBody] = useState('');
   const [postPropertyId, setPostPropertyId] = useState('');
@@ -86,6 +88,10 @@ const Dashboard = () => {
   const [postHashtags, setPostHashtags] = useState('');
   const [postUserTags, setPostUserTags] = useState('');
   const [posting, setPosting] = useState(false);
+  const [commentsByPost, setCommentsByPost] = useState({});
+  const [commentsOpen, setCommentsOpen] = useState({});
+  const [commentDrafts, setCommentDrafts] = useState({});
+  const [commentsLoading, setCommentsLoading] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [editingBuyingPower, setEditingBuyingPower] = useState(false);
@@ -289,6 +295,17 @@ const Dashboard = () => {
     setPollOptions(['', '']);
     setPostHashtags('');
     setPostUserTags('');
+    setPostStage('type');
+  };
+
+  const openPostModal = () => {
+    setShowPostModal(true);
+    setPostStage('type');
+  };
+
+  const closePostModal = () => {
+    setShowPostModal(false);
+    resetPostForm();
   };
 
   const parseTagList = (value, prefix) => {
@@ -478,7 +495,7 @@ const Dashboard = () => {
         hashtags,
         userTags,
       });
-      resetPostForm();
+      closePostModal();
       const [mine, received] = await Promise.all([
         getPostsByAuthor(user.uid),
         getPostsForProperties(myProperties.map((p) => p.id)),
@@ -507,6 +524,48 @@ const Dashboard = () => {
     } catch (err) {
       console.error('Failed to delete post', err);
       alert('Failed to delete post. Please try again.');
+    }
+  };
+
+  const toggleComments = async (postId) => {
+    const isOpen = !!commentsOpen[postId];
+    if (isOpen) {
+      setCommentsOpen((prev) => ({ ...prev, [postId]: false }));
+      return;
+    }
+    setCommentsOpen((prev) => ({ ...prev, [postId]: true }));
+    if (!commentsByPost[postId]) {
+      try {
+        setCommentsLoading((prev) => ({ ...prev, [postId]: true }));
+        const list = await getCommentsForPost(postId);
+        setCommentsByPost((prev) => ({ ...prev, [postId]: list }));
+      } catch (err) {
+        console.error('Failed to load comments', err);
+      } finally {
+        setCommentsLoading((prev) => ({ ...prev, [postId]: false }));
+      }
+    }
+  };
+
+  const handleCommentChange = (postId, value) => {
+    setCommentDrafts((prev) => ({ ...prev, [postId]: value }));
+  };
+
+  const handleCommentSubmit = async (postId) => {
+    const body = (commentDrafts[postId] || '').trim();
+    if (!body) return;
+    try {
+      await addComment(postId, {
+        authorId: user.uid,
+        authorName: userProfile?.publicUsername || userProfile?.name || user?.displayName || 'User',
+        body,
+      });
+      const list = await getCommentsForPost(postId);
+      setCommentsByPost((prev) => ({ ...prev, [postId]: list }));
+      setCommentDrafts((prev) => ({ ...prev, [postId]: '' }));
+    } catch (err) {
+      console.error('Failed to add comment', err);
+      alert('Failed to add comment. Please try again.');
     }
   };
 
@@ -1676,6 +1735,11 @@ const Dashboard = () => {
                 <h2>Activity Feed</h2>
                 <p className="form-hint">Recent likes and activity around your properties.</p>
               </div>
+              <div className="activity-header-actions">
+                <button type="button" className="btn btn-primary btn-small" onClick={openPostModal}>
+                  New Post
+                </button>
+              </div>
               <div className="activity-tabs">
                 <button
                   type="button"
@@ -1691,128 +1755,6 @@ const Dashboard = () => {
                 >
                   My activity
                 </button>
-              </div>
-
-              <div className="activity-composer">
-                <h3>Create Post</h3>
-                <div className="post-type-wheel" role="tablist" aria-label="Post type">
-                  {[
-                    { id: 'post', label: 'Post' },
-                    { id: 'tweet', label: 'Tweet' },
-                    { id: 'poll', label: 'Poll' },
-                    { id: 'instagram', label: 'Instagram' },
-                  ].map((type) => (
-                    <button
-                      key={type.id}
-                      type="button"
-                      role="tab"
-                      aria-selected={postType === type.id}
-                      className={`post-type-pill ${postType === type.id ? 'active' : ''}`}
-                      onClick={() => setPostType(type.id)}
-                    >
-                      {type.label}
-                    </button>
-                  ))}
-                </div>
-                <div className="activity-composer-row">
-                  <label>
-                    Address (optional)
-                    <AddressAutocomplete
-                      value={postAddress}
-                      onAddressChange={handlePostAddressChange}
-                      onAddressSelect={handlePostAddressSelect}
-                      placeholder="123 Main St, City"
-                      inputProps={{ 'aria-label': 'Post address' }}
-                    />
-                  </label>
-                </div>
-                <textarea
-                  value={postBody}
-                  onChange={(e) => setPostBody(e.target.value)}
-                  placeholder="Ask a question, share an update, or start a conversation..."
-                  rows={3}
-                />
-                <div className="activity-composer-row">
-                  <label>
-                    Hashtags
-                    <input
-                      type="text"
-                      value={postHashtags}
-                      onChange={(e) => setPostHashtags(e.target.value)}
-                      placeholder="#renovation #kitchen"
-                    />
-                  </label>
-                  <label>
-                    Tag users
-                    <input
-                      type="text"
-                      value={postUserTags}
-                      onChange={(e) => setPostUserTags(e.target.value)}
-                      placeholder="@alex, @chris"
-                    />
-                  </label>
-                </div>
-                {postType === 'instagram' && (
-                  <div className="post-media-upload">
-                    <DragDropFileInput
-                      accept=".png,.jpg,.jpeg,.webp"
-                      onChange={(f) => { if (f) handleUploadPostImage(f); }}
-                      disabled={postImageUploading}
-                      uploading={postImageUploading}
-                      placeholder={postImageUrl ? 'Drop to replace image' : 'Drop or click to upload image'}
-                      className="dashboard-doc-upload"
-                    />
-                    {postImageUrl && (
-                      <div className="post-media-preview">
-                        <img src={postImageUrl} alt="Post" />
-                        <button type="button" className="btn btn-outline btn-small" onClick={() => setPostImageUrl('')}>
-                          Remove image
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-                {postType === 'poll' && (
-                  <div className="poll-options">
-                    {pollOptions.map((opt, idx) => (
-                      <input
-                        key={`poll-${idx}`}
-                        type="text"
-                        value={opt}
-                        onChange={(e) => {
-                          const next = [...pollOptions];
-                          next[idx] = e.target.value;
-                          setPollOptions(next);
-                        }}
-                        placeholder={`Option ${idx + 1}`}
-                      />
-                    ))}
-                    <button
-                      type="button"
-                      className="btn btn-outline btn-small"
-                      onClick={() => setPollOptions([...pollOptions, ''])}
-                    >
-                      + Add option
-                    </button>
-                    {pollOptions.length > 2 && (
-                      <button
-                        type="button"
-                        className="btn btn-outline btn-small"
-                        onClick={() => setPollOptions(pollOptions.slice(0, -1))}
-                      >
-                        Remove last option
-                      </button>
-                    )}
-                  </div>
-                )}
-                <div className="activity-composer-actions">
-                  <button type="button" className="btn btn-outline" onClick={resetPostForm} disabled={posting}>
-                    Clear
-                  </button>
-                  <button type="button" className="btn btn-primary" onClick={handlePostSubmit} disabled={posting || !postBody.trim()}>
-                    {posting ? 'Posting...' : 'Post'}
-                  </button>
-                </div>
               </div>
 
               {activityTab === 'received' && (
@@ -1831,19 +1773,25 @@ const Dashboard = () => {
                       ))}
                       {receivedPosts.map((post) => (
                         <div key={post.id} className="activity-item activity-item--post">
-                          <div className="activity-item-title">{post.authorName || 'Someone'} posted</div>
-                          {post.propertyAddress && (
-                            <div className="activity-item-meta">
-                              About{' '}
-                              {post.propertyId ? (
-                                <Link to={`/property/${post.propertyId}`} className="activity-item-link">
-                                  {post.propertyAddress}
-                                </Link>
-                              ) : (
-                                post.propertyAddress
+                          <div className="activity-item-header">
+                            <div className="activity-avatar">{(post.authorName || 'U').charAt(0).toUpperCase()}</div>
+                            <div>
+                              <div className="activity-item-title">{post.authorName || 'Someone'}</div>
+                              {post.propertyAddress && (
+                                <div className="activity-item-meta">
+                                  About{' '}
+                                  {post.propertyId ? (
+                                    <Link to={`/property/${post.propertyId}`} className="activity-item-link">
+                                      {post.propertyAddress}
+                                    </Link>
+                                  ) : (
+                                    post.propertyAddress
+                                  )}
+                                </div>
                               )}
                             </div>
-                          )}
+                            <div className="activity-item-date">{formatDate(post.createdAt)}</div>
+                          </div>
                           <div className="activity-item-body">{post.body}</div>
                           {(post.hashtags?.length || post.userTags?.length) && (
                             <div className="activity-item-tags">
@@ -1855,7 +1803,39 @@ const Dashboard = () => {
                               ))}
                             </div>
                           )}
-                          <div className="activity-item-meta">{formatDate(post.createdAt)}</div>
+                          <div className="activity-item-actions">
+                            <button type="button" onClick={() => toggleComments(post.id)}>
+                              Comment
+                            </button>
+                          </div>
+                          {commentsOpen[post.id] && (
+                            <div className="activity-comments">
+                              {commentsLoading[post.id] ? (
+                                <p className="activity-comment-empty">Loading comments...</p>
+                              ) : (commentsByPost[post.id] || []).length === 0 ? (
+                                <p className="activity-comment-empty">No comments yet.</p>
+                              ) : (
+                                <div className="activity-comment-list">
+                                  {(commentsByPost[post.id] || []).map((c) => (
+                                    <div key={c.id} className="activity-comment">
+                                      <strong>{c.authorName || 'Someone'}</strong> {c.body}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              <div className="activity-comment-form">
+                                <input
+                                  type="text"
+                                  value={commentDrafts[post.id] || ''}
+                                  onChange={(e) => handleCommentChange(post.id, e.target.value)}
+                                  placeholder="Write a comment..."
+                                />
+                                <button type="button" onClick={() => handleCommentSubmit(post.id)}>
+                                  Send
+                                </button>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -1871,28 +1851,25 @@ const Dashboard = () => {
                     <div className="activity-list">
                       {myPosts.map((post) => (
                         <div key={post.id} className="activity-item activity-item--post">
-                          <div className="activity-item-title">
-                            You posted
-                            <button
-                              type="button"
-                              className="activity-item-delete"
-                              onClick={() => handleDeletePost(post.id)}
-                            >
-                              Delete
-                            </button>
-                          </div>
-                          {post.propertyAddress && (
-                            <div className="activity-item-meta">
-                              About{' '}
-                              {post.propertyId ? (
-                                <Link to={`/property/${post.propertyId}`} className="activity-item-link">
-                                  {post.propertyAddress}
-                                </Link>
-                              ) : (
-                                post.propertyAddress
+                          <div className="activity-item-header">
+                            <div className="activity-avatar">{(userProfile?.name || user?.displayName || 'U').charAt(0).toUpperCase()}</div>
+                            <div>
+                              <div className="activity-item-title">You posted</div>
+                              {post.propertyAddress && (
+                                <div className="activity-item-meta">
+                                  About{' '}
+                                  {post.propertyId ? (
+                                    <Link to={`/property/${post.propertyId}`} className="activity-item-link">
+                                      {post.propertyAddress}
+                                    </Link>
+                                  ) : (
+                                    post.propertyAddress
+                                  )}
+                                </div>
                               )}
                             </div>
-                          )}
+                            <div className="activity-item-date">{formatDate(post.createdAt)}</div>
+                          </div>
                           <div className="activity-item-body">{post.body}</div>
                           {(post.hashtags?.length || post.userTags?.length) && (
                             <div className="activity-item-tags">
@@ -1904,7 +1881,42 @@ const Dashboard = () => {
                               ))}
                             </div>
                           )}
-                          <div className="activity-item-meta">{formatDate(post.createdAt)}</div>
+                          <div className="activity-item-actions">
+                            <button type="button" onClick={() => toggleComments(post.id)}>
+                              Comment
+                            </button>
+                            <button type="button" className="activity-item-delete" onClick={() => handleDeletePost(post.id)}>
+                              Delete
+                            </button>
+                          </div>
+                          {commentsOpen[post.id] && (
+                            <div className="activity-comments">
+                              {commentsLoading[post.id] ? (
+                                <p className="activity-comment-empty">Loading comments...</p>
+                              ) : (commentsByPost[post.id] || []).length === 0 ? (
+                                <p className="activity-comment-empty">No comments yet.</p>
+                              ) : (
+                                <div className="activity-comment-list">
+                                  {(commentsByPost[post.id] || []).map((c) => (
+                                    <div key={c.id} className="activity-comment">
+                                      <strong>{c.authorName || 'Someone'}</strong> {c.body}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                              <div className="activity-comment-form">
+                                <input
+                                  type="text"
+                                  value={commentDrafts[post.id] || ''}
+                                  onChange={(e) => handleCommentChange(post.id, e.target.value)}
+                                  placeholder="Write a comment..."
+                                />
+                                <button type="button" onClick={() => handleCommentSubmit(post.id)}>
+                                  Send
+                                </button>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -2365,6 +2377,147 @@ const Dashboard = () => {
                 {editingContactId ? 'Save Changes' : 'Add Contact'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {showPostModal && (
+        <div className="post-modal-overlay" onClick={closePostModal}>
+          <div className="post-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="post-modal-header">
+              <h3>Create Post</h3>
+              <button type="button" className="post-modal-close" onClick={closePostModal}>×</button>
+            </div>
+            {postStage === 'type' && (
+              <div className="post-modal-body">
+                <p className="post-modal-hint">Choose a post style.</p>
+                <div className="post-type-wheel" role="tablist" aria-label="Post type">
+                  {[
+                    { id: 'tweet', label: 'Tweet' },
+                    { id: 'instagram', label: 'Instagram' },
+                    { id: 'poll', label: 'Poll' },
+                  ].map((type) => (
+                    <button
+                      key={type.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={postType === type.id}
+                      className={`post-type-pill ${postType === type.id ? 'active' : ''}`}
+                      onClick={() => setPostType(type.id)}
+                    >
+                      {type.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="post-modal-actions">
+                  <button type="button" className="btn btn-primary" onClick={() => setPostStage('compose')}>
+                    Continue
+                  </button>
+                </div>
+              </div>
+            )}
+            {postStage === 'compose' && (
+              <div className="post-modal-body">
+                <div className="activity-composer-row">
+                  <label>
+                    Address (optional)
+                    <AddressAutocomplete
+                      value={postAddress}
+                      onAddressChange={handlePostAddressChange}
+                      onAddressSelect={handlePostAddressSelect}
+                      placeholder="123 Main St, City"
+                      inputProps={{ 'aria-label': 'Post address' }}
+                    />
+                  </label>
+                </div>
+                <textarea
+                  value={postBody}
+                  onChange={(e) => setPostBody(e.target.value)}
+                  placeholder="Ask a question, share an update, or start a conversation..."
+                  rows={4}
+                />
+                <div className="activity-composer-row">
+                  <label>
+                    Hashtags
+                    <input
+                      type="text"
+                      value={postHashtags}
+                      onChange={(e) => setPostHashtags(e.target.value)}
+                      placeholder="#renovation #kitchen"
+                    />
+                  </label>
+                  <label>
+                    Tag users
+                    <input
+                      type="text"
+                      value={postUserTags}
+                      onChange={(e) => setPostUserTags(e.target.value)}
+                      placeholder="@alex, @chris"
+                    />
+                  </label>
+                </div>
+                {postType === 'instagram' && (
+                  <div className="post-media-upload">
+                    <DragDropFileInput
+                      accept=".png,.jpg,.jpeg,.webp"
+                      onChange={(f) => { if (f) handleUploadPostImage(f); }}
+                      disabled={postImageUploading}
+                      uploading={postImageUploading}
+                      placeholder={postImageUrl ? 'Drop to replace image' : 'Drop or click to upload image'}
+                      className="dashboard-doc-upload"
+                    />
+                    {postImageUrl && (
+                      <div className="post-media-preview">
+                        <img src={postImageUrl} alt="Post" />
+                        <button type="button" className="btn btn-outline btn-small" onClick={() => setPostImageUrl('')}>
+                          Remove image
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {postType === 'poll' && (
+                  <div className="poll-options">
+                    {pollOptions.map((opt, idx) => (
+                      <input
+                        key={`poll-${idx}`}
+                        type="text"
+                        value={opt}
+                        onChange={(e) => {
+                          const next = [...pollOptions];
+                          next[idx] = e.target.value;
+                          setPollOptions(next);
+                        }}
+                        placeholder={`Option ${idx + 1}`}
+                      />
+                    ))}
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-small"
+                      onClick={() => setPollOptions([...pollOptions, ''])}
+                    >
+                      + Add option
+                    </button>
+                    {pollOptions.length > 2 && (
+                      <button
+                        type="button"
+                        className="btn btn-outline btn-small"
+                        onClick={() => setPollOptions(pollOptions.slice(0, -1))}
+                      >
+                        Remove last option
+                      </button>
+                    )}
+                  </div>
+                )}
+                <div className="post-modal-actions">
+                  <button type="button" className="btn btn-outline" onClick={() => setPostStage('type')}>
+                    Back
+                  </button>
+                  <button type="button" className="btn btn-primary" onClick={handlePostSubmit} disabled={posting || !postBody.trim()}>
+                    {posting ? 'Posting...' : 'Post'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
