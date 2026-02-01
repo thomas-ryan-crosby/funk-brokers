@@ -1,5 +1,5 @@
 // Profile Service - Firestore operations for sale and purchase profiles
-import { doc, getDoc, setDoc, collection, addDoc, getDocs, query, where, deleteDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, addDoc, getDocs, query, where, deleteDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
 const SALE_PROFILES = 'saleProfiles';
@@ -74,22 +74,6 @@ export const setPurchaseProfile = async (userId, data) => {
     await setDoc(ref, { ...data, updatedAt: new Date() }, { merge: true });
   } catch (err) {
     console.error('Error saving purchase profile:', err);
-    throw err;
-  }
-};
-
-/**
- * Update specific purchase profile fields (supports deleteField).
- * @param {string} userId
- * @param {object} data
- */
-export const updatePurchaseProfile = async (userId, data) => {
-  if (!userId) throw new Error('userId is required');
-  try {
-    const ref = doc(db, PURCHASE_PROFILES, userId);
-    await updateDoc(ref, { ...data, updatedAt: new Date() });
-  } catch (err) {
-    console.error('Error updating purchase profile:', err);
     throw err;
   }
 };
