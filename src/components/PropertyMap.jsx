@@ -17,6 +17,11 @@ const DEDUP_DEG = 0.0001;
 const formatNumber = (value) =>
   value != null && Number.isFinite(value) ? new Intl.NumberFormat('en-US').format(value) : '—';
 
+const formatPrice = (value) =>
+  value != null && Number.isFinite(value)
+    ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value)
+    : '—';
+
 const unlistedTooltipContent = (p) => `
   <div class="property-map-unlisted-tooltip">
     <div class="property-map-unlisted-tooltip__address">${(p.address || 'Address unknown').replace(/</g, '&lt;')}</div>
