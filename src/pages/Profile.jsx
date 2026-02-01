@@ -204,6 +204,31 @@ const Profile = () => {
     }
   };
 
+  const handleRemoveGovernmentId = async () => {
+    if (!user?.uid) return;
+    if (!window.confirm('Remove your government ID?')) return;
+    try {
+      await updateUserProfile(user.uid, {
+        governmentIdUrl: null,
+        governmentIdExtractedName: null,
+        governmentIdExtractedDob: null,
+      });
+      await refreshUserProfile?.(user.uid);
+
+      const purchaseProfile = await getPurchaseProfile(user.uid);
+      const docs = { ...(purchaseProfile?.verificationDocuments || {}) };
+      docs.governmentId = null;
+      await setPurchaseProfile(user.uid, {
+        verificationDocuments: docs,
+        governmentIdExtractedName: null,
+        governmentIdExtractedDob: null,
+      });
+    } catch (err) {
+      console.error('Error removing government ID:', err);
+      setGovernmentIdError('Failed to remove government ID. Please try again.');
+    }
+  };
+
   if (authLoading || !isAuthenticated) {
     return (
       <div className="profile-page">
@@ -231,94 +256,129 @@ const Profile = () => {
           <h2>Personal info</h2>
           {error && <div className="profile-alert profile-alert--error">{error}</div>}
           {saved && <div className="profile-alert profile-alert--success">Profile updated</div>}
-          <div className="profile-grid">
-            <label className="profile-field">
-              <span>Full name</span>
-              <input
-                type="text"
-                value={form.name}
-                onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-                placeholder="Your name"
-                disabled={!isEditingProfile}
-              />
-            </label>
-            <label className="profile-field">
-              <span>Date of birth</span>
-              <input
-                type="date"
-                value={form.dob}
-                onChange={(e) => setForm((prev) => ({ ...prev, dob: e.target.value }))}
-                disabled={!isEditingProfile}
-              />
-            </label>
-            <label className="profile-field">
-              <span>Phone</span>
-              <input
-                type="tel"
-                value={form.phone}
-                onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))}
-                placeholder="(555) 123-4567"
-                disabled={!isEditingProfile}
-              />
-            </label>
-            <label className="profile-field">
-              <span>Email</span>
-              <input type="email" value={displayEmail} disabled />
-            </label>
-          </div>
-          <div className="profile-toggle">
-            <div className="profile-toggle-row">
-              <span>Make my profile anonymous</span>
-              <label className="toggle-switch">
+          {isEditingProfile ? (
+            <>
+              <div className="profile-grid">
+                <label className="profile-field">
+                  <span>Full name</span>
+                  <input
+                    type="text"
+                    value={form.name}
+                    onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
+                    placeholder="Your name"
+                  />
+                </label>
+                <label className="profile-field">
+                  <span>Date of birth</span>
+                  <input
+                    type="date"
+                    value={form.dob}
+                    onChange={(e) => setForm((prev) => ({ ...prev, dob: e.target.value }))}
+                  />
+                </label>
+                <label className="profile-field">
+                  <span>Phone</span>
+                  <input
+                    type="tel"
+                    value={form.phone}
+                    onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))}
+                    placeholder="(555) 123-4567"
+                  />
+                </label>
+                <label className="profile-field">
+                  <span>Email</span>
+                  <input type="email" value={displayEmail} disabled />
+                </label>
+              </div>
+              <div className="profile-toggle">
+                <div className="profile-toggle-row">
+                  <span>Make my profile anonymous</span>
+                  <label className="toggle-switch">
+                    <input
+                      type="checkbox"
+                      checked={form.anonymousProfile}
+                      onChange={(e) => setForm((prev) => ({ ...prev, anonymousProfile: e.target.checked }))}
+                      aria-label="Make my profile anonymous"
+                    />
+                    <span className="toggle-switch__track" aria-hidden />
+                  </label>
+                </div>
+                <p>When enabled, other users will see your public display name instead of your real name.</p>
+              </div>
+              <label className="profile-field">
+                <span>Public display name</span>
                 <input
-                  type="checkbox"
-                  checked={form.anonymousProfile}
-                  onChange={(e) => setForm((prev) => ({ ...prev, anonymousProfile: e.target.checked }))}
-                  aria-label="Make my profile anonymous"
-                  disabled={!isEditingProfile}
+                  type="text"
+                  value={form.publicUsername}
+                  onChange={(e) => setForm((prev) => ({ ...prev, publicUsername: e.target.value }))}
+                  placeholder="Shown to other users"
                 />
-                <span className="toggle-switch__track" aria-hidden />
               </label>
+            </>
+          ) : (
+            <div className="profile-static-grid">
+              <div className="profile-static-field">
+                <span>Full name</span>
+                <strong>{form.name || '—'}</strong>
+              </div>
+              <div className="profile-static-field">
+                <span>Date of birth</span>
+                <strong>{form.dob || '—'}</strong>
+              </div>
+              <div className="profile-static-field">
+                <span>Phone</span>
+                <strong>{form.phone || '—'}</strong>
+              </div>
+              <div className="profile-static-field">
+                <span>Email</span>
+                <strong>{displayEmail || '—'}</strong>
+              </div>
+              <div className="profile-static-field">
+                <span>Anonymous profile</span>
+                <strong>{form.anonymousProfile ? 'Yes' : 'No'}</strong>
+              </div>
+              <div className="profile-static-field">
+                <span>Public display name</span>
+                <strong>{form.publicUsername || '—'}</strong>
+              </div>
             </div>
-            <p>When enabled, other users will see your public display name instead of your real name.</p>
-          </div>
-          <label className="profile-field">
-            <span>Public display name</span>
-            <input
-              type="text"
-              value={form.publicUsername}
-              onChange={(e) => setForm((prev) => ({ ...prev, publicUsername: e.target.value }))}
-              placeholder="Shown to other users"
-              disabled={!isEditingProfile}
-            />
-          </label>
+          )}
         </div>
 
         <div className="profile-section">
           <h2>Funding account</h2>
           <p className="profile-footnote">Add your bank name now. Bank linking is coming soon.</p>
-          <div className="profile-grid">
-            <label className="profile-field">
-              <span>Bank name</span>
-              <input
-                type="text"
-                value={form.bankName}
-                onChange={(e) => setForm((prev) => ({ ...prev, bankName: e.target.value }))}
-                placeholder="e.g. Chase, Bank of America"
-                disabled={!isEditingProfile}
-              />
-            </label>
-          </div>
-          <div className="profile-actions profile-actions--funding">
-            <button
-              type="button"
-              className="btn btn-outline"
-              onClick={() => setShowBankLinkModal(true)}
-              disabled={!isEditingProfile}
-            >
-              Link bank account
-            </button>
-          </div>
+          {isEditingProfile ? (
+            <>
+              <div className="profile-grid">
+                <label className="profile-field">
+                  <span>Bank name</span>
+                  <input
+                    type="text"
+                    value={form.bankName}
+                    onChange={(e) => setForm((prev) => ({ ...prev, bankName: e.target.value }))}
+                    placeholder="e.g. Chase, Bank of America"
+                  />
+                </label>
+              </div>
+              <div className="profile-actions profile-actions--funding">
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={() => setShowBankLinkModal(true)}
+                >
+                  Link bank account
+                </button>
+              </div>
+            </>
+          ) : (
+            <div className="profile-static-grid">
+              <div className="profile-static-field">
+                <span>Bank name</span>
+                <strong>{form.bankName || '—'}</strong>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="profile-section">
@@ -352,16 +412,23 @@ const Profile = () => {
                 )}
               </div>
             </div>
-            <div className="profile-id-upload">
-              <DragDropFileInput
-                accept=".pdf,.jpg,.jpeg,.png"
-                onChange={(f) => { if (f) handleGovernmentIdUpload(f); }}
-                disabled={governmentIdUploading || !isEditingProfile}
-                uploading={governmentIdUploading}
-                placeholder={userProfile?.governmentIdUrl ? 'Drop to replace' : 'Drop or click to upload'}
-                className="profile-id-dropzone"
-              />
-            </div>
+            {isEditingProfile && (
+              <div className="profile-id-upload">
+                <DragDropFileInput
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={(f) => { if (f) handleGovernmentIdUpload(f); }}
+                  disabled={governmentIdUploading}
+                  uploading={governmentIdUploading}
+                  placeholder={userProfile?.governmentIdUrl ? 'Drop to replace' : 'Drop or click to upload'}
+                  className="profile-id-dropzone"
+                />
+                {userProfile?.governmentIdUrl && (
+                  <button type="button" className="btn btn-outline profile-id-remove" onClick={handleRemoveGovernmentId}>
+                    Remove ID
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

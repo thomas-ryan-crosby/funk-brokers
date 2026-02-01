@@ -49,6 +49,26 @@
    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
    gap: 16px;
 }
+
+.profile-static-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+.profile-static-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--color-text-secondary, #cbd5e1);
+}
+
+.profile-static-field strong {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-primary, #f8fafc);
+}
  
 .profile-field {
    display: flex;
@@ -265,6 +285,10 @@
 
 .profile-id-dropzone {
   min-height: 120px;
+}
+
+.profile-id-remove {
+  margin-top: 10px;
 }
 
 @media (max-width: 720px) {
