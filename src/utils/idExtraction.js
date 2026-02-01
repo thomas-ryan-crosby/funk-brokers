@@ -6,6 +6,13 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 const cleanSpaces = (value) => value.replace(/\s+/g, ' ').trim();
 
+const normalizeText = (value) =>
+  cleanSpaces(
+    value
+      .replace(/[|]/g, ' ')
+      .replace(/[^A-Za-z0-9/:\-\. ]+/g, ' ')
+  );
+
 const toTitleCase = (value) =>
   value
     .toLowerCase()
@@ -15,7 +22,7 @@ const toTitleCase = (value) =>
 
 const parseDob = (text) => {
   if (!text) return null;
-  const normalized = text.replace(/\s+/g, ' ');
+  const normalized = normalizeText(text);
   const patterns = [
     /\b(?:dob|date of birth|birth)\b[:\s]*([0-9]{1,2}[\/\-][0-9]{1,2}[\/\-][0-9]{4})/i,
     /\b(?:dob|date of birth|birth)\b[:\s]*([0-9]{1,2}[\/\-][0-9]{1,2}[\/\-][0-9]{2})/i,
@@ -53,8 +60,8 @@ const parseDob = (text) => {
 
 const parseName = (text) => {
   if (!text) return null;
-  const normalized = text.replace(/[|]/g, ' ').replace(/\s+/g, ' ');
-  const cleaned = normalized.replace(/\b(REST|NONE|SPN|END|CLASS|DLN|DOB|EXP|ISS|EYES|HAIR|HGT|WGT|SEX)\b/gi, '');
+  const normalized = normalizeText(text);
+  const cleaned = normalized.replace(/\b(REST|NONE|SPN|END|CLASS|DLN|DOB|EXP|ISS|EYES|HAIR|HGT|WGT|SEX|DRIVER|LICENSE|USA)\b/gi, '');
   const labeled = cleaned.match(/\b(?:name|full name)\b[:\s]*([A-Z][A-Z'\- ]{2,})/i);
   if (labeled?.[1]) return toTitleCase(cleanSpaces(labeled[1]));
 
@@ -64,17 +71,62 @@ const parseName = (text) => {
     return toTitleCase(cleanSpaces(`${idFormat[2]} ${idFormat[1]}`));
   }
 
+  const idLineFormat = cleaned.match(/\b([A-Z'\-]{2,})\b\s*(?:\||=|:)?\s*2\s+([A-Z'\-]+(?:\s+[A-Z'\-]+)*)/i);
+  if (idLineFormat?.[1] && idLineFormat?.[2]) {
+    return toTitleCase(cleanSpaces(`${idLineFormat[2]} ${idLineFormat[1]}`));
+  }
+
+  const tokens = cleaned.split(' ');
+  const getToken = (idx) => tokens[idx] || '';
+  const pickNameFromTokens = () => {
+    const idx1 = tokens.findIndex((t) => t === '1');
+    const idx2 = tokens.findIndex((t) => t === '2');
+    if (idx1 !== -1 && idx2 !== -1) {
+      const last = getToken(idx1 + 1);
+      const first = getToken(idx2 + 1);
+      const middle = getToken(idx2 + 2);
+      if (last && first) {
+        const nameParts = [first, middle, last].filter(Boolean);
+        return toTitleCase(cleanSpaces(nameParts.join(' ')));
+      }
+    }
+    return null;
+  };
+
+  const tokenName = pickNameFromTokens();
+  if (tokenName) return tokenName;
+
   const nameBlock = cleaned.match(/\b([A-Z'\-]{2,})\s+([A-Z'\-]{2,})(?:\s+([A-Z'\-]{2,}))?\b/);
   if (nameBlock?.[1] && nameBlock?.[2]) {
     const last = nameBlock[1];
     const first = nameBlock[2];
     const middle = nameBlock[3] ? ` ${nameBlock[3]}` : '';
-    if (!['REST', 'NONE', 'SPN', 'END'].includes(last.toUpperCase())) {
+    if (!['REST', 'NONE', 'SPN', 'END', 'DRIVER', 'LICENSE', 'USA'].includes(last.toUpperCase())) {
       return toTitleCase(cleanSpaces(`${first}${middle} ${last}`));
     }
   }
 
   return null;
+};
+
+const scoreOcrText = (text) => {
+  const normalized = normalizeText(text);
+  let score = 0;
+  if (/DOB/i.test(normalized)) score += 5;
+  if (/\b[0-9]{1,2}\/[0-9]{1,2}\/[0-9]{2,4}\b/.test(normalized)) score += 5;
+  if (/\b1\s+[A-Z]/.test(normalized) && /\b2\s+[A-Z]/.test(normalized)) score += 5;
+  if (/DRIVER LICENSE|DLN/i.test(normalized)) score += 2;
+  return score;
+};
+
+const runOcrVariants = async (file, variants) => {
+  const results = [];
+  for (const variant of variants) {
+    const { data } = await Tesseract.recognize(file, 'eng', variant);
+    const text = cleanSpaces(data?.text || '');
+    results.push({ text, score: scoreOcrText(text), variant });
+  }
+  return results;
 };
 
 const getPdfText = async (file) => {
@@ -121,12 +173,19 @@ const preprocessImage = (file, scale = 2) => new Promise((resolve, reject) => {
 
 const getImageText = async (file) => {
   const processed = await preprocessImage(file, 2);
-  const { data } = await Tesseract.recognize(processed, 'eng', {
-    tessedit_pageseg_mode: 4,
-    tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789/ -',
-    preserve_interword_spaces: '1',
-  });
-  return cleanSpaces(data?.text || '');
+  const variants = [
+    { tessedit_pageseg_mode: 4, tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789/ -', preserve_interword_spaces: '1' },
+    { tessedit_pageseg_mode: 6, tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789/ -', preserve_interword_spaces: '1' },
+    { tessedit_pageseg_mode: 11, tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789/ -', preserve_interword_spaces: '1' },
+  ];
+  const rawResults = await runOcrVariants(processed, variants);
+  const sorted = rawResults.sort((a, b) => b.score - a.score);
+
+  console.groupCollapsed('[id-ocr] variant scores');
+  console.table(sorted.map(({ score, text }) => ({ score, sample: text.slice(0, 80) })));
+  console.groupEnd();
+
+  return sorted[0]?.text || '';
 };
 
 export const extractGovernmentIdInfo = async (file) => {
