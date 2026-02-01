@@ -46,7 +46,7 @@
 
 .property-map-info p {
   margin: 4px 0;
-  color: #475569;
+  color: var(--color-text-muted);
 }
 
 .property-map-info a {
@@ -80,6 +80,6 @@
 }
 
 .property-map-unlisted-tooltip__row {
-  color: #475569;
+  color: var(--color-text-muted);
   margin: 2px 0;
 }

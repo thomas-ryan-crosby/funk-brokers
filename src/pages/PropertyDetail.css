@@ -25,17 +25,17 @@
 .property-posts-header h2 {
   margin: 0 0 6px 0;
   font-size: 22px;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
 }
 
 .property-posts-header p {
   margin: 0;
-  color: #666;
+  color: var(--color-text-secondary);
   font-size: 14px;
 }
 
 .property-posts-empty {
-  color: #666;
+  color: var(--color-text-secondary);
   margin: 0;
 }
 
@@ -62,11 +62,11 @@
 
 .property-post-author {
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text-primary);
 }
 
 .property-post-body {
-  color: #334155;
+  color: var(--color-text-secondary);
   font-size: 14px;
   line-height: 1.6;
 }
@@ -121,7 +121,7 @@
   border-radius: 8px;
   padding: 8px 10px;
   font-size: 14px;
-  color: #475569;
+  color: var(--color-text-muted);
 }
 
 .property-detail-header {
@@ -153,12 +153,12 @@
 .property-detail-header h1 {
   font-size: 36px;
   margin: 0 0 8px 0;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
 }
 
 .property-address {
   font-size: 18px;
-  color: #666;
+  color: var(--color-text-secondary);
   margin: 0;
 }
 
@@ -219,7 +219,7 @@
 .property-features h2 {
   font-size: 24px;
   margin: 0 0 16px 0;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
 }
 
 .property-stats {
@@ -238,7 +238,7 @@
 
 .stat-label {
   font-size: 12px;
-  color: #666;
+  color: var(--color-text-secondary);
   text-transform: uppercase;
   margin-bottom: 4px;
 }
@@ -246,13 +246,13 @@
 .stat-value {
   font-size: 20px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
 }
 
 .property-description p {
   font-size: 16px;
   line-height: 1.6;
-  color: #333;
+  color: var(--color-text-primary);
   margin: 0;
 }
 
@@ -291,7 +291,7 @@
 .property-owner-actions .owner-stat {
   margin: 0 0 8px 0;
   font-size: 15px;
-  color: #475569;
+  color: var(--color-text-muted);
 }
 
 .owner-stat-button {
@@ -408,7 +408,7 @@
 
 .property-actions .btn-secondary {
   background: #f5f5f5;
-  color: #333;
+  color: var(--color-text-primary);
   border: 1px solid #ddd;
 }
 
@@ -419,7 +419,7 @@
 
 .property-actions .btn-outline.favorited {
   background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-  color: #1e293b;
+  color: var(--color-text-primary);
   border-color: #fbbf24;
 }
 
@@ -453,7 +453,7 @@
 .property-details-card h3 {
   font-size: 20px;
   margin: 0 0 16px 0;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
 }
 
 .detail-row {
@@ -469,13 +469,13 @@
 
 .detail-label {
   font-size: 14px;
-  color: #666;
+  color: var(--color-text-secondary);
 }
 
 .detail-value {
   font-size: 14px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
 }
 
 .detail-value--verified {
@@ -524,7 +524,7 @@
 .detail-section-list > .detail-label {
   display: block;
   font-size: 14px;
-  color: #666;
+  color: var(--color-text-secondary);
   margin-bottom: 8px;
 }
 
@@ -533,7 +533,7 @@
   padding-left: 20px;
   font-size: 14px;
   font-weight: 500;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
   line-height: 1.5;
 }
 
@@ -658,7 +658,7 @@
   font-size: 16px;
   font-weight: 600;
   margin: 0 0 12px 0;
-  color: #475569;
+  color: var(--color-text-muted);
 }
 
 .tier-current {
@@ -698,7 +698,7 @@
 }
 
 .tier-badge--basic {
-  color: #475569;
+  color: var(--color-text-muted);
   background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
   border-color: #cbd5e1;
   box-shadow: 0 2px 8px rgba(71, 85, 105, 0.15);
@@ -873,7 +873,7 @@
   margin: 0;
   padding-left: 18px;
   font-size: 13px;
-  color: #475569;
+  color: var(--color-text-muted);
   line-height: 1.5;
 }
 
@@ -989,7 +989,7 @@
 .error-state {
   text-align: center;
   padding: 60px 20px;
-  color: #666;
+  color: var(--color-text-secondary);
 }
 
 .error-state a {

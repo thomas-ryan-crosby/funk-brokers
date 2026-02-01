@@ -46,7 +46,7 @@
 
 .pitch-lead {
   font-size: 16px;
-  color: #475569;
+  color: var(--color-text-muted);
   line-height: 1.7;
   max-width: 760px;
 }
@@ -96,14 +96,14 @@
 }
 
 .pitch-section p {
-  color: #475569;
+  color: var(--color-text-muted);
   line-height: 1.7;
 }
 
 .pitch-list {
   margin: 10px 0 0;
   padding-left: 20px;
-  color: #475569;
+  color: var(--color-text-muted);
 }
 
 .pitch-list li {
@@ -128,7 +128,7 @@
 .pitch-steps {
   margin: 16px 0 0;
   padding-left: 20px;
-  color: #475569;
+  color: var(--color-text-muted);
 }
 
 .pitch-steps li {
@@ -200,7 +200,7 @@
   padding: 6px 12px;
   font-size: 12px;
   background: #ffffff;
-  color: #475569;
+  color: var(--color-text-muted);
 }
 
 .pitch-vision {
@@ -228,7 +228,7 @@
 
 .pitch-ask-note {
   margin-top: 6px;
-  color: #475569;
+  color: var(--color-text-muted);
 }
 
 @media (max-width: 860px) {

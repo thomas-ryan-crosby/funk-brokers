@@ -80,7 +80,7 @@
   display: block;
   font-size: 14px;
   font-weight: 600;
-  color: #475569;
+  color: var(--color-text-muted);
   margin-bottom: 8px;
 }
 
@@ -164,7 +164,7 @@
 .disclosure-modal-footer .btn-outline {
   background: white;
   border: 1px solid #e2e8f0;
-  color: #475569;
+  color: var(--color-text-muted);
 }
 
 .disclosure-modal-footer .btn-outline:hover {

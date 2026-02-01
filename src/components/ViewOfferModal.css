@@ -119,7 +119,7 @@
 .view-offer-message {
   white-space: pre-wrap;
   font-size: 14px;
-  color: #475569;
+  color: var(--color-text-muted);
   line-height: 1.5;
 }
 

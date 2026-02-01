@@ -16,7 +16,7 @@
 .get-verified-container h1 {
   font-size: 28px;
   margin: 0 0 8px 0;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
 }
 
 .get-verified-intro {
@@ -50,7 +50,7 @@
 .verification-progress-text {
   font-size: 14px;
   font-weight: 600;
-  color: #475569;
+  color: var(--color-text-muted);
   min-width: 5em;
 }
 
@@ -84,7 +84,7 @@
   display: inline-block;
   margin-top: 6px;
   font-size: 12px;
-  color: #475569;
+  color: var(--color-text-muted);
   font-weight: 600;
 }
 
@@ -140,7 +140,7 @@
 .celebration-message {
   margin: 0;
   font-size: 14px;
-  color: #475569;
+  color: var(--color-text-muted);
 }
 
 @keyframes explode {
@@ -169,7 +169,7 @@
 
 .get-verified-success p {
   margin: 0 0 24px 0;
-  color: #475569;
+  color: var(--color-text-muted);
 }
 
 .step-indicator {
@@ -216,7 +216,7 @@
 .form-step h2 {
   font-size: 20px;
   margin: 0 0 8px 0;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
 }
 
 .form-note {
@@ -252,7 +252,7 @@
   border-radius: 20px;
   background: #f8fafc;
   font-size: 13px;
-  color: #475569;
+  color: var(--color-text-muted);
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s;
 }
@@ -419,7 +419,7 @@
 .get-verified-container .btn-outline {
   background: #fff;
   border: 1px solid #e2e8f0;
-  color: #475569;
+  color: var(--color-text-muted);
 }
 
 .get-verified-container .btn-outline:hover {
@@ -556,7 +556,7 @@
 
 .btn-secondary {
   background: #f1f5f9;
-  color: #475569;
+  color: var(--color-text-muted);
   border-color: #e2e8f0;
 }
 

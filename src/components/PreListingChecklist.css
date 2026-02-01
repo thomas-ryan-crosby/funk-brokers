@@ -13,11 +13,11 @@
 .checklist-header h2 {
   font-size: 28px;
   margin: 0 0 8px 0;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
 }
 
 .checklist-header p {
-  color: #666;
+  color: var(--color-text-secondary);
   margin: 0 0 16px 0;
 }
 
@@ -73,7 +73,7 @@
   gap: 8px;
   font-size: 16px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
   cursor: pointer;
 }
 
@@ -94,7 +94,7 @@
 
 .item-description {
   font-size: 14px;
-  color: #666;
+  color: var(--color-text-secondary);
   margin: 0 0 12px 0;
 }
 
@@ -135,7 +135,7 @@
 
 .photo-count {
   font-size: 14px;
-  color: #666;
+  color: var(--color-text-secondary);
   margin-top: 8px;
 }
 
@@ -221,5 +221,5 @@
 .completion-note {
   margin-top: 12px;
   font-size: 14px;
-  color: #666;
+  color: var(--color-text-secondary);
 }

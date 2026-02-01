@@ -13,11 +13,11 @@
 .checklist-header h2 {
   font-size: 28px;
   margin: 0 0 8px 0;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
 }
 
 .checklist-header p {
-  color: #666;
+  color: var(--color-text-secondary);
   margin: 0 0 16px 0;
 }
 
@@ -51,7 +51,7 @@
 .buyer-info-section h3 {
   font-size: 20px;
   margin: 0 0 16px 0;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
 }
 
 .info-grid {
@@ -68,7 +68,7 @@
 .form-group label {
   font-size: 14px;
   font-weight: 600;
-  color: #333;
+  color: var(--color-text-primary);
   margin-bottom: 6px;
 }
 
@@ -118,7 +118,7 @@
   gap: 8px;
   font-size: 16px;
   font-weight: 600;
-  color: #1a1a1a;
+  color: var(--color-text-primary);
   cursor: pointer;
 }
 
@@ -139,7 +139,7 @@
 
 .item-description {
   font-size: 14px;
-  color: #666;
+  color: var(--color-text-secondary);
   margin: 0 0 12px 0;
 }
 
@@ -197,13 +197,13 @@
   font-size: 14px;
   font-weight: 600;
   margin-bottom: 8px;
-  color: #333;
+  color: var(--color-text-primary);
 }
 
 .financing-divider {
   font-size: 14px;
   font-weight: 600;
-  color: #666;
+  color: var(--color-text-secondary);
   padding: 0 8px;
 }
 
@@ -242,7 +242,7 @@
 .completion-note {
   margin-top: 12px;
   font-size: 14px;
-  color: #666;
+  color: var(--color-text-secondary);
 }
 
 @media (max-width: 768px) {

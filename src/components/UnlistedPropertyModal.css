@@ -183,7 +183,7 @@
   border: 1px solid #cbd5e1;
   border-radius: 8px;
   background: #fff;
-  color: #475569;
+  color: var(--color-text-muted);
   cursor: pointer;
 }
 
