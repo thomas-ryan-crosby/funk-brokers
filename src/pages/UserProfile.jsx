@@ -122,7 +122,26 @@ const UserProfile = () => {
 
   const isIdVerified = (() => {
     const personaStatus = (profile?.governmentIdPersonaStatus || '').toLowerCase();
-    return personaStatus ? ['completed', 'approved'].includes(personaStatus) : false;
+    if (personaStatus) {
+      return ['completed', 'approved'].includes(personaStatus);
+    }
+    const normalizeName = (v) => (v || '').toLowerCase().replace(/[^a-z]/g, '');
+    const normalizeDate = (v) => {
+      if (!v) return null;
+      const isoMatch = String(v).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (isoMatch) return isoMatch[0];
+      const altMatch = String(v).match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+      if (!altMatch) return null;
+      const month = altMatch[1].padStart(2, '0');
+      const day = altMatch[2].padStart(2, '0');
+      return `${altMatch[3]}-${month}-${day}`;
+    };
+    const extractedName = normalizeName(profile?.governmentIdExtractedName);
+    const profileName = normalizeName(profile?.name);
+    const extractedDob = normalizeDate(profile?.governmentIdExtractedDob);
+    const profileDob = normalizeDate(profile?.dob);
+    if (!extractedName || !extractedDob || !profileName || !profileDob) return false;
+    return extractedName === profileName && extractedDob === profileDob;
   })();
 
   return (
