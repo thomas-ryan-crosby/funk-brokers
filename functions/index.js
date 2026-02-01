@@ -214,8 +214,7 @@ const parseName = (text) => {
 };
 
 const extractTextFromPdf = async (buffer) => {
-  const pdfParseFn = pdfParse.default || pdfParse;
-  const parsed = await pdfParseFn(buffer);
+  const parsed = await pdfParse(buffer);
   return (parsed.text || '').replace(/\s+/g, ' ').trim();
 };
 
