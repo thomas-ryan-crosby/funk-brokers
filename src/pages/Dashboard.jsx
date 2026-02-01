@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { getPropertiesBySeller, getPropertyById, archiveProperty, restoreProperty, deletePropertyPermanently } from '../services/propertyService';
 import { getUserFavoriteIds, removeFromFavorites, getFavoritesForProperty } from '../services/favoritesService';
 import { getAllProperties } from '../services/propertyService';
-import { getSavedSearches, removeSavedSearch, getPurchaseProfile, setPurchaseProfile } from '../services/profileService';
+import { getSavedSearches, removeSavedSearch, getPurchaseProfile, setPurchaseProfile, updatePurchaseProfile } from '../services/profileService';
 import { addComment, createPost, deletePost, getCommentsForPost, getPostsByAuthor, getPostsForProperties } from '../services/postService';
 import { getOffersByProperty, getOffersByBuyer, acceptOffer, rejectOffer, withdrawOffer, counterOffer } from '../services/offerService';
 import { getTransactionsByUser, getTransactionByOfferId, createTransaction } from '../services/transactionService';
@@ -724,7 +724,7 @@ const Dashboard = () => {
       if (amountEligible.includes(field)) {
         try {
           const { extractDocumentData } = await import('../utils/documentExtraction');
-          const result = await extractDocumentData({ url, docType: field });
+          const result = await extractDocumentData({ url, path, docType: field });
           if (result?.amount != null) {
             amounts[field] = result.amount;
           } else {
@@ -772,8 +772,8 @@ const Dashboard = () => {
     delete amounts[key];
     const validation = computeBuyingPowerValidation(purchaseProfile?.buyingPower ?? null, amounts);
     const updates = {
-      verificationDocuments: docs,
-      verificationDocumentAmounts: amounts,
+      [`verificationDocuments.${key}`]: deleteField(),
+      [`verificationDocumentAmounts.${key}`]: deleteField(),
       buyingPowerValidationStatus: validation.status,
       buyingPowerValidationMessage: validation.message,
     };
@@ -782,7 +782,7 @@ const Dashboard = () => {
       updates.buyerVerifiedAt = deleteField();
     }
     try {
-      await setPurchaseProfile(user.uid, updates);
+      await updatePurchaseProfile(user.uid, updates);
       setPurchaseProfileState((p) => {
         if (!p) return p;
         const next = { ...p, verificationDocuments: docs };

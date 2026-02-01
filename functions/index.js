@@ -238,21 +238,40 @@ exports.extractDocumentData = functions.https.onRequest(async (req, res) => {
     return;
   }
 
-  const { url, docType } = req.body || {};
-  if (!url || typeof url !== 'string') {
-    res.status(400).json({ error: 'Missing document url' });
+  const { url, path, docType } = req.body || {};
+  if ((!url || typeof url !== 'string') && (!path || typeof path !== 'string')) {
+    res.status(400).json({ error: 'Missing document url or path' });
     return;
   }
 
   try {
-    const response = await fetch(url);
-    if (!response.ok) {
-      res.status(502).json({ error: 'Failed to fetch document' });
-      return;
+    let buffer;
+    let contentType = '';
+    let urlLower = (url || '').toLowerCase();
+
+    if (path) {
+      try {
+        const bucket = admin.storage().bucket();
+        const file = bucket.file(path);
+        const [metadata] = await file.getMetadata();
+        contentType = metadata?.contentType || '';
+        const [downloaded] = await file.download();
+        buffer = downloaded;
+      } catch (err) {
+        console.error('Storage download failed, falling back to URL:', err);
+      }
     }
-    const contentType = response.headers.get('content-type') || '';
-    const urlLower = url.toLowerCase();
-    const buffer = Buffer.from(await response.arrayBuffer());
+
+    if (!buffer) {
+      const response = await fetch(url);
+      if (!response.ok) {
+        res.status(502).json({ error: 'Failed to fetch document' });
+        return;
+      }
+      contentType = response.headers.get('content-type') || '';
+      urlLower = urlLower || url.toLowerCase();
+      buffer = Buffer.from(await response.arrayBuffer());
+    }
 
     let text = '';
     if (contentType.includes('pdf') || urlLower.includes('.pdf') || isPdfBuffer(buffer)) {
