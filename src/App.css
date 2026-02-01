@@ -29,7 +29,8 @@ body {
 .nav-container {
   max-width: 1400px;
   margin: 0 auto;
-  padding: 16px 20px;
+  height: 72px;
+  padding: 0 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -40,12 +41,29 @@ body {
   color: inherit;
   display: inline-flex;
   align-items: center;
+  line-height: 0;
+}
+
+.nav-logo .logo > img,
+.nav-logo .logo > svg {
+  max-height: 64px;
 }
 
 .nav-links {
   display: flex;
   gap: 24px;
   align-items: center;
+}
+
+@media (max-width: 768px) {
+  .nav-container {
+    height: 60px;
+  }
+
+  .nav-logo .logo > img,
+  .nav-logo .logo > svg {
+    max-height: 48px;
+  }
 }
 
 .nav-messages {
