@@ -184,11 +184,6 @@ const Profile = () => {
               placeholder="Shown to other users"
             />
           </label>
-          <div className="profile-actions">
-            <button type="button" className="btn btn-primary" onClick={handleSaveProfile} disabled={saving}>
-              {saving ? 'Saving...' : 'Save changes'}
-            </button>
-          </div>
         </div>
 
         <div className="profile-section">
@@ -208,6 +203,14 @@ const Profile = () => {
           <div className="profile-actions">
             <button type="button" className="btn btn-outline" onClick={() => setShowBankLinkModal(true)}>
               Link bank account
+            </button>
+          </div>
+        </div>
+
+        <div className="profile-section">
+          <div className="profile-actions">
+            <button type="button" className="btn btn-primary" onClick={handleSaveProfile} disabled={saving}>
+              {saving ? 'Saving...' : 'Save profile changes'}
             </button>
           </div>
         </div>
