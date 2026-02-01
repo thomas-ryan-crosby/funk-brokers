@@ -624,6 +624,23 @@ const Dashboard = () => {
       ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n)
       : '—';
 
+  const computeBuyingPowerValidation = (buyingPower, amounts = {}) => {
+    const values = Object.values(amounts)
+      .map((v) => Number(v))
+      .filter((v) => Number.isFinite(v) && v > 0);
+    if (buyingPower == null || buyingPower === '') {
+      return { status: 'pending', message: 'Enter buying power to validate.' };
+    }
+    if (!values.length) {
+      return { status: 'pending', message: 'Upload a document to validate buying power.' };
+    }
+    const maxAmount = Math.max(...values);
+    if (Number(buyingPower) <= maxAmount) {
+      return { status: 'validated', message: `Validated against document amount ${formatCurrency(maxAmount)}.` };
+    }
+    return { status: 'not_approved', message: 'Not approved - please review with support team.' };
+  };
+
   const normalizeDate = (value) => {
     if (!value) return null;
     const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -654,8 +671,18 @@ const Dashboard = () => {
       return;
     }
     try {
-      await setPurchaseProfile(user.uid, { buyingPower: parsed ?? null });
-      setPurchaseProfileState((p) => (p ? { ...p, buyingPower: parsed ?? null } : null));
+      const validation = computeBuyingPowerValidation(parsed ?? null, purchaseProfile?.verificationDocumentAmounts || {});
+      await setPurchaseProfile(user.uid, {
+        buyingPower: parsed ?? null,
+        buyingPowerValidationStatus: validation.status,
+        buyingPowerValidationMessage: validation.message,
+      });
+      setPurchaseProfileState((p) => (p ? {
+        ...p,
+        buyingPower: parsed ?? null,
+        buyingPowerValidationStatus: validation.status,
+        buyingPowerValidationMessage: validation.message,
+      } : null));
       setEditingBuyingPower(false);
       setBuyingPowerForm('');
     } catch (err) {
@@ -692,14 +719,25 @@ const Dashboard = () => {
           delete amounts[field];
         }
       }
-      const updates = { verificationDocuments: docs };
+      const validation = computeBuyingPowerValidation(purchaseProfile?.buyingPower ?? null, amounts);
+      const updates = {
+        verificationDocuments: docs,
+        buyingPowerValidationStatus: validation.status,
+        buyingPowerValidationMessage: validation.message,
+      };
       if (amountEligible.includes(field)) {
         updates.verificationDocumentAmounts = amounts;
       }
       await setPurchaseProfile(user.uid, updates);
       setPurchaseProfileState((p) => {
         if (!p) return p;
-        return { ...p, verificationDocuments: docs, verificationDocumentAmounts: amounts };
+        return {
+          ...p,
+          verificationDocuments: docs,
+          verificationDocumentAmounts: amounts,
+          buyingPowerValidationStatus: validation.status,
+          buyingPowerValidationMessage: validation.message,
+        };
       });
     } catch (err) {
       console.error(err);
@@ -717,7 +755,13 @@ const Dashboard = () => {
     const stillVerified = meetsVerifiedBuyerCriteria(nextProfile);
     const amounts = { ...(purchaseProfile?.verificationDocumentAmounts || {}) };
     delete amounts[key];
-    const updates = { verificationDocuments: docs, verificationDocumentAmounts: amounts };
+    const validation = computeBuyingPowerValidation(purchaseProfile?.buyingPower ?? null, amounts);
+    const updates = {
+      verificationDocuments: docs,
+      verificationDocumentAmounts: amounts,
+      buyingPowerValidationStatus: validation.status,
+      buyingPowerValidationMessage: validation.message,
+    };
     if (!stillVerified) {
       updates.buyerVerified = false;
       updates.buyerVerifiedAt = deleteField();
@@ -728,6 +772,8 @@ const Dashboard = () => {
         if (!p) return p;
         const next = { ...p, verificationDocuments: docs };
         next.verificationDocumentAmounts = amounts;
+        next.buyingPowerValidationStatus = validation.status;
+        next.buyingPowerValidationMessage = validation.message;
         if (!stillVerified) {
           next.buyerVerified = false;
           next.buyerVerifiedAt = null;
@@ -1603,7 +1649,21 @@ const Dashboard = () => {
                   </div>
                 ) : (
                   <div className="buying-power-display">
-                    <span className="buying-power-amount">{formatCurrency(purchaseProfile?.buyingPower)}</span>
+                    <div>
+                      <span className="buying-power-amount">{formatCurrency(purchaseProfile?.buyingPower)}</span>
+                      <div className="buying-power-validation">
+                        <span className={`buying-power-validation-pill ${purchaseProfile?.buyingPowerValidationStatus || 'pending'}`}>
+                          {purchaseProfile?.buyingPowerValidationStatus === 'validated'
+                            ? 'Validated'
+                            : purchaseProfile?.buyingPowerValidationStatus === 'not_approved'
+                              ? 'Not approved'
+                              : 'Pending'}
+                        </span>
+                        <span className="buying-power-validation-note">
+                          {purchaseProfile?.buyingPowerValidationMessage || 'Upload a document to validate buying power.'}
+                        </span>
+                      </div>
+                    </div>
                     <div className="buying-power-actions">
                       <button type="button" className="btn btn-outline btn-small" onClick={() => { setEditingBuyingPower(true); setBuyingPowerForm(purchaseProfile?.buyingPower != null ? String(purchaseProfile.buyingPower) : ''); }}>
                         Edit
