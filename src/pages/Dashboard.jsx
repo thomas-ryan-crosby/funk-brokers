@@ -641,6 +641,11 @@ const Dashboard = () => {
     return { status: 'not_approved', message: 'Not approved - please review with support team.' };
   };
 
+  const buyingPowerValidation = computeBuyingPowerValidation(
+    purchaseProfile?.buyingPower ?? null,
+    purchaseProfile?.verificationDocumentAmounts || {}
+  );
+
   const normalizeDate = (value) => {
     if (!value) return null;
     const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -1652,15 +1657,15 @@ const Dashboard = () => {
                     <div>
                       <span className="buying-power-amount">{formatCurrency(purchaseProfile?.buyingPower)}</span>
                       <div className="buying-power-validation">
-                        <span className={`buying-power-validation-pill ${purchaseProfile?.buyingPowerValidationStatus || 'pending'}`}>
-                          {purchaseProfile?.buyingPowerValidationStatus === 'validated'
+                        <span className={`buying-power-validation-pill ${buyingPowerValidation.status}`}>
+                          {buyingPowerValidation.status === 'validated'
                             ? 'Validated'
-                            : purchaseProfile?.buyingPowerValidationStatus === 'not_approved'
+                            : buyingPowerValidation.status === 'not_approved'
                               ? 'Not approved'
                               : 'Pending'}
                         </span>
                         <span className="buying-power-validation-note">
-                          {purchaseProfile?.buyingPowerValidationMessage || 'Upload a document to validate buying power.'}
+                          {buyingPowerValidation.message}
                         </span>
                       </div>
                     </div>
