@@ -1608,25 +1608,28 @@ const Dashboard = () => {
                               View
                             </a>
                           )}
-                          <div className="doc-drag-drop-wrap">
-                            <DragDropFileInput
-                              accept=".pdf,.jpg,.jpeg,.png"
-                              onChange={(f) => { if (f) handleReplaceDocument(key, f); }}
-                              disabled={!editingBuyingPower || !!uploadingDoc}
-                              uploading={isUploading}
-                              placeholder={url ? 'Drop to replace' : 'Drop or click to add'}
-                              className="dashboard-doc-upload"
-                            />
-                          </div>
-                          {url && (
-                            <button
-                              type="button"
-                              className="btn btn-outline btn-small doc-remove-btn"
-                              onClick={() => handleRemoveDocument(key)}
-                              disabled={!editingBuyingPower}
-                            >
-                              Remove
-                            </button>
+                          {editingBuyingPower && (
+                            <>
+                              <div className="doc-drag-drop-wrap">
+                                <DragDropFileInput
+                                  accept=".pdf,.jpg,.jpeg,.png"
+                                  onChange={(f) => { if (f) handleReplaceDocument(key, f); }}
+                                  disabled={!!uploadingDoc}
+                                  uploading={isUploading}
+                                  placeholder={url ? 'Drop to replace' : 'Drop or click to add'}
+                                  className="dashboard-doc-upload"
+                                />
+                              </div>
+                              {url && (
+                                <button
+                                  type="button"
+                                  className="btn btn-outline btn-small doc-remove-btn"
+                                  onClick={() => handleRemoveDocument(key)}
+                                >
+                                  Remove
+                                </button>
+                              )}
+                            </>
                           )}
                         </div>
                       </div>
