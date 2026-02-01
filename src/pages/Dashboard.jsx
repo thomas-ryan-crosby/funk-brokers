@@ -1577,21 +1577,6 @@ const Dashboard = () => {
                       onChange={(e) => setBuyingPowerForm(e.target.value)}
                       className="buying-power-input"
                     />
-                    <div className="buying-power-edit-actions">
-                      <button type="button" className="btn btn-primary" onClick={handleSaveBuyingPower}>
-                        Save
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-outline"
-                        onClick={() => {
-                          setEditingBuyingPower(false);
-                          setBuyingPowerForm('');
-                        }}
-                      >
-                        Cancel
-                      </button>
-                    </div>
                   </div>
                 ) : (
                   <div className="buying-power-display">
@@ -1672,6 +1657,24 @@ const Dashboard = () => {
                     </Link>
                   </div>
                 </div>
+
+                {editingBuyingPower && (
+                  <div className="buying-power-edit-actions">
+                    <button type="button" className="btn btn-primary" onClick={handleSaveBuyingPower}>
+                      Save changes
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-outline"
+                      onClick={() => {
+                        setEditingBuyingPower(false);
+                        setBuyingPowerForm('');
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )}
