@@ -714,7 +714,8 @@ const Dashboard = () => {
       const url = await uploadFile(file, path);
       const docs = { ...(purchaseProfile?.verificationDocuments || {}), [field]: url };
       const amounts = { ...(purchaseProfile?.verificationDocumentAmounts || {}) };
-      if (amountEligible.includes(field) && file.type === 'application/pdf') {
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    if (amountEligible.includes(field) && isPdf) {
         const extracted = await extractPdfAmount(file);
         if (extracted != null) {
           amounts[field] = extracted;
