@@ -5,7 +5,6 @@ import { updateUserProfile, updateUserPassword, logout } from '../services/authS
 import { getPurchaseProfile, setPurchaseProfile } from '../services/profileService';
 import { uploadFile } from '../services/storageService';
 import DragDropFileInput from '../components/DragDropFileInput';
-import { extractDocumentData } from '../utils/documentExtraction';
 import './Profile.css';
 
 const Profile = () => {
@@ -173,6 +172,7 @@ const Profile = () => {
       let extractedName = null;
       let extractedDob = null;
       try {
+        const { extractDocumentData } = await import('../utils/documentExtraction');
         const result = await extractDocumentData({ url, docType: 'governmentId' });
         extractedName = result?.extractedName || null;
         extractedDob = result?.extractedDob || null;

@@ -19,7 +19,6 @@ import CounterOfferModal from '../components/CounterOfferModal';
 import ViewOfferModal from '../components/ViewOfferModal';
 import DragDropFileInput from '../components/DragDropFileInput';
 import AddressAutocomplete from '../components/AddressAutocomplete';
-import { extractDocumentData } from '../utils/documentExtraction';
 import './Dashboard.css';
 
 function getExpiryMs(offer) {
@@ -724,6 +723,7 @@ const Dashboard = () => {
       const amounts = { ...(purchaseProfile?.verificationDocumentAmounts || {}) };
       if (amountEligible.includes(field)) {
         try {
+          const { extractDocumentData } = await import('../utils/documentExtraction');
           const result = await extractDocumentData({ url, docType: field });
           if (result?.amount != null) {
             amounts[field] = result.amount;
