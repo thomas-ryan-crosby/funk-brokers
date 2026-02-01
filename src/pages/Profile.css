@@ -24,6 +24,10 @@
    margin: 0 0 24px 0;
    color: var(--color-text-secondary, #cbd5e1);
 }
+
+.profile-header-actions {
+  margin-top: 12px;
+}
  
 .profile-section {
    padding: 24px 0;
@@ -170,32 +174,6 @@
   margin-top: 16px;
   display: flex;
   gap: 10px;
-  flex-wrap: wrap;
-}
-
-.profile-funding-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.profile-funding-label {
-  margin: 0 0 4px 0;
-  color: var(--color-text-secondary, #cbd5e1);
-  font-size: 13px;
-}
-
-.profile-funding-value {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--color-text-primary, #f8fafc);
-}
-
-.profile-funding-actions {
-  display: flex;
-  gap: 8px;
   flex-wrap: wrap;
 }
  

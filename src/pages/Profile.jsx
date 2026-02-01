@@ -14,6 +14,7 @@ const Profile = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [saved, setSaved] = useState(false);
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [form, setForm] = useState({
     name: '',
     dob: '',
@@ -28,8 +29,7 @@ const Profile = () => {
   const [passwordSaved, setPasswordSaved] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [showBankLinkModal, setShowBankLinkModal] = useState(false);
-  const [editingFunding, setEditingFunding] = useState(false);
-  const [fundingForm, setFundingForm] = useState('');
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [governmentIdUploading, setGovernmentIdUploading] = useState(false);
   const [governmentIdError, setGovernmentIdError] = useState('');
 
@@ -78,12 +78,24 @@ const Profile = () => {
       await refreshUserProfile?.(user.uid);
       setSaved(true);
       window.setTimeout(() => setSaved(false), 2500);
+      setIsEditingProfile(false);
     } catch (err) {
       console.error('Error updating profile:', err);
       setError('Failed to update profile. Please try again.');
     } finally {
       setSaving(false);
     }
+  };
+
+  const resetProfileForm = () => {
+    setForm({
+      name: userProfile?.name || user?.displayName || '',
+      dob: userProfile?.dob || '',
+      phone: userProfile?.phone || '',
+      publicUsername: userProfile?.publicUsername || '',
+      anonymousProfile: userProfile?.anonymousProfile === true,
+      bankName: userProfile?.bankName || '',
+    });
   };
 
   const handleChangePassword = async () => {
@@ -207,6 +219,13 @@ const Profile = () => {
         <div className="profile-header">
           <h1>Profile</h1>
           <p>Manage how you appear to others and keep your account secure.</p>
+          <div className="profile-header-actions">
+            {!isEditingProfile && (
+              <button type="button" className="btn btn-outline" onClick={() => setIsEditingProfile(true)}>
+                Edit profile
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="profile-section">
@@ -221,6 +240,7 @@ const Profile = () => {
                 value={form.name}
                 onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
                 placeholder="Your name"
+                disabled={!isEditingProfile}
               />
             </label>
             <label className="profile-field">
@@ -229,6 +249,7 @@ const Profile = () => {
                 type="date"
                 value={form.dob}
                 onChange={(e) => setForm((prev) => ({ ...prev, dob: e.target.value }))}
+                disabled={!isEditingProfile}
               />
             </label>
             <label className="profile-field">
@@ -238,6 +259,7 @@ const Profile = () => {
                 value={form.phone}
                 onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))}
                 placeholder="(555) 123-4567"
+                disabled={!isEditingProfile}
               />
             </label>
             <label className="profile-field">
@@ -254,6 +276,7 @@ const Profile = () => {
                   checked={form.anonymousProfile}
                   onChange={(e) => setForm((prev) => ({ ...prev, anonymousProfile: e.target.checked }))}
                   aria-label="Make my profile anonymous"
+                  disabled={!isEditingProfile}
                 />
                 <span className="toggle-switch__track" aria-hidden />
               </label>
@@ -267,6 +290,7 @@ const Profile = () => {
               value={form.publicUsername}
               onChange={(e) => setForm((prev) => ({ ...prev, publicUsername: e.target.value }))}
               placeholder="Shown to other users"
+              disabled={!isEditingProfile}
             />
           </label>
         </div>
@@ -274,81 +298,28 @@ const Profile = () => {
         <div className="profile-section">
           <h2>Funding account</h2>
           <p className="profile-footnote">Add your bank name now. Bank linking is coming soon.</p>
-          {editingFunding ? (
-            <>
-              <div className="profile-grid">
-                <label className="profile-field">
-                  <span>Bank name</span>
-                  <input
-                    type="text"
-                    value={fundingForm}
-                    onChange={(e) => setFundingForm(e.target.value)}
-                    placeholder="e.g. Chase, Bank of America"
-                  />
-                </label>
-              </div>
-              <div className="profile-actions profile-actions--funding">
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={async () => {
-                    if (!user?.uid) return;
-                    setSaving(true);
-                    try {
-                      const bankName = fundingForm.trim() || null;
-                      await updateUserProfile(user.uid, { bankName });
-                      await refreshUserProfile?.(user.uid);
-                      setForm((prev) => ({ ...prev, bankName: bankName || '' }));
-                      setEditingFunding(false);
-                      setFundingForm('');
-                    } catch (err) {
-                      console.error('Error updating funding account:', err);
-                      setError('Failed to update funding account. Please try again.');
-                    } finally {
-                      setSaving(false);
-                    }
-                  }}
-                  disabled={saving}
-                >
-                  {saving ? 'Saving...' : 'Save funding account'}
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-outline"
-                  onClick={() => {
-                    setEditingFunding(false);
-                    setFundingForm('');
-                  }}
-                >
-                  Cancel
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="profile-funding-row">
-                <div>
-                  <p className="profile-funding-label">Bank name</p>
-                  <p className="profile-funding-value">{form.bankName || 'Not linked yet'}</p>
-                </div>
-                <div className="profile-funding-actions">
-                  <button
-                    type="button"
-                    className="btn btn-outline"
-                    onClick={() => {
-                      setEditingFunding(true);
-                      setFundingForm(form.bankName);
-                    }}
-                  >
-                    Edit
-                  </button>
-                  <button type="button" className="btn btn-outline" onClick={() => setShowBankLinkModal(true)}>
-                    Link bank account
-                  </button>
-                </div>
-              </div>
-            </>
-          )}
+          <div className="profile-grid">
+            <label className="profile-field">
+              <span>Bank name</span>
+              <input
+                type="text"
+                value={form.bankName}
+                onChange={(e) => setForm((prev) => ({ ...prev, bankName: e.target.value }))}
+                placeholder="e.g. Chase, Bank of America"
+                disabled={!isEditingProfile}
+              />
+            </label>
+          </div>
+          <div className="profile-actions profile-actions--funding">
+            <button
+              type="button"
+              className="btn btn-outline"
+              onClick={() => setShowBankLinkModal(true)}
+              disabled={!isEditingProfile}
+            >
+              Link bank account
+            </button>
+          </div>
         </div>
 
         <div className="profile-section">
@@ -386,7 +357,7 @@ const Profile = () => {
               <DragDropFileInput
                 accept=".pdf,.jpg,.jpeg,.png"
                 onChange={(f) => { if (f) handleGovernmentIdUpload(f); }}
-                disabled={governmentIdUploading}
+                disabled={governmentIdUploading || !isEditingProfile}
                 uploading={governmentIdUploading}
                 placeholder={userProfile?.governmentIdUrl ? 'Drop to replace' : 'Drop or click to upload'}
                 className="profile-id-dropzone"
@@ -397,9 +368,16 @@ const Profile = () => {
 
         <div className="profile-section">
           <div className="profile-actions">
-            <button type="button" className="btn btn-primary" onClick={handleSaveProfile} disabled={saving}>
-              {saving ? 'Saving...' : 'Save profile changes'}
-            </button>
+            {isEditingProfile && (
+              <>
+                <button type="button" className="btn btn-outline" onClick={() => { resetProfileForm(); setIsEditingProfile(false); }}>
+                  Cancel
+                </button>
+                <button type="button" className="btn btn-primary" onClick={handleSaveProfile} disabled={saving}>
+                  {saving ? 'Saving...' : 'Save changes'}
+                </button>
+              </>
+            )}
           </div>
         </div>
 
