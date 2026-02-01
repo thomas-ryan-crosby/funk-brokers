@@ -79,6 +79,16 @@ export const extractGovernmentIdInfo = async (file) => {
     const text = isPdf ? await getPdfText(file) : await getImageText(file);
     const extractedName = parseName(text);
     const extractedDob = parseDob(text);
+
+    const candidates = [
+      { label: 'name', value: extractedName, method: extractedName ? 'pattern' : 'none' },
+      { label: 'dob', value: extractedDob, method: extractedDob ? 'pattern' : 'none' },
+    ];
+
+    console.groupCollapsed('[id-ocr] extraction results');
+    console.table(candidates);
+    console.groupEnd();
+
     return {
       extractedName,
       extractedDob,
