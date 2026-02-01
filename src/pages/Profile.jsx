@@ -23,6 +23,8 @@ const Profile = () => {
   const [passwordSaved, setPasswordSaved] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [showBankLinkModal, setShowBankLinkModal] = useState(false);
+  const [editingFunding, setEditingFunding] = useState(false);
+  const [fundingForm, setFundingForm] = useState('');
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -189,22 +191,81 @@ const Profile = () => {
         <div className="profile-section">
           <h2>Funding account</h2>
           <p className="profile-footnote">Add your bank name now. Bank linking is coming soon.</p>
-          <div className="profile-grid">
-            <label className="profile-field">
-              <span>Bank name</span>
-              <input
-                type="text"
-                value={form.bankName}
-                onChange={(e) => setForm((prev) => ({ ...prev, bankName: e.target.value }))}
-                placeholder="e.g. Chase, Bank of America"
-              />
-            </label>
-          </div>
-          <div className="profile-actions">
-            <button type="button" className="btn btn-outline" onClick={() => setShowBankLinkModal(true)}>
-              Link bank account
-            </button>
-          </div>
+          {editingFunding ? (
+            <>
+              <div className="profile-grid">
+                <label className="profile-field">
+                  <span>Bank name</span>
+                  <input
+                    type="text"
+                    value={fundingForm}
+                    onChange={(e) => setFundingForm(e.target.value)}
+                    placeholder="e.g. Chase, Bank of America"
+                  />
+                </label>
+              </div>
+              <div className="profile-actions profile-actions--funding">
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={async () => {
+                    if (!user?.uid) return;
+                    setSaving(true);
+                    try {
+                      const bankName = fundingForm.trim() || null;
+                      await updateUserProfile(user.uid, { bankName });
+                      await refreshUserProfile?.(user.uid);
+                      setForm((prev) => ({ ...prev, bankName: bankName || '' }));
+                      setEditingFunding(false);
+                      setFundingForm('');
+                    } catch (err) {
+                      console.error('Error updating funding account:', err);
+                      setError('Failed to update funding account. Please try again.');
+                    } finally {
+                      setSaving(false);
+                    }
+                  }}
+                  disabled={saving}
+                >
+                  {saving ? 'Saving...' : 'Save funding account'}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={() => {
+                    setEditingFunding(false);
+                    setFundingForm('');
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="profile-funding-row">
+                <div>
+                  <p className="profile-funding-label">Bank name</p>
+                  <p className="profile-funding-value">{form.bankName || 'Not linked yet'}</p>
+                </div>
+                <div className="profile-funding-actions">
+                  <button
+                    type="button"
+                    className="btn btn-outline"
+                    onClick={() => {
+                      setEditingFunding(true);
+                      setFundingForm(form.bankName);
+                    }}
+                  >
+                    Edit
+                  </button>
+                  <button type="button" className="btn btn-outline" onClick={() => setShowBankLinkModal(true)}>
+                    Link bank account
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         <div className="profile-section">

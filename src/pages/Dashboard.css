@@ -1048,8 +1048,20 @@
 .buying-power-funding {
   margin-top: 16px;
   display: flex;
-  flex-direction: column;
-  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.buying-power-funding-name {
+  margin: 4px 0 0 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-primary, #f8fafc);
+}
+
+.buying-power-funding-actions .btn {
+  width: auto;
 }
 
 .doc-row {

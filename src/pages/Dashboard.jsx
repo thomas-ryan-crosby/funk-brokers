@@ -1660,10 +1660,17 @@ const Dashboard = () => {
                 </div>
 
                 <div className="buying-power-funding">
-                  <p className="form-hint">Want to link a funding account?</p>
-                  <Link to="/profile" className="btn btn-outline btn-small">
-                    Link funding account
-                  </Link>
+                  <div>
+                    <p className="form-hint">Funding account</p>
+                    <p className="buying-power-funding-name">
+                      {userProfile?.bankName || 'Not linked yet'}
+                    </p>
+                  </div>
+                  <div className="buying-power-funding-actions">
+                    <Link to="/profile" className="btn btn-outline btn-small">
+                      {userProfile?.bankName ? 'Edit funding account' : 'Link funding account'}
+                    </Link>
+                  </div>
                 </div>
               </div>
             </div>
