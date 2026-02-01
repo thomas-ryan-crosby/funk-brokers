@@ -646,12 +646,6 @@ const Dashboard = () => {
     purchaseProfile?.verificationDocumentAmounts || {}
   );
 
-  const overallVerificationStatus = (() => {
-    if (buyingPowerValidation.status === 'validated' && isGovernmentIdVerified) return 'verified';
-    if (buyingPowerValidation.status === 'not_approved') return 'not_approved';
-    return 'pending';
-  })();
-
   const normalizeDate = (value) => {
     if (!value) return null;
     const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -1643,17 +1637,6 @@ const Dashboard = () => {
               <div className="section-header">
                 <h2>Buying Power</h2>
                 <p className="form-hint">Your verified buying power and the documents that support it. You can update these at any time.</p>
-              </div>
-
-              <div className="buying-power-overall">
-                <span>Overall verification</span>
-                <span className={`buying-power-overall-pill ${overallVerificationStatus}`}>
-                  {overallVerificationStatus === 'verified'
-                    ? 'Verified'
-                    : overallVerificationStatus === 'not_approved'
-                      ? 'Not approved'
-                      : 'Pending'}
-                </span>
               </div>
 
               <div className="buying-power-card">

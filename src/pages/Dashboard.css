@@ -1076,35 +1076,6 @@
   margin: 0 0 12px 0;
 }
 
-.buying-power-overall {
-  margin-bottom: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  color: var(--color-text-secondary, #cbd5e1);
-  font-size: 14px;
-}
-
-.buying-power-overall-pill {
-  padding: 4px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 600;
-  background: rgba(148, 163, 184, 0.15);
-  color: var(--color-text-secondary, #cbd5e1);
-}
-
-.buying-power-overall-pill.verified {
-  background: rgba(16, 185, 129, 0.2);
-  color: #a7f3d0;
-}
-
-.buying-power-overall-pill.not_approved {
-  background: rgba(220, 38, 38, 0.2);
-  color: #fecaca;
-}
-
 .buying-power-id-status {
   margin-top: 16px;
   padding-top: 12px;
