@@ -18,7 +18,8 @@ const SubmitOffer = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
 
-  const [step, setStep] = useState('attention'); // 'attention' | 'disclosures' | 'form' | 'review'
+  const [step, setStep] = useState('attention'); // 'attention' | 'unlisted-ack' | 'disclosures' | 'form' | 'review'
+  const [unlistedAcknowledged, setUnlistedAcknowledged] = useState(false);
   const [disclosureAcknowledged, setDisclosureAcknowledged] = useState(false);
   const [signatureName, setSignatureName] = useState('');
   const [offerData, setOfferData] = useState({
@@ -247,13 +248,13 @@ const SubmitOffer = () => {
     );
   }
 
-  if (error && !property) {
+  if (error && (!property || !verificationData)) {
     return (
       <div className="submit-offer-page">
         <div className="error-state">
           <p>{error}</p>
-          <button onClick={() => navigate('/browse')} className="btn btn-primary">
-            Back to Properties
+          <button onClick={() => navigate(property ? `/property/${property.id}` : '/browse')} className="btn btn-primary">
+            {property ? 'Back to Property' : 'Back to Properties'}
           </button>
         </div>
       </div>
@@ -318,8 +319,43 @@ const SubmitOffer = () => {
               <li>Confirm wiring instructions independently; beware of wire fraud.</li>
             </ul>
             <p className="offer-attention-text">Consult an attorney, inspector, or other professional as needed. Verify anything important to you.</p>
-            <button type="button" className="btn-primary" onClick={() => setStep('disclosures')}>
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => setStep(property.availableForSale === false && property.acceptingOffers === true ? 'unlisted-ack' : 'disclosures')}
+            >
               I Understand — Continue
+            </button>
+          </div>
+        )}
+
+        {step === 'unlisted-ack' && (
+          <div className="offer-unlisted-ack">
+            <h2 className="offer-unlisted-ack-title">This property is not formally listed</h2>
+            <p className="offer-unlisted-ack-intro">
+              The seller is open to offers but has not completed a full listing. That means willingness to sell, responsiveness, and disclosures may not be ready at this point.
+            </p>
+            <p className="offer-unlisted-ack-reassure">
+              That is not inherently a problem. If you are interested, it is very simple for the seller to get this in place. You can submit your offer and they can respond when ready.
+            </p>
+            <label className="offer-unlisted-ack-checkbox">
+              <input
+                type="checkbox"
+                checked={unlistedAcknowledged}
+                onChange={(e) => setUnlistedAcknowledged(e.target.checked)}
+                aria-describedby="offer-unlisted-ack-desc"
+              />
+              <span id="offer-unlisted-ack-desc">
+                I acknowledge that this property is not formally listed. Willingness to sell, responsiveness, and disclosures may not be ready at this point. I understand the seller can get these in place if we move forward.
+              </span>
+            </label>
+            <button
+              type="button"
+              className="btn-primary"
+              disabled={!unlistedAcknowledged}
+              onClick={() => setStep('disclosures')}
+            >
+              Continue to Disclosures
             </button>
           </div>
         )}

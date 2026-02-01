@@ -61,6 +61,7 @@ export const claimProperty = async (parcel, sellerId) => {
     features: [],
     status: 'not_listed',
     availableForSale: false,
+    acceptingOffers: false,
     acceptingCommunications: true,
     archived: false,
     createdAt: now,

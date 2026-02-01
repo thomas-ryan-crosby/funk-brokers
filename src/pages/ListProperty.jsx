@@ -299,6 +299,7 @@ const ListProperty = () => {
         sellerId: user?.uid || '',
         sellerName: userProfile?.name || user?.displayName || '',
         sellerEmail: user?.email || '',
+        acceptingOffers: false,
         acceptingCommunications: true,
       };
       if (typeof formData.latitude === 'number' && !Number.isNaN(formData.latitude) && typeof formData.longitude === 'number' && !Number.isNaN(formData.longitude)) {

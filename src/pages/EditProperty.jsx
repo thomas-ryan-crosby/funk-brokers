@@ -320,6 +320,7 @@ const EditProperty = () => {
         description: (formData.description || '').trim(),
         photos,
         ...docUrls,
+        acceptingOffers: !!formData.acceptingOffers,
         acceptingCommunications: !!formData.acceptingCommunications,
       };
       if (typeof formData.latitude === 'number' && !Number.isNaN(formData.latitude) && typeof formData.longitude === 'number' && !Number.isNaN(formData.longitude)) {
@@ -668,6 +669,21 @@ const EditProperty = () => {
           {/* Additional sections for non-tier-advancement editing */}
           {!isTierAdvancement && (
             <>
+              <div className="form-group">
+                <div className="toggle-row">
+                  <label className="toggle-row__label">Accepting offers (even when not listed)</label>
+                  <label className="toggle-switch">
+                    <input
+                      type="checkbox"
+                      checked={!!formData.acceptingOffers}
+                      onChange={(e) => setFormData((prev) => prev ? { ...prev, acceptingOffers: e.target.checked } : prev)}
+                      aria-label="Allow buyers to submit a PSA/offer even when not formally listed"
+                    />
+                    <span className="toggle-switch__track" aria-hidden />
+                  </label>
+                </div>
+                <p className="form-hint">When on, buyers can submit an offer to this property even if it is not formally listed for sale.</p>
+              </div>
               <div className="form-group">
                 <div className="toggle-row">
                   <label className="toggle-row__label">Accepting communications from buyers</label>

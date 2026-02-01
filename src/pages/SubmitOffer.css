@@ -84,6 +84,57 @@
   margin-bottom: 6px;
 }
 
+.offer-unlisted-ack {
+  padding: 32px 24px;
+  background: var(--color-bg-secondary, #0f172a);
+  border: 1px solid var(--color-border-light, rgba(148, 163, 184, 0.2));
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.offer-unlisted-ack-title {
+  margin: 0 0 16px 0;
+  font-size: 20px;
+  color: var(--color-text-primary, #f8fafc);
+}
+
+.offer-unlisted-ack-intro {
+  margin: 0 0 12px 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--color-text-secondary, #cbd5e1);
+}
+
+.offer-unlisted-ack-reassure {
+  margin: 0 0 20px 0;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--color-text-muted, #94a3b8);
+  font-style: italic;
+}
+
+.offer-unlisted-ack-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 24px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--color-text-secondary, #cbd5e1);
+  cursor: pointer;
+}
+
+.offer-unlisted-ack-checkbox input[type="checkbox"] {
+  margin-top: 3px;
+  flex-shrink: 0;
+  accent-color: #f472b6;
+}
+
+.offer-unlisted-ack .btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .offer-disclosures {
   padding: 32px 24px;
   background: var(--color-bg-secondary, #0f172a);

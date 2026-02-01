@@ -29,6 +29,7 @@ const PropertyDetail = () => {
   const [favoritesOpen, setFavoritesOpen] = useState(false);
   const [commsUpdating, setCommsUpdating] = useState(false);
   const [availableForSaleUpdating, setAvailableForSaleUpdating] = useState(false);
+  const [acceptingOffersUpdating, setAcceptingOffersUpdating] = useState(false);
   const [listingReadiness, setListingReadiness] = useState(0);
   const [checklistComplete, setChecklistComplete] = useState(false);
   const [pingOpen, setPingOpen] = useState(false);
@@ -264,6 +265,21 @@ const PropertyDetail = () => {
       alert('Failed to update. Please try again.');
     } finally {
       setAvailableForSaleUpdating(false);
+    }
+  };
+
+  const handleAcceptingOffersToggle = async () => {
+    if (!property || !isOwner || acceptingOffersUpdating) return;
+    const next = !(property.acceptingOffers === true);
+    setAcceptingOffersUpdating(true);
+    try {
+      await updateProperty(property.id, { acceptingOffers: next });
+      setProperty((p) => (p ? { ...p, acceptingOffers: next } : p));
+    } catch (err) {
+      console.error(err);
+      alert('Failed to update. Please try again.');
+    } finally {
+      setAcceptingOffersUpdating(false);
     }
   };
 
@@ -570,7 +586,7 @@ const PropertyDetail = () => {
                     >
                       Ping owner
                     </button>
-                    {property.availableForSale !== false ? (
+                    {(property.availableForSale !== false || property.acceptingOffers === true) ? (
                       <Link to={`/submit-offer/${property.id}`} className="btn btn-primary btn-large">
                         Submit Offer
                       </Link>
@@ -713,6 +729,30 @@ const PropertyDetail = () => {
                 ) : (
                   <span className="detail-value">
                     {property.availableForSale !== false ? 'Listed for sale' : 'Not currently for sale'}
+                  </span>
+                )}
+              </div>
+              <div className={`detail-row ${isOwner ? 'detail-row--comms' : ''}`}>
+                <span className="detail-label">Accepting offers</span>
+                {isOwner ? (
+                  <label className="comms-toggle-wrap">
+                    <span className="toggle-switch">
+                      <input
+                        type="checkbox"
+                        checked={property.acceptingOffers === true}
+                        onChange={handleAcceptingOffersToggle}
+                        disabled={acceptingOffersUpdating}
+                        aria-label="Allow buyers to submit a PSA/offer even when not formally listed"
+                      />
+                      <span className="toggle-switch__track" aria-hidden />
+                    </span>
+                    <span className={`comms-toggle-label detail-value--comms-${property.acceptingOffers === true ? 'accepting' : 'not-accepting'}`}>
+                      {property.acceptingOffers === true ? 'Yes' : 'No'}
+                    </span>
+                  </label>
+                ) : (
+                  <span className="detail-value">
+                    {property.acceptingOffers === true ? 'Yes — buyers can submit an offer' : 'No'}
                   </span>
                 )}
               </div>
