@@ -19,6 +19,7 @@ import CounterOfferModal from '../components/CounterOfferModal';
 import ViewOfferModal from '../components/ViewOfferModal';
 import DragDropFileInput from '../components/DragDropFileInput';
 import AddressAutocomplete from '../components/AddressAutocomplete';
+import { extractPdfAmount } from '../utils/pdfAmount';
 import './Dashboard.css';
 
 function getExpiryMs(offer) {
@@ -652,14 +653,31 @@ const Dashboard = () => {
       alert('File must be PDF, JPG, or PNG.');
       return;
     }
+    const amountEligible = ['proofOfFunds', 'preApprovalLetter', 'bankLetter'];
     setUploadingDoc(field);
     try {
       const ext = file.name.split('.').pop();
       const path = `buyer-verification/${user.uid}/${Date.now()}_${field}.${ext}`;
       const url = await uploadFile(file, path);
       const docs = { ...(purchaseProfile?.verificationDocuments || {}), [field]: url };
-      await setPurchaseProfile(user.uid, { verificationDocuments: docs });
-      setPurchaseProfileState((p) => (p ? { ...p, verificationDocuments: docs } : null));
+      const amounts = { ...(purchaseProfile?.verificationDocumentAmounts || {}) };
+      if (amountEligible.includes(field) && file.type === 'application/pdf') {
+        const extracted = await extractPdfAmount(file);
+        if (extracted != null) {
+          amounts[field] = extracted;
+        } else {
+          delete amounts[field];
+        }
+      }
+      const updates = { verificationDocuments: docs };
+      if (amountEligible.includes(field)) {
+        updates.verificationDocumentAmounts = amounts;
+      }
+      await setPurchaseProfile(user.uid, updates);
+      setPurchaseProfileState((p) => {
+        if (!p) return p;
+        return { ...p, verificationDocuments: docs, verificationDocumentAmounts: amounts };
+      });
     } catch (err) {
       console.error(err);
       alert('Failed to upload. Please try again.');
@@ -674,7 +692,9 @@ const Dashboard = () => {
     delete docs[key];
     const nextProfile = { ...purchaseProfile, verificationDocuments: docs };
     const stillVerified = meetsVerifiedBuyerCriteria(nextProfile);
-    const updates = { verificationDocuments: docs };
+    const amounts = { ...(purchaseProfile?.verificationDocumentAmounts || {}) };
+    delete amounts[key];
+    const updates = { verificationDocuments: docs, verificationDocumentAmounts: amounts };
     if (!stillVerified) {
       updates.buyerVerified = false;
       updates.buyerVerifiedAt = deleteField();
@@ -684,6 +704,7 @@ const Dashboard = () => {
       setPurchaseProfileState((p) => {
         if (!p) return p;
         const next = { ...p, verificationDocuments: docs };
+        next.verificationDocumentAmounts = amounts;
         if (!stillVerified) {
           next.buyerVerified = false;
           next.buyerVerifiedAt = null;
@@ -1595,10 +1616,14 @@ const Dashboard = () => {
                     { key: 'governmentId', label: 'Government ID' },
                   ].map(({ key, label }) => {
                     const url = purchaseProfile?.verificationDocuments?.[key];
+                    const amount = purchaseProfile?.verificationDocumentAmounts?.[key];
                     const isUploading = uploadingDoc === key;
                     return (
                       <div key={key} className="doc-row">
-                        <div className="doc-row-label">{label}</div>
+                        <div className="doc-row-label">
+                          {label}
+                          {amount != null && `: Amount - ${formatCurrency(amount)}`}
+                        </div>
                         <div className="doc-row-actions">
                           {url && (
                             <a href={url} target="_blank" rel="noopener noreferrer" className="doc-link">
