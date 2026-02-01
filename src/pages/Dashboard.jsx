@@ -1803,6 +1803,20 @@ const Dashboard = () => {
                               ))}
                             </div>
                           )}
+                          {post.imageUrl && (
+                            <div className="activity-item-media">
+                              <img src={post.imageUrl} alt="Post media" />
+                            </div>
+                          )}
+                          {post.pollOptions && post.pollOptions.length > 0 && (
+                            <div className="activity-item-poll">
+                              {post.pollOptions.map((opt, idx) => (
+                                <div key={`${post.id}-opt-${idx}`} className="activity-item-poll-option">
+                                  {opt}
+                                </div>
+                              ))}
+                            </div>
+                          )}
                           <div className="activity-item-actions">
                             <button type="button" onClick={() => toggleComments(post.id)}>
                               Comment
@@ -1878,6 +1892,20 @@ const Dashboard = () => {
                               ))}
                               {post.userTags?.map((tag) => (
                                 <span key={`${post.id}-user-${tag}`} className="activity-tag">@{tag}</span>
+                              ))}
+                            </div>
+                          )}
+                          {post.imageUrl && (
+                            <div className="activity-item-media">
+                              <img src={post.imageUrl} alt="Post media" />
+                            </div>
+                          )}
+                          {post.pollOptions && post.pollOptions.length > 0 && (
+                            <div className="activity-item-poll">
+                              {post.pollOptions.map((opt, idx) => (
+                                <div key={`${post.id}-opt-${idx}`} className="activity-item-poll-option">
+                                  {opt}
+                                </div>
                               ))}
                             </div>
                           )}
