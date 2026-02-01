@@ -1071,6 +1071,11 @@
   color: #a7f3d0;
 }
 
+.buying-power-id-pill.is-unverified {
+  background: rgba(220, 38, 38, 0.2);
+  color: #fecaca;
+}
+
 .buying-power-funding {
   margin-top: 16px;
   display: flex;

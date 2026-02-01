@@ -624,6 +624,29 @@ const Dashboard = () => {
       ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n)
       : '—';
 
+  const normalizeDate = (value) => {
+    if (!value) return null;
+    const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (isoMatch) return value;
+    const altMatch = value.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if (!altMatch) return null;
+    const month = altMatch[1].padStart(2, '0');
+    const day = altMatch[2].padStart(2, '0');
+    return `${altMatch[3]}-${month}-${day}`;
+  };
+
+  const normalizeName = (value) =>
+    (value || '').toLowerCase().replace(/[^a-z]/g, '');
+
+  const isGovernmentIdVerified = (() => {
+    const extractedName = normalizeName(userProfile?.governmentIdExtractedName);
+    const profileName = normalizeName(userProfile?.name || user?.displayName);
+    const extractedDob = normalizeDate(userProfile?.governmentIdExtractedDob);
+    const profileDob = normalizeDate(userProfile?.dob);
+    if (!extractedName || !extractedDob || !profileName || !profileDob) return false;
+    return extractedName === profileName && extractedDob === profileDob;
+  })();
+
   const handleSaveBuyingPower = async () => {
     const parsed = buyingPowerForm.trim() === '' ? null : parseFloat(buyingPowerForm.replace(/,/g, ''));
     if (buyingPowerForm.trim() !== '' && !Number.isFinite(parsed)) {
@@ -1645,8 +1668,8 @@ const Dashboard = () => {
 
                 <div className="buying-power-id-status">
                   <span>Government ID</span>
-                  <span className={`buying-power-id-pill ${userProfile?.governmentIdUrl ? 'is-verified' : ''}`}>
-                    {userProfile?.governmentIdUrl ? 'Verified' : 'Not verified'}
+                  <span className={`buying-power-id-pill ${isGovernmentIdVerified ? 'is-verified' : 'is-unverified'}`}>
+                    {isGovernmentIdVerified ? 'Verified' : 'Not verified'}
                   </span>
                 </div>
 
