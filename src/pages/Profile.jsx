@@ -177,7 +177,10 @@ const Profile = () => {
     setGovernmentIdUploading(true);
     setGovernmentIdError('');
     try {
-      const { extractedName, extractedDob } = await extractGovernmentIdInfo(file);
+      const { extractedName, extractedDob } = await extractGovernmentIdInfo(file, {
+        name: userProfile?.name || user?.displayName,
+        dob: userProfile?.dob,
+      });
       const ext = file.name.split('.').pop();
       const path = `government-ids/${user.uid}/${Date.now()}.${ext}`;
       const url = await uploadFile(file, path);
