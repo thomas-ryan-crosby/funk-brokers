@@ -345,6 +345,13 @@
   box-shadow: 0 0 0 3px rgba(236, 72, 153, 0.15);
 }
 
+.form-group input.form-readonly,
+.form-group input[readonly] {
+  background: var(--color-bg-dark, #0b1224);
+  cursor: default;
+  color: var(--color-text-muted, #94a3b8);
+}
+
 .form-group textarea {
   resize: vertical;
 }
