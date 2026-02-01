@@ -17,21 +17,37 @@ const parseDob = (text) => {
   if (!text) return null;
   const patterns = [
     /\b(?:dob|date of birth|birth)\b[:\s]*([0-9]{1,2}[\/\-][0-9]{1,2}[\/\-][0-9]{4})/i,
+    /\b(?:dob|date of birth|birth)\b[:\s]*([0-9]{1,2}[\/\-][0-9]{1,2}[\/\-][0-9]{2})/i,
     /\b([0-9]{4}[\/\-][0-9]{1,2}[\/\-][0-9]{1,2})\b/,
   ];
   for (const pattern of patterns) {
     const match = text.match(pattern);
-    if (match?.[1]) return match[1];
+    if (match?.[1]) {
+      const value = match[1];
+      const parts = value.split(/[\/\-]/);
+      if (parts.length === 3 && parts[2].length === 2) {
+        const year = parseInt(parts[2], 10);
+        const currentYear = new Date().getFullYear() % 100;
+        const century = year > currentYear ? 1900 : 2000;
+        return `${parts[0]}/${parts[1]}/${century + year}`;
+      }
+      return value;
+    }
   }
   return null;
 };
 
 const parseName = (text) => {
   if (!text) return null;
-  const match = text.match(/\b(?:name|full name)\b[:\s]*([A-Z][A-Z'\- ]{2,})/i);
-  if (match?.[1]) {
-    return toTitleCase(cleanSpaces(match[1]));
+  const labeled = text.match(/\b(?:name|full name)\b[:\s]*([A-Z][A-Z'\- ]{2,})/i);
+  if (labeled?.[1]) return toTitleCase(cleanSpaces(labeled[1]));
+
+  // Common ID format: "1 LAST" and "2 FIRST MIDDLE"
+  const idFormat = text.match(/\b1\s+([A-Z'\-]+)\s+2\s+([A-Z'\-]+(?:\s+[A-Z'\-]+)*)/i);
+  if (idFormat?.[1] && idFormat?.[2]) {
+    return toTitleCase(cleanSpaces(`${idFormat[2]} ${idFormat[1]}`));
   }
+
   return null;
 };
 
@@ -49,7 +65,11 @@ const getPdfText = async (file) => {
 };
 
 const getImageText = async (file) => {
-  const { data } = await Tesseract.recognize(file, 'eng');
+  const { data } = await Tesseract.recognize(file, 'eng', {
+    tessedit_pageseg_mode: 6,
+    tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789/ -',
+    preserve_interword_spaces: '1',
+  });
   return cleanSpaces(data?.text || '');
 };
 
