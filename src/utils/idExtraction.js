@@ -64,9 +64,39 @@ const getPdfText = async (file) => {
   return cleanSpaces(fullText);
 };
 
+const preprocessImage = (file, scale = 2) => new Promise((resolve, reject) => {
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = img.width * scale;
+    canvas.height = img.height * scale;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return reject(new Error('Canvas not supported'));
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imgData.data;
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      let v = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+      v = Math.min(255, Math.max(0, (v - 128) * 1.25 + 128));
+      data[i] = v;
+      data[i + 1] = v;
+      data[i + 2] = v;
+    }
+    ctx.putImageData(imgData, 0, 0);
+    resolve(canvas.toDataURL('image/png'));
+  };
+  img.onerror = reject;
+  img.src = URL.createObjectURL(file);
+});
+
 const getImageText = async (file) => {
-  const { data } = await Tesseract.recognize(file, 'eng', {
-    tessedit_pageseg_mode: 6,
+  const processed = await preprocessImage(file, 2);
+  const { data } = await Tesseract.recognize(processed, 'eng', {
+    tessedit_pageseg_mode: 4,
     tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789/ -',
     preserve_interword_spaces: '1',
   });
@@ -79,6 +109,10 @@ export const extractGovernmentIdInfo = async (file) => {
     const text = isPdf ? await getPdfText(file) : await getImageText(file);
     const extractedName = parseName(text);
     const extractedDob = parseDob(text);
+
+    console.groupCollapsed('[id-ocr] raw text');
+    console.log(text);
+    console.groupEnd();
 
     const candidates = [
       { label: 'name', value: extractedName, method: extractedName ? 'pattern' : 'none' },
