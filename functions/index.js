@@ -214,6 +214,20 @@ const resumeInquiry = async (apiKey, inquiryId) => {
   return payload?.meta?.['session-token'] || null;
 };
 
+const generateOneTimeLink = async (apiKey, inquiryId) => {
+  const response = await fetch(`${PERSONA_BASE}/inquiries/${inquiryId}/generate-one-time-link`, {
+    method: 'POST',
+    headers: personaHeaders(apiKey),
+    body: JSON.stringify({ meta: {} }),
+  });
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`Persona generate one-time link failed: ${response.status} ${body}`);
+  }
+  const payload = await response.json();
+  return payload?.meta?.['one-time-link'] || payload?.meta?.['one-time-link-short'] || null;
+};
+
 exports.createPersonaInquiry = functions.https.onCall(async (data, context) => {
   if (!context.auth?.uid) {
     throw new functions.https.HttpsError('unauthenticated', 'Authentication required.');
@@ -241,13 +255,15 @@ exports.createPersonaInquiry = functions.https.onCall(async (data, context) => {
       const status = existing?.attributes?.status || 'created';
       const inquiryId = existing?.id;
       const sessionToken = status === 'pending' ? await resumeInquiry(apiKey, inquiryId) : null;
-      return { inquiryId, status, sessionToken };
+      const hostedLink = await generateOneTimeLink(apiKey, inquiryId);
+      return { inquiryId, status, sessionToken, hostedLink };
     }
 
     const created = await createInquiry(apiKey, templateId, referenceId, fields);
     const inquiryId = created?.data?.id || null;
     const status = created?.data?.attributes?.status || 'created';
-    const hostedLink = created?.meta?.['one-time-link'] || created?.meta?.['one-time-link-short'] || null;
+    const hostedLink = created?.meta?.['one-time-link'] || created?.meta?.['one-time-link-short'] || null
+      || (inquiryId ? await generateOneTimeLink(apiKey, inquiryId) : null);
     return { inquiryId, status, sessionToken: null, hostedLink };
   } catch (error) {
     console.error('Persona inquiry error:', error);
