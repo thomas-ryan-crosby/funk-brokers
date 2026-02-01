@@ -5,7 +5,20 @@ const Pitch = () => {
     <div className="pitch-page">
       <div className="pitch-sheet">
         <header className="pitch-hero">
-          <p className="pitch-kicker">OpenTo</p>
+          <div className="pitch-brand">
+            <picture>
+              <source
+                srcSet={`${import.meta.env.BASE_URL}brand/opento-logo.webp`}
+                type="image/webp"
+              />
+              <img
+                className="pitch-logo"
+                src={`${import.meta.env.BASE_URL}brand/opento-logo.png`}
+                alt="OpenTo"
+              />
+            </picture>
+            <p className="pitch-kicker">OpenTo</p>
+          </div>
           <h1>A Radically Different Real Estate Platform</h1>
           <p className="pitch-subtitle">What We&apos;re Building</p>
           <p className="pitch-lead">

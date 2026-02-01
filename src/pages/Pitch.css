@@ -12,11 +12,25 @@
   border-radius: 18px;
   padding: 48px 56px;
   box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+  position: relative;
 }
 
 .pitch-hero h1 {
   font-size: clamp(2.25rem, 3.4vw, 3.25rem);
   margin-bottom: 10px;
+}
+
+.pitch-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.pitch-logo {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
 }
 
 .pitch-kicker {
@@ -25,7 +39,7 @@
   font-size: 11px;
   font-weight: 600;
   color: #ff3ea5;
-  margin-bottom: 12px;
+  margin: 0;
 }
 
 .pitch-subtitle {
@@ -57,8 +71,8 @@
 }
 
 .pitch-callout--accent {
-  border-color: #ffc1e2;
-  background: #fff7fb;
+  border-color: #d9c3ff;
+  background: linear-gradient(135deg, #fff7fb 0%, #f5f0ff 100%);
 }
 
 .pitch-callout h3 {
@@ -149,8 +163,19 @@
 
 .pitch-compare-highlight {
   border-left-color: #ff3ea5;
-  background: #fff2f9;
+  background: linear-gradient(90deg, #fff2f9 0%, #f5edff 100%);
   font-weight: 600;
+}
+
+.pitch-sheet::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  border-radius: 18px 18px 0 0;
+  background: linear-gradient(90deg, #ff3ea5 0%, #8b5cf6 100%);
 }
 
 .pitch-stats {
