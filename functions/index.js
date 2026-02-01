@@ -213,22 +213,8 @@ const parseName = (text) => {
   return null;
 };
 
-const getPdfParseFn = () => {
-  if (typeof pdfParse === 'function') return pdfParse;
-  if (typeof pdfParse?.default === 'function') return pdfParse.default;
-  if (typeof pdfParse?.pdf === 'function') return pdfParse.pdf;
-  try {
-    const legacy = require('pdf-parse/lib/pdf-parse');
-    if (typeof legacy === 'function') return legacy;
-    if (typeof legacy?.default === 'function') return legacy.default;
-  } catch (err) {
-    console.error('Failed to load pdf-parse legacy entry:', err);
-  }
-  throw new Error('pdf-parse is not callable');
-};
-
 const extractTextFromPdf = async (buffer) => {
-  const pdfParseFn = getPdfParseFn();
+  const pdfParseFn = pdfParse.default || pdfParse;
   const parsed = await pdfParseFn(buffer);
   return (parsed.text || '').replace(/\s+/g, ' ').trim();
 };
