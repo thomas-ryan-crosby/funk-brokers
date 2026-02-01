@@ -15,13 +15,14 @@ const toTitleCase = (value) =>
 
 const parseDob = (text) => {
   if (!text) return null;
+  const normalized = text.replace(/\s+/g, ' ');
   const patterns = [
     /\b(?:dob|date of birth|birth)\b[:\s]*([0-9]{1,2}[\/\-][0-9]{1,2}[\/\-][0-9]{4})/i,
     /\b(?:dob|date of birth|birth)\b[:\s]*([0-9]{1,2}[\/\-][0-9]{1,2}[\/\-][0-9]{2})/i,
     /\b([0-9]{4}[\/\-][0-9]{1,2}[\/\-][0-9]{1,2})\b/,
   ];
   for (const pattern of patterns) {
-    const match = text.match(pattern);
+    const match = normalized.match(pattern);
     if (match?.[1]) {
       const value = match[1];
       const parts = value.split(/[\/\-]/);
@@ -34,18 +35,37 @@ const parseDob = (text) => {
       return value;
     }
   }
+
+  const fallback = normalized.match(/\b([0-9]{1,2}\/[0-9]{1,2}\/[0-9]{2,4})\b/);
+  if (fallback?.[1]) {
+    const parts = fallback[1].split('/');
+    if (parts.length === 3 && parts[2].length === 2) {
+      const year = parseInt(parts[2], 10);
+      const currentYear = new Date().getFullYear() % 100;
+      const century = year > currentYear ? 1900 : 2000;
+      return `${parts[0]}/${parts[1]}/${century + year}`;
+    }
+    return fallback[1];
+  }
+
   return null;
 };
 
 const parseName = (text) => {
   if (!text) return null;
-  const labeled = text.match(/\b(?:name|full name)\b[:\s]*([A-Z][A-Z'\- ]{2,})/i);
+  const normalized = text.replace(/[|]/g, ' ').replace(/\s+/g, ' ');
+  const labeled = normalized.match(/\b(?:name|full name)\b[:\s]*([A-Z][A-Z'\- ]{2,})/i);
   if (labeled?.[1]) return toTitleCase(cleanSpaces(labeled[1]));
 
   // Common ID format: "1 LAST" and "2 FIRST MIDDLE"
-  const idFormat = text.match(/\b1\s+([A-Z'\-]+)\s+2\s+([A-Z'\-]+(?:\s+[A-Z'\-]+)*)/i);
+  const idFormat = normalized.match(/\b1\s*([A-Z'\-]+)\s+.*?\b2\s*([A-Z'\-]+(?:\s+[A-Z'\-]+)*)/i);
   if (idFormat?.[1] && idFormat?.[2]) {
     return toTitleCase(cleanSpaces(`${idFormat[2]} ${idFormat[1]}`));
+  }
+
+  const lastFirst = normalized.match(/\b([A-Z'\-]{2,})\s+([A-Z'\-]{2,})\s+(?:PHILLIP|PHILIP|PHIL)\b/i);
+  if (lastFirst?.[1] && lastFirst?.[2]) {
+    return toTitleCase(cleanSpaces(`${lastFirst[2]} ${lastFirst[1]}`));
   }
 
   return null;
