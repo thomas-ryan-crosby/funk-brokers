@@ -113,6 +113,8 @@ node scripts/clearAllData.js
 - All favorites
 - All pre-listing checklists
 - All listing progress
+- All posts (and each post’s comments subcollection)
+- All pings (ping-owner / inquiry records)
 
 **Note:** User profiles (`users` collection) are preserved and will NOT be deleted.
 

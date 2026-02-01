@@ -39,7 +39,7 @@ export const createPing = async ({
 };
 
 /**
- * Get all pings for a seller.
+ * Get all pings for a seller (incoming pings).
  * @param {string} sellerId
  * @returns {Promise<Array>}
  */
@@ -48,6 +48,28 @@ export const getPingsForSeller = async (sellerId) => {
   const q = query(
     collection(db, PINGS_COLLECTION),
     where('sellerId', '==', sellerId)
+  );
+  const snap = await getDocs(q);
+  const list = [];
+  snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
+  list.sort((a, b) => {
+    const aDate = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+    const bDate = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+    return bDate - aDate;
+  });
+  return list;
+};
+
+/**
+ * Get all pings sent by a user (outgoing pings).
+ * @param {string} senderId
+ * @returns {Promise<Array>}
+ */
+export const getPingsForSender = async (senderId) => {
+  if (!senderId) return [];
+  const q = query(
+    collection(db, PINGS_COLLECTION),
+    where('senderId', '==', senderId)
   );
   const snap = await getDocs(q);
   const list = [];

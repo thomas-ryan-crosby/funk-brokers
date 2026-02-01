@@ -49,6 +49,15 @@ This script will **permanently delete** all data from your Firebase Firestore da
 10. **`preListingChecklists`** - All pre-listing checklists
     - 7-step checklist data for each property
 
+11. **`listingProgress`** - Listing progress records per property
+
+12. **`posts`** - All community posts
+    - For each post, the script first deletes all documents in the **`comments`** subcollection (`posts/{postId}/comments`), then deletes the post document
+    - Does NOT delete actual files from Storage (e.g. post images)
+
+13. **`pings`** - All "ping owner" / inquiry records
+    - Buyer-to-seller interest pings
+
 ### Collections That Are NOT Deleted
 
 - **`users`** - User profiles are preserved
@@ -76,19 +85,19 @@ If you choose to delete Storage files, the script will delete:
 
 ### Prerequisites
 
-1. Ensure you have `firebase-admin` installed:
+1. From the **project root** (the folder that contains `package.json` and `scripts/`), ensure dependencies are installed:
    ```bash
-   cd functions
-   npm install firebase-admin
+   npm install
    ```
+   (The root `package.json` includes `firebase-admin`.)
 
-2. Ensure `firebase/serviceAccountKey.json` exists (copy from `serviceAccountKey.json.example` and fill in your credentials)
+2. Ensure `firebase/serviceAccountKey.json` exists (copy from `firebase/serviceAccountKey.json.example` and add your Firebase service account credentials).
 
 ### Running the Script
 
-1. **Review this documentation** to understand what will be deleted
+1. **Review this documentation** to understand what will be deleted.
 
-2. **Open the script** (`scripts/clearAllData.js`) and review the configuration at the top:
+2. **Open the script** (`scripts/clearAllData.js`) and review the configuration at the top if needed:
    ```javascript
    const CONFIG = {
      DELETE_STORAGE_FILES: false,  // Set to true to also delete Storage files
@@ -96,7 +105,11 @@ If you choose to delete Storage files, the script will delete:
    };
    ```
 
-3. **Run the script**:
+3. **From the project root**, run:
+   ```bash
+   npm run clear-data
+   ```
+   Or directly:
    ```bash
    node scripts/clearAllData.js
    ```
@@ -106,9 +119,8 @@ If you choose to delete Storage files, the script will delete:
 ### Safety Features
 
 - **Confirmation prompt** - Requires typing "DELETE ALL DATA" to proceed
-- **Dry-run mode** - Shows what would be deleted without actually deleting (first run)
 - **Progress logging** - Shows detailed progress for each collection
-- **Error handling** - Continues even if one collection fails
+- **Error handling** - Continues even if one collection fails; reports errors in summary
 - **Summary report** - Shows what was deleted at the end
 
 ## Example Output
@@ -163,5 +175,6 @@ If you encounter errors:
 
 ---
 
-**Last Updated:** 2026-01-28  
-**Script Version:** 1.0
+**Last Updated:** 2026-01-31  
+**Script Version:** 1.1  
+**PRD:** See `docs/CLEAR_DATA_PRD.md` for product requirements and maintenance notes.

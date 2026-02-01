@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { getMessagesForUser, createMessage } from '../services/messageService';
 import { getPropertiesBySeller } from '../services/propertyService';
 import { getFavoritesForProperty } from '../services/favoritesService';
-import { getPingsForSeller } from '../services/pingService';
+import { getPingsForSeller, getPingsForSender } from '../services/pingService';
 import './Messages.css';
 
 const formatDate = (v) => {
@@ -277,10 +277,14 @@ const Messages = () => {
     if (!user?.uid || pingsLoading) return;
     setPingsLoading(true);
     try {
-      const list = await getPingsForSeller(user.uid);
-      const items = (list || []).map((ping) => ({
+      const [incoming, outgoing] = await Promise.all([
+        getPingsForSeller(user.uid),
+        getPingsForSender(user.uid),
+      ]);
+      const incomingItems = (incoming || []).map((ping) => ({
         id: `ping_${ping.id}`,
         type: 'ping',
+        direction: 'incoming',
         propertyId: ping.propertyId,
         propertyAddress: ping.propertyAddress,
         createdAt: ping.createdAt,
@@ -288,6 +292,18 @@ const Messages = () => {
         label: pingLabel(ping.reasonType),
         note: ping.note || '',
       }));
+      const outgoingItems = (outgoing || []).map((ping) => ({
+        id: `ping_${ping.id}`,
+        type: 'ping',
+        direction: 'outgoing',
+        propertyId: ping.propertyId,
+        propertyAddress: ping.propertyAddress,
+        createdAt: ping.createdAt,
+        actorName: 'You',
+        label: `Sent: ${pingLabel(ping.reasonType).toLowerCase()}`,
+        note: ping.note || '',
+      }));
+      const items = [...incomingItems, ...outgoingItems];
       items.sort((a, b) => {
         const aDate = getMessageDate(a);
         const bDate = getMessageDate(b);
@@ -499,13 +515,15 @@ const Messages = () => {
                   <ul className="notifications-list">
                     {pings.map((n) => {
                       const isExpanded = expandedPingId === n.id;
+                      const isOutgoing = n.direction === 'outgoing';
                       return (
-                        <li key={n.id} className="notification-item">
+                        <li key={n.id} className={`notification-item ${isOutgoing ? 'notification-item--outgoing' : ''}`}>
                           <div className="notification-item-main">
                             <span className="notification-item-title">
                               {n.actorName} {n.label}
                             </span>
                             <span className="notification-item-tag notification-item-tag--ping">Ping</span>
+                            {isOutgoing && <span className="notification-item-tag notification-item-tag--outgoing">Outgoing</span>}
                             <span className="notification-item-date">{formatListDate(n.createdAt)}</span>
                           </div>
                           <div className="notification-item-context">

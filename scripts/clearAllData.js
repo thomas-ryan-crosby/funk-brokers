@@ -13,11 +13,11 @@ const readline = require('readline');
 
 // Configuration
 const CONFIG = {
-  DELETE_STORAGE_FILES: false,  // Set to true to also delete Storage files
+  DELETE_STORAGE_FILES: true,  // Set to true to also delete Storage files
   BATCH_SIZE: 500,               // Number of documents to delete per batch
 };
 
-// Collections to clear
+// Collections to clear (order does not affect referential integrity; users collection is preserved)
 const COLLECTIONS_TO_CLEAR = [
   'properties',
   'saleProfiles',
@@ -30,6 +30,8 @@ const COLLECTIONS_TO_CLEAR = [
   'favorites',
   'preListingChecklists',
   'listingProgress',
+  'posts',   // includes subcollection posts/{postId}/comments — deleted first
+  'pings',
   // Note: 'users' collection is NOT deleted - user accounts are preserved
 ];
 
@@ -54,52 +56,45 @@ try {
 }
 
 /**
- * Delete all documents from a collection
+ * Delete all documents from a collection (optionally in batches)
  */
 async function deleteCollection(collectionName) {
   console.log(`\n📁 Processing collection: ${collectionName}`);
-  
+
   try {
     const collectionRef = db.collection(collectionName);
     let deletedCount = 0;
-    let batchCount = 0;
-    
-    // Get all documents
+
     const snapshot = await collectionRef.get();
     const totalDocs = snapshot.size;
-    
+
     if (totalDocs === 0) {
       console.log(`   ✓ No documents found in ${collectionName}`);
       return { collection: collectionName, deleted: 0, errors: [] };
     }
-    
+
     console.log(`   Found ${totalDocs} document(s)`);
-    
-    // Delete in batches
+
     const batches = [];
     let currentBatch = db.batch();
     let batchDocCount = 0;
-    
+
     snapshot.forEach((doc) => {
       currentBatch.delete(doc.ref);
       batchDocCount++;
       deletedCount++;
-      
+
       if (batchDocCount >= CONFIG.BATCH_SIZE) {
         batches.push(currentBatch);
         currentBatch = db.batch();
         batchDocCount = 0;
-        batchCount++;
       }
     });
-    
-    // Add remaining batch
+
     if (batchDocCount > 0) {
       batches.push(currentBatch);
-      batchCount++;
     }
-    
-    // Execute batches
+
     console.log(`   Deleting ${batches.length} batch(es)...`);
     for (let i = 0; i < batches.length; i++) {
       await batches[i].commit();
@@ -107,8 +102,70 @@ async function deleteCollection(collectionName) {
       process.stdout.write(`   Progress: ${progress}% (${i + 1}/${batches.length} batches)\r`);
     }
     console.log(`   ✓ Deleted ${deletedCount} document(s) from ${collectionName}`);
-    
+
     return { collection: collectionName, deleted: deletedCount, errors: [] };
+  } catch (error) {
+    console.error(`   ✗ Error deleting ${collectionName}:`, error.message);
+    return { collection: collectionName, deleted: 0, errors: [error.message] };
+  }
+}
+
+/**
+ * Delete all posts and their comments subcollection (posts/{postId}/comments)
+ */
+async function deletePostsWithComments() {
+  const collectionName = 'posts';
+  console.log(`\n📁 Processing collection: ${collectionName} (with comments subcollection)`);
+
+  try {
+    const postsRef = db.collection(collectionName);
+    const postsSnap = await postsRef.get();
+    const totalPosts = postsSnap.size;
+
+    if (totalPosts === 0) {
+      console.log(`   ✓ No documents found in ${collectionName}`);
+      return { collection: collectionName, deleted: 0, errors: [] };
+    }
+
+    console.log(`   Found ${totalPosts} post(s)`);
+
+    let totalDeleted = 0;
+
+    for (const postDoc of postsSnap.docs) {
+      const postId = postDoc.id;
+      const commentsRef = postsRef.doc(postId).collection('comments');
+      const commentsSnap = await commentsRef.get();
+
+      if (commentsSnap.size > 0) {
+        const commentBatches = [];
+        let currentBatch = db.batch();
+        let batchDocCount = 0;
+
+        commentsSnap.forEach((commentDoc) => {
+          currentBatch.delete(commentDoc.ref);
+          batchDocCount++;
+          totalDeleted++;
+
+          if (batchDocCount >= CONFIG.BATCH_SIZE) {
+            commentBatches.push(currentBatch);
+            currentBatch = db.batch();
+            batchDocCount = 0;
+          }
+        });
+        if (batchDocCount > 0) {
+          commentBatches.push(currentBatch);
+        }
+        for (const batch of commentBatches) {
+          await batch.commit();
+        }
+      }
+
+      await postDoc.ref.delete();
+      totalDeleted++;
+    }
+
+    console.log(`   ✓ Deleted ${totalDeleted} document(s) from ${collectionName} (posts + comments)`);
+    return { collection: collectionName, deleted: totalDeleted, errors: [] };
   } catch (error) {
     console.error(`   ✗ Error deleting ${collectionName}:`, error.message);
     return { collection: collectionName, deleted: 0, errors: [error.message] };
@@ -217,9 +274,12 @@ async function main() {
     const results = [];
     const startTime = Date.now();
     
-    // Delete all collections
+    // Delete all collections (posts handled specially: comments subcollection first)
     for (const collectionName of COLLECTIONS_TO_CLEAR) {
-      const result = await deleteCollection(collectionName);
+      const result =
+        collectionName === 'posts'
+          ? await deletePostsWithComments()
+          : await deleteCollection(collectionName);
       results.push(result);
     }
     

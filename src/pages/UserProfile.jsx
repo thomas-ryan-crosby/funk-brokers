@@ -120,6 +120,11 @@ const UserProfile = () => {
 
   const displayName = getDisplayName(profile);
 
+  const isIdVerified = (() => {
+    const personaStatus = (profile?.governmentIdPersonaStatus || '').toLowerCase();
+    return personaStatus ? ['completed', 'approved'].includes(personaStatus) : false;
+  })();
+
   return (
     <div className="user-profile-page">
       <div className="user-profile-container">
@@ -127,7 +132,15 @@ const UserProfile = () => {
           <div className="user-profile-avatar">{displayName.charAt(0).toUpperCase()}</div>
           <div>
             <h1>{displayName}</h1>
-            <p className="user-profile-subtitle">Public profile overview</p>
+            <div className="user-profile-header-meta">
+              <p className="user-profile-subtitle">Public profile overview</p>
+              <span
+                className={`user-profile-verified-badge ${isIdVerified ? 'user-profile-verified-badge--verified' : 'user-profile-verified-badge--not-verified'}`}
+                aria-label={isIdVerified ? 'ID verified' : 'ID not verified'}
+              >
+                {isIdVerified ? 'Verified user' : 'Not verified user'}
+              </span>
+            </div>
           </div>
         </header>
 
