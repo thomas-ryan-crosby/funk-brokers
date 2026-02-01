@@ -1,7 +1,6 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const pdfParse = require('pdf-parse');
-const cors = require('cors')({ origin: true });
 
 admin.initializeApp();
 
@@ -242,82 +241,88 @@ const isPngBuffer = (buffer) => {
   return buffer.slice(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
 };
 
-exports.extractDocumentData = functions.https.onRequest((req, res) => {
-  cors(req, res, async () => {
-    if (req.method !== 'POST') {
-      res.status(405).json({ error: 'Method not allowed' });
-      return;
+exports.extractDocumentData = functions.https.onRequest(async (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
+  }
+
+  const { url, path, docType } = req.body || {};
+  if ((!url || typeof url !== 'string') && (!path || typeof path !== 'string')) {
+    res.status(400).json({ error: 'Missing document url or path' });
+    return;
+  }
+
+  try {
+    let buffer;
+    let contentType = '';
+    let urlLower = (url || '').toLowerCase();
+
+    if (path) {
+      try {
+        const bucket = admin.storage().bucket();
+        const file = bucket.file(path);
+        const [metadata] = await file.getMetadata();
+        contentType = metadata?.contentType || '';
+        const [downloaded] = await file.download();
+        buffer = downloaded;
+      } catch (err) {
+        console.error('Storage download failed, falling back to URL:', err);
+      }
     }
 
-    const { url, path, docType } = req.body || {};
-    if ((!url || typeof url !== 'string') && (!path || typeof path !== 'string')) {
-      res.status(400).json({ error: 'Missing document url or path' });
-      return;
+    if (!buffer) {
+      const response = await fetch(url);
+      if (!response.ok) {
+        res.status(502).json({ error: 'Failed to fetch document' });
+        return;
+      }
+      contentType = response.headers.get('content-type') || '';
+      urlLower = urlLower || url.toLowerCase();
+      buffer = Buffer.from(await response.arrayBuffer());
     }
 
-    try {
-      let buffer;
-      let contentType = '';
-      let urlLower = (url || '').toLowerCase();
-
-      if (path) {
-        try {
-          const bucket = admin.storage().bucket();
-          const file = bucket.file(path);
-          const [metadata] = await file.getMetadata();
-          contentType = metadata?.contentType || '';
-          const [downloaded] = await file.download();
-          buffer = downloaded;
-        } catch (err) {
-          console.error('Storage download failed, falling back to URL:', err);
-        }
+    let text = '';
+    if (contentType.includes('pdf') || urlLower.includes('.pdf') || isPdfBuffer(buffer)) {
+      text = await extractTextFromPdf(buffer);
+    } else if (
+      contentType.includes('image')
+      || /\.(png|jpe?g)$/i.test(urlLower)
+      || isJpegBuffer(buffer)
+      || isPngBuffer(buffer)
+    ) {
+      try {
+        text = await extractTextFromImage(buffer);
+      } catch (err) {
+        console.error('Image OCR failed:', err);
+        text = '';
       }
-
-      if (!buffer) {
-        const response = await fetch(url);
-        if (!response.ok) {
-          res.status(502).json({ error: 'Failed to fetch document' });
-          return;
-        }
-        contentType = response.headers.get('content-type') || '';
-        urlLower = urlLower || url.toLowerCase();
-        buffer = Buffer.from(await response.arrayBuffer());
-      }
-
-      let text = '';
-      if (contentType.includes('pdf') || urlLower.includes('.pdf') || isPdfBuffer(buffer)) {
-        text = await extractTextFromPdf(buffer);
-      } else if (
-        contentType.includes('image')
-        || /\.(png|jpe?g)$/i.test(urlLower)
-        || isJpegBuffer(buffer)
-        || isPngBuffer(buffer)
-      ) {
-        try {
-          text = await extractTextFromImage(buffer);
-        } catch (err) {
-          console.error('Image OCR failed:', err);
-          text = '';
-        }
-      }
-
-      const amountCandidates = [
-        ...parseCurrencyValues(text),
-        ...parseKeywordAmounts(text),
-      ];
-      const amount = amountCandidates.length ? Math.max(...amountCandidates) : null;
-
-      const extractedName = docType === 'governmentId' ? parseName(text) : null;
-      const extractedDob = docType === 'governmentId' ? parseDob(text) : null;
-
-      res.json({
-        amount,
-        extractedName,
-        extractedDob,
-      });
-    } catch (error) {
-      console.error('Extraction error:', error);
-      res.status(500).json({ error: 'Extraction failed' });
     }
-  });
+
+    const amountCandidates = [
+      ...parseCurrencyValues(text),
+      ...parseKeywordAmounts(text),
+    ];
+    const amount = amountCandidates.length ? Math.max(...amountCandidates) : null;
+
+    const extractedName = docType === 'governmentId' ? parseName(text) : null;
+    const extractedDob = docType === 'governmentId' ? parseDob(text) : null;
+
+    res.json({
+      amount,
+      extractedName,
+      extractedDob,
+    });
+  } catch (error) {
+    console.error('Extraction error:', error);
+    res.status(500).json({ error: 'Extraction failed' });
+  }
 });
