@@ -209,6 +209,21 @@ const extractTextFromImage = async (buffer) => {
   return (data?.text || '').replace(/\s+/g, ' ').trim();
 };
 
+const isPdfBuffer = (buffer) => {
+  if (!buffer || buffer.length < 4) return false;
+  return buffer.slice(0, 4).toString() === '%PDF';
+};
+
+const isJpegBuffer = (buffer) => {
+  if (!buffer || buffer.length < 3) return false;
+  return buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+};
+
+const isPngBuffer = (buffer) => {
+  if (!buffer || buffer.length < 8) return false;
+  return buffer.slice(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+};
+
 exports.extractDocumentData = functions.https.onRequest(async (req, res) => {
   res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -236,13 +251,24 @@ exports.extractDocumentData = functions.https.onRequest(async (req, res) => {
       return;
     }
     const contentType = response.headers.get('content-type') || '';
+    const urlLower = url.toLowerCase();
     const buffer = Buffer.from(await response.arrayBuffer());
 
     let text = '';
-    if (contentType.includes('pdf') || url.toLowerCase().includes('.pdf')) {
+    if (contentType.includes('pdf') || urlLower.includes('.pdf') || isPdfBuffer(buffer)) {
       text = await extractTextFromPdf(buffer);
-    } else if (contentType.includes('image') || /\.(png|jpe?g)$/i.test(url)) {
-      text = await extractTextFromImage(buffer);
+    } else if (
+      contentType.includes('image')
+      || /\.(png|jpe?g)$/i.test(urlLower)
+      || isJpegBuffer(buffer)
+      || isPngBuffer(buffer)
+    ) {
+      try {
+        text = await extractTextFromImage(buffer);
+      } catch (err) {
+        console.error('Image OCR failed:', err);
+        text = '';
+      }
     }
 
     const amountCandidates = [
