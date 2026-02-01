@@ -1086,9 +1086,6 @@
   color: var(--color-text-primary, #f8fafc);
 }
 
-.buying-power-funding-actions .btn {
-  width: auto;
-}
 
 .doc-row {
   display: flex;
