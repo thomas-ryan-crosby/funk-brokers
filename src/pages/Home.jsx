@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { loadGooglePlaces } from '../utils/loadGooglePlaces';
-import { getParcelsInViewport } from '../services/parcelService';
+import { resolveAddressToParcel } from '../services/parcelService';
 import { claimProperty, getAllProperties, searchProperties } from '../services/propertyService';
 import PropertyCard from '../components/PropertyCard';
 import PropertyMap from '../components/PropertyMap';
@@ -128,10 +128,10 @@ const Home = () => {
         new window.google.maps.LatLng(lat - delta, lng - delta),
         new window.google.maps.LatLng(lat + delta, lng + delta)
       );
-      const { parcels } = await getParcelsInViewport(bounds);
+      const { parcel } = await resolveAddressToParcel({ address: query, bounds });
       if (requestId !== unlistedRequestRef.current) return;
       const normalized = query.toLowerCase();
-      const match = (parcels || []).find((p) => (p.address || '').toLowerCase().includes(normalized)) || (parcels || [])[0];
+      const match = parcel && (parcel.address || '').toLowerCase().includes(normalized) ? parcel : parcel;
       setUnlistedParcel(match || fallbackUnlistedParcel(query));
     } catch (err) {
       console.error('Unlisted lookup failed:', err);

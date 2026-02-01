@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { loadGooglePlaces } from '../utils/loadGooglePlaces';
-import { getParcelsInViewport } from '../services/parcelService';
+import { getMapParcels } from '../services/parcelService';
 import { claimProperty } from '../services/propertyService';
 import UnlistedPropertyModal from './UnlistedPropertyModal';
 import './PropertyMap.css';
@@ -14,35 +14,16 @@ const DEFAULT_CENTER = { lat: 39.5, lng: -98.5 };
 const DEFAULT_ZOOM = 4;
 const DEDUP_DEG = 0.0001;
 
-const formatPrice = (n) =>
-  n != null && Number.isFinite(n)
-    ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n)
-    : '—';
-
-const formatLastSaleDate = (s) => {
-  if (!s || typeof s !== 'string') return '';
-  const m = s.match(/^(\d{4})-(\d{2})/);
-  if (m) {
-    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-    return `${months[parseInt(m[2], 10) - 1]} ${m[1]}`;
-  }
-  return String(s).slice(0, 10);
-};
-
-const formatLastSale = (date, price) => {
-  const d = date ? formatLastSaleDate(date) : '';
-  const p = price != null && Number.isFinite(price) ? formatPrice(price) : '';
-  if (!d && !p) return '—';
-  if (d && p) return `${d} · ${p}`;
-  return d || p;
-};
+const formatNumber = (value) =>
+  value != null && Number.isFinite(value) ? new Intl.NumberFormat('en-US').format(value) : '—';
 
 const unlistedTooltipContent = (p) => `
   <div class="property-map-unlisted-tooltip">
     <div class="property-map-unlisted-tooltip__address">${(p.address || 'Address unknown').replace(/</g, '&lt;')}</div>
     <div class="property-map-unlisted-tooltip__badge">Unlisted</div>
-    <div class="property-map-unlisted-tooltip__row">Funk Estimate: ${formatPrice(p.estimate)}</div>
-    <div class="property-map-unlisted-tooltip__row">Last sale: ${formatLastSale(p.lastSaleDate, p.lastSalePrice)}</div>
+    <div class="property-map-unlisted-tooltip__row">
+      ${formatNumber(p.beds)} bd · ${formatNumber(p.baths)} ba · ${formatNumber(p.squareFeet)} sqft
+    </div>
   </div>
 `;
 
@@ -150,6 +131,25 @@ const PropertyMap = ({ properties = [], onPropertiesInView }) => {
       map.setZoom(DEFAULT_ZOOM);
     }
 
+    const lastRequestRef = { current: 0 };
+    const lastMapStateRef = { current: null };
+    const debouncedRef = { current: null };
+    const lastFetchAtRef = { current: 0 };
+
+    const movedEnough = (prev, next) => {
+      if (!prev) return true;
+      const zoomChange = Math.abs((prev.zoom ?? 0) - (next.zoom ?? 0));
+      if (zoomChange >= 1) return true;
+      const toRadians = (deg) => (deg * Math.PI) / 180;
+      const earth = 6371000;
+      const dLat = toRadians(next.lat - prev.lat);
+      const dLng = toRadians(next.lng - prev.lng);
+      const a = Math.sin(dLat / 2) ** 2
+        + Math.cos(toRadians(prev.lat)) * Math.cos(toRadians(next.lat)) * Math.sin(dLng / 2) ** 2;
+      const distance = 2 * earth * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return distance > 350;
+    };
+
     const updatePropertiesInView = () => {
       if (typeof onPropertiesInView === 'function') {
         const b = map.getBounds();
@@ -166,9 +166,30 @@ const PropertyMap = ({ properties = [], onPropertiesInView }) => {
       }
       const b = map.getBounds();
       if (!b) return;
-      getParcelsInViewport(b)
-        .then(({ parcels }) => setUnlistedParcels(parcels || []))
-        .catch(() => setUnlistedParcels([]));
+      const center = map.getCenter();
+      const nextState = { lat: center.lat(), lng: center.lng(), zoom };
+      if (!movedEnough(lastMapStateRef.current, nextState)) {
+        return;
+      }
+      lastMapStateRef.current = nextState;
+      if (debouncedRef.current) {
+        window.clearTimeout(debouncedRef.current);
+      }
+      debouncedRef.current = window.setTimeout(() => {
+        if (Date.now() - lastFetchAtRef.current < 800) return;
+        lastFetchAtRef.current = Date.now();
+        const requestId = lastRequestRef.current + 1;
+        lastRequestRef.current = requestId;
+        getMapParcels({ bounds: b, zoom })
+          .then(({ parcels }) => {
+            if (requestId !== lastRequestRef.current) return;
+            setUnlistedParcels(parcels || []);
+          })
+          .catch(() => {
+            if (requestId !== lastRequestRef.current) return;
+            setUnlistedParcels([]);
+          });
+      }, 600);
     };
 
     const idleListener = map.addListener('idle', updatePropertiesInView);

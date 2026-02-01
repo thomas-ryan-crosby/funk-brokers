@@ -1,75 +1,18 @@
 const functions = require('firebase-functions');
 
-const ATTOM_BASE = 'https://api.gateway.attomdata.com/propertyapi/v1.0.0/allevents/snapshot';
+const {
+  getMapParcels,
+  resolveAddress,
+  getPropertySnapshot,
+} = require('./attomService');
 const PERSONA_BASE = 'https://api.withpersona.com/api/v1';
 const PERSONA_VERSION = '2025-10-27';
 
 /**
- * Compute radius in miles from bbox (n,s,e,w in degrees).
- * 69 miles per degree latitude; longitude scaled by cos(lat).
- * Clamped to 0.25–20 miles.
+ * GET/POST getMapParcels
+ * Query/body: n, s, e, w, zoom
  */
-function radiusFromBbox(n, s, e, w) {
-  const centerLat = (n + s) / 2;
-  const centerLng = (e + w) / 2;
-  const latDeg = n - s;
-  const lngDeg = Math.abs(e - w) * Math.cos((centerLat * Math.PI) / 180);
-  const radiusMiles = 69 * 0.5 * Math.max(latDeg, lngDeg);
-  return Math.max(0.25, Math.min(20, radiusMiles));
-}
-
-/**
- * Map ATTOM property to our parcel shape.
- */
-function mapAttomToParcel(p, index) {
-  const addr = p.address || {};
-  const parts = [
-    addr.line1 || addr.line2,
-    addr.locality,
-    addr.adminarea || addr.region,
-    addr.postal1 || addr.postalcode
-  ].filter(Boolean);
-  const address = parts.length > 0 ? parts.join(', ') : 'Address unknown';
-
-  const lat = p.location?.latitude ?? p.latitude;
-  const lng = p.location?.longitude ?? p.longitude;
-  if (lat == null || lng == null) return null;
-
-  const avm = p.avm?.amount ?? p.avm;
-  const estimate = avm?.value ?? avm?.amount ?? null;
-
-  const sale = p.sale ?? {};
-  const saleAmt = sale.amount?.saleAmt ?? sale.amount?.saleamt ?? sale.saleamt ?? sale.saleAmt ?? null;
-  const saleDate = sale.saleSearchDate ?? sale.salesearchdate ?? sale.saleTransDate ?? sale.saletransdate ?? null;
-
-  const rooms = p.building?.rooms ?? p.building ?? {};
-  const beds = rooms.beds ?? p.beds ?? null;
-  const baths = rooms.bathstotal ?? rooms.bathstotal ?? p.bathstotal ?? p.baths ?? null;
-  const size = p.building?.size ?? p.building ?? {};
-  const squareFeet = size.universalsize ?? size.buildingSize ?? size.buildingsize ?? p.squarefeet ?? null;
-
-  const attomId = p.identifier?.Id ?? p.identifier?.id ?? p.id ?? p.attomId ?? `p-${index}`;
-
-  return {
-    address,
-    latitude: Number(lat),
-    longitude: Number(lng),
-    estimate: estimate != null ? Number(estimate) : null,
-    lastSalePrice: saleAmt != null ? Number(saleAmt) : null,
-    lastSaleDate: saleDate != null ? String(saleDate) : null,
-    attomId: String(attomId),
-    beds: beds != null ? Number(beds) : null,
-    baths: baths != null ? Number(baths) : null,
-    squareFeet: squareFeet != null ? Number(squareFeet) : null
-  };
-}
-
-/**
- * GET/POST getParcelsInViewport
- * Query/body: n, s, e, w (degrees)
- * Calls ATTOM allevents/snapshot with center + radius; returns { parcels } with CORS.
- */
-const getParcelsInViewport = functions.https.onRequest(async (req, res) => {
+const getMapParcelsEndpoint = functions.https.onRequest(async (req, res) => {
   // CORS
   res.set('Access-Control-Allow-Origin', '*');
   res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -79,58 +22,102 @@ const getParcelsInViewport = functions.https.onRequest(async (req, res) => {
     return;
   }
 
-  let n, s, e, w;
+  let n, s, e, w, zoom;
   if (req.method === 'POST' && req.body && typeof req.body === 'object') {
-    n = req.body.n; s = req.body.s; e = req.body.e; w = req.body.w;
+    n = req.body.n; s = req.body.s; e = req.body.e; w = req.body.w; zoom = req.body.zoom;
   } else {
-    n = req.query.n; s = req.query.s; e = req.query.e; w = req.query.w;
+    n = req.query.n; s = req.query.s; e = req.query.e; w = req.query.w; zoom = req.query.zoom;
   }
-  n = parseFloat(n); s = parseFloat(s); e = parseFloat(e); w = parseFloat(w);
-  if (!Number.isFinite(n) || !Number.isFinite(s) || !Number.isFinite(e) || !Number.isFinite(w)) {
-    res.status(400).json({ error: 'Missing or invalid n,s,e,w' });
+  n = parseFloat(n); s = parseFloat(s); e = parseFloat(e); w = parseFloat(w); zoom = parseInt(zoom, 10);
+  if (!Number.isFinite(n) || !Number.isFinite(s) || !Number.isFinite(e) || !Number.isFinite(w) || !Number.isFinite(zoom)) {
+    res.status(400).json({ error: 'Missing or invalid n,s,e,w,zoom' });
     return;
   }
-
-  const apiKey = process.env.ATTOM_API_KEY || functions.config().attom?.api_key;
-  if (!apiKey) {
-    res.status(500).json({ error: 'ATTOM API key not configured' });
-    return;
-  }
-
-  const centerLat = (n + s) / 2;
-  const centerLng = (e + w) / 2;
-  const radius = radiusFromBbox(n, s, e, w);
-
-  // ATTOM radius is always in miles; radiusunit is not a valid parameter.
-  const url = `${ATTOM_BASE}?latitude=${centerLat}&longitude=${centerLng}&radius=${radius}`;
-  let data;
+  const requesterKey = req.headers['x-forwarded-for'] || req.ip || 'unknown';
   try {
-    const r = await fetch(url, {
-      headers: { Accept: 'application/json', APIKey: apiKey }
+    const result = await getMapParcels({
+      bounds: { n, s, e, w },
+      zoom,
+      requesterKey,
     });
-    if (!r.ok) {
-      const txt = await r.text();
-      console.error('ATTOM API error', r.status, txt);
-      res.status(502).json({ error: 'Upstream API error', details: txt.slice(0, 200) });
-      return;
-    }
-    data = await r.json();
+    res.json(result);
   } catch (err) {
-    console.error('ATTOM fetch error', err);
+    console.error('Map parcels error', err);
     res.status(502).json({ error: 'Upstream request failed' });
-    return;
   }
-
-  const list = data.property ?? data.properties ?? data ?? [];
-  const arr = Array.isArray(list) ? list : [list];
-  const parcels = arr
-    .map((p, i) => mapAttomToParcel(p, i))
-    .filter(Boolean);
-
-  res.json({ parcels });
 });
 
-exports.getParcelsInViewport = getParcelsInViewport;
+/**
+ * POST resolveAddress
+ * Body: { address, n, s, e, w }
+ */
+const resolveAddressEndpoint = functions.https.onRequest(async (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
+  }
+  const { address, n, s, e, w } = req.body || {};
+  if (!address) {
+    res.status(400).json({ error: 'Missing address' });
+    return;
+  }
+  const bounds = {
+    n: parseFloat(n),
+    s: parseFloat(s),
+    e: parseFloat(e),
+    w: parseFloat(w),
+  };
+  if (!Number.isFinite(bounds.n) || !Number.isFinite(bounds.s) || !Number.isFinite(bounds.e) || !Number.isFinite(bounds.w)) {
+    res.status(400).json({ error: 'Missing bounds' });
+    return;
+  }
+  try {
+    const result = await resolveAddress({ address, bounds });
+    res.json(result || { attomId: null, parcel: null });
+  } catch (err) {
+    console.error('Resolve address error', err);
+    res.status(502).json({ error: 'Upstream request failed' });
+  }
+});
+
+/**
+ * GET propertySnapshot
+ * Query: attomId, lat, lng
+ */
+const getPropertySnapshotEndpoint = functions.https.onRequest(async (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+  const attomId = req.query.attomId;
+  const latitude = parseFloat(req.query.lat);
+  const longitude = parseFloat(req.query.lng);
+  if (!attomId) {
+    res.status(400).json({ error: 'Missing attomId' });
+    return;
+  }
+  try {
+    const result = await getPropertySnapshot({ attomId, latitude, longitude });
+    res.json(result || { payload: null });
+  } catch (err) {
+    console.error('Property snapshot error', err);
+    res.status(502).json({ error: 'Upstream request failed' });
+  }
+});
+
+exports.getMapParcels = getMapParcelsEndpoint;
+exports.resolveAddress = resolveAddressEndpoint;
+exports.getPropertySnapshot = getPropertySnapshotEndpoint;
 
 const getPersonaConfig = (templateOverride) => {
   const apiKey = process.env.PERSONA_API_KEY || functions.config().persona?.api_key;

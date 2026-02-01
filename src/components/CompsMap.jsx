@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { loadGooglePlaces } from '../utils/loadGooglePlaces';
-import { getParcelsInViewport } from '../services/parcelService';
+import { getMapParcels } from '../services/parcelService';
 import './CompsMap.css';
 
 const SELECTED_COLOR = '#3b82f6';
@@ -8,10 +8,8 @@ const UNSELECTED_COLOR = '#64748b';
 const DEFAULT_CENTER = { lat: 39.5, lng: -98.5 };
 const DEFAULT_ZOOM = 15;
 
-const formatPrice = (n) =>
-  n != null && Number.isFinite(n)
-    ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n)
-    : '—';
+const formatNumber = (value) =>
+  value != null && Number.isFinite(value) ? new Intl.NumberFormat('en-US').format(value) : '—';
 
 const CompsMap = ({ center, onCompSelect, selectedComps = [] }) => {
   const mapRef = useRef(null);
@@ -51,12 +49,54 @@ const CompsMap = ({ center, onCompSelect, selectedComps = [] }) => {
     }
 
     // Load parcels in viewport
+    const lastRequestRef = { current: 0 };
+    const lastMapStateRef = { current: null };
+    const debouncedRef = { current: null };
+    const lastFetchAtRef = { current: 0 };
+
+    const movedEnough = (prev, next) => {
+      if (!prev) return true;
+      const zoomChange = Math.abs((prev.zoom ?? 0) - (next.zoom ?? 0));
+      if (zoomChange >= 1) return true;
+      const toRadians = (deg) => (deg * Math.PI) / 180;
+      const earth = 6371000;
+      const dLat = toRadians(next.lat - prev.lat);
+      const dLng = toRadians(next.lng - prev.lng);
+      const a = Math.sin(dLat / 2) ** 2
+        + Math.cos(toRadians(prev.lat)) * Math.cos(toRadians(next.lat)) * Math.sin(dLng / 2) ** 2;
+      const distance = 2 * earth * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return distance > 350;
+    };
+
     const updateParcels = () => {
       const bounds = map.getBounds();
       if (!bounds) return;
-      getParcelsInViewport(bounds)
-        .then(({ parcels: p }) => setParcels(p || []))
-        .catch(() => setParcels([]));
+      const zoom = map.getZoom();
+      if (zoom == null) return;
+      const center = map.getCenter();
+      const nextState = { lat: center.lat(), lng: center.lng(), zoom };
+      if (!movedEnough(lastMapStateRef.current, nextState)) {
+        return;
+      }
+      lastMapStateRef.current = nextState;
+      if (debouncedRef.current) {
+        window.clearTimeout(debouncedRef.current);
+      }
+      debouncedRef.current = window.setTimeout(() => {
+        if (Date.now() - lastFetchAtRef.current < 800) return;
+        lastFetchAtRef.current = Date.now();
+        const requestId = lastRequestRef.current + 1;
+        lastRequestRef.current = requestId;
+        getMapParcels({ bounds, zoom })
+          .then(({ parcels: p }) => {
+            if (requestId !== lastRequestRef.current) return;
+            setParcels(p || []);
+          })
+          .catch(() => {
+            if (requestId !== lastRequestRef.current) return;
+            setParcels([]);
+          });
+      }, 600);
     };
 
     const idleListener = map.addListener('idle', updateParcels);
@@ -124,8 +164,7 @@ const CompsMap = ({ center, onCompSelect, selectedComps = [] }) => {
         content: `
           <div class="comps-map-info">
             <strong>${parcel.address || 'Address unknown'}</strong>
-            ${parcel.estimate ? `<p>Estimate: ${formatPrice(parcel.estimate)}</p>` : ''}
-            ${parcel.lastSalePrice ? `<p>Last sale: ${formatPrice(parcel.lastSalePrice)}</p>` : ''}
+            <p>${formatNumber(parcel.beds)} bd · ${formatNumber(parcel.baths)} ba · ${formatNumber(parcel.squareFeet)} sqft</p>
             ${isSelected 
               ? '<p class="comps-map-info-selected">✓ Selected as comp</p>' 
               : `<button class="comps-map-add-btn" onclick="if(window.compsMapCallbacks && window.compsMapCallbacks['${callbackId}']) { window.compsMapCallbacks['${callbackId}'](); }">Add as Comp</button>`
