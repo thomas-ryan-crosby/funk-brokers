@@ -100,6 +100,40 @@ function defaultAgreement() {
   };
 }
 
+function defaultLoi() {
+  return {
+    loi_metadata: {
+      document_type: 'Letter of Intent',
+      binding_status: 'non_binding_except_specified_sections',
+      version: 'Nationwide LOI v1.0',
+      date: null,
+    },
+    parties: { seller_name: '', buyer_name: '' },
+    property: { street_address: '', city: '', state: '', zip: '' },
+    economic_terms: {
+      purchase_price: 0,
+      earnest_money: { amount: 0, due_upon_psa_execution: true },
+    },
+    timeline: { target_closing_days_after_psa: 0, due_diligence_days: 0 },
+    financing: { anticipated_financing: false, anticipated_all_cash: false },
+    condition_of_sale: {
+      anticipated_as_is_purchase: true,
+      subject_to_inspections: true,
+    },
+    assignment: { assignment_contemplated: false, affiliate_assignment_allowed: false },
+    exclusivity: { exclusive: false, exclusivity_period_days: 0 },
+    legal: {
+      non_binding: true,
+      binding_sections: ['governing_law', 'confidentiality', 'exclusivity_if_selected'],
+      governing_law: 'property_state',
+    },
+    acceptance: {
+      seller_signature: { signed: false, date: null },
+      buyer_signature: { signed: false, date: null },
+    },
+  };
+}
+
 function setNested(obj, path, value) {
   const parts = path.split('.');
   const next = JSON.parse(JSON.stringify(obj));
@@ -124,11 +158,13 @@ const SubmitOffer = () => {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
 
-  const [step, setStep] = useState('attention');
+  const [documentType, setDocumentType] = useState(null); // 'psa' | 'loi'
+  const [step, setStep] = useState('choose-type');
   const [unlistedAcknowledged, setUnlistedAcknowledged] = useState(false);
   const [disclosureAcknowledged, setDisclosureAcknowledged] = useState(false);
   const [signatureName, setSignatureName] = useState('');
   const [agreement, setAgreement] = useState(defaultAgreement);
+  const [loi, setLoi] = useState(defaultLoi);
 
   useEffect(() => {
     if (authLoading) return;
@@ -155,7 +191,6 @@ const SubmitOffer = () => {
         bankLetter: profile.verificationDocuments?.bankLetter,
         governmentId: profile.verificationDocuments?.governmentId,
         buyerInfo: profile.buyerInfo,
-        buyerVerified: profile.buyerVerified,
       } : {});
       const next = defaultAgreement();
       if (data) {
@@ -171,6 +206,18 @@ const SubmitOffer = () => {
       next.parties.buyer.legal_names = name ? [name.trim()].filter(Boolean) : [];
       next.parties.buyer.mailing_address = profile?.buyerInfo?.address || '';
       setAgreement(next);
+
+      const loiNext = defaultLoi();
+      if (data) {
+        loiNext.property.street_address = data.address || '';
+        loiNext.property.city = data.city || '';
+        loiNext.property.state = data.state || '';
+        loiNext.property.zip = data.zip || '';
+        loiNext.economic_terms.purchase_price = Number(data.price) || 0;
+        loiNext.economic_terms.earnest_money.amount = Number(data.price) ? Number(data.price) * 0.01 : 0;
+      }
+      loiNext.parties.buyer_name = name ? name.trim() : '';
+      setLoi(loiNext);
     } catch (err) {
       setError('Failed to load. Please try again.');
       console.error(err);
@@ -182,6 +229,9 @@ const SubmitOffer = () => {
   const setAgreementPath = (path, value) => {
     setAgreement((prev) => setNested(prev, path, value));
   };
+  const setLoiPath = (path, value) => {
+    setLoi((prev) => setNested(prev, path, value));
+  };
 
   const formatPrice = (price) =>
     new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(price || 0);
@@ -190,28 +240,44 @@ const SubmitOffer = () => {
     'Attention: By submitting an offer, you are entering into a legally binding agreement. If the seller accepts your offer, you may be obligated to purchase this property under the terms you specify. Do you wish to proceed?';
 
   const buildOffer = () => {
-    const effectiveDate = agreement.agreement_metadata.effective_date || new Date().toISOString().slice(0, 10);
-    const payload = {
+    const base = {
       propertyId,
       buyerId: user.uid,
-      buyerName: verificationData?.buyerInfo?.name ?? '',
       buyerEmail: verificationData?.buyerInfo?.email ?? '',
       buyerPhone: verificationData?.buyerInfo?.phone ?? '',
-      verificationDocuments: {
-        proofOfFunds: verificationData?.proofOfFunds,
-        preApprovalLetter: verificationData?.preApprovalLetter,
-        bankLetter: verificationData?.bankLetter,
-        governmentId: verificationData?.governmentId,
-      },
+      verificationDocuments: verificationData ? {
+        proofOfFunds: verificationData.proofOfFunds,
+        preApprovalLetter: verificationData.preApprovalLetter,
+        bankLetter: verificationData.bankLetter,
+        governmentId: verificationData.governmentId,
+      } : {},
       createdBy: user.uid,
+    };
+    if (documentType === 'loi') {
+      const buyerName = (loi.parties.buyer_name || '').trim() || (verificationData?.buyerInfo?.name ?? '');
+      const loiDate = loi.loi_metadata.date || new Date().toISOString().slice(0, 10);
+      return {
+        ...base,
+        buyerName: buyerName || '',
+        offerType: 'loi',
+        loi: { ...loi, loi_metadata: { ...loi.loi_metadata, date: loiDate } },
+        offerAmount: loi.economic_terms.purchase_price,
+        proposedClosingDate: null,
+      };
+    }
+    const effectiveDate = agreement.agreement_metadata.effective_date || new Date().toISOString().slice(0, 10);
+    const buyerName = verificationData?.buyerInfo?.name ?? (agreement.parties.buyer.legal_names?.[0] ?? '');
+    return {
+      ...base,
+      buyerName: buyerName.trim() || '',
+      offerType: 'psa',
       agreement: {
         ...agreement,
         agreement_metadata: { ...agreement.agreement_metadata, effective_date: effectiveDate },
       },
+      offerAmount: agreement.purchase_terms.purchase_price,
+      proposedClosingDate: agreement.closing.closing_date ? new Date(agreement.closing.closing_date) : null,
     };
-    payload.offerAmount = agreement.purchase_terms.purchase_price;
-    payload.proposedClosingDate = agreement.closing.closing_date ? new Date(agreement.closing.closing_date) : null;
-    return payload;
   };
 
   const handleReviewOffer = (e) => {
@@ -224,20 +290,21 @@ const SubmitOffer = () => {
     setSignatureName('');
     setStep('review');
   };
+  const goToReviewLoi = () => {
+    setError(null);
+    setSignatureName('');
+    setStep('review');
+  };
 
   const handleFinalSubmit = async () => {
-    if (!verificationData?.buyerVerified || !verificationData?.buyerInfo) {
-      navigate(`/verify-buyer?redirect=${encodeURIComponent(`/submit-offer/${propertyId}`)}`);
-      return;
-    }
     if (!disclosureAcknowledged) {
       setError('You must read and acknowledge the required disclosures before submitting an offer.');
       return;
     }
-    const expected = (verificationData?.buyerInfo?.name || '').trim().toLowerCase();
+    const expectedName = (verificationData?.buyerInfo?.name || (agreement.parties.buyer.legal_names?.[0] ?? '')).trim().toLowerCase();
     const signed = signatureName.trim().toLowerCase();
-    if (expected && signed !== expected) {
-      setError('Please type your full legal name exactly as it appears on your verified buyer profile.');
+    if (expectedName && signed !== expectedName) {
+      setError('Please type your full legal name exactly as it appears on this offer.');
       return;
     }
     if (!signed) {
@@ -321,6 +388,31 @@ const SubmitOffer = () => {
 
         {error && <div className="error-message">{error}</div>}
 
+        {step === 'choose-type' && (
+          <div className="offer-choose-type">
+            <h2 className="offer-choose-type-title">What would you like to send?</h2>
+            <p className="offer-choose-type-intro">Choose a full Purchase and Sale Agreement (PSA) or start with a non-binding Letter of Intent (LOI).</p>
+            <div className="offer-choose-type-cards">
+              <button
+                type="button"
+                className="offer-choose-type-card"
+                onClick={() => { setDocumentType('psa'); setStep('attention'); }}
+              >
+                <span className="offer-choose-type-card-title">Full Purchase and Sale Agreement</span>
+                <span className="offer-choose-type-card-desc">A complete, binding contract with all terms. Best when you and the seller are ready to commit.</span>
+              </button>
+              <button
+                type="button"
+                className="offer-choose-type-card"
+                onClick={() => { setDocumentType('loi'); setStep('loi-intro'); }}
+              >
+                <span className="offer-choose-type-card-title">Letter of Intent (LOI)</span>
+                <span className="offer-choose-type-card-desc">A shorter, non-binding outline of key terms. Use to gauge interest before negotiating a full PSA.</span>
+              </button>
+            </div>
+          </div>
+        )}
+
         {step === 'attention' && (
           <div className="offer-attention">
             <h2 className="offer-attention-title">Attention Buyer</h2>
@@ -360,6 +452,19 @@ const SubmitOffer = () => {
             </label>
             <button type="button" className="btn-primary" disabled={!unlistedAcknowledged} onClick={() => setStep('disclosures')}>
               Continue to Disclosures
+            </button>
+          </div>
+        )}
+
+        {step === 'loi-intro' && (
+          <div className="offer-disclosures">
+            <h2 className="offer-disclosures-title">Letter of Intent</h2>
+            <p className="offer-disclosures-intro">
+              A Letter of Intent is generally <strong>non-binding</strong> except for specific sections (e.g. governing law, confidentiality, exclusivity if selected). It outlines your proposed economic terms and timeline so the seller can gauge your interest before you both commit to a full Purchase and Sale Agreement.
+            </p>
+            <p className="offer-disclosures-intro">Complete the form on the next screen. Once signed, the LOI will be sent to the seller.</p>
+            <button type="button" className="btn-primary" onClick={() => setStep('loi-form')}>
+              Continue to LOI Form
             </button>
           </div>
         )}
@@ -417,7 +522,7 @@ const SubmitOffer = () => {
                 </div>
                 <div className="form-group">
                   <label>Buyer legal name(s)</label>
-                  <input type="text" value={(agreement.parties.buyer.legal_names || []).join(', ')} onChange={(e) => setAgreementPath('parties.buyer.legal_names', parseArrayFromComma(e.target.value))} placeholder="Pre-filled from profile" />
+                  <input type="text" value={(agreement.parties.buyer.legal_names || []).join(', ')} onChange={(e) => setAgreementPath('parties.buyer.legal_names', parseArrayFromComma(e.target.value))} placeholder="Your full legal name(s)" />
                 </div>
                 <div className="form-group">
                   <label>Buyer mailing address</label>
@@ -794,62 +899,303 @@ const SubmitOffer = () => {
           </form>
         )}
 
+        {step === 'loi-form' && (
+          <div className="offer-form">
+            <div className="form-section">
+              <h2>LOI — Document</h2>
+              <div className="form-grid">
+                <div className="form-group">
+                  <label>Document type</label>
+                  <input type="text" value={loi.loi_metadata.document_type} readOnly className="form-readonly" />
+                </div>
+                <div className="form-group">
+                  <label>Binding status</label>
+                  <input type="text" value={loi.loi_metadata.binding_status} readOnly className="form-readonly" />
+                </div>
+                <div className="form-group">
+                  <label>Version</label>
+                  <input type="text" value={loi.loi_metadata.version} readOnly className="form-readonly" />
+                </div>
+              </div>
+            </div>
+            <div className="form-section">
+              <h2>Parties</h2>
+              <div className="form-grid">
+                <div className="form-group">
+                  <label>Seller name *</label>
+                  <input type="text" value={loi.parties.seller_name} onChange={(e) => setLoiPath('parties.seller_name', e.target.value)} placeholder="Seller legal name" required />
+                </div>
+                <div className="form-group">
+                  <label>Buyer name *</label>
+                  <input type="text" value={loi.parties.buyer_name} onChange={(e) => setLoiPath('parties.buyer_name', e.target.value)} placeholder="Your full legal name" required />
+                </div>
+              </div>
+            </div>
+            <div className="form-section">
+              <h2>Property</h2>
+              <div className="form-grid">
+                <div className="form-group">
+                  <label>Street address *</label>
+                  <input type="text" value={loi.property.street_address} onChange={(e) => setLoiPath('property.street_address', e.target.value)} required />
+                </div>
+                <div className="form-group">
+                  <label>City *</label>
+                  <input type="text" value={loi.property.city} onChange={(e) => setLoiPath('property.city', e.target.value)} required />
+                </div>
+                <div className="form-group">
+                  <label>State *</label>
+                  <input type="text" value={loi.property.state} onChange={(e) => setLoiPath('property.state', e.target.value)} required />
+                </div>
+                <div className="form-group">
+                  <label>ZIP *</label>
+                  <input type="text" value={loi.property.zip} onChange={(e) => setLoiPath('property.zip', e.target.value)} required />
+                </div>
+              </div>
+            </div>
+            <div className="form-section">
+              <h2>Economic Terms</h2>
+              <div className="form-grid">
+                <div className="form-group">
+                  <label>Purchase price ($) *</label>
+                  <input type="number" min={0} step={1000} value={loi.economic_terms.purchase_price || ''} onChange={(e) => setLoiPath('economic_terms.purchase_price', parseNumber(e.target.value))} required />
+                </div>
+                <div className="form-group">
+                  <label>Earnest money ($) *</label>
+                  <input type="number" min={0} step={500} value={loi.economic_terms.earnest_money?.amount ?? ''} onChange={(e) => setLoiPath('economic_terms.earnest_money.amount', parseNumber(e.target.value))} required />
+                </div>
+                <div className="form-group">
+                  <label className="contingency-checkbox">
+                    <input type="checkbox" checked={loi.economic_terms.earnest_money?.due_upon_psa_execution !== false} onChange={(e) => setLoiPath('economic_terms.earnest_money.due_upon_psa_execution', e.target.checked)} />
+                    <span>Earnest money due upon PSA execution</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div className="form-section">
+              <h2>Timeline</h2>
+              <div className="form-grid">
+                <div className="form-group">
+                  <label>Target closing (days after PSA)</label>
+                  <input type="number" min={0} value={loi.timeline.target_closing_days_after_psa ?? ''} onChange={(e) => setLoiPath('timeline.target_closing_days_after_psa', parseNumber(e.target.value))} />
+                </div>
+                <div className="form-group">
+                  <label>Due diligence (days)</label>
+                  <input type="number" min={0} value={loi.timeline.due_diligence_days ?? ''} onChange={(e) => setLoiPath('timeline.due_diligence_days', parseNumber(e.target.value))} />
+                </div>
+              </div>
+            </div>
+            <div className="form-section">
+              <h2>Financing</h2>
+              <div className="form-grid">
+                <div className="form-group">
+                  <label className="contingency-checkbox">
+                    <input type="checkbox" checked={loi.financing.anticipated_financing} onChange={(e) => setLoiPath('financing.anticipated_financing', e.target.checked)} />
+                    <span>Anticipated financing</span>
+                  </label>
+                </div>
+                <div className="form-group">
+                  <label className="contingency-checkbox">
+                    <input type="checkbox" checked={loi.financing.anticipated_all_cash} onChange={(e) => setLoiPath('financing.anticipated_all_cash', e.target.checked)} />
+                    <span>Anticipated all cash</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div className="form-section">
+              <h2>Condition of Sale</h2>
+              <div className="form-grid">
+                <div className="form-group">
+                  <label className="contingency-checkbox">
+                    <input type="checkbox" checked={loi.condition_of_sale.anticipated_as_is_purchase} onChange={(e) => setLoiPath('condition_of_sale.anticipated_as_is_purchase', e.target.checked)} />
+                    <span>Anticipated as-is purchase</span>
+                  </label>
+                </div>
+                <div className="form-group">
+                  <label className="contingency-checkbox">
+                    <input type="checkbox" checked={loi.condition_of_sale.subject_to_inspections} onChange={(e) => setLoiPath('condition_of_sale.subject_to_inspections', e.target.checked)} />
+                    <span>Subject to inspections</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div className="form-section">
+              <h2>Assignment</h2>
+              <div className="form-grid">
+                <div className="form-group">
+                  <label className="contingency-checkbox">
+                    <input type="checkbox" checked={loi.assignment.assignment_contemplated} onChange={(e) => setLoiPath('assignment.assignment_contemplated', e.target.checked)} />
+                    <span>Assignment contemplated</span>
+                  </label>
+                </div>
+                <div className="form-group">
+                  <label className="contingency-checkbox">
+                    <input type="checkbox" checked={loi.assignment.affiliate_assignment_allowed} onChange={(e) => setLoiPath('assignment.affiliate_assignment_allowed', e.target.checked)} />
+                    <span>Affiliate assignment allowed</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+            <div className="form-section">
+              <h2>Exclusivity</h2>
+              <div className="form-grid">
+                <div className="form-group">
+                  <label className="contingency-checkbox">
+                    <input type="checkbox" checked={loi.exclusivity.exclusive} onChange={(e) => setLoiPath('exclusivity.exclusive', e.target.checked)} />
+                    <span>Exclusive</span>
+                  </label>
+                </div>
+                <div className="form-group">
+                  <label>Exclusivity period (days)</label>
+                  <input type="number" min={0} value={loi.exclusivity.exclusivity_period_days ?? ''} onChange={(e) => setLoiPath('exclusivity.exclusivity_period_days', parseNumber(e.target.value))} />
+                </div>
+              </div>
+            </div>
+            <div className="form-section">
+              <h2>Legal</h2>
+              <div className="form-grid">
+                <div className="form-group">
+                  <label className="contingency-checkbox">
+                    <input type="checkbox" checked={loi.legal.non_binding} onChange={(e) => setLoiPath('legal.non_binding', e.target.checked)} />
+                    <span>Non-binding (except specified sections)</span>
+                  </label>
+                </div>
+                <div className="form-group">
+                  <label>Governing law</label>
+                  <select value={loi.legal.governing_law} onChange={(e) => setLoiPath('legal.governing_law', e.target.value)}>
+                    <option value="property_state">Property state</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+              </div>
+              <p className="contingencies-intro">Binding sections typically include: governing law, confidentiality, and exclusivity (if selected).</p>
+            </div>
+            <div className="form-actions">
+              <button type="button" onClick={() => navigate(`/property/${propertyId}`)} className="btn-secondary">Cancel</button>
+              <button type="button" className="btn-primary" onClick={goToReviewLoi}>Review LOI</button>
+            </div>
+          </div>
+        )}
+
         {step === 'review' && (
           <div className="offer-review">
-            <h2 className="offer-review-title">Review Your Offer</h2>
+            <h2 className="offer-review-title">{documentType === 'loi' ? 'Review Your Letter of Intent' : 'Review Your Offer'}</h2>
             <p className="offer-review-hint">Please confirm all terms below. Type your full legal name to sign and submit.</p>
 
-            <div className="offer-review-section">
-              <h3>Agreement</h3>
-              <ul className="offer-review-list">
-                <li>{agreement.agreement_metadata.agreement_type} — {agreement.agreement_metadata.version}</li>
-              </ul>
-            </div>
-            <div className="offer-review-section">
-              <h3>Property</h3>
-              <ul className="offer-review-list">
-                <li>{[agreement.property.street_address, agreement.property.city, agreement.property.state, agreement.property.zip].filter(Boolean).join(', ')}</li>
-              </ul>
-            </div>
-            <div className="offer-review-section">
-              <h3>Purchase Terms</h3>
-              <ul className="offer-review-list">
-                <li>Purchase price: {formatPrice(agreement.purchase_terms.purchase_price)}</li>
-                <li>Earnest money: {formatPrice(agreement.purchase_terms.earnest_money?.amount)} — due {agreement.purchase_terms.earnest_money?.due_days_after_effective_date} days after effective date</li>
-                <li>Holder: {agreement.purchase_terms.earnest_money?.holder?.name || '—'}</li>
-              </ul>
-            </div>
-            <div className="offer-review-section">
-              <h3>Closing</h3>
-              <ul className="offer-review-list">
-                <li>Date: {agreement.closing.closing_date || '—'}</li>
-                <li>Method: {agreement.closing.closing_method}</li>
-                <li>Title: {agreement.closing.deliverables?.title_standard}, Deed: {agreement.closing.deliverables?.deed_type}</li>
-              </ul>
-            </div>
-            <div className="offer-review-section">
-              <h3>Title, Condition &amp; Inspection</h3>
-              <ul className="offer-review-list">
-                <li>Title review: {agreement.title_review.review_period_days} days; objection {agreement.title_review.objection_deadline_days_before_closing} days before closing</li>
-                <li>Sale condition: {agreement.property_condition.sale_condition}</li>
-                <li>Inspection period: {agreement.inspection_due_diligence.inspection_period_days} days</li>
-              </ul>
-            </div>
-            <div className="offer-review-section">
-              <h3>Financing</h3>
-              <ul className="offer-review-list">
-                <li>Contingency: {agreement.financing.financing_contingency ? 'Yes' : 'No'}</li>
-                {agreement.financing.loan_type && <li>Loan type: {agreement.financing.loan_type}</li>}
-                {agreement.financing.loan_amount > 0 && <li>Loan amount: {formatPrice(agreement.financing.loan_amount)}</li>}
-              </ul>
-            </div>
-            <div className="offer-review-section">
-              <h3>Costs &amp; Risk</h3>
-              <ul className="offer-review-list">
-                <li>Tax/rent proration: {agreement.prorations_and_costs.tax_proration}; escrow/title: {agreement.prorations_and_costs.escrow_and_title_costs}</li>
-                <li>Risk: {agreement.risk_of_loss.risk_holder_pre_closing}; casualty: {agreement.risk_of_loss.casualty_threshold}</li>
-              </ul>
-            </div>
+            {documentType === 'loi' ? (
+              <>
+                <div className="offer-review-section">
+                  <h3>Document</h3>
+                  <ul className="offer-review-list">
+                    <li>{loi.loi_metadata.document_type} — {loi.loi_metadata.version}</li>
+                    <li>Status: {loi.loi_metadata.binding_status}</li>
+                  </ul>
+                </div>
+                <div className="offer-review-section">
+                  <h3>Parties</h3>
+                  <ul className="offer-review-list">
+                    <li>Seller: {loi.parties.seller_name || '—'}</li>
+                    <li>Buyer: {loi.parties.buyer_name || '—'}</li>
+                  </ul>
+                </div>
+                <div className="offer-review-section">
+                  <h3>Property</h3>
+                  <ul className="offer-review-list">
+                    <li>{[loi.property.street_address, loi.property.city, loi.property.state, loi.property.zip].filter(Boolean).join(', ')}</li>
+                  </ul>
+                </div>
+                <div className="offer-review-section">
+                  <h3>Economic Terms</h3>
+                  <ul className="offer-review-list">
+                    <li>Purchase price: {formatPrice(loi.economic_terms.purchase_price)}</li>
+                    <li>Earnest money: {formatPrice(loi.economic_terms.earnest_money?.amount)} — due upon PSA execution: {loi.economic_terms.earnest_money?.due_upon_psa_execution ? 'Yes' : 'No'}</li>
+                  </ul>
+                </div>
+                <div className="offer-review-section">
+                  <h3>Timeline</h3>
+                  <ul className="offer-review-list">
+                    <li>Target closing: {loi.timeline.target_closing_days_after_psa ?? '—'} days after PSA</li>
+                    <li>Due diligence: {loi.timeline.due_diligence_days ?? '—'} days</li>
+                  </ul>
+                </div>
+                <div className="offer-review-section">
+                  <h3>Financing &amp; Condition</h3>
+                  <ul className="offer-review-list">
+                    <li>Anticipated financing: {loi.financing.anticipated_financing ? 'Yes' : 'No'}</li>
+                    <li>Anticipated all cash: {loi.financing.anticipated_all_cash ? 'Yes' : 'No'}</li>
+                    <li>As-is purchase: {loi.condition_of_sale.anticipated_as_is_purchase ? 'Yes' : 'No'}</li>
+                    <li>Subject to inspections: {loi.condition_of_sale.subject_to_inspections ? 'Yes' : 'No'}</li>
+                  </ul>
+                </div>
+                <div className="offer-review-section">
+                  <h3>Assignment &amp; Exclusivity</h3>
+                  <ul className="offer-review-list">
+                    <li>Assignment contemplated: {loi.assignment.assignment_contemplated ? 'Yes' : 'No'}</li>
+                    <li>Exclusive: {loi.exclusivity.exclusive ? 'Yes' : 'No'}{loi.exclusivity.exclusive ? ` (${loi.exclusivity.exclusivity_period_days} days)` : ''}</li>
+                  </ul>
+                </div>
+                <div className="offer-review-section">
+                  <h3>Legal</h3>
+                  <ul className="offer-review-list">
+                    <li>Non-binding: {loi.legal.non_binding ? 'Yes' : 'No'}</li>
+                    <li>Governing law: {loi.legal.governing_law}</li>
+                  </ul>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="offer-review-section">
+                  <h3>Agreement</h3>
+                  <ul className="offer-review-list">
+                    <li>{agreement.agreement_metadata.agreement_type} — {agreement.agreement_metadata.version}</li>
+                  </ul>
+                </div>
+                <div className="offer-review-section">
+                  <h3>Property</h3>
+                  <ul className="offer-review-list">
+                    <li>{[agreement.property.street_address, agreement.property.city, agreement.property.state, agreement.property.zip].filter(Boolean).join(', ')}</li>
+                  </ul>
+                </div>
+                <div className="offer-review-section">
+                  <h3>Purchase Terms</h3>
+                  <ul className="offer-review-list">
+                    <li>Purchase price: {formatPrice(agreement.purchase_terms.purchase_price)}</li>
+                    <li>Earnest money: {formatPrice(agreement.purchase_terms.earnest_money?.amount)} — due {agreement.purchase_terms.earnest_money?.due_days_after_effective_date} days after effective date</li>
+                    <li>Holder: {agreement.purchase_terms.earnest_money?.holder?.name || '—'}</li>
+                  </ul>
+                </div>
+                <div className="offer-review-section">
+                  <h3>Closing</h3>
+                  <ul className="offer-review-list">
+                    <li>Date: {agreement.closing.closing_date || '—'}</li>
+                    <li>Method: {agreement.closing.closing_method}</li>
+                    <li>Title: {agreement.closing.deliverables?.title_standard}, Deed: {agreement.closing.deliverables?.deed_type}</li>
+                  </ul>
+                </div>
+                <div className="offer-review-section">
+                  <h3>Title, Condition &amp; Inspection</h3>
+                  <ul className="offer-review-list">
+                    <li>Title review: {agreement.title_review.review_period_days} days; objection {agreement.title_review.objection_deadline_days_before_closing} days before closing</li>
+                    <li>Sale condition: {agreement.property_condition.sale_condition}</li>
+                    <li>Inspection period: {agreement.inspection_due_diligence.inspection_period_days} days</li>
+                  </ul>
+                </div>
+                <div className="offer-review-section">
+                  <h3>Financing</h3>
+                  <ul className="offer-review-list">
+                    <li>Contingency: {agreement.financing.financing_contingency ? 'Yes' : 'No'}</li>
+                    {agreement.financing.loan_type && <li>Loan type: {agreement.financing.loan_type}</li>}
+                    {agreement.financing.loan_amount > 0 && <li>Loan amount: {formatPrice(agreement.financing.loan_amount)}</li>}
+                  </ul>
+                </div>
+                <div className="offer-review-section">
+                  <h3>Costs &amp; Risk</h3>
+                  <ul className="offer-review-list">
+                    <li>Tax/rent proration: {agreement.prorations_and_costs.tax_proration}; escrow/title: {agreement.prorations_and_costs.escrow_and_title_costs}</li>
+                    <li>Risk: {agreement.risk_of_loss.risk_holder_pre_closing}; casualty: {agreement.risk_of_loss.casualty_threshold}</li>
+                  </ul>
+                </div>
+              </>
+            )}
 
             <div className="offer-review-sign">
               <label htmlFor="offer-signature">Type your full legal name to confirm and sign</label>
@@ -858,16 +1204,16 @@ const SubmitOffer = () => {
                 type="text"
                 value={signatureName}
                 onChange={(e) => setSignatureName(e.target.value)}
-                placeholder={verificationData?.buyerInfo?.name || 'Your full legal name'}
+                placeholder={documentType === 'loi' ? (loi.parties.buyer_name || verificationData?.buyerInfo?.name || 'Your full legal name') : (verificationData?.buyerInfo?.name || agreement.parties.buyer.legal_names?.[0] || 'Your full legal name')}
                 className="offer-review-sign-input"
                 autoComplete="name"
               />
             </div>
 
             <div className="form-actions">
-              <button type="button" className="btn-secondary" onClick={() => { setError(null); setStep('form'); }}>Back</button>
+              <button type="button" className="btn-secondary" onClick={() => { setError(null); setStep(documentType === 'loi' ? 'loi-form' : 'form'); }}>Back</button>
               <button type="button" className="btn-primary" disabled={submitting} onClick={handleFinalSubmit}>
-                {submitting ? 'Submitting Offer...' : 'Submit Offer'}
+                {submitting ? 'Submitting...' : documentType === 'loi' ? 'Submit LOI' : 'Submit Offer'}
               </button>
             </div>
           </div>

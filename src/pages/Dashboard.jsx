@@ -12,7 +12,7 @@ import { getVendorsByUser, createVendor, updateVendor, deleteVendor, addVendorCo
 import { updateUserProfile, getUserProfile } from '../services/authService';
 import { uploadFile } from '../services/storageService';
 import { deleteField } from 'firebase/firestore';
-import { getVerifiedBuyerScore, getListingTier, getListingTierLabel, getListingTierProgress, meetsVerifiedBuyerCriteria } from '../utils/verificationScores';
+import { getListingTier, getListingTierLabel, getListingTierProgress, meetsVerifiedBuyerCriteria } from '../utils/verificationScores';
 import PropertyCard from '../components/PropertyCard';
 import Logo from '../components/Logo';
 import CounterOfferModal from '../components/CounterOfferModal';
@@ -1121,24 +1121,6 @@ const Dashboard = () => {
         </div>
 
         <div className="dashboard-scores-and-ctas">
-          <div className="dashboard-buyer-status">
-            {getVerifiedBuyerScore(purchaseProfile).score >= 100 ? (
-              <>
-                <span className="dashboard-buyer-status-badge">✓ Verified buyer</span>
-                <span className="dashboard-buyer-status-score">100%</span>
-              </>
-            ) : (
-              <>
-                <span className="dashboard-buyer-status-label">Verified buyer</span>
-                <span className="dashboard-buyer-status-value">
-                  {getVerifiedBuyerScore(purchaseProfile).score}%
-                </span>
-                <Link to="/verify-buyer" className="dashboard-buyer-status-link">
-                  {getVerifiedBuyerScore(purchaseProfile).score === 0 ? 'Become a verified buyer' : 'Complete verification'}
-                </Link>
-              </>
-            )}
-          </div>
           <div className="dashboard-process-ctas">
             <Link to="/create-search" className="btn btn-process btn-process-buy">
               Create a new search
