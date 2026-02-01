@@ -1,5 +1,8 @@
-import { getPdfjs } from './pdfjsLoader';
+import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf';
+import pdfWorker from 'pdfjs-dist/legacy/build/pdf.worker.min?url';
 import Tesseract from 'tesseract.js';
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 const cleanSpaces = (value) => value.replace(/\s+/g, ' ').trim();
 
@@ -34,7 +37,6 @@ const parseName = (text) => {
 
 const getPdfText = async (file) => {
   const data = await file.arrayBuffer();
-  const pdfjsLib = await getPdfjs();
   const pdf = await pdfjsLib.getDocument({ data }).promise;
   let fullText = '';
   for (let i = 1; i <= pdf.numPages; i += 1) {

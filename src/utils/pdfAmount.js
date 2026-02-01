@@ -1,4 +1,7 @@
-import { getPdfjs } from './pdfjsLoader';
+import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf';
+import pdfWorker from 'pdfjs-dist/legacy/build/pdf.worker.min?url';
+
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
 const MIN_AMOUNT = 1000;
 const MAX_AMOUNT = 100000000;
@@ -46,7 +49,6 @@ const parseKeywordAmounts = (text) => {
 export const extractPdfAmount = async (file) => {
   try {
     const data = await file.arrayBuffer();
-    const pdfjsLib = await getPdfjs();
     const pdf = await pdfjsLib.getDocument({ data }).promise;
     let fullText = '';
     for (let i = 1; i <= pdf.numPages; i += 1) {
