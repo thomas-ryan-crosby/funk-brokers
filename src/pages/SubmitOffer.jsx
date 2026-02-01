@@ -146,20 +146,17 @@ const SubmitOffer = () => {
       setError(null);
       const [data, profile] = await Promise.all([
         getPropertyById(propertyId),
-        getPurchaseProfile(user.uid),
+        getPurchaseProfile(user.uid).catch(() => null),
       ]);
-      if (!profile?.buyerVerified || !profile?.buyerInfo) {
-        navigate(`/verify-buyer?redirect=${encodeURIComponent(`/submit-offer/${propertyId}`)}`);
-        return;
-      }
       setProperty(data);
-      setVerificationData({
+      setVerificationData(profile ? {
         proofOfFunds: profile.verificationDocuments?.proofOfFunds,
         preApprovalLetter: profile.verificationDocuments?.preApprovalLetter,
         bankLetter: profile.verificationDocuments?.bankLetter,
         governmentId: profile.verificationDocuments?.governmentId,
         buyerInfo: profile.buyerInfo,
-      });
+        buyerVerified: profile.buyerVerified,
+      } : {});
       const next = defaultAgreement();
       if (data) {
         next.property.street_address = data.address || '';
@@ -229,6 +226,10 @@ const SubmitOffer = () => {
   };
 
   const handleFinalSubmit = async () => {
+    if (!verificationData?.buyerVerified || !verificationData?.buyerInfo) {
+      navigate(`/verify-buyer?redirect=${encodeURIComponent(`/submit-offer/${propertyId}`)}`);
+      return;
+    }
     if (!disclosureAcknowledged) {
       setError('You must read and acknowledge the required disclosures before submitting an offer.');
       return;
@@ -297,7 +298,7 @@ const SubmitOffer = () => {
     );
   }
 
-  if (!property || !verificationData) {
+  if (!property) {
     return (
       <div className="submit-offer-page">
         <div className="loading-state">Loading...</div>
