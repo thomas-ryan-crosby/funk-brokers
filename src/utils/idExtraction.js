@@ -54,18 +54,24 @@ const parseDob = (text) => {
 const parseName = (text) => {
   if (!text) return null;
   const normalized = text.replace(/[|]/g, ' ').replace(/\s+/g, ' ');
-  const labeled = normalized.match(/\b(?:name|full name)\b[:\s]*([A-Z][A-Z'\- ]{2,})/i);
+  const cleaned = normalized.replace(/\b(REST|NONE|SPN|END|CLASS|DLN|DOB|EXP|ISS|EYES|HAIR|HGT|WGT|SEX)\b/gi, '');
+  const labeled = cleaned.match(/\b(?:name|full name)\b[:\s]*([A-Z][A-Z'\- ]{2,})/i);
   if (labeled?.[1]) return toTitleCase(cleanSpaces(labeled[1]));
 
   // Common ID format: "1 LAST" and "2 FIRST MIDDLE"
-  const idFormat = normalized.match(/\b1\s*([A-Z'\-]+)\s+.*?\b2\s*([A-Z'\-]+(?:\s+[A-Z'\-]+)*)/i);
+  const idFormat = cleaned.match(/\b1\s*([A-Z'\-]+)\b.*?\b2\s*([A-Z'\-]+(?:\s+[A-Z'\-]+)*)/i);
   if (idFormat?.[1] && idFormat?.[2]) {
     return toTitleCase(cleanSpaces(`${idFormat[2]} ${idFormat[1]}`));
   }
 
-  const lastFirst = normalized.match(/\b([A-Z'\-]{2,})\s+([A-Z'\-]{2,})\s+(?:PHILLIP|PHILIP|PHIL)\b/i);
-  if (lastFirst?.[1] && lastFirst?.[2]) {
-    return toTitleCase(cleanSpaces(`${lastFirst[2]} ${lastFirst[1]}`));
+  const nameBlock = cleaned.match(/\b([A-Z'\-]{2,})\s+([A-Z'\-]{2,})(?:\s+([A-Z'\-]{2,}))?\b/);
+  if (nameBlock?.[1] && nameBlock?.[2]) {
+    const last = nameBlock[1];
+    const first = nameBlock[2];
+    const middle = nameBlock[3] ? ` ${nameBlock[3]}` : '';
+    if (!['REST', 'NONE', 'SPN', 'END'].includes(last.toUpperCase())) {
+      return toTitleCase(cleanSpaces(`${first}${middle} ${last}`));
+    }
   }
 
   return null;
