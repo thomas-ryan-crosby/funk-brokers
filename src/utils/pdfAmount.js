@@ -22,6 +22,22 @@ const parseCurrencyValues = (text) => {
   return results;
 };
 
+const parseLooseAmounts = (text) => {
+  if (!text) return [];
+  const results = [];
+  const pattern = /\b([0-9]{1,3}(?:,[0-9]{3})+|[0-9]{5,})\b/g;
+  let match;
+  while ((match = pattern.exec(text)) !== null) {
+    const raw = match[1] || '';
+    const normalized = raw.replace(/,/g, '');
+    const value = Number.parseFloat(normalized);
+    if (!Number.isNaN(value) && value >= MIN_AMOUNT && value <= MAX_AMOUNT) {
+      results.push(value);
+    }
+  }
+  return results;
+};
+
 const parseKeywordAmounts = (text) => {
   if (!text) return [];
   const results = [];
@@ -42,6 +58,7 @@ const parseKeywordAmounts = (text) => {
     if (idx === -1) continue;
     const windowText = text.slice(Math.max(0, idx - 40), idx + 160);
     results.push(...parseCurrencyValues(windowText));
+    results.push(...parseLooseAmounts(windowText));
   }
   return results;
 };
@@ -60,6 +77,7 @@ export const extractPdfAmount = async (file) => {
 
     const allAmounts = [
       ...parseCurrencyValues(fullText),
+      ...parseLooseAmounts(fullText),
       ...parseKeywordAmounts(fullText),
     ];
     if (!allAmounts.length) return null;
