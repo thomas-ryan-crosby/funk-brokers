@@ -221,6 +221,7 @@ const Profile = () => {
       }
 
       const templateId = import.meta.env.VITE_PERSONA_TEMPLATE_ID;
+      const forceHosted = String(import.meta.env.VITE_PERSONA_FORCE_HOSTED || '').toLowerCase() === 'true';
       const name = userProfile?.name || user?.displayName || '';
       const { first, middle, last } = splitNameParts(name);
       const fields = {
@@ -234,21 +235,22 @@ const Profile = () => {
       let inquiryId = null;
       let sessionToken = null;
 
-      if (templateId) {
-        inquiryId = null;
-        sessionToken = null;
-      } else {
-        const created = await createPersonaInquiry({
-          name: userProfile?.name || user?.displayName,
-          dob: userProfile?.dob,
-          email: userProfile?.email || user?.email,
-          templateId,
-        });
-        inquiryId = created?.inquiryId;
-        sessionToken = created?.sessionToken;
-        if (!inquiryId) {
-          throw new Error('Persona inquiry could not be created.');
+      const created = await createPersonaInquiry({
+        name: userProfile?.name || user?.displayName,
+        dob: userProfile?.dob,
+        email: userProfile?.email || user?.email,
+        templateId,
+      });
+      inquiryId = created?.inquiryId;
+      sessionToken = created?.sessionToken;
+
+      if (forceHosted) {
+        if (created?.hostedLink) {
+          window.open(created.hostedLink, '_blank', 'noopener,noreferrer');
+          setPersonaError('Opened hosted verification in a new tab.');
+          return;
         }
+        throw new Error('Persona hosted link could not be created.');
       }
       if (personaClientRef.current?.destroy) {
         personaClientRef.current.destroy();
