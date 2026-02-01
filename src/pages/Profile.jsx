@@ -242,6 +242,7 @@ const Profile = () => {
           name: userProfile?.name || user?.displayName,
           dob: userProfile?.dob,
           email: userProfile?.email || user?.email,
+          templateId,
         });
         inquiryId = created?.inquiryId;
         sessionToken = created?.sessionToken;
@@ -285,9 +286,25 @@ const Profile = () => {
         onCancel: () => {
           client.destroy();
         },
-        onError: (error) => {
+        onError: async (error) => {
           console.error('Persona error:', error);
-          setPersonaError('Persona verification failed. Please try again.');
+          try {
+            const created = await createPersonaInquiry({
+              name: userProfile?.name || user?.displayName,
+              dob: userProfile?.dob,
+              email: userProfile?.email || user?.email,
+              templateId,
+            });
+            if (created?.hostedLink) {
+              window.open(created.hostedLink, '_blank', 'noopener,noreferrer');
+              setPersonaError('Persona embedded flow failed. Opened hosted verification in a new tab.');
+            } else {
+              setPersonaError('Persona verification failed. Please try again.');
+            }
+          } catch (hostedError) {
+            console.error('Persona hosted fallback error:', hostedError);
+            setPersonaError('Persona verification failed. Please try again.');
+          }
           client.destroy();
         },
       });

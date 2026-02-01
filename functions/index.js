@@ -132,9 +132,9 @@ const getParcelsInViewport = functions.https.onRequest(async (req, res) => {
 
 exports.getParcelsInViewport = getParcelsInViewport;
 
-const getPersonaConfig = () => {
+const getPersonaConfig = (templateOverride) => {
   const apiKey = process.env.PERSONA_API_KEY || functions.config().persona?.api_key;
-  const templateId = process.env.PERSONA_TEMPLATE_ID || functions.config().persona?.template_id;
+  const templateId = process.env.PERSONA_TEMPLATE_ID || functions.config().persona?.template_id || templateOverride;
   if (!apiKey || !templateId) {
     throw new functions.https.HttpsError('failed-precondition', 'Persona API key or template ID not configured.');
   }
@@ -194,7 +194,10 @@ const createInquiry = async (apiKey, templateId, referenceId, fields) => {
     throw new Error(`Persona create inquiry failed: ${response.status} ${body}`);
   }
   const payloadResponse = await response.json();
-  return payloadResponse?.data || null;
+  return {
+    data: payloadResponse?.data || null,
+    meta: payloadResponse?.meta || null,
+  };
 };
 
 const resumeInquiry = async (apiKey, inquiryId) => {
@@ -216,7 +219,8 @@ exports.createPersonaInquiry = functions.https.onCall(async (data, context) => {
     throw new functions.https.HttpsError('unauthenticated', 'Authentication required.');
   }
 
-  const { apiKey, templateId } = getPersonaConfig();
+  const templateOverride = data?.templateId || null;
+  const { apiKey, templateId } = getPersonaConfig(templateOverride);
   const referenceId = context.auth.uid;
   const name = data?.name || '';
   const birthdate = data?.dob || null;
@@ -241,7 +245,10 @@ exports.createPersonaInquiry = functions.https.onCall(async (data, context) => {
     }
 
     const created = await createInquiry(apiKey, templateId, referenceId, fields);
-    return { inquiryId: created?.id, status: created?.attributes?.status || 'created', sessionToken: null };
+    const inquiryId = created?.data?.id || null;
+    const status = created?.data?.attributes?.status || 'created';
+    const hostedLink = created?.meta?.['one-time-link'] || created?.meta?.['one-time-link-short'] || null;
+    return { inquiryId, status, sessionToken: null, hostedLink };
   } catch (error) {
     console.error('Persona inquiry error:', error);
     throw new functions.https.HttpsError('internal', 'Failed to create Persona inquiry.');
