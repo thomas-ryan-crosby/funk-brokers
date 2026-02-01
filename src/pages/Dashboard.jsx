@@ -1579,9 +1579,6 @@ const Dashboard = () => {
                       <button type="button" className="btn btn-outline btn-small" onClick={() => { setEditingBuyingPower(true); setBuyingPowerForm(purchaseProfile?.buyingPower != null ? String(purchaseProfile.buyingPower) : ''); }}>
                         Edit
                       </button>
-                      <button type="button" className="btn btn-outline btn-small doc-remove-btn" onClick={handleRemoveBuyingPower}>
-                        Remove
-                      </button>
                     </div>
                   </div>
                 )}
