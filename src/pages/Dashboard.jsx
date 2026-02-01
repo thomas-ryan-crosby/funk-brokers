@@ -640,6 +640,17 @@ const Dashboard = () => {
     return { status: 'not_approved', message: 'Not approved - please review with support team.' };
   };
 
+  const buyingPowerValidation = computeBuyingPowerValidation(
+    purchaseProfile?.buyingPower ?? null,
+    purchaseProfile?.verificationDocumentAmounts || {}
+  );
+
+  const overallVerificationStatus = (() => {
+    if (buyingPowerValidation.status === 'validated' && isGovernmentIdVerified) return 'verified';
+    if (buyingPowerValidation.status === 'not_approved') return 'not_approved';
+    return 'pending';
+  })();
+
   const normalizeDate = (value) => {
     if (!value) return null;
     const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -661,17 +672,6 @@ const Dashboard = () => {
     const profileDob = normalizeDate(userProfile?.dob);
     if (!extractedName || !extractedDob || !profileName || !profileDob) return false;
     return extractedName === profileName && extractedDob === profileDob;
-  })();
-
-  const buyingPowerValidation = computeBuyingPowerValidation(
-    purchaseProfile?.buyingPower ?? null,
-    purchaseProfile?.verificationDocumentAmounts || {}
-  );
-
-  const overallVerificationStatus = (() => {
-    if (buyingPowerValidation.status === 'validated' && isGovernmentIdVerified) return 'verified';
-    if (buyingPowerValidation.status === 'not_approved') return 'not_approved';
-    return 'pending';
   })();
 
   const handleSaveBuyingPower = async () => {
