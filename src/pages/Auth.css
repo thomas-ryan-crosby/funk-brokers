@@ -38,18 +38,10 @@
 
 .auth-logo {
   text-decoration: none;
-  display: block;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   margin-bottom: 24px;
-}
-
-.auth-logo h1 {
-  font-size: 32px;
-  background: var(--gradient-brand, linear-gradient(135deg, #ff3ea5 0%, #7c3aed 100%));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin: 0;
-  font-weight: 700;
 }
 
 .auth-header h2 {

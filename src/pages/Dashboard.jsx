@@ -14,6 +14,7 @@ import { uploadFile } from '../services/storageService';
 import { deleteField } from 'firebase/firestore';
 import { getVerifiedBuyerScore, getListingTier, getListingTierLabel, getListingTierProgress, meetsVerifiedBuyerCriteria } from '../utils/verificationScores';
 import PropertyCard from '../components/PropertyCard';
+import Logo from '../components/Logo';
 import CounterOfferModal from '../components/CounterOfferModal';
 import ViewOfferModal from '../components/ViewOfferModal';
 import DragDropFileInput from '../components/DragDropFileInput';
@@ -1013,17 +1014,7 @@ const Dashboard = () => {
       <div className="dashboard-container">
         <div className="dashboard-header">
           <div className="dashboard-brand">
-            <picture>
-              <source
-                srcSet={`${import.meta.env.BASE_URL}brand/opento-logo.webp`}
-                type="image/webp"
-              />
-              <img
-                className="dashboard-logo"
-                src={`${import.meta.env.BASE_URL}brand/opento-logo.png`}
-                alt="OpenTo"
-              />
-            </picture>
+            <Logo variant="symbol" alt="OpenTo" />
             <div>
               <h1>Welcome back, {userProfile?.name || user?.displayName || 'User'}!</h1>
               <p>Manage your profile, properties, and activity</p>

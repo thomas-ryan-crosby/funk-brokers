@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Landing from './pages/Landing';
+import Logo from './components/Logo';
 import Home from './pages/Home';
 import ListProperty from './pages/ListProperty';
 import PropertyDetail from './pages/PropertyDetail';
@@ -86,18 +87,8 @@ function AppContent() {
       <div className="App">
         <nav className="app-nav">
           <div className="nav-container">
-            <Link to="/" className="nav-logo">
-              <picture>
-                <source
-                  srcSet={`${import.meta.env.BASE_URL}brand/opento-logo.webp`}
-                  type="image/webp"
-                />
-                <img
-                  className="nav-logo-img"
-                  src={`${import.meta.env.BASE_URL}brand/opento-logo.png`}
-                  alt="OpenTo"
-                />
-              </picture>
+            <Link to="/" className="nav-logo" aria-label="OpenTo home">
+              <Logo variant="wordSymbol" alt="OpenTo" />
             </Link>
             <div className="nav-links">
               <Link to="/browse">Browse Properties</Link>

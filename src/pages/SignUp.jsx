@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { signUp } from '../services/authService';
+import Logo from '../components/Logo';
 import './Auth.css';
 
 const SignUp = () => {
@@ -80,8 +81,8 @@ const SignUp = () => {
     <div className="auth-page">
       <div className="auth-container">
         <div className="auth-header">
-          <Link to="/" className="auth-logo">
-            <h1>Funk Brokers</h1>
+          <Link to="/" className="auth-logo" aria-label="Funk Brokers home">
+            <Logo variant="wordSymbol" alt="Funk Brokers" />
           </Link>
           <h2>Create Your Account</h2>
           <p>Sign up to list your property or make offers</p>

@@ -27,11 +27,6 @@
   margin-bottom: 10px;
 }
 
-.pitch-logo {
-  width: 44px;
-  height: 44px;
-  object-fit: contain;
-}
 
 .pitch-kicker {
   text-transform: uppercase;

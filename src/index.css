@@ -26,6 +26,26 @@ body {
   color: var(--color-text-primary, #f8fafc);
 }
 
+.logo {
+  display: inline-flex;
+  align-items: center;
+  line-height: 0;
+}
+
+.logo > img,
+.logo > svg {
+  display: block;
+  max-height: 36px;
+  width: auto;
+}
+
+@media (max-width: 768px) {
+  .logo > img,
+  .logo > svg {
+    max-height: 26px;
+  }
+}
+
 #root {
   width: 100%;
   margin: 0 auto;
