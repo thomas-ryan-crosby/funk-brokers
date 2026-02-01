@@ -523,7 +523,7 @@
 
 .step-verify-property-dl dd {
   margin: 0;
-  color: #1e293b;
+  color: var(--color-text-primary, #f8fafc);
 }
 
 .step-list-price-disclaimer {
@@ -792,7 +792,7 @@
 .step-comps-list h4 {
   font-size: 16px;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text-primary, #f8fafc);
   margin: 0 0 16px 0;
 }
 

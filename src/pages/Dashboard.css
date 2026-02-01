@@ -22,7 +22,7 @@
   font-size: 32px;
   font-weight: 700;
   margin: 0 0 8px 0;
-  color: #1e293b;
+  color: var(--color-text-primary, #f8fafc);
 }
 
 .dashboard-header p {
@@ -74,7 +74,7 @@
 .dashboard-buyer-status-value {
   font-size: 18px;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--color-text-primary, #f8fafc);
 }
 
 .dashboard-buyer-status-link {
@@ -196,7 +196,7 @@
   font-size: 24px;
   font-weight: 700;
   margin: 0 0 8px 0;
-  color: #1e293b;
+  color: var(--color-text-primary, #f8fafc);
 }
 
 .empty-message {
@@ -251,7 +251,7 @@
 
 .activity-tab.active {
   border-color: #3b82f6;
-  color: #1e293b;
+  color: var(--color-text-primary, #f8fafc);
 }
 
 .activity-composer {
@@ -297,7 +297,7 @@
 
 .post-type-pill.active {
   border-color: #3b82f6;
-  color: #1e293b;
+  color: var(--color-text-primary, #f8fafc);
 }
 
 .activity-composer label {
@@ -354,7 +354,7 @@
   height: 40px;
   border-radius: 999px;
   background: #e2e8f0;
-  color: #1e293b;
+  color: var(--color-text-primary, #f8fafc);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -760,7 +760,7 @@
 
 .search-item-name {
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text-primary, #f8fafc);
   font-size: 15px;
 }
 
@@ -1030,7 +1030,7 @@
 .buyer-info-value {
   font-size: 15px;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text-primary, #f8fafc);
 }
 
 .buying-power-docs {
@@ -1114,7 +1114,7 @@
   font-size: 28px;
   font-weight: 700;
   margin: 0 0 8px 0;
-  color: #1e293b;
+  color: var(--color-text-primary, #f8fafc);
 }
 
 .vendor-center-subtitle {
@@ -1192,7 +1192,7 @@
 .vendor-center-empty h3 {
   font-size: 20px;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text-primary, #f8fafc);
   margin: 0 0 8px 0;
 }
 
@@ -1389,7 +1389,7 @@
 .vendor-table-action-btn:hover {
   background: #f8fafc;
   border-color: #cbd5e1;
-  color: #1e293b;
+  color: var(--color-text-primary, #f8fafc);
 }
 
 .vendor-table-action-btn--danger {
@@ -1438,7 +1438,7 @@
 .vendor-table-details-header h4 {
   font-size: 16px;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text-primary, #f8fafc);
   margin: 0;
 }
 
@@ -1468,7 +1468,7 @@
 
 .vendor-table-detail-item > div {
   font-size: 15px;
-  color: #1e293b;
+  color: var(--color-text-primary, #f8fafc);
 }
 
 .vendor-table-link {
@@ -1530,7 +1530,7 @@
 .vendor-table-details-header h4 {
   font-size: 18px;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--color-text-primary, #f8fafc);
   margin: 0;
 }
 
@@ -1564,7 +1564,7 @@
 
 .vendor-table-detail-item > div {
   font-size: 15px;
-  color: #1e293b;
+  color: var(--color-text-primary, #f8fafc);
   line-height: 1.5;
   min-height: 22px;
   display: flex;
@@ -1620,7 +1620,7 @@
 .vendor-table-contacts-header h4 {
   font-size: 18px;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--color-text-primary, #f8fafc);
   margin: 0;
 }
 
@@ -1703,7 +1703,7 @@
 .vendor-table-contact-action:hover {
   background: #f8fafc;
   border-color: #cbd5e1;
-  color: #1e293b;
+  color: var(--color-text-primary, #f8fafc);
 }
 
 .vendor-table-contact-action--danger {
@@ -1794,7 +1794,7 @@
 .modal-header h2 {
   font-size: 24px;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--color-text-primary, #f8fafc);
   margin: 0;
 }
 
@@ -1817,7 +1817,7 @@
 
 .modal-close:hover {
   background: #e2e8f0;
-  color: #1e293b;
+  color: var(--color-text-primary, #f8fafc);
 }
 
 .modal-body {
@@ -1988,7 +1988,7 @@
 
 .deal-property-title {
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text-primary, #f8fafc);
   text-decoration: none;
   font-size: 15px;
 }
@@ -2012,7 +2012,7 @@
 
 .deal-offer-property {
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text-primary, #f8fafc);
   text-decoration: none;
   font-size: 15px;
 }
@@ -2048,7 +2048,7 @@
 
 .deal-offer-buyer {
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text-primary, #f8fafc);
   font-size: 15px;
 }
 
@@ -2078,7 +2078,7 @@
 .deal-offer-expiry-countdown {
   font-size: 15px;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--color-text-primary, #f8fafc);
 }
 
 .deal-offer-expiry-countdown.deal-offer-expiry--expired {
@@ -2232,7 +2232,7 @@
 
 .transaction-card-title {
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text-primary, #f8fafc);
   text-decoration: none;
   font-size: 15px;
 }
