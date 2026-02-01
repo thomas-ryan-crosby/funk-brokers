@@ -16,6 +16,7 @@ const Profile = () => {
   const [saved, setSaved] = useState(false);
   const [form, setForm] = useState({
     name: '',
+    dob: '',
     phone: '',
     publicUsername: '',
     anonymousProfile: false,
@@ -42,6 +43,7 @@ const Profile = () => {
     if (!user?.uid) return;
     setForm({
       name: userProfile?.name || user?.displayName || '',
+      dob: userProfile?.dob || '',
       phone: userProfile?.phone || '',
       publicUsername: userProfile?.publicUsername || '',
       anonymousProfile: userProfile?.anonymousProfile === true,
@@ -59,6 +61,7 @@ const Profile = () => {
     try {
       const name = form.name.trim();
       const phone = form.phone.trim();
+      const dob = form.dob || null;
       const bankName = form.bankName.trim();
       const anonymousProfile = !!form.anonymousProfile;
       const publicUsername = anonymousProfile
@@ -66,6 +69,7 @@ const Profile = () => {
         : ((form.publicUsername || '').trim() || null);
       await updateUserProfile(user.uid, {
         name: name || null,
+        dob,
         phone: phone || null,
         bankName: bankName || null,
         publicUsername,
@@ -123,6 +127,29 @@ const Profile = () => {
       setSigningOut(false);
     }
   };
+
+  const normalizeDate = (value) => {
+    if (!value) return null;
+    const isoMatch = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (isoMatch) return value;
+    const altMatch = value.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if (!altMatch) return null;
+    const month = altMatch[1].padStart(2, '0');
+    const day = altMatch[2].padStart(2, '0');
+    return `${altMatch[3]}-${month}-${day}`;
+  };
+
+  const normalizeName = (value) =>
+    (value || '').toLowerCase().replace(/[^a-z]/g, '');
+
+  const isGovernmentIdVerified = (() => {
+    const extractedName = normalizeName(userProfile?.governmentIdExtractedName);
+    const profileName = normalizeName(userProfile?.name || user?.displayName);
+    const extractedDob = normalizeDate(userProfile?.governmentIdExtractedDob);
+    const profileDob = normalizeDate(userProfile?.dob);
+    if (!extractedName || !extractedDob || !profileName || !profileDob) return false;
+    return extractedName === profileName && extractedDob === profileDob;
+  })();
 
   const handleGovernmentIdUpload = async (file) => {
     if (!file || !user?.uid) return;
@@ -194,6 +221,14 @@ const Profile = () => {
                 value={form.name}
                 onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
                 placeholder="Your name"
+              />
+            </label>
+            <label className="profile-field">
+              <span>Date of birth</span>
+              <input
+                type="date"
+                value={form.dob}
+                onChange={(e) => setForm((prev) => ({ ...prev, dob: e.target.value }))}
               />
             </label>
             <label className="profile-field">
@@ -320,6 +355,12 @@ const Profile = () => {
           <h2>Government ID</h2>
           <p className="profile-footnote">Upload a government ID to verify your identity.</p>
           {governmentIdError && <div className="profile-alert profile-alert--error">{governmentIdError}</div>}
+          <div className="profile-id-status">
+            <span>Verification status</span>
+            <span className={`profile-id-pill ${isGovernmentIdVerified ? 'is-verified' : ''}`}>
+              {isGovernmentIdVerified ? 'Verified' : 'Not verified'}
+            </span>
+          </div>
           <div className="profile-id-row">
             <div className="profile-id-details">
               <div className="profile-id-field">
