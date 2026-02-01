@@ -926,33 +926,11 @@
   margin-bottom: 24px;
 }
 
-.buying-power-card h3,
-.buying-power-docs summary {
+.buying-power-card h3 {
   font-size: 16px;
   font-weight: 600;
   margin: 0 0 12px 0;
   color: var(--color-text-secondary, #cbd5e1);
-}
-
-.buying-power-docs summary {
-  cursor: pointer;
-  list-style: none;
-}
-
-.buying-power-docs summary::-webkit-details-marker {
-  display: none;
-}
-
-.buying-power-docs summary::before {
-  content: '▸';
-  display: inline-block;
-  margin-right: 8px;
-  color: var(--color-text-secondary, #cbd5e1);
-  transition: transform 0.2s ease;
-}
-
-.buying-power-docs[open] summary::before {
-  transform: rotate(90deg);
 }
 
 .buying-power-display {
@@ -1051,11 +1029,20 @@
 }
 
 .buying-power-docs {
-  padding-top: 8px;
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(148, 163, 184, 0.25);
 }
 
-.buying-power-docs-body {
-  margin-top: 12px;
+.buying-power-docs h4 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 8px 0;
+  color: var(--color-text-secondary, #cbd5e1);
+}
+
+.buying-power-docs .form-hint {
+  margin: 0 0 12px 0;
 }
 
 .doc-row {

@@ -1585,11 +1585,12 @@ const Dashboard = () => {
                     </div>
                   </div>
                 )}
-              </div>
 
-              <details className="buying-power-docs">
-                <summary>Supporting documents</summary>
-                <div className="buying-power-docs-body">
+                <div className="buying-power-docs">
+                  <h4>Supporting documents</h4>
+                  {!editingBuyingPower && (
+                    <p className="form-hint">Edit buying power to add or replace documents.</p>
+                  )}
                   {[
                     { key: 'proofOfFunds', label: 'Proof of Funds' },
                     { key: 'preApprovalLetter', label: 'Pre-Approval Letter' },
@@ -1611,14 +1612,19 @@ const Dashboard = () => {
                             <DragDropFileInput
                               accept=".pdf,.jpg,.jpeg,.png"
                               onChange={(f) => { if (f) handleReplaceDocument(key, f); }}
-                              disabled={!!uploadingDoc}
+                              disabled={!editingBuyingPower || !!uploadingDoc}
                               uploading={isUploading}
                               placeholder={url ? 'Drop to replace' : 'Drop or click to add'}
                               className="dashboard-doc-upload"
                             />
                           </div>
                           {url && (
-                            <button type="button" className="btn btn-outline btn-small doc-remove-btn" onClick={() => handleRemoveDocument(key)}>
+                            <button
+                              type="button"
+                              className="btn btn-outline btn-small doc-remove-btn"
+                              onClick={() => handleRemoveDocument(key)}
+                              disabled={!editingBuyingPower}
+                            >
                               Remove
                             </button>
                           )}
@@ -1627,7 +1633,7 @@ const Dashboard = () => {
                     );
                   })}
                 </div>
-              </details>
+              </div>
             </div>
           )}
 
