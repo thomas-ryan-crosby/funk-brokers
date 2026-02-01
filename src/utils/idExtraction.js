@@ -1,4 +1,5 @@
 import { getPdfjs } from './pdfjsLoader';
+import Tesseract from 'tesseract.js';
 
 const cleanSpaces = (value) => value.replace(/\s+/g, ' ').trim();
 
@@ -46,7 +47,6 @@ const getPdfText = async (file) => {
 };
 
 const getImageText = async (file) => {
-  const { default: Tesseract } = await import('tesseract.js');
   const { data } = await Tesseract.recognize(file, 'eng');
   return cleanSpaces(data?.text || '');
 };
