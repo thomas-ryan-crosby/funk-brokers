@@ -490,6 +490,61 @@
   color: #92400e;
 }
 
+/* Section cards A–G (Physical, Ownership, Mortgage, etc.) */
+.property-detail-section-card {
+  margin-top: 16px;
+}
+
+.property-detail-section-card:first-of-type {
+  margin-top: 0;
+}
+
+.detail-section-loading {
+  margin: 0;
+  font-size: 14px;
+  color: #64748b;
+}
+
+.detail-value-list {
+  font-weight: 500;
+  max-width: 60%;
+  text-align: right;
+  word-break: break-word;
+}
+
+.detail-section-list {
+  padding: 12px 0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.detail-section-list:last-child {
+  border-bottom: none;
+}
+
+.detail-section-list > .detail-label {
+  display: block;
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 8px;
+}
+
+.detail-value-list-ul {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1a1a1a;
+  line-height: 1.5;
+}
+
+.detail-value-list-ul li {
+  margin-bottom: 6px;
+}
+
+.detail-value-list-ul li:last-child {
+  margin-bottom: 0;
+}
+
 .detail-row--comms .comms-toggle-wrap {
   display: inline-flex;
   align-items: center;
