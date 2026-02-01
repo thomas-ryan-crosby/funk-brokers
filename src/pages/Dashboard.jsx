@@ -19,6 +19,7 @@ import CounterOfferModal from '../components/CounterOfferModal';
 import ViewOfferModal from '../components/ViewOfferModal';
 import DragDropFileInput from '../components/DragDropFileInput';
 import AddressAutocomplete from '../components/AddressAutocomplete';
+import { extractDocumentData } from '../utils/documentExtraction';
 import './Dashboard.css';
 
 function getExpiryMs(offer) {
@@ -721,13 +722,16 @@ const Dashboard = () => {
       const url = await uploadFile(file, path);
       const docs = { ...(purchaseProfile?.verificationDocuments || {}), [field]: url };
       const amounts = { ...(purchaseProfile?.verificationDocumentAmounts || {}) };
-      if (amountEligible.includes(field) && file.type === 'application/pdf') {
-        const { extractPdfAmount } = await import('../utils/pdfAmount');
-        const extracted = await extractPdfAmount(file);
-        if (extracted != null) {
-          amounts[field] = extracted;
-        } else {
-          delete amounts[field];
+      if (amountEligible.includes(field)) {
+        try {
+          const result = await extractDocumentData({ url, docType: field });
+          if (result?.amount != null) {
+            amounts[field] = result.amount;
+          } else {
+            delete amounts[field];
+          }
+        } catch (error) {
+          console.error('Document extraction failed:', error);
         }
       }
       const validation = computeBuyingPowerValidation(purchaseProfile?.buyingPower ?? null, amounts);

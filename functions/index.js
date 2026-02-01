@@ -1,4 +1,8 @@
 const functions = require('firebase-functions');
+const admin = require('firebase-admin');
+const pdfParse = require('pdf-parse');
+
+admin.initializeApp();
 
 const ATTOM_BASE = 'https://api.gateway.attomdata.com/propertyapi/v1.0.0/allevents/snapshot';
 
@@ -129,3 +133,134 @@ const getParcelsInViewport = functions.https.onRequest(async (req, res) => {
 });
 
 exports.getParcelsInViewport = getParcelsInViewport;
+
+const parseCurrencyValues = (text) => {
+  if (!text) return [];
+  const results = [];
+  const pattern = /(?:\$|usd\s*)\s*([0-9]{1,3}(?:,[0-9]{3})+|[0-9]+)(?:\.\d{2})?/gi;
+  let match;
+  while ((match = pattern.exec(text)) !== null) {
+    const raw = match[1] || '';
+    const normalized = raw.replace(/,/g, '');
+    const value = Number.parseFloat(normalized);
+    if (!Number.isNaN(value) && value >= 1000 && value <= 100000000) {
+      results.push(value);
+    }
+  }
+  return results;
+};
+
+const parseKeywordAmounts = (text) => {
+  if (!text) return [];
+  const results = [];
+  const keywords = [
+    'approved',
+    'pre-approval',
+    'preapproval',
+    'loan amount',
+    'amount',
+    'funds',
+    'available',
+    'verified',
+    'credit',
+  ];
+  const lower = text.toLowerCase();
+  for (const keyword of keywords) {
+    const idx = lower.indexOf(keyword);
+    if (idx === -1) continue;
+    const windowText = text.slice(Math.max(0, idx - 40), idx + 160);
+    results.push(...parseCurrencyValues(windowText));
+  }
+  return results;
+};
+
+const parseDob = (text) => {
+  if (!text) return null;
+  const patterns = [
+    /\b(?:dob|date of birth|birth)\b[:\s]*([0-9]{1,2}[\/\-][0-9]{1,2}[\/\-][0-9]{4})/i,
+    /\b([0-9]{4}[\/\-][0-9]{1,2}[\/\-][0-9]{1,2})\b/,
+  ];
+  for (const pattern of patterns) {
+    const match = text.match(pattern);
+    if (match?.[1]) return match[1];
+  }
+  return null;
+};
+
+const parseName = (text) => {
+  if (!text) return null;
+  const match = text.match(/\b(?:name|full name)\b[:\s]*([A-Z][A-Z'\- ]{2,})/i);
+  if (match?.[1]) {
+    return match[1].replace(/\s+/g, ' ').trim();
+  }
+  return null;
+};
+
+const extractTextFromPdf = async (buffer) => {
+  const parsed = await pdfParse(buffer);
+  return (parsed.text || '').replace(/\s+/g, ' ').trim();
+};
+
+const extractTextFromImage = async (buffer) => {
+  const { createWorker } = require('tesseract.js');
+  const worker = await createWorker('eng');
+  const { data } = await worker.recognize(buffer);
+  await worker.terminate();
+  return (data?.text || '').replace(/\s+/g, ' ').trim();
+};
+
+exports.extractDocumentData = functions.https.onRequest(async (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+
+  if (req.method !== 'POST') {
+    res.status(405).json({ error: 'Method not allowed' });
+    return;
+  }
+
+  const { url, docType } = req.body || {};
+  if (!url || typeof url !== 'string') {
+    res.status(400).json({ error: 'Missing document url' });
+    return;
+  }
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      res.status(502).json({ error: 'Failed to fetch document' });
+      return;
+    }
+    const contentType = response.headers.get('content-type') || '';
+    const buffer = Buffer.from(await response.arrayBuffer());
+
+    let text = '';
+    if (contentType.includes('pdf') || url.toLowerCase().includes('.pdf')) {
+      text = await extractTextFromPdf(buffer);
+    } else if (contentType.includes('image') || /\.(png|jpe?g)$/i.test(url)) {
+      text = await extractTextFromImage(buffer);
+    }
+
+    const amountCandidates = [
+      ...parseCurrencyValues(text),
+      ...parseKeywordAmounts(text),
+    ];
+    const amount = amountCandidates.length ? Math.max(...amountCandidates) : null;
+
+    const extractedName = docType === 'governmentId' ? parseName(text) : null;
+    const extractedDob = docType === 'governmentId' ? parseDob(text) : null;
+
+    res.json({
+      amount,
+      extractedName,
+      extractedDob,
+    });
+  } catch (error) {
+    console.error('Extraction error:', error);
+    res.status(500).json({ error: 'Extraction failed' });
+  }
+});
