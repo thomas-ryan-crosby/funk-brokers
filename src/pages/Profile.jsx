@@ -200,6 +200,15 @@ const Profile = () => {
     };
   };
 
+  const splitNameParts = (fullName) => {
+    const parts = String(fullName || '').trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return {};
+    const first = parts[0];
+    const last = parts.length > 1 ? parts[parts.length - 1] : '';
+    const middle = parts.length > 2 ? parts.slice(1, -1).join(' ') : '';
+    return { first, middle, last };
+  };
+
   const handlePersonaVerification = async () => {
     if (!user?.uid || personaLoading) return;
     setPersonaError('');
@@ -210,26 +219,51 @@ const Profile = () => {
       if (!environmentId) {
         throw new Error('Persona environment ID not configured.');
       }
-      const { inquiryId, sessionToken } = await createPersonaInquiry({
-        name: userProfile?.name || user?.displayName,
-        dob: userProfile?.dob,
-        email: userProfile?.email || user?.email,
-      });
-      if (!inquiryId) {
-        throw new Error('Persona inquiry could not be created.');
+
+      const templateId = import.meta.env.VITE_PERSONA_TEMPLATE_ID;
+      const name = userProfile?.name || user?.displayName || '';
+      const { first, middle, last } = splitNameParts(name);
+      const fields = {
+        ...(first ? { 'name-first': first } : {}),
+        ...(middle ? { 'name-middle': middle } : {}),
+        ...(last ? { 'name-last': last } : {}),
+        ...(userProfile?.dob ? { birthdate: userProfile.dob } : {}),
+        ...(userProfile?.email || user?.email ? { 'email-address': userProfile?.email || user?.email } : {}),
+      };
+
+      let inquiryId = null;
+      let sessionToken = null;
+
+      if (templateId) {
+        inquiryId = null;
+        sessionToken = null;
+      } else {
+        const created = await createPersonaInquiry({
+          name: userProfile?.name || user?.displayName,
+          dob: userProfile?.dob,
+          email: userProfile?.email || user?.email,
+        });
+        inquiryId = created?.inquiryId;
+        sessionToken = created?.sessionToken;
+        if (!inquiryId) {
+          throw new Error('Persona inquiry could not be created.');
+        }
       }
       if (personaClientRef.current?.destroy) {
         personaClientRef.current.destroy();
       }
       const client = new Persona.Client({
-        inquiryId,
+        ...(templateId ? { templateId } : { inquiryId }),
         environmentId,
+        referenceId: user?.uid,
+        fields,
         ...(sessionToken ? { sessionToken } : {}),
         onReady: () => client.open(),
         onComplete: async ({ inquiryId: completedId, status, fields }) => {
           const { extractedName, extractedDob } = parsePersonaFields(fields);
+          const resolvedInquiryId = completedId || inquiryId || null;
           await updateUserProfile(user.uid, {
-            governmentIdPersonaInquiryId: completedId || inquiryId,
+            governmentIdPersonaInquiryId: resolvedInquiryId,
             governmentIdPersonaStatus: status || null,
             governmentIdExtractedName: extractedName || null,
             governmentIdExtractedDob: extractedDob || null,
@@ -238,10 +272,10 @@ const Profile = () => {
 
           const purchaseProfile = await getPurchaseProfile(user.uid);
           const docs = { ...(purchaseProfile?.verificationDocuments || {}) };
-          docs.governmentId = `persona:${completedId || inquiryId}`;
+          docs.governmentId = resolvedInquiryId ? `persona:${resolvedInquiryId}` : 'persona';
           await setPurchaseProfile(user.uid, {
             verificationDocuments: docs,
-            governmentIdPersonaInquiryId: completedId || inquiryId,
+            governmentIdPersonaInquiryId: resolvedInquiryId,
             governmentIdPersonaStatus: status || null,
             governmentIdExtractedName: extractedName || null,
             governmentIdExtractedDob: extractedDob || null,
