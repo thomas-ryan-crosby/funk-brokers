@@ -283,6 +283,17 @@
   text-decoration: underline;
 }
 
+.profile-id-persona {
+  align-self: flex-start;
+}
+
+.profile-id-divider {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-text-muted, #94a3b8);
+}
+
 .profile-id-dropzone {
   min-height: 120px;
 }

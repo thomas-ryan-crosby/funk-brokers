@@ -656,6 +656,10 @@ const Dashboard = () => {
     (value || '').toLowerCase().replace(/[^a-z]/g, '');
 
   const isGovernmentIdVerified = (() => {
+    const personaStatus = (userProfile?.governmentIdPersonaStatus || '').toLowerCase();
+    if (personaStatus) {
+      return ['completed', 'approved'].includes(personaStatus);
+    }
     const extractedName = normalizeName(userProfile?.governmentIdExtractedName);
     const profileName = normalizeName(userProfile?.name || user?.displayName);
     const extractedDob = normalizeDate(userProfile?.governmentIdExtractedDob);

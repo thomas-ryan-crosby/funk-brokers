@@ -1,11 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { updateUserProfile, updateUserPassword, logout } from '../services/authService';
 import { getPurchaseProfile, setPurchaseProfile } from '../services/profileService';
 import { uploadFile } from '../services/storageService';
 import DragDropFileInput from '../components/DragDropFileInput';
+import { createPersonaInquiry } from '../services/personaService';
 import { extractGovernmentIdInfo } from '../utils/idExtraction';
+import Persona from 'persona';
 import './Profile.css';
 
 const Profile = () => {
@@ -31,12 +33,23 @@ const Profile = () => {
   const [showBankLinkModal, setShowBankLinkModal] = useState(false);
   const [governmentIdUploading, setGovernmentIdUploading] = useState(false);
   const [governmentIdError, setGovernmentIdError] = useState('');
+  const [personaLoading, setPersonaLoading] = useState(false);
+  const [personaError, setPersonaError] = useState('');
+  const personaClientRef = useRef(null);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       navigate('/sign-in?redirect=/profile');
     }
   }, [authLoading, isAuthenticated, navigate]);
+
+  useEffect(() => {
+    return () => {
+      if (personaClientRef.current?.destroy) {
+        personaClientRef.current.destroy();
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!user?.uid) return;
@@ -154,6 +167,10 @@ const Profile = () => {
     (value || '').toLowerCase().replace(/[^a-z]/g, '');
 
   const isGovernmentIdVerified = (() => {
+    const personaStatus = (userProfile?.governmentIdPersonaStatus || '').toLowerCase();
+    if (personaStatus) {
+      return ['completed', 'approved'].includes(personaStatus);
+    }
     const extractedName = normalizeName(userProfile?.governmentIdExtractedName);
     const profileName = normalizeName(userProfile?.name || user?.displayName);
     const extractedDob = normalizeDate(userProfile?.governmentIdExtractedDob);
@@ -161,6 +178,93 @@ const Profile = () => {
     if (!extractedName || !extractedDob || !profileName || !profileDob) return false;
     return extractedName === profileName && extractedDob === profileDob;
   })();
+
+  const readPersonaField = (fields, key, altKey) => {
+    if (!fields) return null;
+    const value = fields[key] ?? fields[altKey];
+    if (!value) return null;
+    if (typeof value === 'string') return value;
+    if (typeof value === 'object' && value.value) return value.value;
+    return null;
+  };
+
+  const parsePersonaFields = (fields) => {
+    const first = readPersonaField(fields, 'name-first', 'name_first');
+    const middle = readPersonaField(fields, 'name-middle', 'name_middle');
+    const last = readPersonaField(fields, 'name-last', 'name_last');
+    const birthdate = readPersonaField(fields, 'birthdate', 'birthdate');
+    const nameParts = [first, middle, last].filter(Boolean);
+    return {
+      extractedName: nameParts.length ? nameParts.join(' ') : null,
+      extractedDob: birthdate || null,
+    };
+  };
+
+  const handlePersonaVerification = async () => {
+    if (!user?.uid || personaLoading) return;
+    setPersonaError('');
+    setGovernmentIdError('');
+    setPersonaLoading(true);
+    try {
+      const environmentId = import.meta.env.VITE_PERSONA_ENV_ID;
+      if (!environmentId) {
+        throw new Error('Persona environment ID not configured.');
+      }
+      const { inquiryId, sessionToken } = await createPersonaInquiry({
+        name: userProfile?.name || user?.displayName,
+        dob: userProfile?.dob,
+        email: userProfile?.email || user?.email,
+      });
+      if (!inquiryId) {
+        throw new Error('Persona inquiry could not be created.');
+      }
+      if (personaClientRef.current?.destroy) {
+        personaClientRef.current.destroy();
+      }
+      const client = new Persona.Client({
+        inquiryId,
+        environmentId,
+        ...(sessionToken ? { sessionToken } : {}),
+        onReady: () => client.open(),
+        onComplete: async ({ inquiryId: completedId, status, fields }) => {
+          const { extractedName, extractedDob } = parsePersonaFields(fields);
+          await updateUserProfile(user.uid, {
+            governmentIdPersonaInquiryId: completedId || inquiryId,
+            governmentIdPersonaStatus: status || null,
+            governmentIdExtractedName: extractedName || null,
+            governmentIdExtractedDob: extractedDob || null,
+          });
+          await refreshUserProfile?.(user.uid);
+
+          const purchaseProfile = await getPurchaseProfile(user.uid);
+          const docs = { ...(purchaseProfile?.verificationDocuments || {}) };
+          docs.governmentId = `persona:${completedId || inquiryId}`;
+          await setPurchaseProfile(user.uid, {
+            verificationDocuments: docs,
+            governmentIdPersonaInquiryId: completedId || inquiryId,
+            governmentIdPersonaStatus: status || null,
+            governmentIdExtractedName: extractedName || null,
+            governmentIdExtractedDob: extractedDob || null,
+          });
+          client.destroy();
+        },
+        onCancel: () => {
+          client.destroy();
+        },
+        onError: (error) => {
+          console.error('Persona error:', error);
+          setPersonaError('Persona verification failed. Please try again.');
+          client.destroy();
+        },
+      });
+      personaClientRef.current = client;
+    } catch (err) {
+      console.error('Persona verification error:', err);
+      setPersonaError(err?.message || 'Failed to start Persona verification.');
+    } finally {
+      setPersonaLoading(false);
+    }
+  };
 
   const handleGovernmentIdUpload = async (file) => {
     if (!file || !user?.uid) return;
@@ -189,6 +293,8 @@ const Profile = () => {
         governmentIdUrl: url,
         governmentIdExtractedName: extractedName || null,
         governmentIdExtractedDob: extractedDob || null,
+        governmentIdPersonaInquiryId: null,
+        governmentIdPersonaStatus: null,
       });
       await refreshUserProfile?.(user.uid);
 
@@ -198,6 +304,8 @@ const Profile = () => {
         verificationDocuments: docs,
         governmentIdExtractedName: extractedName || null,
         governmentIdExtractedDob: extractedDob || null,
+        governmentIdPersonaInquiryId: null,
+        governmentIdPersonaStatus: null,
       });
     } catch (err) {
       console.error('Error uploading government ID:', err);
@@ -215,6 +323,8 @@ const Profile = () => {
         governmentIdUrl: null,
         governmentIdExtractedName: null,
         governmentIdExtractedDob: null,
+        governmentIdPersonaInquiryId: null,
+        governmentIdPersonaStatus: null,
       });
       await refreshUserProfile?.(user.uid);
 
@@ -225,6 +335,8 @@ const Profile = () => {
         verificationDocuments: docs,
         governmentIdExtractedName: null,
         governmentIdExtractedDob: null,
+        governmentIdPersonaInquiryId: null,
+        governmentIdPersonaStatus: null,
       });
     } catch (err) {
       console.error('Error removing government ID:', err);
@@ -386,8 +498,9 @@ const Profile = () => {
 
         <div className="profile-section">
           <h2>Government ID</h2>
-          <p className="profile-footnote">Upload a government ID to verify your identity.</p>
+          <p className="profile-footnote">Verify your identity with Persona or upload a document manually.</p>
           {governmentIdError && <div className="profile-alert profile-alert--error">{governmentIdError}</div>}
+          {personaError && <div className="profile-alert profile-alert--error">{personaError}</div>}
           <div className="profile-id-status">
             <span>Verification status</span>
             <span className={`profile-id-pill ${isGovernmentIdVerified ? 'is-verified' : ''}`}>
@@ -396,6 +509,10 @@ const Profile = () => {
           </div>
           <div className="profile-id-row">
             <div className="profile-id-details">
+              <div className="profile-id-field">
+                <span>Persona status</span>
+                <strong>{userProfile?.governmentIdPersonaStatus || '—'}</strong>
+              </div>
               <div className="profile-id-field">
                 <span>Extracted name</span>
                 <strong>{userProfile?.governmentIdExtractedName || '—'}</strong>
@@ -417,6 +534,15 @@ const Profile = () => {
             </div>
             {isEditingProfile && (
               <div className="profile-id-upload">
+                <button
+                  type="button"
+                  className="btn btn-primary profile-id-persona"
+                  onClick={handlePersonaVerification}
+                  disabled={personaLoading}
+                >
+                  {personaLoading ? 'Starting Persona...' : 'Verify with Persona'}
+                </button>
+                <div className="profile-id-divider">or upload manually</div>
                 <DragDropFileInput
                   accept=".pdf,.jpg,.jpeg,.png"
                   onChange={(f) => { if (f) handleGovernmentIdUpload(f); }}
@@ -425,7 +551,7 @@ const Profile = () => {
                   placeholder={userProfile?.governmentIdUrl ? 'Drop to replace' : 'Drop or click to upload'}
                   className="profile-id-dropzone"
                 />
-                {userProfile?.governmentIdUrl && (
+                {(userProfile?.governmentIdUrl || userProfile?.governmentIdPersonaInquiryId) && (
                   <button type="button" className="btn btn-outline profile-id-remove" onClick={handleRemoveGovernmentId}>
                     Remove ID
                   </button>

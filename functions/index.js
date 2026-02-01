@@ -1,6 +1,8 @@
 const functions = require('firebase-functions');
 
 const ATTOM_BASE = 'https://api.gateway.attomdata.com/propertyapi/v1.0.0/allevents/snapshot';
+const PERSONA_BASE = 'https://api.withpersona.com/api/v1';
+const PERSONA_VERSION = '2025-10-27';
 
 /**
  * Compute radius in miles from bbox (n,s,e,w in degrees).
@@ -129,3 +131,119 @@ const getParcelsInViewport = functions.https.onRequest(async (req, res) => {
 });
 
 exports.getParcelsInViewport = getParcelsInViewport;
+
+const getPersonaConfig = () => {
+  const apiKey = process.env.PERSONA_API_KEY || functions.config().persona?.api_key;
+  const templateId = process.env.PERSONA_TEMPLATE_ID || functions.config().persona?.template_id;
+  if (!apiKey || !templateId) {
+    throw new functions.https.HttpsError('failed-precondition', 'Persona API key or template ID not configured.');
+  }
+  return { apiKey, templateId };
+};
+
+const personaHeaders = (apiKey) => ({
+  Authorization: `Bearer ${apiKey}`,
+  'Content-Type': 'application/json',
+  'Persona-Version': PERSONA_VERSION,
+});
+
+const pickNameParts = (fullName) => {
+  const tokens = String(fullName || '').trim().split(/\s+/).filter(Boolean);
+  if (!tokens.length) return {};
+  const first = tokens[0];
+  const last = tokens.length > 1 ? tokens[tokens.length - 1] : '';
+  const middle = tokens.length > 2 ? tokens.slice(1, -1).join(' ') : '';
+  return { first, middle, last };
+};
+
+const findOpenInquiry = async (apiKey, referenceId) => {
+  const params = new URLSearchParams({
+    'filter[reference-id]': referenceId,
+    'filter[status]': 'created,pending',
+    'page[size]': '1',
+  });
+  const response = await fetch(`${PERSONA_BASE}/inquiries?${params.toString()}`, {
+    method: 'GET',
+    headers: personaHeaders(apiKey),
+  });
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`Persona list inquiries failed: ${response.status} ${body}`);
+  }
+  const payload = await response.json();
+  return payload?.data?.[0] || null;
+};
+
+const createInquiry = async (apiKey, templateId, referenceId, fields) => {
+  const payload = {
+    data: {
+      attributes: {
+        'inquiry-template-id': templateId,
+        'reference-id': referenceId,
+        fields,
+      },
+    },
+  };
+  const response = await fetch(`${PERSONA_BASE}/inquiries`, {
+    method: 'POST',
+    headers: personaHeaders(apiKey),
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`Persona create inquiry failed: ${response.status} ${body}`);
+  }
+  const payloadResponse = await response.json();
+  return payloadResponse?.data || null;
+};
+
+const resumeInquiry = async (apiKey, inquiryId) => {
+  const response = await fetch(`${PERSONA_BASE}/inquiries/${inquiryId}/resume`, {
+    method: 'POST',
+    headers: personaHeaders(apiKey),
+    body: JSON.stringify({ meta: {} }),
+  });
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`Persona resume inquiry failed: ${response.status} ${body}`);
+  }
+  const payload = await response.json();
+  return payload?.meta?.['session-token'] || null;
+};
+
+exports.createPersonaInquiry = functions.https.onCall(async (data, context) => {
+  if (!context.auth?.uid) {
+    throw new functions.https.HttpsError('unauthenticated', 'Authentication required.');
+  }
+
+  const { apiKey, templateId } = getPersonaConfig();
+  const referenceId = context.auth.uid;
+  const name = data?.name || '';
+  const birthdate = data?.dob || null;
+  const email = data?.email || null;
+  const { first, middle, last } = pickNameParts(name);
+
+  const fields = {
+    ...(first ? { 'name-first': first } : {}),
+    ...(middle ? { 'name-middle': middle } : {}),
+    ...(last ? { 'name-last': last } : {}),
+    ...(birthdate ? { birthdate } : {}),
+    ...(email ? { 'email-address': email } : {}),
+  };
+
+  try {
+    const existing = await findOpenInquiry(apiKey, referenceId);
+    if (existing) {
+      const status = existing?.attributes?.status || 'created';
+      const inquiryId = existing?.id;
+      const sessionToken = status === 'pending' ? await resumeInquiry(apiKey, inquiryId) : null;
+      return { inquiryId, status, sessionToken };
+    }
+
+    const created = await createInquiry(apiKey, templateId, referenceId, fields);
+    return { inquiryId: created?.id, status: created?.attributes?.status || 'created', sessionToken: null };
+  } catch (error) {
+    console.error('Persona inquiry error:', error);
+    throw new functions.https.HttpsError('internal', 'Failed to create Persona inquiry.');
+  }
+});
