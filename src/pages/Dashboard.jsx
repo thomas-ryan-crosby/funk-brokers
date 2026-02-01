@@ -1587,45 +1587,47 @@ const Dashboard = () => {
                 )}
               </div>
 
-              <div className="buying-power-docs">
-                <h3>Supporting documents</h3>
-                {[
-                  { key: 'proofOfFunds', label: 'Proof of Funds' },
-                  { key: 'preApprovalLetter', label: 'Pre-Approval Letter' },
-                  { key: 'bankLetter', label: 'Bank Letter' },
-                  { key: 'governmentId', label: 'Government ID' },
-                ].map(({ key, label }) => {
-                  const url = purchaseProfile?.verificationDocuments?.[key];
-                  const isUploading = uploadingDoc === key;
-                  return (
-                    <div key={key} className="doc-row">
-                      <div className="doc-row-label">{label}</div>
-                      <div className="doc-row-actions">
-                        {url && (
-                          <a href={url} target="_blank" rel="noopener noreferrer" className="doc-link">
-                            View
-                          </a>
-                        )}
-                        <div className="doc-drag-drop-wrap">
-                          <DragDropFileInput
-                            accept=".pdf,.jpg,.jpeg,.png"
-                            onChange={(f) => { if (f) handleReplaceDocument(key, f); }}
-                            disabled={!!uploadingDoc}
-                            uploading={isUploading}
-                            placeholder={url ? 'Drop to replace' : 'Drop or click to add'}
-                            className="dashboard-doc-upload"
-                          />
+              <details className="buying-power-docs">
+                <summary>Supporting documents</summary>
+                <div className="buying-power-docs-body">
+                  {[
+                    { key: 'proofOfFunds', label: 'Proof of Funds' },
+                    { key: 'preApprovalLetter', label: 'Pre-Approval Letter' },
+                    { key: 'bankLetter', label: 'Bank Letter' },
+                    { key: 'governmentId', label: 'Government ID' },
+                  ].map(({ key, label }) => {
+                    const url = purchaseProfile?.verificationDocuments?.[key];
+                    const isUploading = uploadingDoc === key;
+                    return (
+                      <div key={key} className="doc-row">
+                        <div className="doc-row-label">{label}</div>
+                        <div className="doc-row-actions">
+                          {url && (
+                            <a href={url} target="_blank" rel="noopener noreferrer" className="doc-link">
+                              View
+                            </a>
+                          )}
+                          <div className="doc-drag-drop-wrap">
+                            <DragDropFileInput
+                              accept=".pdf,.jpg,.jpeg,.png"
+                              onChange={(f) => { if (f) handleReplaceDocument(key, f); }}
+                              disabled={!!uploadingDoc}
+                              uploading={isUploading}
+                              placeholder={url ? 'Drop to replace' : 'Drop or click to add'}
+                              className="dashboard-doc-upload"
+                            />
+                          </div>
+                          {url && (
+                            <button type="button" className="btn btn-outline btn-small doc-remove-btn" onClick={() => handleRemoveDocument(key)}>
+                              Remove
+                            </button>
+                          )}
                         </div>
-                        {url && (
-                          <button type="button" className="btn btn-outline btn-small doc-remove-btn" onClick={() => handleRemoveDocument(key)}>
-                            Remove
-                          </button>
-                        )}
                       </div>
-                    </div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+              </details>
             </div>
           )}
 

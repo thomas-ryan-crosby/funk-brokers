@@ -927,15 +927,32 @@
 }
 
 .buying-power-card h3,
-.buying-power-docs h3 {
+.buying-power-docs summary {
   font-size: 16px;
   font-weight: 600;
   margin: 0 0 12px 0;
   color: var(--color-text-secondary, #cbd5e1);
 }
 
-.buying-power-docs h3 {
-  margin-bottom: 12px;
+.buying-power-docs summary {
+  cursor: pointer;
+  list-style: none;
+}
+
+.buying-power-docs summary::-webkit-details-marker {
+  display: none;
+}
+
+.buying-power-docs summary::before {
+  content: '▸';
+  display: inline-block;
+  margin-right: 8px;
+  color: var(--color-text-secondary, #cbd5e1);
+  transition: transform 0.2s ease;
+}
+
+.buying-power-docs[open] summary::before {
+  transform: rotate(90deg);
 }
 
 .buying-power-display {
@@ -1035,6 +1052,10 @@
 
 .buying-power-docs {
   padding-top: 8px;
+}
+
+.buying-power-docs-body {
+  margin-top: 12px;
 }
 
 .doc-row {
