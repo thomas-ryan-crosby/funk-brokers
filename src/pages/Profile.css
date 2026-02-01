@@ -224,6 +224,53 @@
    font-size: 13px;
 }
 
+.profile-id-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 320px);
+  gap: 20px;
+  align-items: start;
+}
+
+.profile-id-details {
+  display: grid;
+  gap: 12px;
+}
+
+.profile-id-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  color: var(--color-text-secondary, #cbd5e1);
+  font-size: 13px;
+}
+
+.profile-id-field strong {
+  color: var(--color-text-primary, #f8fafc);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.profile-id-link {
+  color: #f472b6;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.profile-id-link:hover {
+  text-decoration: underline;
+}
+
+.profile-id-dropzone {
+  min-height: 120px;
+}
+
+@media (max-width: 720px) {
+  .profile-id-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 .profile-modal-overlay {
   position: fixed;
   inset: 0;

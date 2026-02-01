@@ -1598,7 +1598,6 @@ const Dashboard = () => {
                     { key: 'proofOfFunds', label: 'Proof of Funds' },
                     { key: 'preApprovalLetter', label: 'Pre-Approval Letter' },
                     { key: 'bankLetter', label: 'Bank Letter' },
-                    { key: 'governmentId', label: 'Government ID' },
                   ].map(({ key, label }) => {
                     const url = purchaseProfile?.verificationDocuments?.[key];
                     const amount = purchaseProfile?.verificationDocumentAmounts?.[key];
@@ -1642,6 +1641,13 @@ const Dashboard = () => {
                       </div>
                     );
                   })}
+                </div>
+
+                <div className="buying-power-id-status">
+                  <span>Government ID</span>
+                  <span className={`buying-power-id-pill ${userProfile?.governmentIdUrl ? 'is-verified' : ''}`}>
+                    {userProfile?.governmentIdUrl ? 'Verified' : 'Not verified'}
+                  </span>
                 </div>
 
                 <div className="buying-power-funding">

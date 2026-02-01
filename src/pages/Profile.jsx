@@ -2,6 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { updateUserProfile, updateUserPassword, logout } from '../services/authService';
+import { getPurchaseProfile, setPurchaseProfile } from '../services/profileService';
+import { uploadFile } from '../services/storageService';
+import DragDropFileInput from '../components/DragDropFileInput';
+import { extractGovernmentIdInfo } from '../utils/idExtraction';
 import './Profile.css';
 
 const Profile = () => {
@@ -25,6 +29,8 @@ const Profile = () => {
   const [showBankLinkModal, setShowBankLinkModal] = useState(false);
   const [editingFunding, setEditingFunding] = useState(false);
   const [fundingForm, setFundingForm] = useState('');
+  const [governmentIdUploading, setGovernmentIdUploading] = useState(false);
+  const [governmentIdError, setGovernmentIdError] = useState('');
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -115,6 +121,48 @@ const Profile = () => {
       setError('Failed to sign out. Please try again.');
     } finally {
       setSigningOut(false);
+    }
+  };
+
+  const handleGovernmentIdUpload = async (file) => {
+    if (!file || !user?.uid) return;
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setGovernmentIdError('File must be under 10MB.');
+      return;
+    }
+    const allowed = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+    if (!allowed.includes(file.type)) {
+      setGovernmentIdError('File must be PDF, JPG, or PNG.');
+      return;
+    }
+    setGovernmentIdUploading(true);
+    setGovernmentIdError('');
+    try {
+      const { extractedName, extractedDob } = await extractGovernmentIdInfo(file);
+      const ext = file.name.split('.').pop();
+      const path = `government-ids/${user.uid}/${Date.now()}.${ext}`;
+      const url = await uploadFile(file, path);
+
+      await updateUserProfile(user.uid, {
+        governmentIdUrl: url,
+        governmentIdExtractedName: extractedName || null,
+        governmentIdExtractedDob: extractedDob || null,
+      });
+      await refreshUserProfile?.(user.uid);
+
+      const purchaseProfile = await getPurchaseProfile(user.uid);
+      const docs = { ...(purchaseProfile?.verificationDocuments || {}), governmentId: url };
+      await setPurchaseProfile(user.uid, {
+        verificationDocuments: docs,
+        governmentIdExtractedName: extractedName || null,
+        governmentIdExtractedDob: extractedDob || null,
+      });
+    } catch (err) {
+      console.error('Error uploading government ID:', err);
+      setGovernmentIdError('Failed to upload government ID. Please try again.');
+    } finally {
+      setGovernmentIdUploading(false);
     }
   };
 
@@ -266,6 +314,44 @@ const Profile = () => {
               </div>
             </>
           )}
+        </div>
+
+        <div className="profile-section">
+          <h2>Government ID</h2>
+          <p className="profile-footnote">Upload a government ID to verify your identity.</p>
+          {governmentIdError && <div className="profile-alert profile-alert--error">{governmentIdError}</div>}
+          <div className="profile-id-row">
+            <div className="profile-id-details">
+              <div className="profile-id-field">
+                <span>Extracted name</span>
+                <strong>{userProfile?.governmentIdExtractedName || '—'}</strong>
+              </div>
+              <div className="profile-id-field">
+                <span>Extracted date of birth</span>
+                <strong>{userProfile?.governmentIdExtractedDob || '—'}</strong>
+              </div>
+              <div className="profile-id-field">
+                <span>Document</span>
+                {userProfile?.governmentIdUrl ? (
+                  <a href={userProfile.governmentIdUrl} target="_blank" rel="noopener noreferrer" className="profile-id-link">
+                    View uploaded ID
+                  </a>
+                ) : (
+                  <strong>Not uploaded</strong>
+                )}
+              </div>
+            </div>
+            <div className="profile-id-upload">
+              <DragDropFileInput
+                accept=".pdf,.jpg,.jpeg,.png"
+                onChange={(f) => { if (f) handleGovernmentIdUpload(f); }}
+                disabled={governmentIdUploading}
+                uploading={governmentIdUploading}
+                placeholder={userProfile?.governmentIdUrl ? 'Drop to replace' : 'Drop or click to upload'}
+                className="profile-id-dropzone"
+              />
+            </div>
+          </div>
         </div>
 
         <div className="profile-section">
