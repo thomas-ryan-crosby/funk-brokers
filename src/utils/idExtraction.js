@@ -53,7 +53,9 @@ const cleanNameCandidate = (value) => {
   const normalized = (value || '').replace(/[^A-Za-z'\- ]+/g, ' ');
   const tokens = cleanSpaces(normalized)
     .split(' ')
-    .filter((token) => token && !noiseNameTokens.has(token.toUpperCase()));
+    .filter((token) => token && !noiseNameTokens.has(token.toUpperCase()))
+    .filter((token) => token !== '-' && token !== "'")
+    .filter((token) => token.length > 1);
   if (tokens.length < 2) return null;
   return toTitleCase(tokens.join(' '));
 };
@@ -329,6 +331,16 @@ const extractNameCandidates = (text, source, hints) => {
     const value = cleanNameCandidate(`${idFormat[2]} ${idFormat[1]}`);
     if (value) candidates.push({ label: 'name', value, score: scoreNameCandidate(value, 8, hints), source, reason: '1/2 format' });
   }
+  const idSymbolFormat = normalized.match(/\b([A-Z'\-]{2,})\b\s*(?:\||=|:)?\s*2\s+([A-Z'\-]+(?:\s+[A-Z'\-]+)*)/i);
+  if (idSymbolFormat?.[1] && idSymbolFormat?.[2]) {
+    const value = cleanNameCandidate(`${idSymbolFormat[2]} ${idSymbolFormat[1]}`);
+    if (value) candidates.push({ label: 'name', value, score: scoreNameCandidate(value, 9, hints), source, reason: 'symbol 2 format' });
+  }
+  const lastPipeFormat = normalized.match(/\b([A-Z'\-]{2,})\b\s*(?:\||=){1,2}\s*2\s+([A-Z'\-]+(?:\s+[A-Z'\-]+)*)/i);
+  if (lastPipeFormat?.[1] && lastPipeFormat?.[2]) {
+    const value = cleanNameCandidate(`${lastPipeFormat[2]} ${lastPipeFormat[1]}`);
+    if (value) candidates.push({ label: 'name', value, score: scoreNameCandidate(value, 10, hints), source, reason: 'pipe 2 format' });
+  }
   const idLineFormat = normalized.match(/\b([A-Z'\-]{2,})\b\s*(?:\||=|:)?\s*2\s+([A-Z'\-]+(?:\s+[A-Z'\-]+)*)/i);
   if (idLineFormat?.[1] && idLineFormat?.[2]) {
     const value = cleanNameCandidate(`${idLineFormat[2]} ${idLineFormat[1]}`);
@@ -343,6 +355,13 @@ const extractNameCandidates = (text, source, hints) => {
     const middle = tokens[idx2 + 2];
     const value = cleanNameCandidate([first, middle, last].filter(Boolean).join(' '));
     if (value) candidates.push({ label: 'name', value, score: scoreNameCandidate(value, 6, hints), source, reason: 'token proximity' });
+  }
+  if (hints?.first && hints?.last) {
+    const hintPattern = new RegExp(`\\b${hints.last.toUpperCase()}\\b[^\\n]{0,40}\\b2\\s+${hints.first.toUpperCase()}`, 'i');
+    if (hintPattern.test(normalized)) {
+      const value = cleanNameCandidate(`${hints.first} ${hints.last}`);
+      if (value) candidates.push({ label: 'name', value, score: scoreNameCandidate(value, 14, hints), source, reason: 'hint proximity' });
+    }
   }
   return candidates;
 };
