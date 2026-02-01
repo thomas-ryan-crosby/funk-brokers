@@ -1,6 +1,7 @@
 const functions = require('firebase-functions');
 const admin = require('firebase-admin');
 const pdfParse = require('pdf-parse');
+const cors = require('cors')({ origin: true });
 
 admin.initializeApp();
 
@@ -241,73 +242,82 @@ const isPngBuffer = (buffer) => {
   return buffer.slice(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
 };
 
-exports.extractDocumentData = functions.https.onCall(async (data) => {
-  const { url, path, docType } = data || {};
-  if ((!url || typeof url !== 'string') && (!path || typeof path !== 'string')) {
-    throw new functions.https.HttpsError('invalid-argument', 'Missing document url or path');
-  }
-
-  try {
-    let buffer;
-    let contentType = '';
-    let urlLower = (url || '').toLowerCase();
-
-    if (path) {
-      try {
-        const bucket = admin.storage().bucket();
-        const file = bucket.file(path);
-        const [metadata] = await file.getMetadata();
-        contentType = metadata?.contentType || '';
-        const [downloaded] = await file.download();
-        buffer = downloaded;
-      } catch (err) {
-        console.error('Storage download failed, falling back to URL:', err);
-      }
+exports.extractDocumentData = functions.https.onRequest((req, res) => {
+  cors(req, res, async () => {
+    if (req.method !== 'POST') {
+      res.status(405).json({ error: 'Method not allowed' });
+      return;
     }
 
-    if (!buffer) {
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new functions.https.HttpsError('unavailable', 'Failed to fetch document');
-      }
-      contentType = response.headers.get('content-type') || '';
-      urlLower = urlLower || url.toLowerCase();
-      buffer = Buffer.from(await response.arrayBuffer());
+    const { url, path, docType } = req.body || {};
+    if ((!url || typeof url !== 'string') && (!path || typeof path !== 'string')) {
+      res.status(400).json({ error: 'Missing document url or path' });
+      return;
     }
 
-    let text = '';
-    if (contentType.includes('pdf') || urlLower.includes('.pdf') || isPdfBuffer(buffer)) {
-      text = await extractTextFromPdf(buffer);
-    } else if (
-      contentType.includes('image')
-      || /\.(png|jpe?g)$/i.test(urlLower)
-      || isJpegBuffer(buffer)
-      || isPngBuffer(buffer)
-    ) {
-      try {
-        text = await extractTextFromImage(buffer);
-      } catch (err) {
-        console.error('Image OCR failed:', err);
-        text = '';
+    try {
+      let buffer;
+      let contentType = '';
+      let urlLower = (url || '').toLowerCase();
+
+      if (path) {
+        try {
+          const bucket = admin.storage().bucket();
+          const file = bucket.file(path);
+          const [metadata] = await file.getMetadata();
+          contentType = metadata?.contentType || '';
+          const [downloaded] = await file.download();
+          buffer = downloaded;
+        } catch (err) {
+          console.error('Storage download failed, falling back to URL:', err);
+        }
       }
+
+      if (!buffer) {
+        const response = await fetch(url);
+        if (!response.ok) {
+          res.status(502).json({ error: 'Failed to fetch document' });
+          return;
+        }
+        contentType = response.headers.get('content-type') || '';
+        urlLower = urlLower || url.toLowerCase();
+        buffer = Buffer.from(await response.arrayBuffer());
+      }
+
+      let text = '';
+      if (contentType.includes('pdf') || urlLower.includes('.pdf') || isPdfBuffer(buffer)) {
+        text = await extractTextFromPdf(buffer);
+      } else if (
+        contentType.includes('image')
+        || /\.(png|jpe?g)$/i.test(urlLower)
+        || isJpegBuffer(buffer)
+        || isPngBuffer(buffer)
+      ) {
+        try {
+          text = await extractTextFromImage(buffer);
+        } catch (err) {
+          console.error('Image OCR failed:', err);
+          text = '';
+        }
+      }
+
+      const amountCandidates = [
+        ...parseCurrencyValues(text),
+        ...parseKeywordAmounts(text),
+      ];
+      const amount = amountCandidates.length ? Math.max(...amountCandidates) : null;
+
+      const extractedName = docType === 'governmentId' ? parseName(text) : null;
+      const extractedDob = docType === 'governmentId' ? parseDob(text) : null;
+
+      res.json({
+        amount,
+        extractedName,
+        extractedDob,
+      });
+    } catch (error) {
+      console.error('Extraction error:', error);
+      res.status(500).json({ error: 'Extraction failed' });
     }
-
-    const amountCandidates = [
-      ...parseCurrencyValues(text),
-      ...parseKeywordAmounts(text),
-    ];
-    const amount = amountCandidates.length ? Math.max(...amountCandidates) : null;
-
-    const extractedName = docType === 'governmentId' ? parseName(text) : null;
-    const extractedDob = docType === 'governmentId' ? parseDob(text) : null;
-
-    return {
-      amount,
-      extractedName,
-      extractedDob,
-    };
-  } catch (error) {
-    console.error('Extraction error:', error);
-    throw new functions.https.HttpsError('internal', 'Extraction failed');
-  }
+  });
 });
