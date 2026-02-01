@@ -29,7 +29,6 @@ const Profile = () => {
   const [passwordSaved, setPasswordSaved] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [showBankLinkModal, setShowBankLinkModal] = useState(false);
-  const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [governmentIdUploading, setGovernmentIdUploading] = useState(false);
   const [governmentIdError, setGovernmentIdError] = useState('');
 
