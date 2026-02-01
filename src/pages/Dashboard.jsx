@@ -19,6 +19,7 @@ import CounterOfferModal from '../components/CounterOfferModal';
 import ViewOfferModal from '../components/ViewOfferModal';
 import DragDropFileInput from '../components/DragDropFileInput';
 import AddressAutocomplete from '../components/AddressAutocomplete';
+import { extractPdfAmount } from '../utils/pdfAmount';
 import './Dashboard.css';
 
 function getExpiryMs(offer) {
@@ -722,7 +723,6 @@ const Dashboard = () => {
       const docs = { ...(purchaseProfile?.verificationDocuments || {}), [field]: url };
       const amounts = { ...(purchaseProfile?.verificationDocumentAmounts || {}) };
       if (amountEligible.includes(field) && file.type === 'application/pdf') {
-        const { extractPdfAmount } = await import('../utils/pdfAmount');
         const extracted = await extractPdfAmount(file);
         if (extracted != null) {
           amounts[field] = extracted;
