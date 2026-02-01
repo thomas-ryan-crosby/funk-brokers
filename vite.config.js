@@ -5,12 +5,21 @@ export default defineConfig({
   plugins: [react()],
   build: {
     outDir: 'dist',
-    sourcemap: true,
-    minify: false,
+    sourcemap: false,
+    minify: 'terser',
     assetsDir: 'assets',
     rollupOptions: {
       output: {
         manualChunks: undefined,
+      },
+    },
+    terserOptions: {
+      compress: {
+        module: false,
+        passes: 2,
+      },
+      format: {
+        comments: false,
       },
     },
   },
