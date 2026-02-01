@@ -1173,6 +1173,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  position: relative;
 }
 
 .doc-link {
@@ -1198,6 +1199,13 @@
 
 .doc-drag-drop-wrap {
   min-width: 160px;
+  position: relative;
+  z-index: 1;
+}
+
+.doc-row-actions .btn {
+  position: relative;
+  z-index: 2;
 }
 
 .dashboard-doc-upload .drag-drop-file-input__zone {
