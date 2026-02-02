@@ -1,11 +1,11 @@
-import { doc, getDoc, setDoc, updateDoc, arrayRemove, arrayUnion } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, arrayRemove, arrayUnion, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
 const USER_FOLLOWING_COLLECTION = 'userFollowing';
 
 /**
- * Get list of user IDs that the current user is following.
- * @param {string} userId - current user's uid
+ * Get list of user IDs that the given user is following.
+ * @param {string} userId - user's uid
  * @returns {Promise<string[]>}
  */
 export const getFollowing = async (userId) => {
@@ -77,4 +77,22 @@ export const isFollowing = async (followerId, followingId) => {
   if (!followerId || !followingId) return false;
   const list = await getFollowing(followerId);
   return list.includes(followingId);
+};
+
+/**
+ * Get list of user IDs who follow the given user (followers).
+ * @param {string} userId - user's uid
+ * @returns {Promise<string[]>}
+ */
+export const getFollowers = async (userId) => {
+  if (!userId) return [];
+  try {
+    const ref = collection(db, USER_FOLLOWING_COLLECTION);
+    const q = query(ref, where('following', 'array-contains', userId));
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => d.id);
+  } catch (err) {
+    console.error('Error fetching followers', err);
+    return [];
+  }
 };
