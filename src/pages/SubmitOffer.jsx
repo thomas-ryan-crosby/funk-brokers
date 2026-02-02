@@ -297,10 +297,6 @@ const SubmitOffer = () => {
   };
 
   const handleFinalSubmit = async () => {
-    if (!disclosureAcknowledged) {
-      setError('You must read and acknowledge the required disclosures before submitting an offer.');
-      return;
-    }
     const expectedName = (verificationData?.buyerInfo?.name || (agreement.parties.buyer.legal_names?.[0] ?? '')).trim().toLowerCase();
     const signed = signatureName.trim().toLowerCase();
     if (expectedName && signed !== expectedName) {
@@ -351,11 +347,16 @@ const SubmitOffer = () => {
   }
 
   if (success) {
+    const estimatedPrice = property?.funkEstimate ?? property?.price;
+    const brokerCommissionSavings = (estimatedPrice != null && Number.isFinite(Number(estimatedPrice))) ? Number(estimatedPrice) * 0.055 : null;
     return (
       <div className="submit-offer-page">
         <div className="success-message">
           <h2>Offer Submitted Successfully!</h2>
           <p>Your offer has been sent to the seller. You will be notified when they respond.</p>
+          <p className="success-nudge">
+            Congratulations on being OpenTo transacting real estate via our platform! We guarantee it is easier than you think. Estimate savings: {brokerCommissionSavings != null ? formatPrice(brokerCommissionSavings) : '—'} (typical broker commission).
+          </p>
           <div className="success-actions">
             <button onClick={() => navigate('/browse')} className="btn btn-primary">Browse More Properties</button>
             <button onClick={() => navigate(`/property/${propertyId}`)} className="btn btn-outline">View Property</button>
@@ -381,7 +382,7 @@ const SubmitOffer = () => {
           {property && (
             <div className="property-summary">
               <p className="property-address">{property.address}, {property.city}, {property.state}</p>
-              <p className="property-price">Asking Price: {formatPrice(property.price)}</p>
+              <p className="property-price">Estimated Price: {formatPrice(property.funkEstimate ?? property.price)}</p>
             </div>
           )}
         </div>
@@ -430,7 +431,7 @@ const SubmitOffer = () => {
             <button
               type="button"
               className="btn-primary"
-              onClick={() => setStep(property.availableForSale === false && property.acceptingOffers === true ? 'unlisted-ack' : 'disclosures')}
+              onClick={() => setStep(property.availableForSale === false && property.acceptingOffers === true ? 'unlisted-ack' : 'form')}
             >
               I Understand — Continue
             </button>
@@ -450,8 +451,8 @@ const SubmitOffer = () => {
               <input type="checkbox" checked={unlistedAcknowledged} onChange={(e) => setUnlistedAcknowledged(e.target.checked)} aria-describedby="offer-unlisted-ack-desc" />
               <span id="offer-unlisted-ack-desc">I acknowledge that this property is not formally listed. Willingness to sell, responsiveness, and disclosures may not be ready at this point. I understand the seller can get these in place if we move forward.</span>
             </label>
-            <button type="button" className="btn-primary" disabled={!unlistedAcknowledged} onClick={() => setStep('disclosures')}>
-              Continue to Disclosures
+            <button type="button" className="btn-primary" disabled={!unlistedAcknowledged} onClick={() => setStep('form')}>
+              Continue to Offer Form
             </button>
           </div>
         )}
@@ -587,7 +588,9 @@ const SubmitOffer = () => {
                 <div className="form-group">
                   <label>Purchase price ($) *</label>
                   <input type="number" min={0} step={1000} value={agreement.purchase_terms.purchase_price || ''} onChange={(e) => setAgreementPath('purchase_terms.purchase_price', parseNumber(e.target.value))} required />
-                  {property?.price && <span className="form-hint">{formatPrice(agreement.purchase_terms.purchase_price)} — {agreement.purchase_terms.purchase_price >= property.price ? 'at or above' : 'below'} asking</span>}
+                  {((property?.funkEstimate ?? property?.price) != null) && (
+                  <span className="form-hint">{formatPrice(agreement.purchase_terms.purchase_price)} — {agreement.purchase_terms.purchase_price >= (property.funkEstimate ?? property.price) ? 'at or above' : 'below'} estimated price</span>
+                )}
                 </div>
                 <div className="form-group">
                   <label>Earnest money amount ($) *</label>

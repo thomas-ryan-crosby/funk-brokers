@@ -442,6 +442,13 @@ const PropertyDetail = () => {
           </button>
           <h1>{formatPrice(property.price)}</h1>
           <p className="property-address">{formatAddress(property)}</p>
+          {(property.estimatedWorth != null && Number.isFinite(Number(property.estimatedWorth))) || (property.makeMeMovePrice != null && Number.isFinite(Number(property.makeMeMovePrice))) ? (
+            <p className="property-value-make-me">
+              {property.estimatedWorth != null && Number.isFinite(Number(property.estimatedWorth)) && <span>Your value: {formatPrice(property.estimatedWorth)}</span>}
+              {property.estimatedWorth != null && property.makeMeMovePrice != null && ' · '}
+              {property.makeMeMovePrice != null && Number.isFinite(Number(property.makeMeMovePrice)) && <span>Make me move price: {formatPrice(property.makeMeMovePrice)}</span>}
+            </p>
+          ) : null}
         </div>
 
         {property.photos && property.photos.length > 0 && (
@@ -641,6 +648,18 @@ const PropertyDetail = () => {
                 <span className="detail-label">Price</span>
                 <span className="detail-value">{formatPrice(property.price)}</span>
               </div>
+              {(property.estimatedWorth != null && Number.isFinite(Number(property.estimatedWorth))) && (
+                <div className="detail-row">
+                  <span className="detail-label">Your value</span>
+                  <span className="detail-value">{formatPrice(property.estimatedWorth)}</span>
+                </div>
+              )}
+              {(property.makeMeMovePrice != null && Number.isFinite(Number(property.makeMeMovePrice))) && (
+                <div className="detail-row">
+                  <span className="detail-label">Make me move price</span>
+                  <span className="detail-value">{formatPrice(property.makeMeMovePrice)}</span>
+                </div>
+              )}
               {commissionRange && (
                 <div className="detail-row">
                   <span className="detail-label">Typical agent commission (5–6%)</span>

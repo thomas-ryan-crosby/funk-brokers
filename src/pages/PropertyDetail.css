@@ -162,6 +162,12 @@
   margin: 0;
 }
 
+.property-value-make-me {
+  font-size: 15px;
+  color: var(--color-text-muted, #94a3b8);
+  margin: 8px 0 0 0;
+}
+
 .property-photos {
   margin-bottom: 32px;
 }

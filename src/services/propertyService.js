@@ -57,6 +57,7 @@ export const claimProperty = async (parcel, sellerId) => {
     bathrooms: parcel?.baths != null && Number.isFinite(Number(parcel.baths)) ? Number(parcel.baths) : null,
     squareFeet: parcel?.squareFeet != null && Number.isFinite(Number(parcel.squareFeet)) ? Number(parcel.squareFeet) : null,
     price: parcel?.estimate != null && Number.isFinite(Number(parcel.estimate)) ? Number(parcel.estimate) : null,
+    funkEstimate: parcel?.estimate != null && Number.isFinite(Number(parcel.estimate)) ? Number(parcel.estimate) : null,
     photos: [],
     features: [],
     status: 'not_listed',

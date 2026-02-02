@@ -571,6 +571,18 @@
   font-size: 28px;
 }
 
+.success-message .success-nudge {
+  max-width: 480px;
+  margin: 20px auto 0;
+  padding: 16px 20px;
+  background: var(--color-bg-secondary, #0f172a);
+  border: 1px solid var(--color-border-light, rgba(148, 163, 184, 0.2));
+  border-radius: 8px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--color-text-secondary, #cbd5e1);
+}
+
 .success-actions {
   display: flex;
   gap: 16px;
