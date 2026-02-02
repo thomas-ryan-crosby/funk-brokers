@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getPropertiesBySeller, getPropertyById, archiveProperty, restoreProperty, deletePropertyPermanently, reconcileUnderContractStatus } from '../services/propertyService';
@@ -126,8 +126,33 @@ const Dashboard = () => {
   const [showContactModal, setShowContactModal] = useState(false);
   const [contactModalVendorId, setContactModalVendorId] = useState(null);
   const [viewingVendorId, setViewingVendorId] = useState(null);
+  /** Timestamp (ms) when user last viewed Deal Center; used for "new" badge. Persisted per user in localStorage. */
+  const [dealCenterLastViewed, setDealCenterLastViewed] = useState(null);
 
   const location = useLocation();
+
+  const DEAL_CENTER_LAST_VIEWED_KEY = (uid) => `dealCenterLastViewed_${uid || ''}`;
+
+  useEffect(() => {
+    if (user?.uid) {
+      try {
+        const raw = localStorage.getItem(DEAL_CENTER_LAST_VIEWED_KEY(user.uid));
+        setDealCenterLastViewed(raw ? Math.min(Number(raw), Date.now()) : null);
+      } catch (_) {}
+    } else {
+      setDealCenterLastViewed(null);
+    }
+  }, [user?.uid]);
+
+  const markDealCenterViewed = useCallback(() => {
+    const now = Date.now();
+    setDealCenterLastViewed(now);
+    if (user?.uid) {
+      try {
+        localStorage.setItem(DEAL_CENTER_LAST_VIEWED_KEY(user.uid), String(now));
+      } catch (_) {}
+    }
+  }, [user?.uid]);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -153,9 +178,10 @@ const Dashboard = () => {
     if (tab === 'vendor-center') setActiveTab('vendor-center');
     if (tab === 'deal-center') {
       setActiveTab('deal-center');
+      markDealCenterViewed();
       if (sub === 'sent') setDealCenterSubTab('sent');
     }
-  }, [location.search]);
+  }, [location.search, markDealCenterViewed]);
 
   const loadDashboardData = async () => {
     try {
@@ -1138,6 +1164,30 @@ const Dashboard = () => {
     return { sentFrom: from, sentTo: to };
   };
 
+  /** Latest activity timestamp (ms) for an offer: max of createdAt and updatedAt. */
+  const getOfferLatestActivityMs = (offer) => {
+    if (!offer) return 0;
+    const toMs = (v) => (v?.toDate ? v.toDate() : v ? new Date(v) : null);
+    const created = toMs(offer.createdAt);
+    const updated = toMs(offer.updatedAt);
+    const a = created && !Number.isNaN(created.getTime()) ? created.getTime() : 0;
+    const b = updated && !Number.isNaN(updated.getTime()) ? updated.getTime() : 0;
+    return Math.max(a, b);
+  };
+
+  /** Count of Deal Center items (received + sent offers) with activity after last viewed. Badge only when user has viewed Deal Center before. */
+  const dealCenterNewCount = useMemo(() => {
+    if (dealCenterLastViewed == null) return 0;
+    let count = 0;
+    Object.values(offersByProperty).flat().forEach((o) => {
+      if (getOfferLatestActivityMs(o) > dealCenterLastViewed) count += 1;
+    });
+    sentOffers.forEach(({ offer }) => {
+      if (getOfferLatestActivityMs(offer) > dealCenterLastViewed) count += 1;
+    });
+    return count;
+  }, [dealCenterLastViewed, offersByProperty, sentOffers]);
+
   const sentByProperty = useMemo(() => {
     const byId = {};
     for (const { offer, property } of sentOffers) {
@@ -1229,10 +1279,18 @@ const Dashboard = () => {
             My Searches ({mySearches.length})
           </button>
           <button
-            className={`tab ${activeTab === 'deal-center' ? 'active' : ''}`}
-            onClick={() => setActiveTab('deal-center')}
+            className={`tab tab-deal-center ${activeTab === 'deal-center' ? 'active' : ''}`}
+            onClick={() => {
+              setActiveTab('deal-center');
+              markDealCenterViewed();
+            }}
           >
             Deal Center
+            {dealCenterNewCount > 0 && (
+              <span className="tab-badge" aria-label={`${dealCenterNewCount} new`}>
+                {dealCenterNewCount > 99 ? '99+' : dealCenterNewCount}
+              </span>
+            )}
           </button>
           <button
             className={`tab ${activeTab === 'transactions' ? 'active' : ''}`}

@@ -168,6 +168,27 @@
   border-bottom-color: #3b82f6;
 }
 
+.tab.tab-deal-center {
+  position: relative;
+}
+
+.tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  margin-left: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  background: #ef4444;
+  border-radius: 10px;
+  vertical-align: middle;
+  line-height: 1;
+}
+
 .tab.tab--link {
   text-decoration: none;
   color: #64748b;
