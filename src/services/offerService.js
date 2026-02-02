@@ -145,21 +145,23 @@ export const updateOfferStatus = async (offerId, status, additionalData = {}) =>
 };
 
 /**
- * Accept an offer
+ * Accept an offer. For PSA: updates status, property to under_contract, creates transaction.
+ * For LOI: updates status and property only; no transaction (user is prompted to convert LOI to PSA).
  */
 export const acceptOffer = async (offerId) => {
   try {
-    // Update offer status
     await updateOfferStatus(offerId, 'accepted');
 
     const offer = await getOfferById(offerId);
     if (offer.propertyId) {
       const { updateProperty, getPropertyById } = await import('./propertyService');
       await updateProperty(offer.propertyId, { status: 'under_contract' });
-      // Create transaction and contractual steps for the deal
-      const property = await getPropertyById(offer.propertyId).catch(() => null);
-      const { createTransaction } = await import('./transactionService');
-      await createTransaction(offer, property || {});
+      // Only create transaction for PSA; LOI flow prompts user to convert to PSA
+      if (offer.offerType !== 'loi') {
+        const property = await getPropertyById(offer.propertyId).catch(() => null);
+        const { createTransaction } = await import('./transactionService');
+        await createTransaction(offer, property || {});
+      }
     }
   } catch (error) {
     console.error('Error accepting offer:', error);

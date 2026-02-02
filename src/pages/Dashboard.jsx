@@ -6,7 +6,7 @@ import { getUserFavoriteIds, removeFromFavorites, getFavoritesForProperty } from
 import { getAllProperties } from '../services/propertyService';
 import { getSavedSearches, removeSavedSearch, getPurchaseProfile, setPurchaseProfile, updatePurchaseProfile } from '../services/profileService';
 import { addComment, createPost, deletePost, getCommentsForPost, getPostsByAuthor, getPostsForProperties } from '../services/postService';
-import { getOffersByProperty, getOffersByBuyer, acceptOffer, rejectOffer, withdrawOffer, counterOffer } from '../services/offerService';
+import { getOffersByProperty, getOffersByBuyer, getOfferById, acceptOffer, rejectOffer, withdrawOffer, counterOffer } from '../services/offerService';
 import { getTransactionsByUser, getTransactionByOfferId, createTransaction } from '../services/transactionService';
 import { getVendorsByUser, createVendor, updateVendor, deleteVendor, addVendorContact, updateVendorContact, removeVendorContact, VENDOR_TYPES } from '../services/vendorService';
 import { updateUserProfile, getUserProfile } from '../services/authService';
@@ -108,6 +108,7 @@ const Dashboard = () => {
   const [transactions, setTransactions] = useState([]);
   const [dealCenterActionOfferId, setDealCenterActionOfferId] = useState(null);
   const [dealCenterSubTab, setDealCenterSubTab] = useState('received'); // 'received' | 'sent'
+  const [convertLoiAfterAccept, setConvertLoiAfterAccept] = useState(null); // { propertyId } after accepting an LOI
   const [counterOfferFor, setCounterOfferFor] = useState(null); // { offer, property } or null
   const [viewOfferFor, setViewOfferFor] = useState(null); // { offer, property } or null
   const [countdownNow, setCountdownNow] = useState(() => Date.now());
@@ -999,14 +1000,31 @@ const Dashboard = () => {
   };
 
   const handleAcceptOffer = async (offerId) => {
-    if (!window.confirm('Accept this offer? The property will be marked Under Contract.')) return;
+    let offer;
+    try {
+      offer = await getOfferById(offerId);
+    } catch (e) {
+      alert('Could not load offer.');
+      return;
+    }
+    const isLoi = offer?.offerType === 'loi';
+    if (isLoi) {
+      if (!window.confirm('Accept this LOI? You\'ll be prompted to convert to a full Purchase and Sale Agreement (PSA) to formalize the deal.')) return;
+    } else {
+      if (!window.confirm('Accept this offer? The property will be marked Under Contract.')) return;
+    }
     setDealCenterActionOfferId(offerId);
     try {
       await acceptOffer(offerId);
       await loadDashboardData();
+      if (isLoi && offer?.propertyId) {
+        setConvertLoiAfterAccept({ propertyId: offer.propertyId });
+        setActiveTab('deal-center');
+        setDealCenterSubTab('sent');
+      }
     } catch (err) {
       console.error(err);
-      alert('Failed to accept offer. Please try again.');
+      alert('Failed to accept. Please try again.');
     } finally {
       setDealCenterActionOfferId(null);
     }
@@ -1067,20 +1085,16 @@ const Dashboard = () => {
   const getOfferEventBadge = (offer, { isReceived }) => {
     if (!offer || !user?.uid) return null;
     const uid = user.uid;
-    // Seller / offers on your listings (each row is one offer document)
+    const isLoi = offer.offerType === 'loi';
     if (isReceived) {
-      // This row is the counter we wrote (we created it)
       if (offer.counterToOfferId && offer.createdBy === uid) return { label: 'You sent a counter', type: 'sent-counter' };
-      // This row is the buyer's counter to our counter
       if (offer.counterToOfferId && offer.createdBy !== uid) return { label: 'You have received a counter', type: 'received-counter' };
-      // counteredByOfferId = we received this offer and countered it; the counter is a different row. This row = received offer.
-      if (offer.counteredByOfferId) return { label: 'You have received an offer', type: 'received-offer' };
-      return { label: 'You have received an offer', type: 'received-offer' };
+      if (offer.counteredByOfferId) return { label: 'You have received a counter', type: 'received-counter' };
+      return { label: isLoi ? 'You have received an LOI' : 'You have received an offer', type: 'received-offer' };
     }
-    // Buyer / offers you've sent (each row is one offer document)
     if (offer.counterToOfferId && offer.createdBy === uid) return { label: 'You sent a counter', type: 'sent-counter' };
     if (offer.counteredByOfferId) return { label: 'You have received a counter', type: 'received-counter' };
-    return { label: 'You sent an offer', type: 'sent-offer' };
+    return { label: isLoi ? 'LOI sent' : 'Offer sent', type: 'sent-offer' };
   };
 
   const sentByProperty = useMemo(() => {
@@ -1334,6 +1348,20 @@ const Dashboard = () => {
                 <p className="form-hint">If you received an offer or counter, you can accept, reject, or counter. If you sent it, you can only view or rescind.</p>
               </div>
 
+              {convertLoiAfterAccept?.propertyId && (
+                <div className="deal-center-convert-loi">
+                  <p className="deal-center-convert-loi-text">LOI accepted! Convert to a full Purchase and Sale Agreement (PSA) when you&apos;re ready to formalize the deal.</p>
+                  <div className="deal-center-convert-loi-actions">
+                    <Link to={`/submit-offer/${convertLoiAfterAccept.propertyId}`} className="btn btn-primary btn-small" onClick={() => setConvertLoiAfterAccept(null)}>
+                      Convert to PSA
+                    </Link>
+                    <button type="button" className="btn btn-outline btn-small" onClick={() => setConvertLoiAfterAccept(null)}>
+                      Dismiss
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="deal-center-subtabs">
                 <button
                   type="button"
@@ -1347,7 +1375,7 @@ const Dashboard = () => {
                   className={`deal-center-subtab ${dealCenterSubTab === 'sent' ? 'active' : ''}`}
                   onClick={() => setDealCenterSubTab('sent')}
                 >
-                  Offers sent
+                  LOIs &amp; offers sent
                 </button>
               </div>
 
@@ -1384,12 +1412,14 @@ const Dashboard = () => {
                                   {evt && (
                                     <span className={`offer-event-badge offer-event-badge--${evt.type}`}>{evt.label}</span>
                                   )}
-                                  <span className="deal-offer-buyer">{offer.buyerName || 'Buyer'}</span>
-                                  <span className="deal-offer-amount">{formatCurrency(offer.offerAmount)}</span>
+                                  <span className="deal-offer-buyer">{offer.offerType === 'loi' ? (offer.loi?.parties?.buyer_name || offer.buyerName || 'Buyer') : (offer.buyerName || 'Buyer')}</span>
+                                  <span className="deal-offer-amount">{formatCurrency(offer.offerType === 'loi' ? (offer.loi?.economic_terms?.purchase_price ?? offer.offerAmount) : offer.offerAmount)}</span>
                                   <span className="deal-offer-meta">
-                                    {['Earnest ' + formatCurrency(offer.earnestMoney), 'Closing ' + formatDate(offer.proposedClosingDate), (offer.financingType || '').replace(/-/g, ' ')].filter(Boolean).join(' · ')}
+                                    {offer.offerType === 'loi'
+                                      ? [offer.loi?.economic_terms?.earnest_money?.amount != null && 'Earnest ' + formatCurrency(offer.loi.economic_terms.earnest_money.amount), offer.loi?.timeline?.target_closing_days_after_psa != null && `${offer.loi.timeline.target_closing_days_after_psa}d to close`, offer.loi?.timeline?.due_diligence_days != null && `${offer.loi.timeline.due_diligence_days}d due diligence`].filter(Boolean).join(' · ')
+                                      : ['Earnest ' + formatCurrency(offer.earnestMoney), 'Closing ' + formatDate(offer.proposedClosingDate), (offer.financingType || '').replace(/-/g, ' ')].filter(Boolean).join(' · ')}
                                   </span>
-                                  <span className="deal-offer-received">Received {formatDate(offer.createdAt)}</span>
+                                  <span className="deal-offer-received">{offer.offerType === 'loi' ? 'LOI received' : 'Received'} {formatDate(offer.createdAt)}</span>
                                 </div>
                                 {(() => {
                                   const ms = getExpiryMs(offer);
@@ -1404,13 +1434,13 @@ const Dashboard = () => {
                                   );
                                 })()}
                                 <div className="deal-offer-actions">
-                                  <button
-                                    type="button"
-                                    className="btn btn-outline btn-small"
-                                    onClick={() => setViewOfferFor({ offer, property })}
-                                  >
-                                    View Offer
-                                  </button>
+                                <button
+                                  type="button"
+                                  className="btn btn-outline btn-small"
+                                  onClick={() => setViewOfferFor({ offer, property })}
+                                >
+                                  {offer.offerType === 'loi' ? 'View LOI' : 'View Offer'}
+                                </button>
                                   {offer.buyerId && (
                                     <Link
                                       to={`/messages?to=${encodeURIComponent(offer.buyerId)}&propertyId=${encodeURIComponent(offer.propertyId || property?.id || '')}`}
@@ -1502,11 +1532,13 @@ const Dashboard = () => {
                                 {evt && (
                                   <span className={`offer-event-badge offer-event-badge--${evt.type}`}>{evt.label}</span>
                                 )}
-                                <span className="deal-offer-amount">{formatCurrency(offer.offerAmount)}</span>
+                                <span className="deal-offer-amount">{formatCurrency(offer.offerType === 'loi' ? (offer.loi?.economic_terms?.purchase_price ?? offer.offerAmount) : offer.offerAmount)}</span>
                                 <span className="deal-offer-meta">
-                                  {['Earnest ' + formatCurrency(offer.earnestMoney), 'Closing ' + formatDate(offer.proposedClosingDate), (offer.financingType || '').replace(/-/g, ' ')].filter(Boolean).join(' · ')}
+                                  {offer.offerType === 'loi'
+                                    ? [offer.loi?.economic_terms?.earnest_money?.amount != null && 'Earnest ' + formatCurrency(offer.loi.economic_terms.earnest_money.amount), offer.loi?.timeline?.target_closing_days_after_psa != null && `${offer.loi.timeline.target_closing_days_after_psa}d to close`, offer.loi?.timeline?.due_diligence_days != null && `${offer.loi.timeline.due_diligence_days}d due diligence`].filter(Boolean).join(' · ')
+                                    : ['Earnest ' + formatCurrency(offer.earnestMoney), 'Closing ' + formatDate(offer.proposedClosingDate), (offer.financingType || '').replace(/-/g, ' ')].filter(Boolean).join(' · ')}
                                 </span>
-                                <span className="deal-offer-received">Sent {formatDate(offer.createdAt)}</span>
+                                <span className="deal-offer-received">{offer.offerType === 'loi' ? 'LOI sent' : 'Offer sent'} {formatDate(offer.createdAt)}</span>
                               </div>
                               {(() => {
                                 const ms = getExpiryMs(offer);
@@ -1526,7 +1558,7 @@ const Dashboard = () => {
                                   className="btn btn-outline btn-small"
                                   onClick={() => setViewOfferFor({ offer, property: prop || null })}
                                 >
-                                  View Offer
+                                  {offer.offerType === 'loi' ? 'View LOI' : 'View Offer'}
                                 </button>
                                 {prop?.sellerId && (
                                   <Link
