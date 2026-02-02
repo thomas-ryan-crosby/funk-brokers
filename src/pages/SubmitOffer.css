@@ -718,6 +718,23 @@
   margin-top: 4px;
 }
 
+.form-label-meta {
+  font-weight: 400;
+  color: var(--color-text-secondary, #94a3b8);
+  font-size: 0.95em;
+}
+
+.loi-financing-toggle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px 24px;
+}
+
+.loi-financing-contingency {
+  width: 100%;
+}
+
 /* Convert from LOI: diff report (changes from agreed LOI terms) */
 .offer-convert-diff {
   margin-bottom: 24px;

@@ -118,7 +118,7 @@ function defaultLoi() {
       earnest_money: { amount: 0, due_upon_psa_execution: true },
     },
     timeline: { target_closing_days_after_psa: 0, due_diligence_days: 0 },
-    financing: { anticipated_financing: false, anticipated_all_cash: false },
+    financing: { anticipated_financing: false, anticipated_all_cash: false, financing_contingency: false },
     condition_of_sale: {
       anticipated_as_is_purchase: true,
       subject_to_inspections: true,
@@ -336,9 +336,10 @@ const SubmitOffer = () => {
         loiNext.property.street_address = data.address || '';
         loiNext.property.city = data.city || '';
         loiNext.property.state = data.state || '';
-        loiNext.property.zip = data.zip || '';
-        loiNext.economic_terms.purchase_price = Number(data.price) || 0;
-        loiNext.economic_terms.earnest_money.amount = Number(data.price) ? Number(data.price) * 0.01 : 0;
+        loiNext.property.zip = data.zip || data.zipCode || '';
+        loiNext.economic_terms.purchase_price = Number(data.price) || Number(data.funkEstimate) || 0;
+        loiNext.economic_terms.earnest_money.amount = Number(data.price) || Number(data.funkEstimate) ? Number(data.price || data.funkEstimate) * 0.01 : 0;
+        loiNext.parties.seller_name = data.sellerName || '';
       }
       loiNext.parties.buyer_name = name ? name.trim() : '';
       setLoi(loiNext);
@@ -1218,7 +1219,7 @@ const SubmitOffer = () => {
         {step === 'loi-form' && (
           <div className="offer-form">
             <div className="form-section">
-              <h2>LOI — Document</h2>
+              <h2>LOI — Document <FieldInfoIcon description="Letter of Intent is a non-binding outline of key terms. It helps both parties align before signing a full Purchase and Sale Agreement." /></h2>
               <div className="form-grid">
                 <div className="form-group">
                   <label>Document type</label>
@@ -1235,7 +1236,7 @@ const SubmitOffer = () => {
               </div>
             </div>
             <div className="form-section">
-              <h2>Parties</h2>
+              <h2>Parties <FieldInfoIcon description="Legal names of seller and buyer. Usually auto-filled from the listing and your profile." /></h2>
               <div className="form-grid">
                 <div className="form-group">
                   <label>Seller name *</label>
@@ -1248,7 +1249,7 @@ const SubmitOffer = () => {
               </div>
             </div>
             <div className="form-section">
-              <h2>Property</h2>
+              <h2>Property <FieldInfoIcon description="Property address for the LOI. Filled from the listing; you can edit if needed." /></h2>
               <div className="form-grid">
                 <div className="form-group">
                   <label>Street address *</label>
@@ -1264,20 +1265,33 @@ const SubmitOffer = () => {
                 </div>
                 <div className="form-group">
                   <label>ZIP *</label>
-                  <input type="text" value={loi.property.zip} onChange={(e) => setLoiPath('property.zip', e.target.value)} required />
+                  <input type="text" value={loi.property.zip} onChange={(e) => setLoiPath('property.zip', e.target.value)} placeholder="e.g. 85020" required />
                 </div>
               </div>
             </div>
             <div className="form-section">
-              <h2>Economic Terms</h2>
+              <h2>Economic Terms <FieldInfoIcon description="Purchase price and earnest money are key deal terms. Price is often expressed relative to list price or estimate." /></h2>
               <div className="form-grid">
                 <div className="form-group">
-                  <label>Purchase price ($) *</label>
-                  <input type="number" min={0} step={1000} value={loi.economic_terms.purchase_price || ''} onChange={(e) => setLoiPath('economic_terms.purchase_price', parseNumber(e.target.value))} required />
+                  <label>
+                    Purchase price ($) *
+                    {property && (() => {
+                      const refPrice = Number(property.price) || Number(property.funkEstimate) || 0;
+                      const price = Number(loi.economic_terms.purchase_price) || 0;
+                      if (!refPrice || !price) return null;
+                      const pct = ((price - refPrice) / refPrice) * 100;
+                      const isListed = property.availableForSale === true && (property.status === 'active' || property.status === 'under_contract');
+                      const label = isListed ? 'list' : 'estimate';
+                      if (Math.abs(pct) < 0.5) return <span className="form-label-meta"> — at {label} price</span>;
+                      if (pct > 0) return <span className="form-label-meta"> — {pct.toFixed(1)}% over {label} price</span>;
+                      return <span className="form-label-meta"> — {Math.abs(pct).toFixed(1)}% under {label} price</span>;
+                    })()}
+                  </label>
+                  <input type="number" min={0} step={1} value={numInputValue(loi.economic_terms.purchase_price)} onChange={(e) => setLoiPath('economic_terms.purchase_price', parseNumber(e.target.value))} required />
                 </div>
                 <div className="form-group">
                   <label>Earnest money ($) *</label>
-                  <input type="number" min={0} step={500} value={loi.economic_terms.earnest_money?.amount ?? ''} onChange={(e) => setLoiPath('economic_terms.earnest_money.amount', parseNumber(e.target.value))} required />
+                  <input type="number" min={0} step={1} value={numInputValue(loi.economic_terms.earnest_money?.amount)} onChange={(e) => setLoiPath('economic_terms.earnest_money.amount', parseNumber(e.target.value))} required />
                 </div>
                 <div className="form-group">
                   <label className="contingency-checkbox">
@@ -1288,37 +1302,44 @@ const SubmitOffer = () => {
               </div>
             </div>
             <div className="form-section">
-              <h2>Timeline</h2>
+              <h2>Timeline <FieldInfoIcon description="Target closing is typically 30–60 days after the PSA is signed. Due diligence (inspection period) is often 7–21 days; during this time the buyer can inspect and cancel without losing earnest money if terms allow." common="Closing: 30, 45, or 60 days. Due diligence: 7, 10, 14, or 21 days." /></h2>
               <div className="form-grid">
                 <div className="form-group">
                   <label>Target closing (days after PSA)</label>
-                  <input type="number" min={0} value={numInputValue(loi.timeline.target_closing_days_after_psa)} onChange={(e) => setLoiPath('timeline.target_closing_days_after_psa', parseNumber(e.target.value))} />
+                  <input type="number" min={0} value={numInputValue(loi.timeline.target_closing_days_after_psa)} onChange={(e) => setLoiPath('timeline.target_closing_days_after_psa', parseNumber(e.target.value))} placeholder="e.g. 30, 45, 60" />
                 </div>
                 <div className="form-group">
                   <label>Due diligence (days)</label>
-                  <input type="number" min={0} value={numInputValue(loi.timeline.due_diligence_days)} onChange={(e) => setLoiPath('timeline.due_diligence_days', parseNumber(e.target.value))} />
+                  <input type="number" min={0} value={numInputValue(loi.timeline.due_diligence_days)} onChange={(e) => setLoiPath('timeline.due_diligence_days', parseNumber(e.target.value))} placeholder="e.g. 7, 10, 14, 21" />
                 </div>
               </div>
             </div>
             <div className="form-section">
-              <h2>Financing</h2>
-              <div className="form-grid">
+              <h2>Financing <FieldInfoIcon description="Choose whether the purchase will be financed (mortgage) or all cash. A financing contingency means the deal can be cancelled if the buyer cannot obtain a loan." common="Financed deals often include a 14–21 day financing contingency." /></h2>
+              <div className="form-grid loi-financing-toggle">
                 <div className="form-group">
                   <label className="contingency-checkbox">
-                    <input type="checkbox" checked={loi.financing.anticipated_financing} onChange={(e) => setLoiPath('financing.anticipated_financing', e.target.checked)} />
-                    <span>Anticipated financing</span>
+                    <input type="radio" name="loi-financing-type" checked={loi.financing.anticipated_financing} onChange={() => { setLoiPath('financing.anticipated_financing', true); setLoiPath('financing.anticipated_all_cash', false); }} />
+                    <span>Financed</span>
                   </label>
                 </div>
                 <div className="form-group">
                   <label className="contingency-checkbox">
-                    <input type="checkbox" checked={loi.financing.anticipated_all_cash} onChange={(e) => setLoiPath('financing.anticipated_all_cash', e.target.checked)} />
-                    <span>Anticipated all cash</span>
+                    <input type="radio" name="loi-financing-type" checked={loi.financing.anticipated_all_cash} onChange={() => { setLoiPath('financing.anticipated_financing', false); setLoiPath('financing.anticipated_all_cash', true); }} />
+                    <span>All cash</span>
                   </label>
+                </div>
+                <div className="form-group loi-financing-contingency">
+                  <label className="contingency-checkbox">
+                    <input type="checkbox" checked={loi.financing.financing_contingency} onChange={(e) => setLoiPath('financing.financing_contingency', e.target.checked)} disabled={loi.financing.anticipated_all_cash} />
+                    <span>Financing contingency</span>
+                  </label>
+                  {loi.financing.anticipated_all_cash && <span className="form-hint">N/A for all cash</span>}
                 </div>
               </div>
             </div>
             <div className="form-section">
-              <h2>Condition of Sale</h2>
+              <h2>Condition of Sale <FieldInfoIcon description="As-is means the buyer accepts the property in its current condition. Subject to inspections allows the buyer to conduct inspections and potentially renegotiate or cancel during due diligence." /></h2>
               <div className="form-grid">
                 <div className="form-group">
                   <label className="contingency-checkbox">
@@ -1335,7 +1356,7 @@ const SubmitOffer = () => {
               </div>
             </div>
             <div className="form-section">
-              <h2>Assignment</h2>
+              <h2>Assignment <FieldInfoIcon description="Assignment allows the buyer to transfer the contract to another party (e.g. an LLC or another buyer). Affiliate assignment often allows transfer to a related entity without seller approval." /></h2>
               <div className="form-grid">
                 <div className="form-group">
                   <label className="contingency-checkbox">
@@ -1352,7 +1373,7 @@ const SubmitOffer = () => {
               </div>
             </div>
             <div className="form-section">
-              <h2>Exclusivity</h2>
+              <h2>Exclusivity <FieldInfoIcon description="Exclusivity means the seller will not negotiate with other buyers for a set period. Common in LOIs to give the buyer time to complete due diligence." common="Often 14–30 days." /></h2>
               <div className="form-grid">
                 <div className="form-group">
                   <label className="contingency-checkbox">
@@ -1367,7 +1388,7 @@ const SubmitOffer = () => {
               </div>
             </div>
             <div className="form-section">
-              <h2>Legal</h2>
+              <h2>Legal <FieldInfoIcon description="LOIs are typically non-binding except for specific sections (e.g. governing law, confidentiality, exclusivity). Governing law determines which state's laws apply." /></h2>
               <div className="form-grid">
                 <div className="form-group">
                   <label className="contingency-checkbox">
