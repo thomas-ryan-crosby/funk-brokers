@@ -204,6 +204,52 @@
   padding: 24px;
 }
 
+.offer-congrats-overlay--fixed {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  border-radius: 0;
+}
+
+.offer-congrats-sparkles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.offer-congrats-sparkles::before,
+.offer-congrats-sparkles::after {
+  content: '';
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 62, 165, 0.5);
+  animation: offer-sparkle-ring 1.2s ease-out forwards;
+}
+
+.offer-congrats-sparkles::after {
+  width: 200px;
+  height: 200px;
+  border-color: rgba(124, 58, 237, 0.4);
+  animation-delay: 0.15s;
+}
+
+@keyframes offer-sparkle-ring {
+  from {
+    transform: scale(0.2);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
 .offer-congrats-confetti {
   position: absolute;
   inset: 0;
@@ -217,13 +263,14 @@
   position: absolute;
   left: 50%;
   top: 50%;
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
   background: var(--color, #f9a8d4);
   border-radius: 2px;
   transform: translate(-50%, -50%) scale(1);
   opacity: 1;
-  animation: offer-confetti-burst 1.4s ease-out var(--delay, 0s) forwards;
+  animation: offer-confetti-burst 1.6s ease-out var(--delay, 0s) forwards;
+  box-shadow: 0 0 8px var(--color, #f9a8d4);
 }
 
 @keyframes offer-confetti-burst {

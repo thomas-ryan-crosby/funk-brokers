@@ -275,6 +275,7 @@ const SubmitOffer = () => {
         setDocumentType('psa');
         setStep('form');
         setCongratsDismissed(true);
+        setShowConvertLoiCongrats(true);
       })
       .catch(() => {});
     return () => { cancelled = true; };
@@ -527,8 +528,37 @@ const SubmitOffer = () => {
     );
   }
 
+  const loiCongratsMsg = GAMIFICATION_MESSAGES['loi-to-psa'];
+
   return (
     <div className="submit-offer-page">
+      {sourceLoiRef && showConvertLoiCongrats && (
+        <div className="offer-congrats-overlay offer-congrats-overlay--fixed" aria-modal="true" role="dialog" aria-labelledby="convert-congrats-title">
+          <div className="offer-congrats-confetti" aria-hidden="true">
+            {confettiPieces.map((p) => (
+              <div
+                key={p.key}
+                className="offer-congrats-confetti-piece"
+                style={{ '--dx': `${p.dx}px`, '--dy': `${p.dy}px`, '--delay': p.delay, '--color': p.color }}
+              />
+            ))}
+          </div>
+          <div className="offer-congrats-sparkles" aria-hidden="true" />
+          <div className="offer-congrats-pop">
+            <h2 id="convert-congrats-title" className="offer-congrats-pop-title">{loiCongratsMsg?.title || 'Congratulations!'}</h2>
+            <p className="offer-congrats-pop-message">{loiCongratsMsg?.lead}</p>
+            <p className="offer-congrats-pop-body">{loiCongratsMsg?.body}</p>
+            <button
+              type="button"
+              className="btn-primary offer-congrats-pop-cta"
+              onClick={() => { setShowConvertLoiCongrats(false); setDismissedLoiToPsaBump(true); }}
+            >
+              Got it
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="submit-offer-container">
         <div className="offer-header">
           <h1>{sourceLoiRef ? 'Convert LOI to PSA' : 'Submit an Offer'}</h1>
@@ -541,35 +571,6 @@ const SubmitOffer = () => {
             </div>
           )}
         </div>
-
-        {sourceLoiRef && showConvertLoiCongrats && (() => {
-          const msg = GAMIFICATION_MESSAGES['loi-to-psa'];
-          return (
-            <div className="offer-congrats-overlay offer-congrats-overlay--fixed" aria-modal="true" role="dialog">
-              <div className="offer-congrats-confetti" aria-hidden="true">
-                {confettiPieces.map((p) => (
-                  <div
-                    key={p.key}
-                    className="offer-congrats-confetti-piece"
-                    style={{ '--dx': `${p.dx}px`, '--dy': `${p.dy}px`, '--delay': p.delay, '--color': p.color }}
-                  />
-                ))}
-              </div>
-              <div className="offer-congrats-pop">
-                <h2 className="offer-congrats-pop-title">{msg?.title || 'Congratulations!'}</h2>
-                <p className="offer-congrats-pop-message">{msg?.lead}</p>
-                <p className="offer-congrats-pop-body">{msg?.body}</p>
-                <button
-                  type="button"
-                  className="btn-primary offer-congrats-pop-cta"
-                  onClick={() => { setShowConvertLoiCongrats(false); setDismissedLoiToPsaBump(true); }}
-                >
-                  Got it
-                </button>
-              </div>
-            </div>
-          );
-        })()}
 
         {sourceLoiRef && !dismissedLoiToPsaBump && !showConvertLoiCongrats && (
           <GamificationNotification
