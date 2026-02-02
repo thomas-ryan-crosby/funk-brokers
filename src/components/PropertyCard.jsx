@@ -7,11 +7,25 @@ const PropertyCard = ({ property, embedded, compact, listingTier }) => {
   const tier = listingTier ?? getListingTier(property);
   const isListedStatus = property.availableForSale !== false && property.status !== 'not_listed';
   const [imgError, setImgError] = useState(false);
-  const photoUrl = property.photos?.[0];
+  const [photoIndex, setPhotoIndex] = useState(0);
+  const photos = property.photos?.length ? property.photos : [];
+  const photoUrl = photos[photoIndex] ?? photos[0];
 
   useEffect(() => {
     setImgError(false);
-  }, [photoUrl, property.id]);
+    setPhotoIndex(0);
+  }, [property.id, property.photos?.length]);
+
+  const goPrev = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setPhotoIndex((i) => (i <= 0 ? photos.length - 1 : i - 1));
+  };
+  const goNext = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setPhotoIndex((i) => (i >= photos.length - 1 ? 0 : i + 1));
+  };
 
   const formatPrice = (price) => {
     return new Intl.NumberFormat('en-US', {
@@ -31,20 +45,9 @@ const PropertyCard = ({ property, embedded, compact, listingTier }) => {
     return type.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
   };
 
-  const formatCommissionRange = (price) => {
-    if (price == null || !Number.isFinite(Number(price))) return null;
-    const low = Number(price) * 0.05;
-    const high = Number(price) * 0.06;
-    const fmt = new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      maximumFractionDigits: 0,
-    });
-    return `${fmt.format(low)}–${fmt.format(high)}`;
-  };
-
+  const hasValidPrice = property.price != null && Number.isFinite(Number(property.price));
   const showImage = photoUrl && !imgError;
-  const commissionRange = formatCommissionRange(property.price);
+  const hasMultiplePhotos = photos.length > 1;
 
   return (
     <Link
@@ -55,8 +58,9 @@ const PropertyCard = ({ property, embedded, compact, listingTier }) => {
         {showImage ? (
           <img
             src={photoUrl}
-            alt={property.address || 'Property'}
+            alt={`${property.address || 'Property'} — photo ${photoIndex + 1} of ${photos.length}`}
             onError={() => setImgError(true)}
+            className="property-card__media-img"
           />
         ) : (
           <div className="property-card__placeholder">
@@ -68,6 +72,38 @@ const PropertyCard = ({ property, embedded, compact, listingTier }) => {
             <span>No photo yet</span>
           </div>
         )}
+        {hasMultiplePhotos && showImage && (
+          <>
+            <button
+              type="button"
+              className="property-card__nav property-card__nav--prev"
+              onClick={goPrev}
+              aria-label="Previous photo"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              className="property-card__nav property-card__nav--next"
+              onClick={goNext}
+              aria-label="Next photo"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </button>
+            <div className="property-card__photo-dots" aria-hidden>
+              {photos.map((_, i) => (
+                <span
+                  key={i}
+                  className={`property-card__photo-dot ${i === photoIndex ? 'property-card__photo-dot--active' : ''}`}
+                />
+              ))}
+            </div>
+          </>
+        )}
         {property.status === 'under_contract' && (
           <span className="property-card__badge property-card__badge--contract">Under Contract</span>
         )}
@@ -76,13 +112,15 @@ const PropertyCard = ({ property, embedded, compact, listingTier }) => {
       <div className="property-card__body">
         <div className="property-card__head">
           <span className="property-card__price">{formatPrice(property.price)}</span>
-          {property.propertyType && (
-            <span className="property-card__type">{formatPropertyType(property.propertyType)}</span>
-          )}
+          <div className="property-card__head-tags">
+            {hasValidPrice && (
+              <span className="property-card__commission-bubble" title="Typical agent commission">5%</span>
+            )}
+            {property.propertyType && (
+              <span className="property-card__type">{formatPropertyType(property.propertyType)}</span>
+            )}
+          </div>
         </div>
-        {commissionRange && (
-          <p className="property-card__commission">Typical agent commission (5–6%): {commissionRange}</p>
-        )}
         <p className="property-card__address">{formatAddress(property)}</p>
         <div className="property-card__meta">
           <span className="property-card__meta-item">
