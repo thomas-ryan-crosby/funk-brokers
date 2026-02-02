@@ -6,6 +6,7 @@ import { getPurchaseProfile } from '../services/profileService';
 import { createOffer, getOfferById } from '../services/offerService';
 import { savePsaDraft, getPsaDraftById, deletePsaDraft } from '../services/psaDraftService';
 import FieldInfoIcon from '../components/FieldInfoIcon';
+import GamificationNotification from '../components/gamification/GamificationNotification';
 import './SubmitOffer.css';
 
 function defaultAgreement() {
@@ -232,6 +233,8 @@ const SubmitOffer = () => {
   const [showViewLoiModal, setShowViewLoiModal] = useState(false);
   /** Current PSA draft id when resuming or after saving a draft. */
   const [currentDraftId, setCurrentDraftId] = useState(null);
+  /** Dismiss the LOI→PSA gamification bump (shown when converting from accepted LOI). */
+  const [dismissedLoiToPsaBump, setDismissedLoiToPsaBump] = useState(false);
   const confettiPieces = useMemo(() => Array.from({ length: 60 }, (_, i) => {
     const angle = (i / 60) * 2 * Math.PI + Math.random() * 0.5;
     const dist = 120 + Math.random() * 180;
@@ -527,6 +530,13 @@ const SubmitOffer = () => {
             </div>
           )}
         </div>
+
+        {sourceLoiRef && !dismissedLoiToPsaBump && (
+          <GamificationNotification
+            type="loi-to-psa"
+            onDismiss={() => setDismissedLoiToPsaBump(true)}
+          />
+        )}
 
         {sourceLoiRef && (
           <div className="offer-view-loi-float" aria-hidden="true">
