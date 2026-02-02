@@ -7,6 +7,7 @@ import { createOffer, getOfferById } from '../services/offerService';
 import { savePsaDraft, getPsaDraftById, deletePsaDraft } from '../services/psaDraftService';
 import FieldInfoIcon from '../components/FieldInfoIcon';
 import GamificationNotification from '../components/gamification/GamificationNotification';
+import { GAMIFICATION_MESSAGES } from '../components/gamification/messages';
 import './SubmitOffer.css';
 
 function defaultAgreement() {
@@ -235,6 +236,8 @@ const SubmitOffer = () => {
   const [currentDraftId, setCurrentDraftId] = useState(null);
   /** Dismiss the LOI→PSA gamification bump (shown when converting from accepted LOI). */
   const [dismissedLoiToPsaBump, setDismissedLoiToPsaBump] = useState(false);
+  /** Show the fireworks congrats modal with LOI→PSA message when user lands on convert-from-LOI (set true when sourceLoiRef is set from convert effect). */
+  const [showConvertLoiCongrats, setShowConvertLoiCongrats] = useState(false);
   const confettiPieces = useMemo(() => Array.from({ length: 60 }, (_, i) => {
     const angle = (i / 60) * 2 * Math.PI + Math.random() * 0.5;
     const dist = 120 + Math.random() * 180;
@@ -516,6 +519,14 @@ const SubmitOffer = () => {
     );
   }
 
+  if (location.state?.convertFromLoi && location.state?.offerId && !sourceLoiRef) {
+    return (
+      <div className="submit-offer-page">
+        <div className="loading-state">Loading...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="submit-offer-page">
       <div className="submit-offer-container">
@@ -531,7 +542,36 @@ const SubmitOffer = () => {
           )}
         </div>
 
-        {sourceLoiRef && !dismissedLoiToPsaBump && (
+        {sourceLoiRef && showConvertLoiCongrats && (() => {
+          const msg = GAMIFICATION_MESSAGES['loi-to-psa'];
+          return (
+            <div className="offer-congrats-overlay offer-congrats-overlay--fixed" aria-modal="true" role="dialog">
+              <div className="offer-congrats-confetti" aria-hidden="true">
+                {confettiPieces.map((p) => (
+                  <div
+                    key={p.key}
+                    className="offer-congrats-confetti-piece"
+                    style={{ '--dx': `${p.dx}px`, '--dy': `${p.dy}px`, '--delay': p.delay, '--color': p.color }}
+                  />
+                ))}
+              </div>
+              <div className="offer-congrats-pop">
+                <h2 className="offer-congrats-pop-title">{msg?.title || 'Congratulations!'}</h2>
+                <p className="offer-congrats-pop-message">{msg?.lead}</p>
+                <p className="offer-congrats-pop-body">{msg?.body}</p>
+                <button
+                  type="button"
+                  className="btn-primary offer-congrats-pop-cta"
+                  onClick={() => { setShowConvertLoiCongrats(false); setDismissedLoiToPsaBump(true); }}
+                >
+                  Got it
+                </button>
+              </div>
+            </div>
+          );
+        })()}
+
+        {sourceLoiRef && !dismissedLoiToPsaBump && !showConvertLoiCongrats && (
           <GamificationNotification
             type="loi-to-psa"
             onDismiss={() => setDismissedLoiToPsaBump(true)}

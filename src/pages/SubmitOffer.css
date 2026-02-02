@@ -274,6 +274,13 @@
   color: var(--color-text-secondary, #cbd5e1);
 }
 
+.offer-congrats-pop-body {
+  margin: 0 0 20px 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--color-text-secondary, #94a3b8);
+}
+
 .offer-congrats-pop-savings {
   margin: 0 0 24px 0;
   font-size: 16px;
