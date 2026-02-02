@@ -999,6 +999,12 @@ const Dashboard = () => {
     return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   };
 
+  const formatDateTime = (v) => {
+    if (!v) return '—';
+    const d = v?.toDate ? v.toDate() : new Date(v);
+    return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  };
+
   const handleAcceptOffer = async (offerId) => {
     let offer;
     try {
@@ -1080,21 +1086,21 @@ const Dashboard = () => {
   /** True if the current user sent this offer or counter; they can only View or Rescind, not Counter/Accept/Reject. */
   const iSentThisOffer = (o) => o?.createdBy === user?.uid;
 
-  /** Event badges for Deal Center: "You have received an offer", "You have received a counter", "You sent an offer", "You sent a counter" */
-  /** Each row = one offer/contract. Badge describes what THIS offer is from the user's POV. */
+  /** Event badges for Deal Center: LOI/offer received or sent, counter sent or received. Badge includes timestamp. */
   const getOfferEventBadge = (offer, { isReceived }) => {
     if (!offer || !user?.uid) return null;
     const uid = user.uid;
     const isLoi = offer.offerType === 'loi';
+    const ts = formatDateTime(offer.createdAt);
     if (isReceived) {
-      if (offer.counterToOfferId && offer.createdBy === uid) return { label: 'You sent a counter', type: 'sent-counter' };
-      if (offer.counterToOfferId && offer.createdBy !== uid) return { label: 'You have received a counter', type: 'received-counter' };
-      if (offer.counteredByOfferId) return { label: 'You have received a counter', type: 'received-counter' };
-      return { label: isLoi ? 'You have received an LOI' : 'You have received an offer', type: 'received-offer' };
+      if (offer.counterToOfferId && offer.createdBy === uid) return { label: 'Counter sent', type: 'sent-counter', timestamp: ts };
+      if (offer.counterToOfferId && offer.createdBy !== uid) return { label: 'Counter received', type: 'received-counter', timestamp: ts };
+      if (offer.counteredByOfferId) return { label: 'Counter received', type: 'received-counter', timestamp: ts };
+      return { label: isLoi ? 'LOI received' : 'Offer received', type: 'received-offer', timestamp: ts };
     }
-    if (offer.counterToOfferId && offer.createdBy === uid) return { label: 'You sent a counter', type: 'sent-counter' };
-    if (offer.counteredByOfferId) return { label: 'You have received a counter', type: 'received-counter' };
-    return { label: isLoi ? 'LOI sent' : 'Offer sent', type: 'sent-offer' };
+    if (offer.counterToOfferId && offer.createdBy === uid) return { label: 'Counter sent', type: 'sent-counter', timestamp: ts };
+    if (offer.counteredByOfferId) return { label: 'Counter received', type: 'received-counter', timestamp: ts };
+    return { label: isLoi ? 'LOI sent' : 'Offer sent', type: 'sent-offer', timestamp: ts };
   };
 
   const sentByProperty = useMemo(() => {
@@ -1410,7 +1416,9 @@ const Dashboard = () => {
                               <div key={offer.id} className="deal-offer-row">
                                 <div className="deal-offer-main">
                                   {evt && (
-                                    <span className={`offer-event-badge offer-event-badge--${evt.type}`}>{evt.label}</span>
+                                    <span className={`offer-event-badge offer-event-badge--${evt.type}`}>
+                                      {evt.label}{evt.timestamp ? ` · ${evt.timestamp}` : ''}
+                                    </span>
                                   )}
                                   <span className="deal-offer-buyer">{offer.offerType === 'loi' ? (offer.loi?.parties?.buyer_name || offer.buyerName || 'Buyer') : (offer.buyerName || 'Buyer')}</span>
                                   <span className="deal-offer-amount">{formatCurrency(offer.offerType === 'loi' ? (offer.loi?.economic_terms?.purchase_price ?? offer.offerAmount) : offer.offerAmount)}</span>
@@ -1419,7 +1427,6 @@ const Dashboard = () => {
                                       ? [offer.loi?.economic_terms?.earnest_money?.amount != null && 'Earnest ' + formatCurrency(offer.loi.economic_terms.earnest_money.amount), offer.loi?.timeline?.target_closing_days_after_psa != null && `${offer.loi.timeline.target_closing_days_after_psa}d to close`, offer.loi?.timeline?.due_diligence_days != null && `${offer.loi.timeline.due_diligence_days}d due diligence`].filter(Boolean).join(' · ')
                                       : ['Earnest ' + formatCurrency(offer.earnestMoney), 'Closing ' + formatDate(offer.proposedClosingDate), (offer.financingType || '').replace(/-/g, ' ')].filter(Boolean).join(' · ')}
                                   </span>
-                                  <span className="deal-offer-received">{offer.offerType === 'loi' ? 'LOI received' : 'Received'} {formatDate(offer.createdAt)}</span>
                                 </div>
                                 {(() => {
                                   const ms = getExpiryMs(offer);
@@ -1530,7 +1537,9 @@ const Dashboard = () => {
                             <div key={offer.id} className="deal-offer-row">
                               <div className="deal-offer-main">
                                 {evt && (
-                                  <span className={`offer-event-badge offer-event-badge--${evt.type}`}>{evt.label}</span>
+                                  <span className={`offer-event-badge offer-event-badge--${evt.type}`}>
+                                    {evt.label}{evt.timestamp ? ` · ${evt.timestamp}` : ''}
+                                  </span>
                                 )}
                                 <span className="deal-offer-amount">{formatCurrency(offer.offerType === 'loi' ? (offer.loi?.economic_terms?.purchase_price ?? offer.offerAmount) : offer.offerAmount)}</span>
                                 <span className="deal-offer-meta">
@@ -1538,7 +1547,6 @@ const Dashboard = () => {
                                     ? [offer.loi?.economic_terms?.earnest_money?.amount != null && 'Earnest ' + formatCurrency(offer.loi.economic_terms.earnest_money.amount), offer.loi?.timeline?.target_closing_days_after_psa != null && `${offer.loi.timeline.target_closing_days_after_psa}d to close`, offer.loi?.timeline?.due_diligence_days != null && `${offer.loi.timeline.due_diligence_days}d due diligence`].filter(Boolean).join(' · ')
                                     : ['Earnest ' + formatCurrency(offer.earnestMoney), 'Closing ' + formatDate(offer.proposedClosingDate), (offer.financingType || '').replace(/-/g, ' ')].filter(Boolean).join(' · ')}
                                 </span>
-                                <span className="deal-offer-received">{offer.offerType === 'loi' ? 'LOI sent' : 'Offer sent'} {formatDate(offer.createdAt)}</span>
                               </div>
                               {(() => {
                                 const ms = getExpiryMs(offer);

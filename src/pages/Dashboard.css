@@ -2286,6 +2286,7 @@
 .offer-event-badge {
   display: inline-flex;
   align-items: center;
+  flex-wrap: wrap;
   padding: 4px 10px;
   border-radius: 9999px;
   font-size: 11px;
@@ -2294,6 +2295,7 @@
   letter-spacing: 0.02em;
   margin-bottom: 6px;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  max-width: 100%;
 }
 
 .offer-event-badge::before {
