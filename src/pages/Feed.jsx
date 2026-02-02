@@ -8,6 +8,7 @@ import { getFollowing, followUser, unfollowUser } from '../services/followServic
 import { getLikedPostIds, likePost, unlikePost } from '../services/likeService';
 import { getAllProperties } from '../services/propertyService';
 import { uploadFile } from '../services/storageService';
+import { loadGooglePlaces } from '../utils/loadGooglePlaces';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import './Feed.css';
 
@@ -92,6 +93,9 @@ const Feed = () => {
   const [mentionSuggestions, setMentionSuggestions] = useState([]);
   const [mentionLoading, setMentionLoading] = useState(false);
   const [mentionSelectedIndex, setMentionSelectedIndex] = useState(0);
+  const [addressSuggestions, setAddressSuggestions] = useState([]);
+  const [addressLoading, setAddressLoading] = useState(false);
+  const [addressSelectedIndex, setAddressSelectedIndex] = useState(0);
 
   const [commentsByPost, setCommentsByPost] = useState({});
   const [commentsOpen, setCommentsOpen] = useState({});
@@ -112,9 +116,10 @@ const Feed = () => {
   const addressInlineSegment = lastCaret >= 0 && (lastAt < 0 || lastCaret > lastAt)
     ? textBeforeCursor.slice(lastCaret + 1)
     : '';
-  const addressInlineQuery = addressInlineSegment.includes('\n') ? '' : addressInlineSegment;
+  const addressInlineQuery =
+    addressInlineSegment.includes('\n') ? '' : addressInlineSegment.replace(/\s+$/, '');
   const showMentionDropdown = Boolean(mentionQuery);
-  const showAddressInline = Boolean(addressInlineQuery);
+  const showAddressInline = Boolean(addressInlineQuery) && !addressInlineSegment.endsWith(' ');
 
   useEffect(() => {
     if (!mentionQuery) {
@@ -135,6 +140,36 @@ const Feed = () => {
     return () => { cancelled = true; };
   }, [mentionQuery]);
 
+  useEffect(() => {
+    if (!addressInlineQuery) {
+      setAddressSuggestions([]);
+      setAddressSelectedIndex(0);
+      return;
+    }
+    let cancelled = false;
+    setAddressLoading(true);
+    loadGooglePlaces()
+      .then(() => {
+        if (cancelled || !window.google?.maps?.places?.AutocompleteService) return;
+        const service = new window.google.maps.places.AutocompleteService();
+        service.getPlacePredictions(
+          { input: addressInlineQuery, types: ['address'], componentRestrictions: { country: 'us' } },
+          (predictions, status) => {
+            if (cancelled) return;
+            setAddressLoading(false);
+            if (status === window.google.maps.places.PlacesServiceStatus.OK && Array.isArray(predictions)) {
+              setAddressSuggestions(predictions.map((p) => ({ description: p.description, place_id: p.place_id })));
+              setAddressSelectedIndex(0);
+            } else {
+              setAddressSuggestions([]);
+            }
+          }
+        );
+      })
+      .catch(() => { if (!cancelled) setAddressLoading(false); });
+    return () => { cancelled = true; };
+  }, [addressInlineQuery]);
+
   const insertMention = useCallback((handle) => {
     const before = postBody.slice(0, lastAt);
     const after = postBody.slice(composerCursorPosition);
@@ -151,21 +186,51 @@ const Feed = () => {
     }, 0);
   }, [postBody, composerCursorPosition, lastAt]);
 
-  const replaceAddressInline = useCallback((newValue) => {
+  const insertAddress = useCallback((formattedAddress) => {
     const before = postBody.slice(0, lastCaret + 1);
     const after = postBody.slice(composerCursorPosition);
-    setPostBody(before + newValue + after);
-    setComposerCursorPosition(lastCaret + 1 + newValue.length);
+    const text = (formattedAddress || '').trim();
+    const newBody = before + text + ' ' + after;
+    setPostBody(newBody);
+    setAddressSuggestions([]);
+    const newCursor = lastCaret + 1 + text.length + 1;
+    setComposerCursorPosition(newCursor);
+    setTimeout(() => {
+      if (composerTextareaRef.current) {
+        composerTextareaRef.current.focus();
+        composerTextareaRef.current.setSelectionRange(newCursor, newCursor);
+      }
+    }, 0);
   }, [postBody, composerCursorPosition, lastCaret]);
 
-  const onAddressInlineSelect = useCallback((parsed) => {
-    const formatted = [parsed.address, parsed.city, parsed.state, parsed.zipCode].filter(Boolean).join(', ');
-    const before = postBody.slice(0, lastCaret + 1);
-    const after = postBody.slice(composerCursorPosition);
-    setPostBody(before + formatted + ' ' + after);
-    setComposerCursorPosition(lastCaret + 1 + formatted.length + 1);
-    setTimeout(() => composerTextareaRef.current?.focus(), 0);
-  }, [postBody, composerCursorPosition, lastCaret]);
+  const getPlaceFormattedAddress = useCallback((placeId) => {
+    return new Promise((resolve) => {
+      if (!placeId || !window.google?.maps?.places?.PlacesService) {
+        resolve('');
+        return;
+      }
+      const div = document.createElement('div');
+      const service = new window.google.maps.places.PlacesService(div);
+      service.getDetails(
+        { placeId, fields: ['formatted_address'] },
+        (place, status) => {
+          if (status === window.google.maps.places.PlacesServiceStatus.OK && place?.formatted_address) {
+            resolve(place.formatted_address);
+          } else {
+            resolve('');
+          }
+        }
+      );
+    });
+  }, []);
+
+  const handleAddressSelect = useCallback(async (suggestion) => {
+    const formatted = suggestion.place_id
+      ? await getPlaceFormattedAddress(suggestion.place_id)
+      : (suggestion.description || '');
+    if (formatted) insertAddress(formatted);
+    else insertAddress(suggestion.description || '');
+  }, [getPlaceFormattedAddress, insertAddress]);
 
   const loadFollowingIds = useCallback(async () => {
     if (!user?.uid) return;
@@ -345,6 +410,8 @@ const Feed = () => {
     setComposerCursorPosition(0);
     setMentionSuggestions([]);
     setMentionSelectedIndex(0);
+    setAddressSuggestions([]);
+    setAddressSelectedIndex(0);
   };
 
   const openPostModal = () => {
@@ -700,6 +767,28 @@ const Feed = () => {
                           return;
                         }
                       }
+                      if (showAddressInline && addressSuggestions.length > 0) {
+                        if (e.key === 'Escape') {
+                          setAddressSuggestions([]);
+                          return;
+                        }
+                        if (e.key === 'ArrowDown') {
+                          e.preventDefault();
+                          setAddressSelectedIndex((i) => Math.min(i + 1, addressSuggestions.length - 1));
+                          return;
+                        }
+                        if (e.key === 'ArrowUp') {
+                          e.preventDefault();
+                          setAddressSelectedIndex((i) => Math.max(0, i - 1));
+                          return;
+                        }
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const a = addressSuggestions[addressSelectedIndex];
+                          if (a) handleAddressSelect(a);
+                          return;
+                        }
+                      }
                     }}
                     placeholder="What's happening?"
                     rows={3}
@@ -729,15 +818,25 @@ const Feed = () => {
                     </div>
                   )}
                   {showAddressInline && (
-                    <div className="feed-composer-address-inline">
-                      <span className="feed-composer-address-inline-prefix">^</span>
-                      <AddressAutocomplete
-                        value={addressInlineQuery}
-                        onAddressChange={(val) => replaceAddressInline(val)}
-                        onAddressSelect={onAddressInlineSelect}
-                        placeholder="Type address..."
-                        inputProps={{ className: 'feed-composer-address-inline-input', 'aria-label': 'Property address' }}
-                      />
+                    <div className="feed-composer-mention-dropdown" role="listbox" aria-label="Address suggestions">
+                      {addressLoading ? (
+                        <div className="feed-composer-mention-item feed-composer-mention-loading">Searching addresses...</div>
+                      ) : addressSuggestions.length === 0 ? (
+                        <div className="feed-composer-mention-item feed-composer-mention-empty">Type an address to search</div>
+                      ) : (
+                        addressSuggestions.map((a, idx) => (
+                          <button
+                            key={a.place_id || idx}
+                            type="button"
+                            className={`feed-composer-mention-item ${idx === addressSelectedIndex ? 'selected' : ''}`}
+                            role="option"
+                            aria-selected={idx === addressSelectedIndex}
+                            onClick={() => handleAddressSelect(a)}
+                          >
+                            <span className="feed-composer-address-suggestion">^ {a.description}</span>
+                          </button>
+                        ))
+                      )}
                     </div>
                   )}
                   {postImageUrl && (

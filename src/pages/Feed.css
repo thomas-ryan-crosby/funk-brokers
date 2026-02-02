@@ -620,6 +620,13 @@
   color: var(--color-text-muted, #94a3b8);
 }
 
+.feed-composer-address-suggestion {
+  display: block;
+  text-align: left;
+  font-size: 14px;
+  color: var(--color-text-secondary, #cbd5e1);
+}
+
 .feed-composer-address-inline {
   display: flex;
   align-items: center;
