@@ -347,16 +347,11 @@ const SubmitOffer = () => {
   }
 
   if (success) {
-    const estimatedPrice = property?.funkEstimate ?? property?.price;
-    const brokerCommissionSavings = (estimatedPrice != null && Number.isFinite(Number(estimatedPrice))) ? Number(estimatedPrice) * 0.055 : null;
     return (
       <div className="submit-offer-page">
         <div className="success-message">
           <h2>Offer Submitted Successfully!</h2>
           <p>Your offer has been sent to the seller. You will be notified when they respond.</p>
-          <p className="success-nudge">
-            Congratulations on being OpenTo transacting real estate via our platform! We guarantee it is easier than you think. Estimate savings: {brokerCommissionSavings != null ? formatPrice(brokerCommissionSavings) : '—'} (typical broker commission).
-          </p>
           <div className="success-actions">
             <button onClick={() => navigate('/browse')} className="btn btn-primary">Browse More Properties</button>
             <button onClick={() => navigate(`/property/${propertyId}`)} className="btn btn-outline">View Property</button>
@@ -391,6 +386,9 @@ const SubmitOffer = () => {
 
         {step === 'choose-type' && (
           <div className="offer-choose-type">
+            <p className="offer-choose-type-congrats">
+              Congratulations on being OpenTo transacting real estate via our platform! We guarantee it is easier than you think. Estimate savings: {((property?.funkEstimate ?? property?.price) != null && Number.isFinite(Number(property.funkEstimate ?? property.price))) ? formatPrice(Number(property.funkEstimate ?? property.price) * 0.055) : '—'} (typical broker commission).
+            </p>
             <h2 className="offer-choose-type-title">What would you like to send?</h2>
             <p className="offer-choose-type-intro">Choose a full Purchase and Sale Agreement (PSA) or start with a non-binding Letter of Intent (LOI).</p>
             <div className="offer-choose-type-cards">

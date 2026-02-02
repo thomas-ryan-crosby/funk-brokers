@@ -65,6 +65,17 @@
   color: var(--color-text-primary, #f8fafc);
 }
 
+.offer-choose-type-congrats {
+  margin: 0 0 20px 0;
+  padding: 16px 20px;
+  background: rgba(255, 62, 165, 0.12);
+  border: 1px solid rgba(255, 62, 165, 0.3);
+  border-radius: 8px;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--color-text-secondary, #cbd5e1);
+}
+
 .offer-choose-type-intro {
   margin: 0 0 24px 0;
   font-size: 15px;
@@ -569,18 +580,6 @@
   color: var(--color-yellow-primary, #f9a8d4);
   margin-bottom: 16px;
   font-size: 28px;
-}
-
-.success-message .success-nudge {
-  max-width: 480px;
-  margin: 20px auto 0;
-  padding: 16px 20px;
-  background: var(--color-bg-secondary, #0f172a);
-  border: 1px solid var(--color-border-light, rgba(148, 163, 184, 0.2));
-  border-radius: 8px;
-  font-size: 15px;
-  line-height: 1.5;
-  color: var(--color-text-secondary, #cbd5e1);
 }
 
 .success-actions {
