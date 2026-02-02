@@ -15,7 +15,6 @@ const BEDS = ['', '1', '2', '3', '4', '5'];
 const BATHS = ['', '1', '1.5', '2', '2.5', '3', '4'];
 
 const PROPERTY_TIERS = [
-  { value: 'all', label: 'Any tier' },
   { value: 'basic', label: 'Claimed' },
   { value: 'complete', label: 'Complete' },
   { value: 'verified', label: 'Verified' },
@@ -42,7 +41,7 @@ const defaultFilters = () => ({
   city: '',
   state: '',
   listedStatus: 'all', // 'all', 'listed', 'not_listed'
-  propertyTier: 'all',
+  propertyTiers: [], // multi-select: empty = any tier
   communicationStatus: 'all',
   showUnderContract: true,
   orderBy: 'createdAt',
@@ -56,15 +55,24 @@ const normalizeInitial = (initial = {}) => {
     : initial.propertyType
       ? [initial.propertyType]
       : [];
-  return { ...base, ...initial, propertyTypes };
+  const propertyTiers = Array.isArray(initial.propertyTiers)
+    ? initial.propertyTiers
+    : initial.propertyTier && initial.propertyTier !== 'all'
+      ? [initial.propertyTier]
+      : [];
+  return { ...base, ...initial, propertyTypes, propertyTiers };
 };
 
-const SearchFilters = ({ onFilterChange, initialFilters = {} }) => {
+const SearchFilters = ({ onFilterChange, initialFilters = {}, filters: currentFilters, onSaveSearch, isAuthenticated }) => {
   const [filters, setFilters] = useState(() => normalizeInitial(initialFilters));
   const [draft, setDraft] = useState(() => normalizeInitial(initialFilters));
   const [locationInput, setLocationInput] = useState(initialFilters.query || '');
   const [openDropdown, setOpenDropdown] = useState(null);
+  const [showSaveModal, setShowSaveModal] = useState(false);
+  const [saveName, setSaveName] = useState('');
+  const [saving, setSaving] = useState(false);
   const barRef = useRef(null);
+  const appliedFilters = currentFilters ?? filters;
 
   useEffect(() => {
     const onDocClick = (e) => {
@@ -144,8 +152,32 @@ const SearchFilters = ({ onFilterChange, initialFilters = {} }) => {
     return 'Square Ft';
   };
 
-  const propertyTierLabel = () =>
-    PROPERTY_TIERS.find((t) => t.value === (filters.propertyTier || 'all'))?.label ?? 'Property Tier';
+  const propertyTierLabel = () => {
+    const arr = filters.propertyTiers || [];
+    if (arr.length === 0) return 'Property Tier';
+    if (arr.length === 1) return PROPERTY_TIERS.find((t) => t.value === arr[0])?.label ?? 'Property Tier';
+    return `${arr.length} tiers`;
+  };
+
+  const hasActiveFilters = (f) => {
+    const f2 = f ?? appliedFilters;
+    if (!f2) return false;
+    if (String(f2.query || '').trim()) return true;
+    if (f2.minPrice || f2.maxPrice) return true;
+    if (Array.isArray(f2.propertyTypes) && f2.propertyTypes.length > 0) return true;
+    if (Array.isArray(f2.propertyTiers) && f2.propertyTiers.length > 0) return true;
+    if (f2.bedrooms || f2.bathrooms || f2.minSquareFeet || f2.maxSquareFeet) return true;
+    if (f2.city || f2.state) return true;
+    if (f2.listedStatus && f2.listedStatus !== 'all') return true;
+    if (f2.communicationStatus && f2.communicationStatus !== 'all') return true;
+    return false;
+  };
+
+  const togglePropertyTier = (value) => {
+    const current = draft.propertyTiers || [];
+    const next = current.includes(value) ? current.filter((v) => v !== value) : [...current, value];
+    updateDraft('propertyTiers', next);
+  };
 
   const listedStatusLabel = () => {
     const v = filters.listedStatus || 'all';
@@ -161,6 +193,21 @@ const SearchFilters = ({ onFilterChange, initialFilters = {} }) => {
     const current = draft.propertyTypes || [];
     const next = current.includes(value) ? current.filter((v) => v !== value) : [...current, value];
     updateDraft('propertyTypes', next);
+  };
+
+  const handleSaveSearch = async () => {
+    const name = saveName.trim();
+    if (!name || !onSaveSearch) return;
+    setSaving(true);
+    try {
+      await onSaveSearch(name, appliedFilters);
+      setShowSaveModal(false);
+      setSaveName('');
+    } catch (err) {
+      console.error('Save search failed:', err);
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -208,12 +255,15 @@ const SearchFilters = ({ onFilterChange, initialFilters = {} }) => {
                 <button
                   key={t.value}
                   type="button"
-                  className={`search-filters-option ${(draft.propertyTier || 'all') === t.value ? 'active' : ''}`}
-                  onClick={() => { update({ ...filters, propertyTier: t.value }); setOpenDropdown(null); }}
+                  className={`search-filters-option ${(draft.propertyTiers || []).includes(t.value) ? 'active' : ''}`}
+                  onClick={() => togglePropertyTier(t.value)}
                 >
                   {t.label}
                 </button>
               ))}
+              <button type="button" className="search-filters-apply" onClick={handleApply}>
+                Apply
+              </button>
             </div>
           )}
         </div>
@@ -364,10 +414,10 @@ const SearchFilters = ({ onFilterChange, initialFilters = {} }) => {
             <div className="search-filters-panel" onClick={(e) => e.stopPropagation()}>
               {PROPERTY_TYPES.map((o) => (
                 <button
-                  key={o.value || 'all'}
+                  key={o.value}
                   type="button"
-                  className={`search-filters-option ${draft.propertyType === o.value ? 'active' : ''}`}
-                  onClick={() => updateDraft('propertyType', o.value)}
+                  className={`search-filters-option ${(draft.propertyTypes || []).includes(o.value) ? 'active' : ''}`}
+                  onClick={() => togglePropertyType(o.value)}
                 >
                   {o.label}
                 </button>
@@ -483,7 +533,50 @@ const SearchFilters = ({ onFilterChange, initialFilters = {} }) => {
             </div>
           )}
         </div>
+
+        {isAuthenticated && onSaveSearch && hasActiveFilters() && (
+          <button
+            type="button"
+            className="search-filters-save-search"
+            onClick={() => { setSaveName(''); setShowSaveModal(true); }}
+            aria-label="Save this search to your dashboard"
+          >
+            Save search
+          </button>
+        )}
       </div>
+
+      {showSaveModal && (
+        <div className="search-filters-save-modal-overlay" onClick={() => !saving && setShowSaveModal(false)} role="presentation">
+          <div className="search-filters-save-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-labelledby="save-search-title">
+            <h2 id="save-search-title">Save search</h2>
+            <p className="search-filters-save-modal-hint">Name this search to find it in your dashboard.</p>
+            <input
+              type="text"
+              className="search-filters-save-modal-input"
+              placeholder="e.g. Phoenix Verified listings"
+              value={saveName}
+              onChange={(e) => setSaveName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && saveName.trim() && handleSaveSearch()}
+              aria-label="Search name"
+              autoFocus
+            />
+            <div className="search-filters-save-modal-actions">
+              <button type="button" className="search-filters-apply" onClick={() => !saving && setShowSaveModal(false)} disabled={saving}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="search-filters-save-modal-save"
+                onClick={handleSaveSearch}
+                disabled={saving || !saveName.trim()}
+              >
+                {saving ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

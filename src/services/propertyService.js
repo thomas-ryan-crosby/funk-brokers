@@ -206,9 +206,14 @@ export const searchProperties = async (filters = {}) => {
     }
     // If listedStatus is 'all' or not set, show all properties
 
-    // Filter by property tier (client-side via getListingTier)
-    if (filters.propertyTier && filters.propertyTier !== 'all') {
-      properties = properties.filter((p) => getListingTier(p) === filters.propertyTier);
+    // Filter by property tier(s) (client-side via getListingTier)
+    const tierList = Array.isArray(filters.propertyTiers) && filters.propertyTiers.length > 0
+      ? filters.propertyTiers
+      : filters.propertyTier && filters.propertyTier !== 'all'
+        ? [filters.propertyTier]
+        : null;
+    if (tierList && tierList.length > 0) {
+      properties = properties.filter((p) => tierList.includes(getListingTier(p)));
     }
 
     // Filter by communication status

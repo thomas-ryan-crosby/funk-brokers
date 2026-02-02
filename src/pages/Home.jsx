@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { loadGooglePlaces } from '../utils/loadGooglePlaces';
 import { resolveAddressToParcel } from '../services/parcelService';
 import { claimProperty, getAllProperties, searchProperties } from '../services/propertyService';
+import { addSavedSearch } from '../services/profileService';
 import PropertyCard from '../components/PropertyCard';
 import PropertyMap from '../components/PropertyMap';
 import SearchFilters from '../components/SearchFilters';
@@ -163,7 +164,15 @@ const Home = () => {
   return (
     <div className="home-page">
       <div className="home-filters-bar">
-        <SearchFilters onFilterChange={handleFilterChange} initialFilters={filters} />
+        <SearchFilters
+          onFilterChange={handleFilterChange}
+          initialFilters={filters}
+          filters={filters}
+          isAuthenticated={isAuthenticated}
+          onSaveSearch={isAuthenticated ? async (name, filterSnapshot) => {
+            await addSavedSearch(user.uid, { name, filters: filterSnapshot ?? filters });
+          } : undefined}
+        />
       </div>
 
       <div className="home-container">

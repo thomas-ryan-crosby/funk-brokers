@@ -237,6 +237,104 @@
   color: var(--color-text-muted);
 }
 
+/* Save search button on bar */
+.search-filters-save-search {
+  margin-left: auto;
+  padding: 8px 16px;
+  border: 1px solid rgba(34, 197, 94, 0.5);
+  border-radius: 8px;
+  background: rgba(34, 197, 94, 0.15);
+  font-size: 13px;
+  font-weight: 600;
+  color: #22c55e;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.search-filters-save-search:hover {
+  background: rgba(34, 197, 94, 0.25);
+  border-color: #22c55e;
+  color: #4ade80;
+}
+
+/* Save search modal */
+.search-filters-save-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.search-filters-save-modal {
+  background: var(--color-bg-primary, #fff);
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 400px;
+  width: 100%;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+}
+
+.search-filters-save-modal h2 {
+  margin: 0 0 8px;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--color-text-primary, #1e293b);
+}
+
+.search-filters-save-modal-hint {
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: var(--color-text-secondary, #64748b);
+}
+
+.search-filters-save-modal-input {
+  width: 100%;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  border: 1px solid var(--color-border-light, #e2e8f0);
+  border-radius: 8px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.search-filters-save-modal-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+.search-filters-save-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.search-filters-save-modal-save {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  background: #22c55e;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.search-filters-save-modal-save:hover:not(:disabled) {
+  background: #16a34a;
+}
+
+.search-filters-save-modal-save:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* Legacy: hide when using --top bar layout */
 .search-filters--top .filters-grid,
 .search-filters--top .reset-filters-btn {
