@@ -121,8 +121,8 @@ const PropertyCard = ({ property, embedded, compact, listingTier }) => {
         </div>
         {commissionAmount && (
           <div className="property-card__commission-row">
-            <span className="property-card__commission-bubble" title="Typical savings at 5% when you use OpenTo">
-              Save {commissionAmount} with OpenTo
+            <span className="property-card__commission-bubble" title="Typical savings when you use OpenTo">
+              Save TBD in commissions with OpenTo
             </span>
           </div>
         )}
