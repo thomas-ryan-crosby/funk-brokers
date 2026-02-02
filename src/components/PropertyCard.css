@@ -227,14 +227,16 @@
 
 @keyframes property-card-commission-vibrate {
   0%, 100% { transform: translateX(0); }
-  20% { transform: translateX(-1px); }
-  40% { transform: translateX(1px); }
-  60% { transform: translateX(-0.5px); }
-  80% { transform: translateX(0.5px); }
+  15% { transform: translateX(-3px); }
+  30% { transform: translateX(3px); }
+  45% { transform: translateX(-2px); }
+  60% { transform: translateX(2px); }
+  75% { transform: translateX(-1px); }
+  90% { transform: translateX(1px); }
 }
 
 .property-card:hover .property-card__commission-bubble {
-  animation: property-card-commission-vibrate 0.4s ease-in-out 2;
+  animation: property-card-commission-vibrate 0.5s ease-in-out 3;
 }
 
 .property-card__price {
