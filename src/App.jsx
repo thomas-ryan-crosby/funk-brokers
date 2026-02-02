@@ -98,6 +98,7 @@ function AppContent() {
                 <>
                   <Link to="/dashboard">Dashboard</Link>
                   <Link to="/feed">Feed</Link>
+                  <Link to="/feedback" className="nav-feedback">Feedback</Link>
                   <Link to="/messages" className="nav-messages" aria-label="Message center">
                     <span className="nav-messages-icon" aria-hidden>💬</span>
                     <span className="nav-messages-label">Notification Center</span>

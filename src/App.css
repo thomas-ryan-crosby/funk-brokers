@@ -66,6 +66,24 @@ body {
   }
 }
 
+.nav-feedback {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(124, 58, 237, 0.2);
+  color: var(--color-text-primary, #f8fafc);
+  border: 1px solid rgba(124, 58, 237, 0.4);
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.nav-feedback:hover {
+  background: rgba(124, 58, 237, 0.3);
+  color: var(--color-text-primary, #f8fafc);
+  border-color: var(--color-blue-medium, #7c3aed);
+}
+
 .nav-messages {
   position: relative;
   display: inline-flex;
