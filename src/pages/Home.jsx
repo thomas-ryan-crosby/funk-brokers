@@ -222,13 +222,16 @@ const Home = () => {
                   <div className="home-map-split__map">
                     <PropertyMap properties={properties} onPropertiesInView={setPropertiesInMapView} />
                   </div>
-                  <div className="home-map-split__list">
-                    {propertiesInMapView.length === 0 && (
+                  <div className="home-map-split__list" role="region" aria-label="Properties in map view">
+                    {propertiesInMapView.length === 0 ? (
                       <p className="home-map-split__empty">Pan or zoom the map to see properties in view.</p>
+                    ) : (
+                      <div className="properties-grid">
+                        {propertiesInMapView.map((property) => (
+                          <PropertyCard key={property.id} property={property} />
+                        ))}
+                      </div>
                     )}
-                    {propertiesInMapView.map((property) => (
-                      <PropertyCard key={property.id} property={property} />
-                    ))}
                   </div>
                 </div>
               )}

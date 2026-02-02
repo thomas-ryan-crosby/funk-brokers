@@ -103,7 +103,10 @@
   min-height: 100%;
 }
 
-/* Same grid as list view; full-size cards. min-height: 0 lets flex item shrink so list scrolls instead of truncating. */
+/*
+ * Map list panel: scroll viewport only. Content uses same .properties-grid as list view
+ * so cards stay exact same size and layout; grid height is content-driven, viewport scrolls.
+ */
 .home-map-split__list {
   flex: 1 1 50%;
   min-width: 320px;
@@ -112,14 +115,12 @@
   overflow-x: hidden;
   padding: 16px 20px;
   background: var(--color-bg-dark, #0b1224);
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 24px;
-  align-content: start;
+  display: block;
 }
 
-.home-map-split__list > * {
-  min-width: 0;
+.home-map-split__list .properties-grid {
+  /* Same grid as list view; height is content-only so cards are never squished */
+  min-height: min-content;
 }
 
 .home-map-split__empty {
@@ -127,7 +128,6 @@
   font-size: 14px;
   margin: 0;
   padding: 24px 0;
-  grid-column: 1 / -1;
 }
 
 .properties-header {
@@ -286,8 +286,6 @@
     flex: 1 1 auto;
     min-height: 200px;
     max-height: 50vh;
-    grid-template-columns: 1fr;
     padding: 16px 20px;
-    gap: 24px;
   }
 }
