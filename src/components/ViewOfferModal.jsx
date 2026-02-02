@@ -44,6 +44,9 @@ const toDateStr = (v) => {
   return Number.isNaN(d?.getTime()) ? '—' : d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 };
 
+const yesNo = (v) => (v === true ? 'Yes' : v === false ? 'No' : v ?? '—');
+const arrJoin = (arr) => (Array.isArray(arr) && arr.length ? arr.join(', ') : '—');
+
 /** Build list of { label, original, current } for LOI fields that changed. */
 function getLoiDiff(original, current, formatCurrency) {
   const fmt = formatCurrency || ((n) => (n != null && Number.isFinite(n) ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n) : String(n ?? '—')));
@@ -143,6 +146,8 @@ const ViewOfferModal = ({ offer, property, onClose, formatCurrency }) => {
   const fmt = formatCurrency || ((n) => (n != null && Number.isFinite(n) ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n) : '—'));
   const c = offer.contingencies || {};
   const isLoi = offer.offerType === 'loi';
+  const isPsa = offer.offerType === 'psa' && offer.agreement;
+  const a = offer.agreement || {};
   const loi = offer.loi || {};
   const isCounter = !!offer.counterToOfferId;
   const diffRows = isCounter && originalOffer
@@ -151,7 +156,7 @@ const ViewOfferModal = ({ offer, property, onClose, formatCurrency }) => {
 
   return (
     <div className="view-offer-overlay" onClick={onClose} role="presentation">
-      <div className="view-offer-modal" onClick={(e) => e.stopPropagation()} role="dialog" aria-labelledby="view-offer-title">
+      <div className={`view-offer-modal ${isPsa ? 'view-offer-modal--psa' : ''}`} onClick={(e) => e.stopPropagation()} role="dialog" aria-labelledby="view-offer-title">
         <div className="view-offer-header">
           <h2 id="view-offer-title">{isLoi ? 'LOI Details' : 'Offer Details'}{isCounter ? ' (Counter)' : ''}</h2>
           <button type="button" className="view-offer-close" onClick={onClose} aria-label="Close">&times;</button>
@@ -191,7 +196,157 @@ const ViewOfferModal = ({ offer, property, onClose, formatCurrency }) => {
             </section>
           )}
 
-          {isLoi ? (
+          {isPsa ? (
+            <>
+              <section className="view-offer-section">
+                <h3>Agreement</h3>
+                <dl className="view-offer-dl">
+                  <dt>Type</dt><dd>{a.agreement_metadata?.agreement_type || '—'}</dd>
+                  <dt>Version</dt><dd>{a.agreement_metadata?.version || '—'}</dd>
+                  <dt>Effective date</dt><dd>{toDateStr(a.agreement_metadata?.effective_date)}</dd>
+                </dl>
+              </section>
+              <section className="view-offer-section">
+                <h3>Parties</h3>
+                <dl className="view-offer-dl">
+                  <dt>Seller</dt><dd>{arrJoin(a.parties?.seller?.legal_names) || '—'}</dd>
+                  <dt>Seller address</dt><dd>{a.parties?.seller?.mailing_address || '—'}</dd>
+                  <dt>Buyer</dt><dd>{arrJoin(a.parties?.buyer?.legal_names) || offer.buyerName || '—'}</dd>
+                  <dt>Buyer address</dt><dd>{a.parties?.buyer?.mailing_address || '—'}</dd>
+                </dl>
+              </section>
+              <section className="view-offer-section">
+                <h3>Property</h3>
+                <dl className="view-offer-dl">
+                  <dt>Address</dt><dd>{[a.property?.street_address, a.property?.city, a.property?.state, a.property?.zip].filter(Boolean).join(', ') || (property && [property.address, property.city, property.state].filter(Boolean).join(', ')) || '—'}</dd>
+                  <dt>Legal description</dt><dd>{a.property?.legal_description?.provided ? (a.property.legal_description?.text || '—') : 'Not provided'}</dd>
+                  <dt>Included improvements</dt><dd>{a.property?.included_improvements || '—'}</dd>
+                  <dt>Excluded items</dt><dd>{arrJoin(a.property?.excluded_items)}</dd>
+                </dl>
+              </section>
+              <section className="view-offer-section">
+                <h3>Purchase Terms</h3>
+                <dl className="view-offer-dl">
+                  <dt>Purchase price</dt><dd>{fmt(a.purchase_terms?.purchase_price)}</dd>
+                  <dt>Earnest money</dt><dd>{fmt(a.purchase_terms?.earnest_money?.amount)}</dd>
+                  <dt>Earnest due (days after effective)</dt><dd>{a.purchase_terms?.earnest_money?.due_days_after_effective_date ?? '—'}</dd>
+                  <dt>Earnest holder</dt><dd>{a.purchase_terms?.earnest_money?.holder?.name || '—'}</dd>
+                  <dt>Applied to purchase at closing</dt><dd>{yesNo(a.purchase_terms?.earnest_money?.applied_to_purchase_price_at_closing)}</dd>
+                </dl>
+              </section>
+              <section className="view-offer-section">
+                <h3>Closing</h3>
+                <dl className="view-offer-dl">
+                  <dt>Closing date</dt><dd>{toDateStr(a.closing?.closing_date)}</dd>
+                  <dt>Closing method</dt><dd>{(a.closing?.closing_method || '—').replace(/_/g, ' ')}</dd>
+                  <dt>Closing location</dt><dd>{a.closing?.closing_location || '—'}</dd>
+                  <dt>Title standard</dt><dd>{(a.closing?.deliverables?.title_standard || '—').replace(/_/g, ' ')}</dd>
+                  <dt>Deed type</dt><dd>{(a.closing?.deliverables?.deed_type || '—').replace(/_/g, ' ')}</dd>
+                </dl>
+              </section>
+              <section className="view-offer-section">
+                <h3>Title Review</h3>
+                <dl className="view-offer-dl">
+                  <dt>Review period (days)</dt><dd>{a.title_review?.review_period_days ?? '—'}</dd>
+                  <dt>Objection deadline (days before closing)</dt><dd>{a.title_review?.objection_deadline_days_before_closing ?? '—'}</dd>
+                  <dt>Seller cure right</dt><dd>{yesNo(a.title_review?.seller_cure_right)}</dd>
+                </dl>
+              </section>
+              <section className="view-offer-section">
+                <h3>Property Condition</h3>
+                <dl className="view-offer-dl">
+                  <dt>Sale condition</dt><dd>{(a.property_condition?.sale_condition || '—').replace(/_/g, ' ')}</dd>
+                  <dt>Buyer no reliance</dt><dd>{yesNo(a.property_condition?.buyer_no_reliance)}</dd>
+                  <dt>Statutory disclosures required</dt><dd>{yesNo(a.property_condition?.statutory_disclosures_required)}</dd>
+                </dl>
+              </section>
+              <section className="view-offer-section">
+                <h3>Inspection &amp; Due Diligence</h3>
+                <dl className="view-offer-dl">
+                  <dt>Inspection period (days)</dt><dd>{a.inspection_due_diligence?.inspection_period_days ?? '—'}</dd>
+                  <dt>Buyer may terminate during period</dt><dd>{yesNo(a.inspection_due_diligence?.buyer_rights?.may_terminate_during_period)}</dd>
+                  <dt>Termination requires written notice</dt><dd>{yesNo(a.inspection_due_diligence?.buyer_rights?.termination_requires_written_notice)}</dd>
+                  <dt>Earnest money refund on termination</dt><dd>{yesNo(a.inspection_due_diligence?.earnest_money_refund_on_termination)}</dd>
+                </dl>
+              </section>
+              <section className="view-offer-section">
+                <h3>Financing</h3>
+                <dl className="view-offer-dl">
+                  <dt>Financing contingency</dt><dd>{yesNo(a.financing?.financing_contingency)}</dd>
+                  <dt>Loan type</dt><dd>{a.financing?.loan_type || '—'}</dd>
+                  <dt>Loan amount</dt><dd>{a.financing?.loan_amount != null ? fmt(a.financing.loan_amount) : '—'}</dd>
+                  <dt>Commitment deadline</dt><dd>{toDateStr(a.financing?.commitment_deadline)}</dd>
+                  <dt>Buyer good faith effort required</dt><dd>{yesNo(a.financing?.buyer_good_faith_effort_required)}</dd>
+                </dl>
+              </section>
+              <section className="view-offer-section">
+                <h3>Prorations &amp; Costs</h3>
+                <dl className="view-offer-dl">
+                  <dt>Tax proration</dt><dd>{(a.prorations_and_costs?.tax_proration || '—').replace(/_/g, ' ')}</dd>
+                  <dt>Rent proration</dt><dd>{(a.prorations_and_costs?.rent_proration || '—').replace(/_/g, ' ')}</dd>
+                  <dt>Buyer costs</dt><dd>{arrJoin(a.prorations_and_costs?.buyer_costs)}</dd>
+                  <dt>Seller costs</dt><dd>{arrJoin(a.prorations_and_costs?.seller_costs)}</dd>
+                  <dt>Escrow and title costs</dt><dd>{(a.prorations_and_costs?.escrow_and_title_costs || '—').replace(/_/g, ' ')}</dd>
+                </dl>
+              </section>
+              <section className="view-offer-section">
+                <h3>Risk of Loss</h3>
+                <dl className="view-offer-dl">
+                  <dt>Risk holder pre-closing</dt><dd>{(a.risk_of_loss?.risk_holder_pre_closing || '—').replace(/_/g, ' ')}</dd>
+                  <dt>Casualty threshold</dt><dd>{a.risk_of_loss?.casualty_threshold || '—'}</dd>
+                  <dt>Buyer options on casualty</dt><dd>{arrJoin(a.risk_of_loss?.buyer_options_on_casualty)}</dd>
+                </dl>
+              </section>
+              <section className="view-offer-section">
+                <h3>Default &amp; Remedies</h3>
+                <dl className="view-offer-dl">
+                  <dt>Buyer default: earnest as liquidated damages</dt><dd>{yesNo(a.default_and_remedies?.buyer_default?.earnest_money_as_liquidated_damages)}</dd>
+                  <dt>Buyer default: subject to state law</dt><dd>{yesNo(a.default_and_remedies?.buyer_default?.subject_to_state_law)}</dd>
+                  <dt>Seller default: buyer remedies</dt><dd>{arrJoin(a.default_and_remedies?.seller_default?.buyer_remedies)}</dd>
+                </dl>
+              </section>
+              <section className="view-offer-section">
+                <h3>Representations</h3>
+                <dl className="view-offer-dl">
+                  <dt>Seller</dt><dd>{arrJoin(a.representations?.seller)}</dd>
+                  <dt>Buyer</dt><dd>{arrJoin(a.representations?.buyer)}</dd>
+                </dl>
+              </section>
+              <section className="view-offer-section">
+                <h3>Assignment</h3>
+                <dl className="view-offer-dl">
+                  <dt>Assignment allowed</dt><dd>{yesNo(a.assignment?.assignment_allowed)}</dd>
+                  <dt>Seller consent required</dt><dd>{yesNo(a.assignment?.seller_consent_required)}</dd>
+                </dl>
+              </section>
+              <section className="view-offer-section">
+                <h3>Governing Law &amp; Venue</h3>
+                <dl className="view-offer-dl">
+                  <dt>Governing law</dt><dd>{(a.governing_law_and_venue?.governing_law || '—').replace(/_/g, ' ')}</dd>
+                  <dt>Venue</dt><dd>{(a.governing_law_and_venue?.venue || '—').replace(/_/g, ' ')}</dd>
+                </dl>
+              </section>
+              <section className="view-offer-section">
+                <h3>Miscellaneous</h3>
+                <dl className="view-offer-dl">
+                  <dt>Entire agreement</dt><dd>{yesNo(a.miscellaneous?.entire_agreement)}</dd>
+                  <dt>Amendments in writing only</dt><dd>{yesNo(a.miscellaneous?.amendments_in_writing_only)}</dd>
+                  <dt>Electronic signatures allowed</dt><dd>{yesNo(a.miscellaneous?.electronic_signatures_allowed)}</dd>
+                  <dt>Severability</dt><dd>{yesNo(a.miscellaneous?.severability)}</dd>
+                  <dt>Time is of the essence</dt><dd>{yesNo(a.miscellaneous?.time_is_of_the_essence)}</dd>
+                </dl>
+              </section>
+              <section className="view-offer-section">
+                <h3>Execution</h3>
+                <dl className="view-offer-dl">
+                  <dt>Seller signed</dt><dd>{yesNo(a.execution?.seller_signature?.signed)}</dd>
+                  <dt>Seller date</dt><dd>{toDateStr(a.execution?.seller_signature?.date)}</dd>
+                  <dt>Buyer signed</dt><dd>{yesNo(a.execution?.buyer_signature?.signed)}</dd>
+                  <dt>Buyer date</dt><dd>{toDateStr(a.execution?.buyer_signature?.date)}</dd>
+                </dl>
+              </section>
+            </>
+          ) : isLoi ? (
             <>
               <section className="view-offer-section">
                 <h3>Parties</h3>

@@ -21,6 +21,10 @@
   flex-direction: column;
 }
 
+.view-offer-modal--psa {
+  max-width: 640px;
+}
+
 .view-offer-header {
   display: flex;
   align-items: center;
