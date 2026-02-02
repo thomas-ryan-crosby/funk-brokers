@@ -1096,26 +1096,6 @@ const Dashboard = () => {
     return { sentFrom: from, sentTo: to };
   };
 
-  /** Event badges for Deal Center: LOI/offer received or sent, counter sent or received. Badge includes timestamp. */
-  /** Uses iSentThisOffer(offer) for counter so badge matches "Sent from: You" (same creator check). */
-  const getOfferEventBadge = (offer, { isReceived }) => {
-    if (!offer || !user?.uid) return null;
-    const uid = user.uid;
-    const isLoi = offer.offerType === 'loi';
-    const ts = formatDateTime(offer.createdAt);
-    const iSent = iSentThisOffer(offer);
-    if (isReceived) {
-      if (offer.counterToOfferId && iSent) return { label: 'Counter sent', type: 'sent-counter', timestamp: ts };
-      if (offer.counterToOfferId && !iSent) return { label: 'Counter received', type: 'received-counter', timestamp: ts };
-      if (offer.counteredByOfferId) return { label: 'Counter received', type: 'received-counter', timestamp: ts };
-      return { label: isLoi ? 'LOI received' : 'Offer received', type: 'received-offer', timestamp: ts };
-    }
-    if (offer.counterToOfferId && iSent) return { label: 'Counter sent', type: 'sent-counter', timestamp: ts };
-    if (offer.counterToOfferId && !iSent) return { label: 'Counter received', type: 'received-counter', timestamp: ts };
-    if (offer.counteredByOfferId) return { label: 'Counter received', type: 'received-counter', timestamp: ts };
-    return { label: isLoi ? 'LOI sent' : 'Offer sent', type: 'sent-offer', timestamp: ts };
-  };
-
   const sentByProperty = useMemo(() => {
     const byId = {};
     for (const { offer, property } of sentOffers) {
@@ -1423,16 +1403,9 @@ const Dashboard = () => {
                           <p className="deal-no-offers">No offers yet.</p>
                         ) : (
                           <div className="deal-offers">
-                            {offers.map((offer) => {
-                              const evt = getOfferEventBadge(offer, { isReceived: true });
-                              return (
+                            {offers.map((offer) => (
                               <div key={offer.id} className="deal-offer-row">
                                 <div className="deal-offer-main">
-                                  {evt && (
-                                    <span className={`offer-event-badge offer-event-badge--${evt.type}`}>
-                                      {evt.label}{evt.timestamp ? ` · ${evt.timestamp}` : ''}
-                                    </span>
-                                  )}
                                   {offer.offerType === 'loi' && offer.status === 'accepted' && (
                                     <div className="deal-offer-loi-accepted-badge">
                                       <span className="deal-offer-loi-accepted-text">LOI accepted! Convert to a full Purchase and Sale Agreement (PSA) when you&apos;re ready to formalize the deal.</span>
@@ -1525,8 +1498,7 @@ const Dashboard = () => {
                                   )}
                                 </div>
                               </div>
-                            );
-                            })}
+                            ))}
                           </div>
                         )}
                       </div>
@@ -1558,16 +1530,9 @@ const Dashboard = () => {
                         </Link>
                       </div>
                       <div className="deal-offers">
-                        {items.map(({ offer, property: prop }) => {
-                          const evt = getOfferEventBadge(offer, { isReceived: false });
-                          return (
+                        {items.map(({ offer, property: prop }) => (
                             <div key={offer.id} className="deal-offer-row">
                               <div className="deal-offer-main">
-                                {evt && (
-                                  <span className={`offer-event-badge offer-event-badge--${evt.type}`}>
-                                    {evt.label}{evt.timestamp ? ` · ${evt.timestamp}` : ''}
-                                  </span>
-                                )}
                                 {offer.offerType === 'loi' && offer.status === 'accepted' && (
                                   <div className="deal-offer-loi-accepted-badge">
                                     <span className="deal-offer-loi-accepted-text">LOI accepted! Convert to a full Purchase and Sale Agreement (PSA) when you&apos;re ready to formalize the deal.</span>
@@ -1659,8 +1624,7 @@ const Dashboard = () => {
                                 )}
                               </div>
                             </div>
-                          );
-                        })}
+                          ))}
                       </div>
                     </div>
                   ))}
