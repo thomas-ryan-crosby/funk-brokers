@@ -227,6 +227,8 @@ const SubmitOffer = () => {
   const [congratsDismissed, setCongratsDismissed] = useState(false);
   /** When converting from accepted LOI: source LOI object for diff report. */
   const [sourceLoiRef, setSourceLoiRef] = useState(null);
+  /** When converting: show modal with accepted LOI for quick reference. */
+  const [showViewLoiModal, setShowViewLoiModal] = useState(false);
   const confettiPieces = useMemo(() => Array.from({ length: 60 }, (_, i) => {
     const angle = (i / 60) * 2 * Math.PI + Math.random() * 0.5;
     const dist = 120 + Math.random() * 180;
@@ -470,14 +472,80 @@ const SubmitOffer = () => {
     <div className="submit-offer-page">
       <div className="submit-offer-container">
         <div className="offer-header">
-          <h1>Submit an Offer</h1>
+          <h1>{sourceLoiRef ? 'Convert LOI to PSA' : 'Submit an Offer'}</h1>
           {property && (
             <div className="property-summary">
               <p className="property-address">{property.address}, {property.city}, {property.state}</p>
-              <p className="property-price">Estimated Price: {formatPrice(property.funkEstimate ?? property.price)}</p>
+              {!sourceLoiRef && (
+                <p className="property-price">Estimated Price: {formatPrice(property.funkEstimate ?? property.price)}</p>
+              )}
             </div>
           )}
         </div>
+
+        {sourceLoiRef && (
+          <div className="offer-view-loi-float">
+            <button type="button" className="offer-view-loi-btn" onClick={() => setShowViewLoiModal(true)}>
+              View accepted LOI
+            </button>
+          </div>
+        )}
+
+        {sourceLoiRef && showViewLoiModal && (
+          <div className="offer-view-loi-overlay" role="dialog" aria-modal="true" aria-labelledby="view-loi-title">
+            <div className="offer-view-loi-modal">
+              <div className="offer-view-loi-modal-header">
+                <h2 id="view-loi-title">Accepted Letter of Intent</h2>
+                <button type="button" className="offer-view-loi-close" onClick={() => setShowViewLoiModal(false)} aria-label="Close">×</button>
+              </div>
+              <div className="offer-view-loi-body">
+                <section className="offer-view-loi-section">
+                  <h3>Parties</h3>
+                  <p><strong>Seller:</strong> {sourceLoiRef.parties?.seller_name || '—'}</p>
+                  <p><strong>Buyer:</strong> {sourceLoiRef.parties?.buyer_name || '—'}</p>
+                </section>
+                <section className="offer-view-loi-section">
+                  <h3>Property</h3>
+                  <p>{[sourceLoiRef.property?.street_address, sourceLoiRef.property?.city, sourceLoiRef.property?.state, sourceLoiRef.property?.zip].filter(Boolean).join(', ') || '—'}</p>
+                </section>
+                <section className="offer-view-loi-section">
+                  <h3>Economic terms</h3>
+                  <p><strong>Purchase price:</strong> {formatPrice(sourceLoiRef.economic_terms?.purchase_price)}</p>
+                  <p><strong>Earnest money:</strong> {formatPrice(sourceLoiRef.economic_terms?.earnest_money?.amount)} {sourceLoiRef.economic_terms?.earnest_money?.due_upon_psa_execution ? '(due upon PSA execution)' : ''}</p>
+                </section>
+                <section className="offer-view-loi-section">
+                  <h3>Timeline</h3>
+                  <p><strong>Due diligence:</strong> {sourceLoiRef.timeline?.due_diligence_days ?? '—'} days</p>
+                  <p><strong>Target closing:</strong> {sourceLoiRef.timeline?.target_closing_days_after_psa ?? '—'} days after PSA</p>
+                </section>
+                <section className="offer-view-loi-section">
+                  <h3>Financing</h3>
+                  <p>Anticipated financing: {sourceLoiRef.financing?.anticipated_financing ? 'Yes' : 'No'}</p>
+                  <p>Anticipated all cash: {sourceLoiRef.financing?.anticipated_all_cash ? 'Yes' : 'No'}</p>
+                </section>
+                <section className="offer-view-loi-section">
+                  <h3>Condition of sale</h3>
+                  <p>As-is purchase: {sourceLoiRef.condition_of_sale?.anticipated_as_is_purchase ? 'Yes' : 'No'}</p>
+                  <p>Subject to inspections: {sourceLoiRef.condition_of_sale?.subject_to_inspections ? 'Yes' : 'No'}</p>
+                </section>
+                {sourceLoiRef.assignment && (sourceLoiRef.assignment.assignment_contemplated || sourceLoiRef.assignment.affiliate_assignment_allowed) && (
+                  <section className="offer-view-loi-section">
+                    <h3>Assignment</h3>
+                    <p>Assignment contemplated: {sourceLoiRef.assignment.assignment_contemplated ? 'Yes' : 'No'}</p>
+                    <p>Affiliate assignment allowed: {sourceLoiRef.assignment.affiliate_assignment_allowed ? 'Yes' : 'No'}</p>
+                  </section>
+                )}
+                {sourceLoiRef.exclusivity?.exclusive && (
+                  <section className="offer-view-loi-section">
+                    <h3>Exclusivity</h3>
+                    <p>Exclusive: {sourceLoiRef.exclusivity.exclusivity_period_days} days</p>
+                  </section>
+                )}
+              </div>
+            </div>
+            <button type="button" className="offer-view-loi-backdrop" onClick={() => setShowViewLoiModal(false)} aria-label="Close modal" />
+          </div>
+        )}
 
         {error && <div className="error-message">{error}</div>}
 
