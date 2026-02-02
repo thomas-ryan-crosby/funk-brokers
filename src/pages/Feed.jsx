@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { searchUsers } from '../services/authService';
 import { getPropertiesBySeller } from '../services/propertyService';
 import { getPostsByAuthor, getAllPosts, getPostsByAuthors, addComment, createPost, deletePost, getCommentsForPost, setPostCommentCount } from '../services/postService';
 import { getFollowing, followUser, unfollowUser } from '../services/followService';
@@ -86,6 +87,11 @@ const Feed = () => {
   const [pollOptions, setPollOptions] = useState(['', '']);
   const [posting, setPosting] = useState(false);
   const postImageInputRef = useRef(null);
+  const composerTextareaRef = useRef(null);
+  const [composerCursorPosition, setComposerCursorPosition] = useState(0);
+  const [mentionSuggestions, setMentionSuggestions] = useState([]);
+  const [mentionLoading, setMentionLoading] = useState(false);
+  const [mentionSelectedIndex, setMentionSelectedIndex] = useState(0);
 
   const [commentsByPost, setCommentsByPost] = useState({});
   const [commentsOpen, setCommentsOpen] = useState({});
@@ -95,6 +101,71 @@ const Feed = () => {
   const [likedPostIds, setLikedPostIds] = useState([]);
   const [likeCountByPost, setLikeCountByPost] = useState({});
   const [likeLoading, setLikeLoading] = useState({});
+
+  const textBeforeCursor = postBody.slice(0, composerCursorPosition);
+  const lastAt = textBeforeCursor.lastIndexOf('@');
+  const lastCaret = textBeforeCursor.lastIndexOf('^');
+  const mentionQuerySegment = lastAt >= 0 && (lastCaret < 0 || lastAt > lastCaret)
+    ? textBeforeCursor.slice(lastAt + 1)
+    : '';
+  const mentionQuery = mentionQuerySegment.includes(' ') || mentionQuerySegment.includes('\n') ? '' : mentionQuerySegment;
+  const addressInlineSegment = lastCaret >= 0 && (lastAt < 0 || lastCaret > lastAt)
+    ? textBeforeCursor.slice(lastCaret + 1)
+    : '';
+  const addressInlineQuery = addressInlineSegment.includes('\n') ? '' : addressInlineSegment;
+  const showMentionDropdown = Boolean(mentionQuery);
+  const showAddressInline = Boolean(addressInlineQuery);
+
+  useEffect(() => {
+    if (!mentionQuery) {
+      setMentionSuggestions([]);
+      setMentionSelectedIndex(0);
+      return;
+    }
+    let cancelled = false;
+    setMentionLoading(true);
+    searchUsers(mentionQuery)
+      .then((list) => {
+        if (!cancelled) {
+          setMentionSuggestions(list);
+          setMentionSelectedIndex(0);
+        }
+      })
+      .finally(() => { if (!cancelled) setMentionLoading(false); });
+    return () => { cancelled = true; };
+  }, [mentionQuery]);
+
+  const insertMention = useCallback((handle) => {
+    const before = postBody.slice(0, lastAt);
+    const after = postBody.slice(composerCursorPosition);
+    const newBody = before + '@' + handle + ' ' + after;
+    setPostBody(newBody);
+    setMentionSuggestions([]);
+    const newCursor = lastAt + 1 + handle.length + 1;
+    setComposerCursorPosition(newCursor);
+    setTimeout(() => {
+      if (composerTextareaRef.current) {
+        composerTextareaRef.current.focus();
+        composerTextareaRef.current.setSelectionRange(newCursor, newCursor);
+      }
+    }, 0);
+  }, [postBody, composerCursorPosition, lastAt]);
+
+  const replaceAddressInline = useCallback((newValue) => {
+    const before = postBody.slice(0, lastCaret + 1);
+    const after = postBody.slice(composerCursorPosition);
+    setPostBody(before + newValue + after);
+    setComposerCursorPosition(lastCaret + 1 + newValue.length);
+  }, [postBody, composerCursorPosition, lastCaret]);
+
+  const onAddressInlineSelect = useCallback((parsed) => {
+    const formatted = [parsed.address, parsed.city, parsed.state, parsed.zipCode].filter(Boolean).join(', ');
+    const before = postBody.slice(0, lastCaret + 1);
+    const after = postBody.slice(composerCursorPosition);
+    setPostBody(before + formatted + ' ' + after);
+    setComposerCursorPosition(lastCaret + 1 + formatted.length + 1);
+    setTimeout(() => composerTextareaRef.current?.focus(), 0);
+  }, [postBody, composerCursorPosition, lastCaret]);
 
   const loadFollowingIds = useCallback(async () => {
     if (!user?.uid) return;
@@ -271,6 +342,9 @@ const Feed = () => {
     setShowPoll(false);
     setShowAddress(false);
     setPollOptions(['', '']);
+    setComposerCursorPosition(0);
+    setMentionSuggestions([]);
+    setMentionSelectedIndex(0);
   };
 
   const openPostModal = () => {
@@ -595,13 +669,77 @@ const Feed = () => {
                 </div>
                 <div className="feed-composer-input-wrap">
                   <textarea
+                    ref={composerTextareaRef}
                     className="feed-composer-textarea"
                     value={postBody}
-                    onChange={(e) => setPostBody(e.target.value)}
+                    onChange={(e) => {
+                      setPostBody(e.target.value);
+                      setComposerCursorPosition(e.target.selectionStart ?? 0);
+                    }}
+                    onSelect={(e) => setComposerCursorPosition(e.target.selectionStart ?? 0)}
+                    onKeyDown={(e) => {
+                      if (showMentionDropdown && mentionSuggestions.length > 0) {
+                        if (e.key === 'Escape') {
+                          setMentionSuggestions([]);
+                          return;
+                        }
+                        if (e.key === 'ArrowDown') {
+                          e.preventDefault();
+                          setMentionSelectedIndex((i) => Math.min(i + 1, mentionSuggestions.length - 1));
+                          return;
+                        }
+                        if (e.key === 'ArrowUp') {
+                          e.preventDefault();
+                          setMentionSelectedIndex((i) => Math.max(0, i - 1));
+                          return;
+                        }
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const u = mentionSuggestions[mentionSelectedIndex];
+                          if (u) insertMention(u.publicUsername || toHandle(u.name) || 'user');
+                          return;
+                        }
+                      }
+                    }}
                     placeholder="What's happening?"
                     rows={3}
                     autoFocus
                   />
+                  {showMentionDropdown && (
+                    <div className="feed-composer-mention-dropdown" role="listbox">
+                      {mentionLoading ? (
+                        <div className="feed-composer-mention-item feed-composer-mention-loading">Searching...</div>
+                      ) : mentionSuggestions.length === 0 ? (
+                        <div className="feed-composer-mention-item feed-composer-mention-empty">No users found</div>
+                      ) : (
+                        mentionSuggestions.map((u, idx) => (
+                          <button
+                            key={u.id}
+                            type="button"
+                            className={`feed-composer-mention-item ${idx === mentionSelectedIndex ? 'selected' : ''}`}
+                            role="option"
+                            aria-selected={idx === mentionSelectedIndex}
+                            onClick={() => insertMention(u.publicUsername || toHandle(u.name) || 'user')}
+                          >
+                            <span className="feed-composer-mention-handle">@{u.publicUsername || toHandle(u.name) || 'user'}</span>
+                            {u.name && <span className="feed-composer-mention-name">{u.name}</span>}
+                          </button>
+                        ))
+                      )}
+                    </div>
+                  )}
+                  {showAddressInline && (
+                    <div className="feed-composer-address-inline">
+                      <span className="feed-composer-address-inline-prefix">^</span>
+                      <AddressAutocomplete
+                        value={addressInlineQuery}
+                        onAddressChange={(val) => replaceAddressInline(val)}
+                        onAddressSelect={onAddressInlineSelect}
+                        placeholder="Type address..."
+                        inputProps={{ className: 'feed-composer-address-inline-input', 'aria-label': 'Property address' }}
+                      />
+                    </div>
+                  )}
                   {postImageUrl && (
                     <div className="feed-composer-image-preview">
                       <img src={postImageUrl} alt="Post" />

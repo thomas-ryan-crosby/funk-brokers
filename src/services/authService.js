@@ -7,10 +7,47 @@ import {
   updateProfile,
   updatePassword,
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, collection, getDocs, query, limit } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
 
 const USERS_COLLECTION = 'users';
+
+/**
+ * Search users by name, publicUsername, or email (for @ mention suggestions).
+ * Returns up to 10 matches; requires query length >= 1.
+ */
+export const searchUsers = async (searchQuery) => {
+  const q = String(searchQuery || '').trim().toLowerCase();
+  if (!q) return [];
+  try {
+    const usersRef = collection(db, USERS_COLLECTION);
+    const qSnap = await getDocs(query(usersRef, limit(100)));
+    const results = [];
+    for (const docSnap of qSnap.docs) {
+      if (results.length >= 10) break;
+      const data = docSnap.data();
+      const uid = docSnap.id;
+      const name = (data.name || '').toLowerCase();
+      const publicUsername = (data.publicUsername || '').toLowerCase();
+      const email = (data.email || '').toLowerCase();
+      const matches =
+        name.includes(q) ||
+        publicUsername.includes(q) ||
+        (email && email.includes(q));
+      if (matches)
+        results.push({
+          id: uid,
+          name: data.name || '',
+          publicUsername: data.publicUsername || '',
+          email: data.email || '',
+        });
+    }
+    return results.slice(0, 10);
+  } catch (err) {
+    console.error('searchUsers error', err);
+    return [];
+  }
+};
 
 /**
  * Sign up a new user

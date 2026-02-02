@@ -547,6 +547,7 @@
 .feed-composer-input-wrap {
   flex: 1;
   min-width: 0;
+  position: relative;
 }
 
 .feed-composer-textarea {
@@ -563,6 +564,92 @@
 }
 
 .feed-composer-textarea::placeholder {
+  color: var(--color-text-muted, #94a3b8);
+}
+
+.feed-composer-mention-dropdown {
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin-top: 4px;
+  max-height: 220px;
+  overflow-y: auto;
+  background: var(--color-bg-elevated, #10182f);
+  border: 1px solid var(--color-border-light, rgba(148, 163, 184, 0.2));
+  border-radius: var(--radius-md, 12px);
+  box-shadow: var(--shadow-lg, 0 12px 24px rgba(0, 0, 0, 0.3));
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+}
+
+.feed-composer-mention-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 10px 14px;
+  font-size: 14px;
+  text-align: left;
+  border: none;
+  background: none;
+  color: var(--color-text-primary, #f8fafc);
+  cursor: pointer;
+  width: 100%;
+  transition: background 0.15s ease;
+}
+
+.feed-composer-mention-item:hover,
+.feed-composer-mention-item.selected {
+  background: rgba(124, 58, 237, 0.2);
+}
+
+.feed-composer-mention-item.feed-composer-mention-loading,
+.feed-composer-mention-item.feed-composer-mention-empty {
+  color: var(--color-text-muted, #94a3b8);
+  cursor: default;
+}
+
+.feed-composer-mention-handle {
+  font-weight: 600;
+  color: var(--color-blue-medium, #7c3aed);
+}
+
+.feed-composer-mention-name {
+  font-size: 13px;
+  color: var(--color-text-muted, #94a3b8);
+}
+
+.feed-composer-address-inline {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: var(--color-bg-primary, #0b1020);
+  border: 1px solid var(--color-border-light, rgba(148, 163, 184, 0.3));
+  border-radius: var(--radius-sm, 8px);
+}
+
+.feed-composer-address-inline-prefix {
+  flex-shrink: 0;
+  padding-right: 8px;
+  font-size: 16px;
+  color: var(--color-text-muted, #94a3b8);
+}
+
+.feed-composer-address-inline-input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 0;
+  font-size: 15px;
+  border: none;
+  background: none;
+  color: var(--color-text-primary, #f8fafc);
+  outline: none;
+}
+
+.feed-composer-address-inline-input::placeholder {
   color: var(--color-text-muted, #94a3b8);
 }
 
