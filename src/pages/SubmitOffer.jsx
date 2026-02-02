@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getPropertyById } from '../services/propertyService';
@@ -160,6 +160,14 @@ const SubmitOffer = () => {
 
   const [documentType, setDocumentType] = useState(null); // 'psa' | 'loi'
   const [step, setStep] = useState('choose-type');
+  const [congratsDismissed, setCongratsDismissed] = useState(false);
+  const confettiPieces = useMemo(() => Array.from({ length: 60 }, (_, i) => {
+    const angle = (i / 60) * 2 * Math.PI + Math.random() * 0.5;
+    const dist = 120 + Math.random() * 180;
+    const dx = Math.cos(angle) * dist;
+    const dy = Math.sin(angle) * dist - 40;
+    return { key: i, dx, dy, delay: `${Math.random() * 0.25}s`, color: ['#ff3ea5', '#f9a8d4', '#7c3aed', '#a855f7', '#fbbf24', '#34d399', '#60a5fa'][i % 7] };
+  }), []);
   const [unlistedAcknowledged, setUnlistedAcknowledged] = useState(false);
   const [disclosureAcknowledged, setDisclosureAcknowledged] = useState(false);
   const [signatureName, setSignatureName] = useState('');
@@ -386,29 +394,56 @@ const SubmitOffer = () => {
 
         {step === 'choose-type' && (
           <div className="offer-choose-type">
-            <p className="offer-choose-type-congrats">
-              Congratulations on being OpenTo transacting real estate via our platform! We guarantee it is easier than you think. Estimate savings: {((property?.funkEstimate ?? property?.price) != null && Number.isFinite(Number(property.funkEstimate ?? property.price))) ? formatPrice(Number(property.funkEstimate ?? property.price) * 0.055) : '—'} (typical broker commission).
-            </p>
-            <h2 className="offer-choose-type-title">What would you like to send?</h2>
-            <p className="offer-choose-type-intro">Choose a full Purchase and Sale Agreement (PSA) or start with a non-binding Letter of Intent (LOI).</p>
-            <div className="offer-choose-type-cards">
-              <button
-                type="button"
-                className="offer-choose-type-card"
-                onClick={() => { setDocumentType('psa'); setStep('attention'); }}
-              >
-                <span className="offer-choose-type-card-title">Full Purchase and Sale Agreement</span>
-                <span className="offer-choose-type-card-desc">A complete, binding contract with all terms. Best when you and the seller are ready to commit.</span>
-              </button>
-              <button
-                type="button"
-                className="offer-choose-type-card"
-                onClick={() => { setDocumentType('loi'); setStep('loi-intro'); }}
-              >
-                <span className="offer-choose-type-card-title">Letter of Intent (LOI)</span>
-                <span className="offer-choose-type-card-desc">A shorter, non-binding outline of key terms. Use to gauge interest before negotiating a full PSA.</span>
-              </button>
-            </div>
+            {!congratsDismissed ? (
+              <>
+                <div className="offer-congrats-overlay" aria-modal="true" role="dialog">
+                  <div className="offer-congrats-confetti" aria-hidden="true">
+                    {confettiPieces.map((p) => (
+                      <div
+                        key={p.key}
+                        className="offer-congrats-confetti-piece"
+                        style={{ '--dx': `${p.dx}px`, '--dy': `${p.dy}px`, '--delay': p.delay, '--color': p.color }}
+                      />
+                    ))}
+                  </div>
+                  <div className="offer-congrats-pop">
+                    <h2 className="offer-congrats-pop-title">Congratulations!</h2>
+                    <p className="offer-congrats-pop-message">
+                      You&apos;re OpenTo transacting real estate via our platform. We guarantee it&apos;s easier than you think.
+                    </p>
+                    <p className="offer-congrats-pop-savings">
+                      Estimate savings: {((property?.funkEstimate ?? property?.price) != null && Number.isFinite(Number(property.funkEstimate ?? property.price))) ? formatPrice(Number(property.funkEstimate ?? property.price) * 0.055) : '—'} (typical broker commission)
+                    </p>
+                    <button type="button" className="btn-primary offer-congrats-pop-cta" onClick={() => setCongratsDismissed(true)}>
+                      Let&apos;s go!
+                    </button>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <h2 className="offer-choose-type-title">What would you like to send?</h2>
+                <p className="offer-choose-type-intro">Choose a full Purchase and Sale Agreement (PSA) or start with a non-binding Letter of Intent (LOI).</p>
+                <div className="offer-choose-type-cards">
+                  <button
+                    type="button"
+                    className="offer-choose-type-card"
+                    onClick={() => { setDocumentType('psa'); setStep('attention'); }}
+                  >
+                    <span className="offer-choose-type-card-title">Full Purchase and Sale Agreement</span>
+                    <span className="offer-choose-type-card-desc">A complete, binding contract with all terms. Best when you and the seller are ready to commit.</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="offer-choose-type-card"
+                    onClick={() => { setDocumentType('loi'); setStep('loi-intro'); }}
+                  >
+                    <span className="offer-choose-type-card-title">Letter of Intent (LOI)</span>
+                    <span className="offer-choose-type-card-desc">A shorter, non-binding outline of key terms. Use to gauge interest before negotiating a full PSA.</span>
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         )}
 
