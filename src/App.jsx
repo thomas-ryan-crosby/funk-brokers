@@ -10,6 +10,7 @@ import SubmitOffer from './pages/SubmitOffer';
 import SignUp from './pages/SignUp';
 import SignIn from './pages/SignIn';
 import Dashboard from './pages/Dashboard';
+import Feed from './pages/Feed';
 import HowSellingWorks from './pages/HowSellingWorks';
 import HowBuyingWorks from './pages/HowBuyingWorks';
 import HowItWorks from './pages/HowItWorks';
@@ -95,6 +96,7 @@ function AppContent() {
               {isAuthenticated ? (
                 <>
                   <Link to="/dashboard">Dashboard</Link>
+                  <Link to="/feed">Feed</Link>
                   <Link to="/messages" className="nav-messages" aria-label="Message center">
                     <span className="nav-messages-icon" aria-hidden>💬</span>
                     <span className="nav-messages-label">Notification Center</span>
@@ -127,6 +129,7 @@ function AppContent() {
             <Route path="/" element={<Landing />} />
             <Route path="/browse" element={<Home />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/feed" element={<Feed />} />
             <Route path="/list-property" element={<ListProperty />} />
             <Route path="/property/:id" element={<PropertyDetail />} />
             <Route path="/property/:id/edit" element={<EditProperty />} />
