@@ -11,6 +11,7 @@ import {
   deleteDoc,
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
+import { getOffersByProperty } from './offerService';
 
 const PROPERTIES_COLLECTION = 'properties';
 
@@ -141,20 +142,27 @@ export const getPropertiesBySeller = async (sellerId) => {
 };
 
 /**
- * Get a single property by ID
+ * Get a single property by ID.
+ * If status is under_contract, reconciles with offers (only PSA should be under_contract); may update and re-fetch.
  */
 export const getPropertyById = async (propertyId) => {
   try {
     const docRef = doc(db, PROPERTIES_COLLECTION, propertyId);
     const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      return {
-        id: docSnap.id,
-        ...docSnap.data(),
-      };
-    } else {
-      throw new Error('Property not found');
+    if (!docSnap.exists()) throw new Error('Property not found');
+    const data = docSnap.data();
+    const property = { id: docSnap.id, ...data };
+    if (property.status === 'under_contract') {
+      try {
+        const offers = await getOffersByProperty(propertyId);
+        const updated = await reconcileUnderContractStatus(propertyId, offers);
+        if (updated) {
+          const refetch = await getDoc(docRef);
+          if (refetch.exists()) return { id: refetch.id, ...refetch.data() };
+        }
+      } catch (_) {}
     }
+    return property;
   } catch (error) {
     console.error('Error fetching property:', error);
     throw error;
