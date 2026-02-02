@@ -1099,6 +1099,7 @@ const Dashboard = () => {
       return { label: isLoi ? 'LOI received' : 'Offer received', type: 'received-offer', timestamp: ts };
     }
     if (offer.counterToOfferId && offer.createdBy === uid) return { label: 'Counter sent', type: 'sent-counter', timestamp: ts };
+    if (offer.counterToOfferId && offer.createdBy !== uid) return { label: 'Counter received', type: 'received-counter', timestamp: ts };
     if (offer.counteredByOfferId) return { label: 'Counter received', type: 'received-counter', timestamp: ts };
     return { label: isLoi ? 'LOI sent' : 'Offer sent', type: 'sent-offer', timestamp: ts };
   };
