@@ -321,6 +321,10 @@ const SubmitOffer = () => {
     setError(null);
     try {
       await createOffer(buildOffer());
+      if (documentType === 'loi') {
+        navigate(`/dashboard?tab=deal-center&sub=sent`, { replace: true });
+        return;
+      }
       setSuccess(true);
     } catch (err) {
       setError('Failed to submit offer. Please try again.');

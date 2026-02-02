@@ -15,16 +15,36 @@ import { db } from '../config/firebase';
 const OFFERS_COLLECTION = 'offers';
 
 /**
+ * Recursively remove undefined values so Firestore accepts the payload.
+ */
+function sanitizeForFirestore(obj) {
+  if (obj === undefined) return undefined;
+  if (obj === null) return null;
+  if (Array.isArray(obj)) return obj.map(sanitizeForFirestore).filter((v) => v !== undefined);
+  if (typeof obj === 'object' && obj !== null && !(obj instanceof Date)) {
+    const out = {};
+    for (const [k, v] of Object.entries(obj)) {
+      if (v === undefined) continue;
+      const s = sanitizeForFirestore(v);
+      if (s !== undefined) out[k] = s;
+    }
+    return out;
+  }
+  return obj;
+}
+
+/**
  * Create a new offer
  */
 export const createOffer = async (offerData) => {
   try {
-    const docRef = await addDoc(collection(db, OFFERS_COLLECTION), {
+    const sanitized = sanitizeForFirestore({
       ...offerData,
       status: 'pending', // pending, accepted, rejected, countered, withdrawn
       createdAt: new Date(),
       updatedAt: new Date(),
     });
+    const docRef = await addDoc(collection(db, OFFERS_COLLECTION), sanitized);
     return docRef.id;
   } catch (error) {
     console.error('Error creating offer:', error);

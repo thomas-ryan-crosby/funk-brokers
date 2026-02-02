@@ -144,8 +144,14 @@ const Dashboard = () => {
   }, [isAuthenticated, user]);
 
   useEffect(() => {
-    const tab = new URLSearchParams(location.search).get('tab');
+    const params = new URLSearchParams(location.search);
+    const tab = params.get('tab');
+    const sub = params.get('sub');
     if (tab === 'vendor-center') setActiveTab('vendor-center');
+    if (tab === 'deal-center') {
+      setActiveTab('deal-center');
+      if (sub === 'sent') setDealCenterSubTab('sent');
+    }
   }, [location.search]);
 
   const loadDashboardData = async () => {
