@@ -1420,6 +1420,12 @@ const Dashboard = () => {
                                       {evt.label}{evt.timestamp ? ` · ${evt.timestamp}` : ''}
                                     </span>
                                   )}
+                                  {offer.offerType === 'loi' && offer.status === 'accepted' && (
+                                    <div className="deal-offer-loi-accepted-badge">
+                                      <span className="deal-offer-loi-accepted-text">LOI accepted! Convert to a full Purchase and Sale Agreement (PSA) when you&apos;re ready to formalize the deal.</span>
+                                      <Link to={`/submit-offer/${offer.propertyId}`} className="deal-offer-loi-accepted-link">Convert to PSA</Link>
+                                    </div>
+                                  )}
                                   <span className="deal-offer-buyer">{offer.offerType === 'loi' ? (offer.loi?.parties?.buyer_name || offer.buyerName || 'Buyer') : (offer.buyerName || 'Buyer')}</span>
                                   <span className="deal-offer-amount">{formatCurrency(offer.offerType === 'loi' ? (offer.loi?.economic_terms?.purchase_price ?? offer.offerAmount) : offer.offerAmount)}</span>
                                   <span className="deal-offer-meta">
@@ -1540,6 +1546,12 @@ const Dashboard = () => {
                                   <span className={`offer-event-badge offer-event-badge--${evt.type}`}>
                                     {evt.label}{evt.timestamp ? ` · ${evt.timestamp}` : ''}
                                   </span>
+                                )}
+                                {offer.offerType === 'loi' && offer.status === 'accepted' && (
+                                  <div className="deal-offer-loi-accepted-badge">
+                                    <span className="deal-offer-loi-accepted-text">LOI accepted! Convert to a full Purchase and Sale Agreement (PSA) when you&apos;re ready to formalize the deal.</span>
+                                    <Link to={`/submit-offer/${offer.propertyId}`} className="deal-offer-loi-accepted-link">Convert to PSA</Link>
+                                  </div>
                                 )}
                                 <span className="deal-offer-amount">{formatCurrency(offer.offerType === 'loi' ? (offer.loi?.economic_terms?.purchase_price ?? offer.offerAmount) : offer.offerAmount)}</span>
                                 <span className="deal-offer-meta">
