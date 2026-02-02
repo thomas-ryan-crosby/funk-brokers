@@ -1,4 +1,4 @@
-import { addDoc, collection, deleteDoc, doc, getDocs, limit, orderBy, query, where } from 'firebase/firestore';
+import { addDoc, collection, deleteDoc, doc, getDocs, limit, orderBy, query, where, updateDoc, increment } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
 const POSTS_COLLECTION = 'posts';
@@ -17,6 +17,7 @@ export const createPost = async (data) => {
   const payload = {
     ...data,
     likeCount: 0,
+    commentCount: 0,
     createdAt: new Date(),
     updatedAt: new Date(),
   };
@@ -171,6 +172,7 @@ export const addComment = async (postId, data) => {
     createdAt: new Date(),
   };
   const ref = await addDoc(collection(db, POSTS_COLLECTION, postId, 'comments'), payload);
+  await updateDoc(doc(db, POSTS_COLLECTION, postId), { commentCount: increment(1) });
   return ref.id;
 };
 
@@ -186,4 +188,14 @@ export const getCommentsForPost = async (postId) => {
     list.push({ id: d.id, ...d.data() });
   });
   return list;
+};
+
+/**
+ * Set commentCount on a post (e.g. backfill after loading comments).
+ * @param {string} postId
+ * @param {number} count
+ */
+export const setPostCommentCount = async (postId, count) => {
+  if (!postId || count == null) return;
+  await updateDoc(doc(db, POSTS_COLLECTION, postId), { commentCount: count });
 };

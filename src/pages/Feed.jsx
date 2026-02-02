@@ -1,14 +1,13 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getPropertiesBySeller } from '../services/propertyService';
-import { getPostsByAuthor, getAllPosts, getPostsByAuthors, addComment, createPost, deletePost, getCommentsForPost } from '../services/postService';
+import { getPostsByAuthor, getAllPosts, getPostsByAuthors, addComment, createPost, deletePost, getCommentsForPost, setPostCommentCount } from '../services/postService';
 import { getFollowing, followUser, unfollowUser } from '../services/followService';
 import { getLikedPostIds, likePost, unlikePost } from '../services/likeService';
 import { getAllProperties } from '../services/propertyService';
 import { uploadFile } from '../services/storageService';
 import AddressAutocomplete from '../components/AddressAutocomplete';
-import DragDropFileInput from '../components/DragDropFileInput';
 import './Feed.css';
 
 function formatDateShort(v) {
@@ -38,6 +37,21 @@ function parseTagList(value, prefix) {
     .map((t) => (t.startsWith(prefix) ? t.slice(1) : t)).filter(Boolean);
 }
 
+/** Extract #hashtags, @mentions, ^property from post body. */
+function parseBodyTags(body) {
+  const text = String(body || '').trim();
+  const hashtags = [];
+  const userTags = [];
+  let propertyText = null;
+  const hashMatches = text.matchAll(/#([a-zA-Z0-9_]+)/g);
+  for (const m of hashMatches) hashtags.push(m[1]);
+  const atMatches = text.matchAll(/@([a-zA-Z0-9_]+)/g);
+  for (const m of atMatches) userTags.push(m[1]);
+  const caretMatch = text.match(/\^([^#@\n]+)/);
+  if (caretMatch) propertyText = caretMatch[1].trim();
+  return { hashtags: [...new Set(hashtags)], userTags: [...new Set(userTags)], propertyText };
+}
+
 function toHandle(name) {
   if (!name) return 'user';
   return String(name).replace(/\s+/g, '').replace(/[^a-zA-Z0-9]/g, '') || 'user';
@@ -62,17 +76,16 @@ const Feed = () => {
   const [followingIds, setFollowingIds] = useState([]);
 
   const [showPostModal, setShowPostModal] = useState(false);
-  const [postStage, setPostStage] = useState('type');
-  const [postType, setPostType] = useState('tweet');
   const [postBody, setPostBody] = useState('');
   const [postPropertyId, setPostPropertyId] = useState('');
   const [postAddress, setPostAddress] = useState('');
   const [postImageUrl, setPostImageUrl] = useState('');
   const [postImageUploading, setPostImageUploading] = useState(false);
+  const [showPoll, setShowPoll] = useState(false);
+  const [showAddress, setShowAddress] = useState(false);
   const [pollOptions, setPollOptions] = useState(['', '']);
-  const [postHashtags, setPostHashtags] = useState('');
-  const [postUserTags, setPostUserTags] = useState('');
   const [posting, setPosting] = useState(false);
+  const postImageInputRef = useRef(null);
 
   const [commentsByPost, setCommentsByPost] = useState({});
   const [commentsOpen, setCommentsOpen] = useState({});
@@ -250,21 +263,18 @@ const Feed = () => {
   };
 
   const resetPostForm = () => {
-    setPostType('tweet');
     setPostBody('');
     setPostPropertyId('');
     setPostAddress('');
     setPostImageUrl('');
     setPostImageUploading(false);
+    setShowPoll(false);
+    setShowAddress(false);
     setPollOptions(['', '']);
-    setPostHashtags('');
-    setPostUserTags('');
-    setPostStage('type');
   };
 
   const openPostModal = () => {
     setShowPostModal(true);
-    setPostStage('type');
   };
 
   const closePostModal = () => {
@@ -275,7 +285,9 @@ const Feed = () => {
   const handlePostSubmit = async () => {
     if (!postBody.trim()) return;
     if (posting) return;
-    if (postType === 'poll') {
+    const { hashtags, userTags, propertyText } = parseBodyTags(postBody);
+    const addressText = (propertyText || postAddress || '').trim();
+    if (showPoll) {
       const filled = pollOptions.map((o) => o.trim()).filter(Boolean);
       if (filled.length < 2) {
         alert('Please add at least two poll options.');
@@ -284,20 +296,17 @@ const Feed = () => {
     }
     try {
       setPosting(true);
-      const property = myProperties.find((p) => p.id === postPropertyId) || (postPropertyId ? null : await resolvePropertyMatch(postAddress));
-      const addressText = (postAddress || '').trim();
+      const property = postPropertyId ? myProperties.find((p) => p.id === postPropertyId) : (addressText ? await resolvePropertyMatch(addressText) : null);
       const linkedAddress = property ? formatAddress(property) : addressText || null;
-      const hashtags = parseTagList(postHashtags, '#');
-      const userTags = parseTagList(postUserTags, '@');
       await createPost({
         authorId: user.uid,
         authorName: userProfile?.publicUsername || userProfile?.name || user?.displayName || 'User',
-        type: postType,
+        type: showPoll ? 'poll' : 'tweet',
         body: postBody.trim(),
         propertyId: property?.id || null,
         propertyAddress: linkedAddress,
-        imageUrl: postType === 'instagram' ? postImageUrl.trim() || null : null,
-        pollOptions: postType === 'poll' ? pollOptions.map((o) => o.trim()).filter(Boolean) : [],
+        imageUrl: postImageUrl.trim() || null,
+        pollOptions: showPoll ? pollOptions.map((o) => o.trim()).filter(Boolean) : [],
         hashtags,
         userTags,
       });
@@ -335,6 +344,7 @@ const Feed = () => {
         setCommentsLoading((prev) => ({ ...prev, [postId]: true }));
         const list = await getCommentsForPost(postId);
         setCommentsByPost((prev) => ({ ...prev, [postId]: list }));
+        setPostCommentCount(postId, list.length).catch(() => {});
       } catch (err) {
         console.error('Failed to load comments', err);
       } finally {
@@ -554,108 +564,129 @@ const Feed = () => {
 
       {showPostModal && (
         <div className="feed-post-modal-overlay" onClick={closePostModal}>
-          <div className="feed-post-modal" onClick={(e) => e.stopPropagation()}>
+          <div className="feed-post-modal feed-composer-single" onClick={(e) => e.stopPropagation()}>
             <div className="feed-post-modal-header">
-              <h3>Create Post</h3>
               <button type="button" className="feed-post-modal-close" onClick={closePostModal} aria-label="Close">×</button>
             </div>
-            {postStage === 'type' && (
-              <div className="feed-post-modal-body">
-                <p className="feed-post-modal-hint">Choose a post style.</p>
-                <div className="feed-post-type-wheel">
-                  {[{ id: 'tweet', label: 'Tweet' }, { id: 'instagram', label: 'Instagram' }, { id: 'poll', label: 'Poll' }].map((type) => (
-                    <button
-                      key={type.id}
-                      type="button"
-                      className={`feed-post-type-pill ${postType === type.id ? 'active' : ''}`}
-                      onClick={() => setPostType(type.id)}
-                    >
-                      {type.label}
-                    </button>
-                  ))}
+            <div
+              className="feed-composer-body"
+              onDrop={(e) => {
+                e.preventDefault();
+                const f = e.dataTransfer?.files?.[0];
+                if (f && /^image\//.test(f.type)) handleUploadPostImage(f);
+              }}
+              onDragOver={(e) => e.preventDefault()}
+            >
+              <input
+                type="file"
+                ref={postImageInputRef}
+                accept=".png,.jpg,.jpeg,.webp,.gif,image/*"
+                className="feed-composer-file-input-hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handleUploadPostImage(f);
+                  e.target.value = '';
+                }}
+                aria-hidden
+              />
+              <div className="feed-composer-row-main">
+                <div className="feed-composer-avatar" aria-hidden>
+                  {(userProfile?.name || user?.displayName || 'U').charAt(0).toUpperCase()}
                 </div>
-                <div className="feed-post-modal-actions">
-                  <button type="button" className="btn btn-primary" onClick={() => setPostStage('compose')}>Continue</button>
+                <div className="feed-composer-input-wrap">
+                  <textarea
+                    className="feed-composer-textarea"
+                    value={postBody}
+                    onChange={(e) => setPostBody(e.target.value)}
+                    placeholder="What's happening?"
+                    rows={3}
+                    autoFocus
+                  />
+                  {postImageUrl && (
+                    <div className="feed-composer-image-preview">
+                      <img src={postImageUrl} alt="Post" />
+                      <button type="button" className="feed-composer-remove-image" onClick={() => setPostImageUrl('')} aria-label="Remove image">×</button>
+                    </div>
+                  )}
+                  {showPoll && (
+                    <div className="feed-composer-poll-wrap">
+                      {pollOptions.map((opt, idx) => (
+                        <input
+                          key={`poll-${idx}`}
+                          type="text"
+                          className="feed-composer-poll-input"
+                          value={opt}
+                          onChange={(e) => {
+                            const next = [...pollOptions];
+                            next[idx] = e.target.value;
+                            setPollOptions(next);
+                          }}
+                          placeholder={`Option ${idx + 1}`}
+                        />
+                      ))}
+                      <div className="feed-composer-poll-actions">
+                        <button type="button" className="feed-composer-poll-add" onClick={() => setPollOptions([...pollOptions, ''])}>+ Add option</button>
+                        {pollOptions.length > 2 && (
+                          <button type="button" className="feed-composer-poll-remove" onClick={() => setPollOptions(pollOptions.slice(0, -1))}>Remove last</button>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
-            )}
-            {postStage === 'compose' && (
-              <div className="feed-post-modal-body">
-                <div className="feed-composer-row">
-                  <label>
-                    Address (optional)
+              <div className="feed-composer-actions-row">
+                <div className="feed-composer-icons">
+                  <button
+                    type="button"
+                    className="feed-composer-icon-btn"
+                    title="Add photo"
+                    onClick={() => postImageInputRef.current?.click()}
+                    disabled={postImageUploading}
+                  >
+                    <span className="feed-composer-icon" aria-hidden>{postImageUploading ? '…' : '🖼'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={`feed-composer-icon-btn ${showPoll ? 'active' : ''}`}
+                    onClick={() => setShowPoll((p) => !p)}
+                    title="Add poll"
+                    aria-pressed={showPoll}
+                  >
+                    <span className="feed-composer-icon" aria-hidden>📊</span>
+                  </button>
+                  <label className="feed-composer-icon-btn" title="Add location">
+                    <span className="feed-composer-icon" aria-hidden>📍</span>
                     <AddressAutocomplete
                       value={postAddress}
                       onAddressChange={handlePostAddressChange}
                       onAddressSelect={handlePostAddressSelect}
-                      placeholder="123 Main St, City"
-                      inputProps={{ 'aria-label': 'Post address' }}
+                      placeholder=""
+                      inputProps={{ className: 'feed-composer-address-input', 'aria-label': 'Address' }}
                     />
                   </label>
                 </div>
-                <textarea
-                  value={postBody}
-                  onChange={(e) => setPostBody(e.target.value)}
-                  placeholder="Ask a question, share an update, or start a conversation..."
-                  rows={4}
-                />
-                <div className="feed-composer-row">
-                  <label>
-                    Hashtags
-                    <input type="text" value={postHashtags} onChange={(e) => setPostHashtags(e.target.value)} placeholder="#renovation #kitchen" />
-                  </label>
-                  <label>
-                    Tag users
-                    <input type="text" value={postUserTags} onChange={(e) => setPostUserTags(e.target.value)} placeholder="@alex, @chris" />
-                  </label>
-                </div>
-                {postType === 'instagram' && (
-                  <div className="feed-post-media-upload">
-                    <DragDropFileInput
-                      accept=".png,.jpg,.jpeg,.webp"
-                      onChange={(f) => { if (f) handleUploadPostImage(f); }}
-                      disabled={postImageUploading}
-                      uploading={postImageUploading}
-                      placeholder={postImageUrl ? 'Drop to replace image' : 'Drop or click to upload image'}
-                      className="feed-doc-upload"
-                    />
-                    {postImageUrl && (
-                      <div className="feed-post-media-preview">
-                        <img src={postImageUrl} alt="Post" />
-                        <button type="button" className="btn btn-outline btn-small" onClick={() => setPostImageUrl('')}>Remove image</button>
-                      </div>
-                    )}
-                  </div>
-                )}
-                {postType === 'poll' && (
-                  <div className="feed-poll-options">
-                    {pollOptions.map((opt, idx) => (
-                      <input
-                        key={`poll-${idx}`}
-                        type="text"
-                        value={opt}
-                        onChange={(e) => {
-                          const next = [...pollOptions];
-                          next[idx] = e.target.value;
-                          setPollOptions(next);
-                        }}
-                        placeholder={`Option ${idx + 1}`}
-                      />
-                    ))}
-                    <button type="button" className="btn btn-outline btn-small" onClick={() => setPollOptions([...pollOptions, ''])}>+ Add option</button>
-                    {pollOptions.length > 2 && (
-                      <button type="button" className="btn btn-outline btn-small" onClick={() => setPollOptions(pollOptions.slice(0, -1))}>Remove last</button>
-                    )}
-                  </div>
-                )}
-                <div className="feed-post-modal-actions">
-                  <button type="button" className="btn btn-outline" onClick={() => setPostStage('type')}>Back</button>
-                  <button type="button" className="btn btn-primary" onClick={handlePostSubmit} disabled={posting || !postBody.trim()}>
-                    {posting ? 'Posting...' : 'Post'}
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  className="btn btn-primary feed-composer-post-btn"
+                  onClick={handlePostSubmit}
+                  disabled={posting || !postBody.trim()}
+                >
+                  {posting ? 'Posting...' : 'Post'}
+                </button>
               </div>
-            )}
+              {showAddress && (
+                <div className="feed-composer-address-row">
+                  <AddressAutocomplete
+                    value={postAddress}
+                    onAddressChange={handlePostAddressChange}
+                    onAddressSelect={handlePostAddressSelect}
+                    placeholder="Address (optional)"
+                    inputProps={{ 'aria-label': 'Post address' }}
+                  />
+                </div>
+              )}
+              <p className="feed-composer-hint">Use # for hashtags, @ for users, ^ for property (e.g. ^123 Main St)</p>
+            </div>
           </div>
         </div>
       )}
@@ -689,7 +720,7 @@ function PostCard({
 }) {
   const displayName = isOwn ? (currentUserName || 'You') : (post.authorName || 'Someone');
   const handleStr = isOwn ? toHandle(currentUserName) : toHandle(post.authorName);
-  const commentCount = (commentsByPost[post.id] || []).length;
+  const commentCount = (commentsByPost[post.id] !== undefined ? (commentsByPost[post.id] || []).length : post.commentCount) ?? 0;
   const likeCount = likeCountByPost[post.id] ?? post.likeCount ?? 0;
   const isLiked = likedPostIds.includes(post.id);
   const isFollowing = !isOwn && currentUserId && followingIds.includes(post.authorId);
