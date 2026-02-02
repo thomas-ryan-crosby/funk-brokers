@@ -399,9 +399,12 @@ const Feed = () => {
     return (
       <div className="feed-page">
         <div className="feed-layout">
-          <div className="feed-main">
-            <div className="feed-loading">Loading...</div>
-          </div>
+          <aside className="feed-sidebar" aria-hidden />
+          <main className="feed-main">
+            <div className="feed-main-inner">
+              <div className="feed-loading">Loading...</div>
+            </div>
+          </main>
         </div>
       </div>
     );
@@ -410,7 +413,26 @@ const Feed = () => {
   return (
     <div className="feed-page">
       <div className="feed-layout">
+        <aside className="feed-sidebar">
+          <nav className="feed-sidebar-nav" aria-label="Feed navigation">
+            <button
+              type="button"
+              className={`feed-sidebar-link ${feedView === FEED_VIEW_HOME ? 'active' : ''}`}
+              onClick={() => setFeedView(FEED_VIEW_HOME)}
+            >
+              Feed Home
+            </button>
+            <button
+              type="button"
+              className={`feed-sidebar-link ${feedView === FEED_VIEW_PROFILE ? 'active' : ''}`}
+              onClick={() => setFeedView(FEED_VIEW_PROFILE)}
+            >
+              Profile
+            </button>
+          </nav>
+        </aside>
         <main className="feed-main">
+          <div className="feed-main-inner">
           {feedView === FEED_VIEW_HOME && (
             <>
               <header className="feed-header">
@@ -491,26 +513,8 @@ const Feed = () => {
               ))}
             </div>
           )}
+          </div>
         </main>
-
-        <aside className="feed-sidebar">
-          <nav className="feed-sidebar-nav" aria-label="Feed navigation">
-            <button
-              type="button"
-              className={`feed-sidebar-link ${feedView === FEED_VIEW_HOME ? 'active' : ''}`}
-              onClick={() => setFeedView(FEED_VIEW_HOME)}
-            >
-              Feed Home
-            </button>
-            <button
-              type="button"
-              className={`feed-sidebar-link ${feedView === FEED_VIEW_PROFILE ? 'active' : ''}`}
-              onClick={() => setFeedView(FEED_VIEW_PROFILE)}
-            >
-              Profile
-            </button>
-          </nav>
-        </aside>
       </div>
 
       {showPostModal && (

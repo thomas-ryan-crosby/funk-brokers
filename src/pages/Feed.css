@@ -7,7 +7,8 @@
 }
 
 .feed-layout {
-  max-width: 1200px;
+  width: 100%;
+  max-width: 1400px;
   margin: 0 auto;
   display: flex;
   flex-direction: row;
@@ -15,18 +16,24 @@
   min-height: 100vh;
 }
 
-.feed-main {
-  flex: 1;
-  min-width: 0;
-  max-width: 640px;
-  padding: var(--spacing-lg, 24px) var(--spacing-md, 16px);
+.feed-sidebar {
+  width: 160px;
+  flex-shrink: 0;
+  padding: var(--spacing-lg, 24px) var(--spacing-sm, 12px);
   border-right: 1px solid var(--color-border-light, rgba(148, 163, 184, 0.2));
 }
 
-.feed-sidebar {
-  width: 240px;
-  flex-shrink: 0;
+.feed-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  justify-content: center;
   padding: var(--spacing-lg, 24px) var(--spacing-md, 16px);
+}
+
+.feed-main-inner {
+  width: 100%;
+  max-width: 640px;
 }
 
 .feed-sidebar-nav {
@@ -64,14 +71,14 @@
   .feed-layout {
     flex-direction: column;
   }
-  .feed-main {
-    max-width: none;
-    border-right: none;
-  }
   .feed-sidebar {
     width: 100%;
-    border-top: 1px solid var(--color-border-light, rgba(148, 163, 184, 0.2));
-    padding-top: 16px;
+    border-right: none;
+    border-bottom: 1px solid var(--color-border-light, rgba(148, 163, 184, 0.2));
+    padding: 16px;
+  }
+  .feed-main {
+    padding: 16px;
   }
   .feed-sidebar-nav {
     flex-direction: row;
@@ -329,13 +336,15 @@
   border-radius: var(--radius-md, 12px);
   overflow: hidden;
   border: 1px solid var(--color-border-light, rgba(148, 163, 184, 0.2));
+  background: var(--color-bg-primary, #0b1020);
 }
 
 .feed-card-media img {
   width: 100%;
-  max-height: 360px;
-  object-fit: cover;
   display: block;
+  object-fit: contain;
+  max-height: min(80vh, 900px);
+  vertical-align: middle;
 }
 
 .feed-card-poll {
