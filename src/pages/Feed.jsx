@@ -654,16 +654,15 @@ const Feed = () => {
                   >
                     <span className="feed-composer-icon" aria-hidden>📊</span>
                   </button>
-                  <label className="feed-composer-icon-btn" title="Add location">
+                  <button
+                    type="button"
+                    className={`feed-composer-icon-btn ${showAddress ? 'active' : ''}`}
+                    onClick={() => setShowAddress((s) => !s)}
+                    title="Add location"
+                    aria-pressed={showAddress}
+                  >
                     <span className="feed-composer-icon" aria-hidden>📍</span>
-                    <AddressAutocomplete
-                      value={postAddress}
-                      onAddressChange={handlePostAddressChange}
-                      onAddressSelect={handlePostAddressSelect}
-                      placeholder=""
-                      inputProps={{ className: 'feed-composer-address-input', 'aria-label': 'Address' }}
-                    />
-                  </label>
+                  </button>
                 </div>
                 <button
                   type="button"
