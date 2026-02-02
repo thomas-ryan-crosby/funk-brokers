@@ -474,6 +474,8 @@ const SubmitOffer = () => {
   };
 
   const parseNumber = (v) => (v === '' || v == null ? 0 : Number(v));
+  /** Show empty in number inputs when value is 0 or null (avoid prefilled zero). */
+  const numInputValue = (v) => (v === 0 || v == null || v === '' ? '' : v);
   const parseArrayFromComma = (s) => (typeof s === 'string' ? s.split(',').map((x) => x.trim()).filter(Boolean) : Array.isArray(s) ? s : []);
 
   if (loading) {
@@ -904,7 +906,7 @@ const SubmitOffer = () => {
                 </div>
                 <div className="form-group">
                   <label>Earnest money due (days after effective date)</label>
-                  <input type="number" min={0} value={agreement.purchase_terms.earnest_money?.due_days_after_effective_date ?? ''} onChange={(e) => setAgreementPath('purchase_terms.earnest_money.due_days_after_effective_date', parseNumber(e.target.value))} />
+                  <input type="number" min={0} value={numInputValue(agreement.purchase_terms.earnest_money?.due_days_after_effective_date)} onChange={(e) => setAgreementPath('purchase_terms.earnest_money.due_days_after_effective_date', parseNumber(e.target.value))} />
                 </div>
                 <div className="form-group">
                   <label>Earnest money holder name</label>
@@ -962,11 +964,11 @@ const SubmitOffer = () => {
               <div className="form-grid">
                 <div className="form-group">
                   <label>Review period (days)</label>
-                  <input type="number" min={0} value={agreement.title_review.review_period_days ?? ''} onChange={(e) => setAgreementPath('title_review.review_period_days', parseNumber(e.target.value))} />
+                  <input type="number" min={0} value={numInputValue(agreement.title_review.review_period_days)} onChange={(e) => setAgreementPath('title_review.review_period_days', parseNumber(e.target.value))} />
                 </div>
                 <div className="form-group">
                   <label>Objection deadline (days before closing)</label>
-                  <input type="number" min={0} value={agreement.title_review.objection_deadline_days_before_closing ?? ''} onChange={(e) => setAgreementPath('title_review.objection_deadline_days_before_closing', parseNumber(e.target.value))} />
+                  <input type="number" min={0} value={numInputValue(agreement.title_review.objection_deadline_days_before_closing)} onChange={(e) => setAgreementPath('title_review.objection_deadline_days_before_closing', parseNumber(e.target.value))} />
                 </div>
                 <div className="form-group">
                   <label className="contingency-checkbox">
@@ -1009,7 +1011,7 @@ const SubmitOffer = () => {
               <div className="form-grid">
                 <div className="form-group">
                   <label>Inspection period (days)</label>
-                  <input type="number" min={0} value={agreement.inspection_due_diligence.inspection_period_days ?? ''} onChange={(e) => setAgreementPath('inspection_due_diligence.inspection_period_days', parseNumber(e.target.value))} />
+                  <input type="number" min={0} value={numInputValue(agreement.inspection_due_diligence.inspection_period_days)} onChange={(e) => setAgreementPath('inspection_due_diligence.inspection_period_days', parseNumber(e.target.value))} />
                 </div>
                 <div className="form-group">
                   <label className="contingency-checkbox">
@@ -1055,7 +1057,7 @@ const SubmitOffer = () => {
                 </div>
                 <div className="form-group">
                   <label>Loan amount ($)</label>
-                  <input type="number" min={0} step={1000} value={agreement.financing.loan_amount || ''} onChange={(e) => setAgreementPath('financing.loan_amount', parseNumber(e.target.value))} />
+                  <input type="number" min={0} step={1000} value={numInputValue(agreement.financing.loan_amount)} onChange={(e) => setAgreementPath('financing.loan_amount', parseNumber(e.target.value))} />
                 </div>
                 <div className="form-group">
                   <label>Commitment deadline</label>
@@ -1290,11 +1292,11 @@ const SubmitOffer = () => {
               <div className="form-grid">
                 <div className="form-group">
                   <label>Target closing (days after PSA)</label>
-                  <input type="number" min={0} value={loi.timeline.target_closing_days_after_psa ?? ''} onChange={(e) => setLoiPath('timeline.target_closing_days_after_psa', parseNumber(e.target.value))} />
+                  <input type="number" min={0} value={numInputValue(loi.timeline.target_closing_days_after_psa)} onChange={(e) => setLoiPath('timeline.target_closing_days_after_psa', parseNumber(e.target.value))} />
                 </div>
                 <div className="form-group">
                   <label>Due diligence (days)</label>
-                  <input type="number" min={0} value={loi.timeline.due_diligence_days ?? ''} onChange={(e) => setLoiPath('timeline.due_diligence_days', parseNumber(e.target.value))} />
+                  <input type="number" min={0} value={numInputValue(loi.timeline.due_diligence_days)} onChange={(e) => setLoiPath('timeline.due_diligence_days', parseNumber(e.target.value))} />
                 </div>
               </div>
             </div>
@@ -1360,7 +1362,7 @@ const SubmitOffer = () => {
                 </div>
                 <div className="form-group">
                   <label>Exclusivity period (days)</label>
-                  <input type="number" min={0} value={loi.exclusivity.exclusivity_period_days ?? ''} onChange={(e) => setLoiPath('exclusivity.exclusivity_period_days', parseNumber(e.target.value))} />
+                  <input type="number" min={0} value={numInputValue(loi.exclusivity.exclusivity_period_days)} onChange={(e) => setLoiPath('exclusivity.exclusivity_period_days', parseNumber(e.target.value))} />
                 </div>
               </div>
             </div>
