@@ -28,6 +28,7 @@ import Messages from './pages/Messages';
 import PreListingChecklist from './pages/PreListingChecklist';
 import UserProfile from './pages/UserProfile';
 import Pitch from './pages/Pitch';
+import Feedback from './pages/Feedback';
 import { getMessagesForUser } from './services/messageService';
 import './App.css';
 
@@ -151,6 +152,7 @@ function AppContent() {
             <Route path="/begin-sale" element={<BeginSale />} />
             <Route path="/pre-listing-checklist" element={<PreListingChecklist />} />
             <Route path="/create-search" element={<CreateSearch />} />
+            <Route path="/feedback" element={<Feedback />} />
             <Route path="/pitch" element={<Pitch />} />
           </Routes>
         </main>
