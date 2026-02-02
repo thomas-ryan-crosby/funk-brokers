@@ -5,7 +5,7 @@ const FEEDBACK_COLLECTION = 'feedback';
 
 /**
  * Submit feedback or a bug report (beta testers).
- * @param {Object} data - { userId, authorName?, body, type: 'bug'|'feedback'|'other' }
+ * @param {Object} data - { userId, authorName?, body, type: 'bug'|'feedback'|'other', section? }
  * @returns {Promise<string>} document id
  */
 export const createFeedback = async (data) => {
@@ -14,6 +14,7 @@ export const createFeedback = async (data) => {
     authorName: data.authorName || null,
     body: (data.body || '').trim(),
     type: data.type || 'feedback',
+    section: (data.section || '').trim() || null,
     createdAt: new Date(),
   };
   const ref = await addDoc(collection(db, FEEDBACK_COLLECTION), payload);

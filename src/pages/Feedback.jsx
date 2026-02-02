@@ -4,11 +4,28 @@ import { useAuth } from '../contexts/AuthContext';
 import { createFeedback, getFeedbackList } from '../services/feedbackService';
 import './Feedback.css';
 
+const FEEDBACK_SECTIONS = [
+  { value: '', label: '— Optional —' },
+  { value: 'Browse Properties', label: 'Browse Properties' },
+  { value: 'Dashboard', label: 'Dashboard' },
+  { value: 'Feed', label: 'Feed' },
+  { value: 'Profile', label: 'Profile' },
+  { value: 'List Property', label: 'List Property' },
+  { value: 'Property Detail', label: 'Property Detail' },
+  { value: 'Submit Offer', label: 'Submit Offer' },
+  { value: 'Messages', label: 'Messages' },
+  { value: 'Feedback', label: 'Feedback' },
+  { value: 'How it works', label: 'How it works' },
+  { value: 'Other', label: 'Other' },
+];
+
 const Feedback = () => {
   const { user, userProfile, isAuthenticated, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [body, setBody] = useState('');
   const [type, setType] = useState('feedback');
+  const [section, setSection] = useState('');
+  const [sectionExpanded, setSectionExpanded] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [list, setList] = useState([]);
@@ -54,9 +71,12 @@ const Feedback = () => {
         authorName: userProfile?.name || user?.displayName || null,
         body: trimmed,
         type,
+        section: section.trim() || null,
       });
       setBody('');
       setType('feedback');
+      setSection('');
+      setSectionExpanded(false);
       setSubmitted(true);
       setTimeout(() => setSubmitted(false), 3000);
       await loadList();
@@ -119,6 +139,9 @@ const Feedback = () => {
                       <div className="feedback-item-meta">
                         <span className="feedback-item-type">{typeLabel(item.type)}</span>
                         <span className="feedback-item-date">{formatDate(item.createdAt)}</span>
+                        {item.section && (
+                          <span className="feedback-item-section">{item.section}</span>
+                        )}
                         {item.authorName && (
                           <span className="feedback-item-author">{item.authorName}</span>
                         )}
@@ -163,6 +186,33 @@ const Feedback = () => {
                   <option value="bug">Bug report</option>
                   <option value="other">Other</option>
                 </select>
+                <div className="feedback-widget-section-optional">
+                  <button
+                    type="button"
+                    className="feedback-widget-section-toggle"
+                    onClick={() => setSectionExpanded((e) => !e)}
+                    aria-expanded={sectionExpanded}
+                    aria-controls="feedback-section-select"
+                  >
+                    {sectionExpanded ? '▼' : '▶'} Where on the site? (optional)
+                  </button>
+                  {sectionExpanded && (
+                    <div id="feedback-section-select" className="feedback-widget-section-content">
+                      <label className="feedback-widget-label">Section of website</label>
+                      <select
+                        className="feedback-widget-select"
+                        value={section}
+                        onChange={(e) => setSection(e.target.value)}
+                        disabled={submitting}
+                        aria-label="Section of website"
+                      >
+                        {FEEDBACK_SECTIONS.map((opt) => (
+                          <option key={opt.value || 'none'} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
                 {error && <p className="feedback-widget-error" role="alert">{error}</p>}
                 {submitted && <p className="feedback-widget-success">Thank you! Your feedback was submitted.</p>}
                 <button
