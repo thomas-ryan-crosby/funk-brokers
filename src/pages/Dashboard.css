@@ -2234,6 +2234,18 @@
   color: #64748b;
 }
 
+.deal-offer-sent-meta {
+  display: block;
+  font-size: 12px;
+  color: #94a3b8;
+  margin: 6px 0 4px 0;
+}
+
+.deal-offer-sent-meta strong {
+  font-weight: 600;
+  color: #cbd5e1;
+}
+
 .deal-offer-expiry {
   flex: 0 0 auto;
   display: flex;

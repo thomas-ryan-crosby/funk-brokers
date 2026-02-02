@@ -1086,6 +1086,16 @@ const Dashboard = () => {
   /** True if the current user sent this offer or counter; they can only View or Rescind, not Counter/Accept/Reject. */
   const iSentThisOffer = (o) => o?.createdBy === user?.uid;
 
+  /** Sent from / sent to labels for troubleshooting. isReceived = user is seller (received tab). */
+  const getSentFromTo = (offer, property, prop, isReceived) => {
+    const uid = user?.uid;
+    const buyerName = offer?.offerType === 'loi' ? (offer?.loi?.parties?.buyer_name || offer?.buyerName) : offer?.buyerName;
+    const sellerName = property?.sellerName || prop?.sellerName;
+    const from = offer?.createdBy === uid ? 'You' : (offer?.createdBy === offer?.buyerId ? (buyerName || 'Buyer') : (sellerName || 'Seller'));
+    const to = offer?.createdBy === uid ? (isReceived ? (buyerName || 'Buyer') : (sellerName || 'Seller')) : 'You';
+    return { sentFrom: from, sentTo: to };
+  };
+
   /** Event badges for Deal Center: LOI/offer received or sent, counter sent or received. Badge includes timestamp. */
   const getOfferEventBadge = (offer, { isReceived }) => {
     if (!offer || !user?.uid) return null;
@@ -1427,6 +1437,14 @@ const Dashboard = () => {
                                       <Link to={`/submit-offer/${offer.propertyId}`} className="deal-offer-loi-accepted-link">Convert to PSA</Link>
                                     </div>
                                   )}
+                                  {(() => {
+                                    const { sentFrom, sentTo } = getSentFromTo(offer, property, null, true);
+                                    return (
+                                      <span className="deal-offer-sent-meta">
+                                        Sent from: <strong>{sentFrom}</strong> · Sent to: <strong>{sentTo}</strong> · Sent: {formatDateTime(offer.createdAt)}
+                                      </span>
+                                    );
+                                  })()}
                                   <span className="deal-offer-buyer">{offer.offerType === 'loi' ? (offer.loi?.parties?.buyer_name || offer.buyerName || 'Buyer') : (offer.buyerName || 'Buyer')}</span>
                                   <span className="deal-offer-amount">{formatCurrency(offer.offerType === 'loi' ? (offer.loi?.economic_terms?.purchase_price ?? offer.offerAmount) : offer.offerAmount)}</span>
                                   <span className="deal-offer-meta">
@@ -1554,6 +1572,14 @@ const Dashboard = () => {
                                     <Link to={`/submit-offer/${offer.propertyId}`} className="deal-offer-loi-accepted-link">Convert to PSA</Link>
                                   </div>
                                 )}
+                                {(() => {
+                                  const { sentFrom, sentTo } = getSentFromTo(offer, property, prop, false);
+                                  return (
+                                    <span className="deal-offer-sent-meta">
+                                      Sent from: <strong>{sentFrom}</strong> · Sent to: <strong>{sentTo}</strong> · Sent: {formatDateTime(offer.createdAt)}
+                                    </span>
+                                  );
+                                })()}
                                 <span className="deal-offer-amount">{formatCurrency(offer.offerType === 'loi' ? (offer.loi?.economic_terms?.purchase_price ?? offer.offerAmount) : offer.offerAmount)}</span>
                                 <span className="deal-offer-meta">
                                   {offer.offerType === 'loi'
