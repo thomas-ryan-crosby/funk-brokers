@@ -1084,32 +1084,34 @@ const Dashboard = () => {
   };
 
   /** True if the current user sent this offer or counter; they can only View or Rescind, not Counter/Accept/Reject. */
-  const iSentThisOffer = (o) => o?.createdBy === user?.uid;
+  const iSentThisOffer = (o) => o?.createdBy != null && user?.uid != null && String(o.createdBy) === String(user.uid);
 
-  /** Sent from / sent to labels for troubleshooting. isReceived = user is seller (received tab). */
+  /** Sent from / sent to labels for troubleshooting. isReceived = user is seller (received tab). Uses iSentThisOffer so it matches badge. */
   const getSentFromTo = (offer, property, prop, isReceived) => {
-    const uid = user?.uid;
     const buyerName = offer?.offerType === 'loi' ? (offer?.loi?.parties?.buyer_name || offer?.buyerName) : offer?.buyerName;
     const sellerName = property?.sellerName || prop?.sellerName;
-    const from = offer?.createdBy === uid ? 'You' : (offer?.createdBy === offer?.buyerId ? (buyerName || 'Buyer') : (sellerName || 'Seller'));
-    const to = offer?.createdBy === uid ? (isReceived ? (buyerName || 'Buyer') : (sellerName || 'Seller')) : 'You';
+    const iSent = iSentThisOffer(offer);
+    const from = iSent ? 'You' : (offer?.createdBy === offer?.buyerId ? (buyerName || 'Buyer') : (sellerName || 'Seller'));
+    const to = iSent ? (isReceived ? (buyerName || 'Buyer') : (sellerName || 'Seller')) : 'You';
     return { sentFrom: from, sentTo: to };
   };
 
   /** Event badges for Deal Center: LOI/offer received or sent, counter sent or received. Badge includes timestamp. */
+  /** Uses iSentThisOffer(offer) for counter so badge matches "Sent from: You" (same creator check). */
   const getOfferEventBadge = (offer, { isReceived }) => {
     if (!offer || !user?.uid) return null;
     const uid = user.uid;
     const isLoi = offer.offerType === 'loi';
     const ts = formatDateTime(offer.createdAt);
+    const iSent = iSentThisOffer(offer);
     if (isReceived) {
-      if (offer.counterToOfferId && offer.createdBy === uid) return { label: 'Counter sent', type: 'sent-counter', timestamp: ts };
-      if (offer.counterToOfferId && offer.createdBy !== uid) return { label: 'Counter received', type: 'received-counter', timestamp: ts };
+      if (offer.counterToOfferId && iSent) return { label: 'Counter sent', type: 'sent-counter', timestamp: ts };
+      if (offer.counterToOfferId && !iSent) return { label: 'Counter received', type: 'received-counter', timestamp: ts };
       if (offer.counteredByOfferId) return { label: 'Counter received', type: 'received-counter', timestamp: ts };
       return { label: isLoi ? 'LOI received' : 'Offer received', type: 'received-offer', timestamp: ts };
     }
-    if (offer.counterToOfferId && offer.createdBy === uid) return { label: 'Counter sent', type: 'sent-counter', timestamp: ts };
-    if (offer.counterToOfferId && offer.createdBy !== uid) return { label: 'Counter received', type: 'received-counter', timestamp: ts };
+    if (offer.counterToOfferId && iSent) return { label: 'Counter sent', type: 'sent-counter', timestamp: ts };
+    if (offer.counterToOfferId && !iSent) return { label: 'Counter received', type: 'received-counter', timestamp: ts };
     if (offer.counteredByOfferId) return { label: 'Counter received', type: 'received-counter', timestamp: ts };
     return { label: isLoi ? 'LOI sent' : 'Offer sent', type: 'sent-offer', timestamp: ts };
   };
