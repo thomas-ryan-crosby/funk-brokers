@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
 import AddressAutocomplete from './AddressAutocomplete';
-import CityStateAutocomplete from './CityStateAutocomplete';
 import './SearchFilters.css';
 
 const PROPERTY_TYPES = [
@@ -189,6 +188,15 @@ const SearchFilters = ({ onFilterChange, initialFilters = {}, filters: currentFi
   const communicationStatusLabel = () =>
     COMMUNICATION_OPTIONS.find((o) => o.value === (filters.communicationStatus || 'all'))?.label ?? 'Communication Status';
 
+  const sortLabel = () => {
+    const orderBy = filters.orderBy || 'createdAt';
+    const dir = filters.orderDirection || 'desc';
+    if (orderBy === 'createdAt' && dir === 'desc') return 'Newest';
+    if (orderBy === 'price' && dir === 'asc') return 'Price: Low to High';
+    if (orderBy === 'price' && dir === 'desc') return 'Price: High to Low';
+    return 'Sort by';
+  };
+
   const togglePropertyType = (value) => {
     const current = draft.propertyTypes || [];
     const next = current.includes(value) ? current.filter((v) => v !== value) : [...current, value];
@@ -299,6 +307,19 @@ const SearchFilters = ({ onFilterChange, initialFilters = {}, filters: currentFi
                 onClick={() => { update({ ...filters, listedStatus: 'not_listed' }); setOpenDropdown(null); }}
               >
                 Off Market
+              </button>
+              <div className="search-filters-panel-row search-filters-panel-row--toggle">
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={draft.showUnderContract !== false}
+                    onChange={(e) => updateDraft('showUnderContract', e.target.checked)}
+                  />
+                  Show under contract
+                </label>
+              </div>
+              <button type="button" className="search-filters-apply" onClick={handleApply}>
+                Apply
               </button>
             </div>
           )}
@@ -470,69 +491,47 @@ const SearchFilters = ({ onFilterChange, initialFilters = {}, filters: currentFi
         <div className="search-filters-dropdown">
           <button
             type="button"
-            className={`search-filters-trigger ${openDropdown === 'more' ? 'open' : ''}`}
-            onClick={(e) => { e.stopPropagation(); setOpenDropdown(openDropdown === 'more' ? null : 'more'); }}
+            className={`search-filters-trigger ${openDropdown === 'sort' ? 'open' : ''}`}
+            onClick={(e) => { e.stopPropagation(); setOpenDropdown(openDropdown === 'sort' ? null : 'sort'); }}
           >
-            More
+            {sortLabel()}
             <span className="search-filters-chevron">▼</span>
           </button>
-          {openDropdown === 'more' && (
-            <div className="search-filters-panel search-filters-panel--wide" onClick={(e) => e.stopPropagation()}>
-              <div className="search-filters-panel-row">
-                <label>City</label>
-                <CityStateAutocomplete
-                  value={draft.city}
-                  onCityChange={(v) => updateDraft('city', v)}
-                  onCityStateSelect={({ city, state }) => updateDraftMulti({ city, state })}
-                  placeholder="City"
-                  className="search-filters-input"
-                />
-              </div>
-              <div className="search-filters-panel-row">
-                <label>State</label>
-                <input
-                  type="text"
-                  value={draft.state}
-                  onChange={(e) => updateDraft('state', e.target.value.toUpperCase())}
-                  placeholder="e.g. CA"
-                  maxLength="2"
-                  className="search-filters-input"
-                />
-              </div>
-              <div className="search-filters-panel-row">
-                <label>Sort</label>
-                <select
-                  value={`${draft.orderBy}_${draft.orderDirection}`}
-                  onChange={(e) => {
-                    const [orderBy, orderDirection] = e.target.value.split('_');
-                    updateDraftMulti({ orderBy, orderDirection });
-                  }}
-                  className="search-filters-input"
-                >
-                  <option value="createdAt_desc">Newest</option>
-                  <option value="price_asc">Price: Low to High</option>
-                  <option value="price_desc">Price: High to Low</option>
-                </select>
-              </div>
-              <div className="search-filters-panel-row">
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={draft.showUnderContract !== false}
-                    onChange={(e) => updateDraft('showUnderContract', e.target.checked)}
-                  />
-                  Show properties under contract
-                </label>
-              </div>
-              <button type="button" className="search-filters-apply" onClick={handleApply}>
-                Apply
+          {openDropdown === 'sort' && (
+            <div className="search-filters-panel" onClick={(e) => e.stopPropagation()}>
+              <button
+                type="button"
+                className={`search-filters-option ${(filters.orderBy || 'createdAt') === 'createdAt' && (filters.orderDirection || 'desc') === 'desc' ? 'active' : ''}`}
+                onClick={() => { update({ ...filters, orderBy: 'createdAt', orderDirection: 'desc' }); setOpenDropdown(null); }}
+              >
+                Newest
               </button>
-              <button type="button" className="search-filters-reset" onClick={handleReset}>
-                Reset filters
+              <button
+                type="button"
+                className={`search-filters-option ${filters.orderBy === 'price' && filters.orderDirection === 'asc' ? 'active' : ''}`}
+                onClick={() => { update({ ...filters, orderBy: 'price', orderDirection: 'asc' }); setOpenDropdown(null); }}
+              >
+                Price: Low to High
+              </button>
+              <button
+                type="button"
+                className={`search-filters-option ${filters.orderBy === 'price' && filters.orderDirection === 'desc' ? 'active' : ''}`}
+                onClick={() => { update({ ...filters, orderBy: 'price', orderDirection: 'desc' }); setOpenDropdown(null); }}
+              >
+                Price: High to Low
               </button>
             </div>
           )}
         </div>
+
+        <button
+          type="button"
+          className="search-filters-reset-inline"
+          onClick={handleReset}
+          aria-label="Reset all filters"
+        >
+          Reset filters
+        </button>
 
         {isAuthenticated && onSaveSearch && hasActiveFilters() && (
           <button
