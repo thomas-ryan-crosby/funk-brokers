@@ -213,10 +213,10 @@ function toSellerConcessions(form) {
 
 /**
  * Counter an offer (seller counters buyer's offer, or buyer counters seller's counter).
+ * For LOI: pass counterData as { isLoiCounter: true, loi: <LOI object> }.
+ * For PSA: pass form data (offerAmount, earnestMoney, closingDate, etc.).
  * @param {string} originalOfferId - The offer being countered
- * @param {object} counterData - Form data: offerAmount, earnestMoney, closingDate, financingType,
- *   inspectionContingency, inspectionDays, financingContingency, financingDays,
- *   appraisalContingency, homeSaleContingency, message
+ * @param {object} counterData - Form data or { isLoiCounter: true, loi }
  * @param {object} opts - { userId: string } (current user's uid)
  * @returns {Promise<string>} The new offer's id
  */
@@ -230,6 +230,27 @@ export const counterOffer = async (originalOfferId, counterData, { userId }) => 
   const isSeller = property.sellerId === userId;
   const isBuyer = original.buyerId === userId;
   if (!isSeller && !isBuyer) throw new Error('Only the seller or the buyer may counter this offer');
+
+  if (counterData.isLoiCounter && counterData.loi) {
+    const loi = sanitizeForFirestore(counterData.loi);
+    const purchasePrice = loi?.economic_terms?.purchase_price ?? original.offerAmount ?? 0;
+    const newOffer = {
+      offerType: 'loi',
+      loi,
+      propertyId: original.propertyId,
+      buyerId: original.buyerId,
+      buyerName: original.buyerName ?? loi?.parties?.buyer_name ?? null,
+      buyerEmail: original.buyerEmail || null,
+      buyerPhone: original.buyerPhone || null,
+      verificationDocuments: original.verificationDocuments || {},
+      offerAmount: purchasePrice,
+      counterToOfferId: originalOfferId,
+      createdBy: userId,
+    };
+    const newId = await createOffer(newOffer);
+    await updateOfferStatus(originalOfferId, 'countered', { counteredByOfferId: newId });
+    return newId;
+  }
 
   const closing = counterData.closingDate ? new Date(counterData.closingDate) : (original.proposedClosingDate?.toDate ? original.proposedClosingDate.toDate() : new Date(original.proposedClosingDate || Date.now()));
 
