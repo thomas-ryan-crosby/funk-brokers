@@ -278,6 +278,24 @@ export const searchProperties = async (filters = {}) => {
 };
 
 /**
+ * Reconcile under_contract status: property should only be under_contract if it has an accepted PSA.
+ * If status is under_contract but offers have no accepted PSA (only LOI or none), set status to active.
+ * @param {string} propertyId
+ * @param {Array<{ status: string, offerType?: string }>} offers - offers for this property
+ * @returns {Promise<boolean>} true if property was updated to active
+ */
+export const reconcileUnderContractStatus = async (propertyId, offers = []) => {
+  const hasAcceptedPsa = offers.some(
+    (o) => o.status === 'accepted' && o.offerType !== 'loi'
+  );
+  if (!hasAcceptedPsa) {
+    await updateProperty(propertyId, { status: 'active' });
+    return true;
+  }
+  return false;
+};
+
+/**
  * Update a property
  */
 export const updateProperty = async (propertyId, updates) => {

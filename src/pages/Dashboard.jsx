@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { getPropertiesBySeller, getPropertyById, archiveProperty, restoreProperty, deletePropertyPermanently } from '../services/propertyService';
+import { getPropertiesBySeller, getPropertyById, archiveProperty, restoreProperty, deletePropertyPermanently, reconcileUnderContractStatus } from '../services/propertyService';
 import { getUserFavoriteIds, removeFromFavorites, getFavoritesForProperty } from '../services/favoritesService';
 import { getAllProperties } from '../services/propertyService';
 import { getSavedSearches, removeSavedSearch, getPurchaseProfile, setPurchaseProfile, updatePurchaseProfile } from '../services/profileService';
@@ -164,7 +164,6 @@ const Dashboard = () => {
 
       // Load user's properties
       const properties = await getPropertiesBySeller(user.uid);
-      setMyProperties(properties);
 
       // Load offers for each property (Deal Center – received)
       const offerArrays = await Promise.all(
@@ -172,6 +171,23 @@ const Dashboard = () => {
       );
       const offersByPropertyMap = Object.fromEntries(properties.map((p, i) => [p.id, offerArrays[i] || []]));
       setOffersByProperty(offersByPropertyMap);
+
+      // Reconcile under_contract: only PSA should set under_contract; fix properties wrongly set by accepted LOI
+      const propertiesCorrected = [];
+      for (const p of properties) {
+        if (p.status === 'under_contract') {
+          try {
+            const updated = await reconcileUnderContractStatus(p.id, offersByPropertyMap[p.id] || []);
+            if (updated) propertiesCorrected.push({ ...p, status: 'active' });
+            else propertiesCorrected.push(p);
+          } catch (_) {
+            propertiesCorrected.push(p);
+          }
+        } else {
+          propertiesCorrected.push(p);
+        }
+      }
+      setMyProperties(propertiesCorrected);
 
       // Build activity feed (recent likes on your properties)
       const propertiesForActivity = properties.slice(0, 10);
