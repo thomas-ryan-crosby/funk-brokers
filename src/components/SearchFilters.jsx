@@ -144,6 +144,19 @@ const SearchFilters = ({ onFilterChange, initialFilters = {} }) => {
     return 'Square Ft';
   };
 
+  const propertyTierLabel = () =>
+    PROPERTY_TIERS.find((t) => t.value === (filters.propertyTier || 'all'))?.label ?? 'Property Tier';
+
+  const listedStatusLabel = () => {
+    const v = filters.listedStatus || 'all';
+    if (v === 'listed') return 'Listed Only';
+    if (v === 'not_listed') return 'Off Market';
+    return 'Listed vs Off Market';
+  };
+
+  const communicationStatusLabel = () =>
+    COMMUNICATION_OPTIONS.find((o) => o.value === (filters.communicationStatus || 'all'))?.label ?? 'Communication Status';
+
   const togglePropertyType = (value) => {
     const current = draft.propertyTypes || [];
     const next = current.includes(value) ? current.filter((v) => v !== value) : [...current, value];
@@ -153,6 +166,92 @@ const SearchFilters = ({ onFilterChange, initialFilters = {} }) => {
   return (
     <div className="search-filters search-filters--top" ref={barRef}>
       <div className="search-filters-row">
+        <div className="search-filters-dropdown">
+          <button
+            type="button"
+            className={`search-filters-trigger ${openDropdown === 'tier' ? 'open' : ''}`}
+            onClick={(e) => { e.stopPropagation(); setOpenDropdown(openDropdown === 'tier' ? null : 'tier'); }}
+          >
+            {propertyTierLabel()}
+            <span className="search-filters-chevron">▼</span>
+          </button>
+          {openDropdown === 'tier' && (
+            <div className="search-filters-panel" onClick={(e) => e.stopPropagation()}>
+              {PROPERTY_TIERS.map((t) => (
+                <button
+                  key={t.value}
+                  type="button"
+                  className={`search-filters-option ${(draft.propertyTier || 'all') === t.value ? 'active' : ''}`}
+                  onClick={() => { update({ ...filters, propertyTier: t.value }); setOpenDropdown(null); }}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="search-filters-dropdown">
+          <button
+            type="button"
+            className={`search-filters-trigger ${openDropdown === 'listed' ? 'open' : ''}`}
+            onClick={(e) => { e.stopPropagation(); setOpenDropdown(openDropdown === 'listed' ? null : 'listed'); }}
+          >
+            {listedStatusLabel()}
+            <span className="search-filters-chevron">▼</span>
+          </button>
+          {openDropdown === 'listed' && (
+            <div className="search-filters-panel" onClick={(e) => e.stopPropagation()}>
+              <button
+                type="button"
+                className={`search-filters-option ${(draft.listedStatus || 'all') === 'all' ? 'active' : ''}`}
+                onClick={() => { update({ ...filters, listedStatus: 'all' }); setOpenDropdown(null); }}
+              >
+                All Properties
+              </button>
+              <button
+                type="button"
+                className={`search-filters-option ${draft.listedStatus === 'listed' ? 'active' : ''}`}
+                onClick={() => { update({ ...filters, listedStatus: 'listed' }); setOpenDropdown(null); }}
+              >
+                Listed Only
+              </button>
+              <button
+                type="button"
+                className={`search-filters-option ${draft.listedStatus === 'not_listed' ? 'active' : ''}`}
+                onClick={() => { update({ ...filters, listedStatus: 'not_listed' }); setOpenDropdown(null); }}
+              >
+                Off Market
+              </button>
+            </div>
+          )}
+        </div>
+
+        <div className="search-filters-dropdown">
+          <button
+            type="button"
+            className={`search-filters-trigger ${openDropdown === 'comms' ? 'open' : ''}`}
+            onClick={(e) => { e.stopPropagation(); setOpenDropdown(openDropdown === 'comms' ? null : 'comms'); }}
+          >
+            {communicationStatusLabel()}
+            <span className="search-filters-chevron">▼</span>
+          </button>
+          {openDropdown === 'comms' && (
+            <div className="search-filters-panel" onClick={(e) => e.stopPropagation()}>
+              {COMMUNICATION_OPTIONS.map((o) => (
+                <button
+                  key={o.value}
+                  type="button"
+                  className={`search-filters-option ${(draft.communicationStatus || 'all') === o.value ? 'active' : ''}`}
+                  onClick={() => { update({ ...filters, communicationStatus: o.value }); setOpenDropdown(null); }}
+                >
+                  {o.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
         <div className="search-filters-location">
           <AddressAutocomplete
             value={locationInput}
@@ -349,42 +448,6 @@ const SearchFilters = ({ onFilterChange, initialFilters = {} }) => {
                   maxLength="2"
                   className="search-filters-input"
                 />
-              </div>
-              <div className="search-filters-panel-row">
-                <label>Listed vs Off Market</label>
-                <select
-                  value={draft.listedStatus || 'all'}
-                  onChange={(e) => updateDraft('listedStatus', e.target.value)}
-                  className="search-filters-input"
-                >
-                  <option value="all">All Properties</option>
-                  <option value="listed">Listed Only</option>
-                  <option value="not_listed">Off Market</option>
-                </select>
-              </div>
-              <div className="search-filters-panel-row">
-                <label>Property Tier</label>
-                <select
-                  value={draft.propertyTier || 'all'}
-                  onChange={(e) => updateDraft('propertyTier', e.target.value)}
-                  className="search-filters-input"
-                >
-                  {PROPERTY_TIERS.map((t) => (
-                    <option key={t.value} value={t.value}>{t.label}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="search-filters-panel-row">
-                <label>Communication Status</label>
-                <select
-                  value={draft.communicationStatus || 'all'}
-                  onChange={(e) => updateDraft('communicationStatus', e.target.value)}
-                  className="search-filters-input"
-                >
-                  {COMMUNICATION_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
-                </select>
               </div>
               <div className="search-filters-panel-row">
                 <label>Sort</label>
