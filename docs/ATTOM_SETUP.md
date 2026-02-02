@@ -1,6 +1,6 @@
 # ATTOM API Setup (All-Properties / Unlisted Parcels)
 
-The **all-properties** map layer uses ATTOM’s Property API to show unlisted parcels (Funk Estimate, last sale) on demand. The app calls a **Cloud Function** `getParcelsInViewport`, which talks to ATTOM so the API key stays on the server.
+The **all-properties** map layer uses ATTOM’s Property API to show unlisted parcels (Funk Estimate, last sale) on demand. The app calls **Cloud Functions** (`getMapParcels`, `resolveAddress`, `getPropertySnapshot`) which talk to ATTOM so the API key stays on the server. Results are cached in Firestore and in-memory to reduce API calls; see `docs/ATTOM_API_OVERVIEW.md` for caching details.
 
 ---
 
@@ -54,7 +54,7 @@ cd ..
 firebase deploy --only functions
 ```
 
-The `getParcelsInViewport` endpoint will be at:
+The `getMapParcels` endpoint will be at:
 
 ```
 https://us-central1-<PROJECT_ID>.cloudfunctions.net/getParcelsInViewport
@@ -63,7 +63,7 @@ https://us-central1-<PROJECT_ID>.cloudfunctions.net/getParcelsInViewport
 For `funk-brokers-production`:
 
 ```
-https://us-central1-funk-brokers-production.cloudfunctions.net/getParcelsInViewport
+https://us-central1-funk-brokers-production.cloudfunctions.net/getMapParcels
 ```
 
 ---
@@ -95,7 +95,7 @@ The function expects an `allevents/snapshot`-style response. It maps (with fallb
 | `baths`         | `property.building.rooms.bathstotal`, `property.bathstotal`                   |
 | `squareFeet`    | `property.building.size.universalsize`, `buildingSize`, `property.squarefeet` |
 
-If your ATTOM product uses different field names, update `functions/index.js` in `mapAttomToParcel`.
+If your ATTOM product uses different field names, update `functions/attomService.js` (e.g. `mapAttomToParcel`, `mapAttomToAddressParcel`).
 
 ---
 
@@ -103,7 +103,8 @@ If your ATTOM product uses different field names, update `functions/index.js` in
 
 - The function uses a **radius** (max 20 mi) and ATTOM’s limit (e.g. 100 records) per request.
 - The app only requests parcels when the map is **idle** and **zoom ≥ 18** to limit calls.
-- Check your ATTOM plan for rate limits and adjust zoom threshold or caching (e.g. Firestore `parcelCache`) if needed.
+- **Caching is implemented:** Firestore collections `map_search_snapshot`, `address_attom_map`, and `property_snapshots` reduce ATTOM calls but increase Firestore reads, writes, and stored data. Monitor Firestore usage if budget is a concern.
+- Check your ATTOM plan for rate limits; adjust zoom threshold or TTLs in `functions/attomService.js` if needed.
 
 ---
 
