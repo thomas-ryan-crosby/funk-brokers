@@ -1,5 +1,22 @@
 # GitHub Pages Deployment Troubleshooting
 
+## Failing checks: "pages build and deployment" (cancelled / waiting for runner)
+
+If commit checks show **"Some checks were not successful"** with **pages build and deployment** (build / deploy / report-build-status) cancelled, queued, or waiting for a runner, while **Vercel - Deployment has completed** is green:
+
+- **Cause:** GitHub Pages is enabled in the repo, so GitHub runs its built-in "pages build and deployment" workflow on every push. That workflow can stall waiting for a hosted runner or get cancelled; it is **not** a failure of your code.
+- **Vercel** is your primary deployment and is succeeding.
+
+**Fix (recommended if you only use Vercel):** Stop running the Pages workflow so only Vercel runs:
+
+1. On GitHub, open the repo → **Settings** → **Pages**.
+2. Under **Build and deployment** → **Source**, set **Source** to **None** (or "Deploy from a branch" and leave branch as None if you prefer).
+3. Save. The "pages build and deployment" workflow will no longer run on new pushes, so those checks will disappear and commits will show only the Vercel check.
+
+If you still want to use **GitHub Pages** (e.g. for a second URL), leave Pages on and accept that the Pages workflow may occasionally wait for runners or be cancelled; your app is still deployed via Vercel.
+
+---
+
 ## Issue: Nothing Loading / 404 Errors
 
 If you're seeing 404 errors or the page isn't loading, follow these steps:
