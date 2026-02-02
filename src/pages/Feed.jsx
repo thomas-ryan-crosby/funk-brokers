@@ -2,25 +2,13 @@ import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getPropertiesBySeller } from '../services/propertyService';
-import { getFavoritesForProperty } from '../services/favoritesService';
-import { getPostsByAuthor, getPostsForProperties, addComment, createPost, deletePost, getCommentsForPost } from '../services/postService';
+import { getPostsByAuthor, getAllPosts, getPostsByAuthors, addComment, createPost, deletePost, getCommentsForPost } from '../services/postService';
+import { getFollowing, followUser, unfollowUser } from '../services/followService';
 import { getAllProperties } from '../services/propertyService';
 import { uploadFile } from '../services/storageService';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import DragDropFileInput from '../components/DragDropFileInput';
 import './Feed.css';
-
-function getPublicName(profile) {
-  if (!profile) return 'Someone';
-  if (profile.anonymousProfile) return profile.publicUsername || 'Anonymous';
-  return profile.publicUsername || profile.name || 'Someone';
-}
-
-function formatDate(v) {
-  if (!v) return '—';
-  const d = v?.toDate ? v.toDate() : new Date(v);
-  return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
 
 function formatDateShort(v) {
   if (!v) return '—';
@@ -54,16 +42,23 @@ function toHandle(name) {
   return String(name).replace(/\s+/g, '').replace(/[^a-zA-Z0-9]/g, '') || 'user';
 }
 
+const FEED_VIEW_HOME = 'home';
+const FEED_VIEW_PROFILE = 'profile';
+const FEED_TAB_FOR_YOU = 'for-you';
+const FEED_TAB_FOLLOWING = 'following';
+
 const Feed = () => {
   const { user, userProfile, isAuthenticated, loading: authLoading } = useAuth();
+  const [feedView, setFeedView] = useState(FEED_VIEW_HOME);
+  const [feedTab, setFeedTab] = useState(FEED_TAB_FOR_YOU);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [myProperties, setMyProperties] = useState([]);
-  const [activityFeed, setActivityFeed] = useState([]);
-  const [myPosts, setMyPosts] = useState([]);
-  const [receivedPosts, setReceivedPosts] = useState([]);
-  const [activityTab, setActivityTab] = useState('received');
   const [allPropertiesCache, setAllPropertiesCache] = useState([]);
+  const [forYouPosts, setForYouPosts] = useState([]);
+  const [followingPosts, setFollowingPosts] = useState([]);
+  const [myPosts, setMyPosts] = useState([]);
+  const [followingIds, setFollowingIds] = useState([]);
 
   const [showPostModal, setShowPostModal] = useState(false);
   const [postStage, setPostStage] = useState('type');
@@ -82,42 +77,75 @@ const Feed = () => {
   const [commentsOpen, setCommentsOpen] = useState({});
   const [commentDrafts, setCommentDrafts] = useState({});
   const [commentsLoading, setCommentsLoading] = useState({});
+  const [followLoading, setFollowLoading] = useState({});
+
+  const loadFollowingIds = useCallback(async () => {
+    if (!user?.uid) return;
+    try {
+      const ids = await getFollowing(user.uid);
+      setFollowingIds(ids);
+    } catch (err) {
+      console.error('Failed to load following', err);
+    }
+  }, [user?.uid]);
+
+  const loadForYou = useCallback(async () => {
+    try {
+      const list = await getAllPosts(50);
+      setForYouPosts(list);
+    } catch (err) {
+      console.error('Failed to load For You feed', err);
+      setForYouPosts([]);
+    }
+  }, []);
+
+  const loadFollowing = useCallback(async () => {
+    if (!user?.uid) return;
+    try {
+      const ids = await getFollowing(user.uid);
+      if (ids.length === 0) {
+        setFollowingPosts([]);
+        return;
+      }
+      const list = await getPostsByAuthors(ids);
+      setFollowingPosts(list);
+    } catch (err) {
+      console.error('Failed to load Following feed', err);
+      setFollowingPosts([]);
+    }
+  }, [user?.uid]);
+
+  const loadProfilePosts = useCallback(async () => {
+    if (!user?.uid) return;
+    try {
+      const list = await getPostsByAuthor(user.uid);
+      setMyPosts(list || []);
+    } catch (err) {
+      console.error('Failed to load profile posts', err);
+      setMyPosts([]);
+    }
+  }, [user?.uid]);
 
   const loadFeedData = useCallback(async () => {
     if (!user?.uid) return;
     try {
       setLoading(true);
       setError(null);
-      const properties = await getPropertiesBySeller(user.uid);
-      setMyProperties(properties);
-
-      const propertiesForActivity = properties.slice(0, 10);
-      const favoriteActivityArrays = await Promise.all(
-        propertiesForActivity.map(async (p) => {
-          const favorites = await getFavoritesForProperty(p.id).catch(() => []);
-          return favorites.map((fav) => ({
-            type: 'favorite',
-            propertyId: p.id,
-            propertyAddress: p.address || 'Property',
-            userName: getPublicName(fav.userProfile),
-            createdAt: fav.createdAt,
-          }));
-        })
-      );
-      const favoriteActivity = favoriteActivityArrays.flat();
-      favoriteActivity.sort((a, b) => {
-        const aDate = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
-        const bDate = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
-        return bDate - aDate;
-      });
-      setActivityFeed(favoriteActivity.slice(0, 20));
-
-      const [mine, received] = await Promise.all([
-        getPostsByAuthor(user.uid),
-        getPostsForProperties(properties.map((p) => p.id)),
+      const [properties, ids] = await Promise.all([
+        getPropertiesBySeller(user.uid),
+        getFollowing(user.uid),
       ]);
-      setMyPosts(mine || []);
-      setReceivedPosts((received || []).filter((p) => p.authorId !== user.uid));
+      setMyProperties(properties);
+      setFollowingIds(ids);
+
+      const [forYou, following, profile] = await Promise.all([
+        getAllPosts(50),
+        ids.length > 0 ? getPostsByAuthors(ids) : Promise.resolve([]),
+        getPostsByAuthor(user.uid),
+      ]);
+      setForYouPosts(forYou);
+      setFollowingPosts(following);
+      setMyPosts(profile || []);
     } catch (err) {
       console.error('Failed to load feed', err);
       setError('Unable to load feed.');
@@ -130,6 +158,11 @@ const Feed = () => {
     if (!isAuthenticated || !user?.uid) return;
     loadFeedData();
   }, [isAuthenticated, user?.uid, loadFeedData]);
+
+  const refreshCurrentView = useCallback(async () => {
+    if (!user?.uid) return;
+    await loadFeedData();
+  }, [loadFeedData]);
 
   const resolvePropertyMatch = async (addressText) => {
     const normalized = normalizeAddress(addressText);
@@ -263,7 +296,7 @@ const Feed = () => {
         userTags,
       });
       closePostModal();
-      await loadFeedData();
+      await refreshCurrentView();
     } catch (err) {
       console.error('Failed to create post', err);
       alert('Failed to create post. Please try again.');
@@ -277,7 +310,7 @@ const Feed = () => {
     if (!window.confirm('Delete this post?')) return;
     try {
       await deletePost(postId);
-      await loadFeedData();
+      await refreshCurrentView();
     } catch (err) {
       console.error('Failed to delete post', err);
       alert('Failed to delete post. Please try again.');
@@ -326,16 +359,49 @@ const Feed = () => {
     }
   };
 
-  const receivedItems = [
-    ...activityFeed.map((entry) => ({ type: 'like', ...entry, sortDate: entry.createdAt?.toDate ? entry.createdAt.toDate() : new Date(entry.createdAt || 0) })),
-    ...receivedPosts.map((post) => ({ type: 'post', post, sortDate: post.createdAt?.toDate ? post.createdAt.toDate() : new Date(post.createdAt || 0) })),
-  ].sort((a, b) => b.sortDate - a.sortDate);
+  const handleFollow = async (authorId) => {
+    if (!user?.uid || authorId === user.uid) return;
+    setFollowLoading((prev) => ({ ...prev, [authorId]: true }));
+    try {
+      await followUser(user.uid, authorId);
+      setFollowingIds((prev) => (prev.includes(authorId) ? prev : [...prev, authorId]));
+      if (feedTab === FEED_TAB_FOLLOWING) await loadFollowing();
+    } catch (err) {
+      console.error('Failed to follow', err);
+      alert('Failed to follow. Please try again.');
+    } finally {
+      setFollowLoading((prev) => ({ ...prev, [authorId]: false }));
+    }
+  };
+
+  const handleUnfollow = async (authorId) => {
+    if (!user?.uid) return;
+    setFollowLoading((prev) => ({ ...prev, [authorId]: true }));
+    try {
+      await unfollowUser(user.uid, authorId);
+      setFollowingIds((prev) => prev.filter((id) => id !== authorId));
+      if (feedTab === FEED_TAB_FOLLOWING) await loadFollowing();
+    } catch (err) {
+      console.error('Failed to unfollow', err);
+      alert('Failed to unfollow. Please try again.');
+    } finally {
+      setFollowLoading((prev) => ({ ...prev, [authorId]: false }));
+    }
+  };
+
+  const currentPosts = feedView === FEED_VIEW_PROFILE
+    ? myPosts
+    : feedTab === FEED_TAB_FOR_YOU
+      ? forYouPosts
+      : followingPosts;
 
   if (authLoading || !isAuthenticated) {
     return (
       <div className="feed-page">
-        <div className="feed-container">
-          <div className="feed-loading">Loading...</div>
+        <div className="feed-layout">
+          <div className="feed-main">
+            <div className="feed-loading">Loading...</div>
+          </div>
         </div>
       </div>
     );
@@ -343,114 +409,108 @@ const Feed = () => {
 
   return (
     <div className="feed-page">
-      <div className="feed-container">
-        <header className="feed-header">
-          <h1>Feed</h1>
-          <p className="feed-subtitle">Recent activity and posts around your properties.</p>
-          <div className="feed-header-actions">
-            <button type="button" className="btn btn-primary" onClick={openPostModal}>
-              New Post
-            </button>
-          </div>
-        </header>
+      <div className="feed-layout">
+        <main className="feed-main">
+          {feedView === FEED_VIEW_HOME && (
+            <>
+              <header className="feed-header">
+                <h1>Feed</h1>
+                <p className="feed-subtitle">All posts on the platform. Follow users to see them in Following.</p>
+                <div className="feed-header-actions">
+                  <button type="button" className="btn btn-primary" onClick={openPostModal}>
+                    New Post
+                  </button>
+                </div>
+              </header>
+              <div className="feed-tabs">
+                <button
+                  type="button"
+                  className={`feed-tab ${feedTab === FEED_TAB_FOR_YOU ? 'active' : ''}`}
+                  onClick={() => setFeedTab(FEED_TAB_FOR_YOU)}
+                >
+                  For You
+                </button>
+                <button
+                  type="button"
+                  className={`feed-tab ${feedTab === FEED_TAB_FOLLOWING ? 'active' : ''}`}
+                  onClick={() => setFeedTab(FEED_TAB_FOLLOWING)}
+                >
+                  Following
+                </button>
+              </div>
+            </>
+          )}
+          {feedView === FEED_VIEW_PROFILE && (
+            <header className="feed-header">
+              <h1>Profile</h1>
+              <p className="feed-subtitle">Posts you have posted.</p>
+              <div className="feed-header-actions">
+                <button type="button" className="btn btn-primary" onClick={openPostModal}>
+                  New Post
+                </button>
+              </div>
+            </header>
+          )}
 
-        <div className="feed-tabs">
-          <button
-            type="button"
-            className={`feed-tab ${activityTab === 'received' ? 'active' : ''}`}
-            onClick={() => setActivityTab('received')}
-          >
-            Received
-          </button>
-          <button
-            type="button"
-            className={`feed-tab ${activityTab === 'mine' ? 'active' : ''}`}
-            onClick={() => setActivityTab('mine')}
-          >
-            My posts
-          </button>
-        </div>
+          {error && <div className="feed-alert feed-alert-error">{error}</div>}
 
-        {error && <div className="feed-alert feed-alert-error">{error}</div>}
-
-        {loading ? (
-          <div className="feed-loading">Loading feed...</div>
-        ) : activityTab === 'received' ? (
-          receivedItems.length === 0 ? (
-            <p className="feed-empty">No recent activity yet.</p>
+          {loading ? (
+            <div className="feed-loading">Loading...</div>
+          ) : currentPosts.length === 0 ? (
+            <p className="feed-empty">
+              {feedView === FEED_VIEW_PROFILE
+                ? 'You have not posted yet.'
+                : feedTab === FEED_TAB_FOLLOWING
+                  ? 'Follow users to see their posts here.'
+                  : 'No posts yet.'}
+            </p>
           ) : (
             <div className="feed-list">
-              {receivedItems.map((item, idx) =>
-                item.type === 'like' ? (
-                  <article key={`like-${item.propertyId}-${idx}`} className="feed-card">
-                    <div className="feed-card-header">
-                      <div className="feed-card-avatar" aria-hidden>
-                        {(item.userName || 'U').charAt(0).toUpperCase()}
-                      </div>
-                      <div className="feed-card-meta">
-                        <span className="feed-card-name">{item.userName || 'Someone'}</span>
-                        <span className="feed-card-handle">@{toHandle(item.userName)}</span>
-                        <span className="feed-card-date">{formatDateShort(item.createdAt)}</span>
-                      </div>
-                      <div className="feed-card-actions-top">
-                        <button type="button" className="feed-card-action-icon" aria-label="More options">⋯</button>
-                      </div>
-                    </div>
-                    <div className="feed-card-body">
-                      <p>
-                        Liked <Link to={`/property/${item.propertyId}`} className="feed-card-link">{item.propertyAddress}</Link>
-                      </p>
-                    </div>
-                    <div className="feed-card-engagement">
-                      <span className="feed-engagement-item">💬 0</span>
-                      <span className="feed-engagement-item">↗ Share</span>
-                      <span className="feed-engagement-item">🔖</span>
-                    </div>
-                  </article>
-                ) : (
-                  <PostCard
-                    key={item.post.id}
-                    post={item.post}
-                    isOwn={false}
-                    currentUserName={userProfile?.name || user?.displayName}
-                    formatDateShort={formatDateShort}
-                    toHandle={toHandle}
-                    commentsOpen={commentsOpen}
-                    commentsByPost={commentsByPost}
-                    commentsLoading={commentsLoading}
-                    commentDrafts={commentDrafts}
-                    onToggleComments={toggleComments}
-                    onCommentChange={handleCommentChange}
-                    onCommentSubmit={handleCommentSubmit}
-                  />
-                )
-              )}
+              {currentPosts.map((post) => (
+                <PostCard
+                  key={post.id}
+                  post={post}
+                  isOwn={post.authorId === user?.uid}
+                  currentUserId={user?.uid}
+                  currentUserName={userProfile?.name || user?.displayName}
+                  formatDateShort={formatDateShort}
+                  toHandle={toHandle}
+                  followingIds={followingIds}
+                  followLoading={followLoading}
+                  onFollow={handleFollow}
+                  onUnfollow={handleUnfollow}
+                  commentsOpen={commentsOpen}
+                  commentsByPost={commentsByPost}
+                  commentsLoading={commentsLoading}
+                  commentDrafts={commentDrafts}
+                  onToggleComments={toggleComments}
+                  onCommentChange={handleCommentChange}
+                  onCommentSubmit={handleCommentSubmit}
+                  onDelete={handleDeletePost}
+                />
+              ))}
             </div>
-          )
-        ) : myPosts.length === 0 ? (
-          <p className="feed-empty">You have not posted yet.</p>
-        ) : (
-          <div className="feed-list">
-            {myPosts.map((post) => (
-              <PostCard
-                key={post.id}
-                post={post}
-                isOwn
-                currentUserName={userProfile?.name || user?.displayName}
-                formatDateShort={formatDateShort}
-                toHandle={toHandle}
-                commentsOpen={commentsOpen}
-                commentsByPost={commentsByPost}
-                commentsLoading={commentsLoading}
-                commentDrafts={commentDrafts}
-                onToggleComments={toggleComments}
-                onCommentChange={handleCommentChange}
-                onCommentSubmit={handleCommentSubmit}
-                onDelete={handleDeletePost}
-              />
-            ))}
-          </div>
-        )}
+          )}
+        </main>
+
+        <aside className="feed-sidebar">
+          <nav className="feed-sidebar-nav" aria-label="Feed navigation">
+            <button
+              type="button"
+              className={`feed-sidebar-link ${feedView === FEED_VIEW_HOME ? 'active' : ''}`}
+              onClick={() => setFeedView(FEED_VIEW_HOME)}
+            >
+              Feed Home
+            </button>
+            <button
+              type="button"
+              className={`feed-sidebar-link ${feedView === FEED_VIEW_PROFILE ? 'active' : ''}`}
+              onClick={() => setFeedView(FEED_VIEW_PROFILE)}
+            >
+              Profile
+            </button>
+          </nav>
+        </aside>
       </div>
 
       {showPostModal && (
@@ -567,9 +627,14 @@ const Feed = () => {
 function PostCard({
   post,
   isOwn,
+  currentUserId,
   currentUserName,
   formatDateShort,
   toHandle,
+  followingIds,
+  followLoading,
+  onFollow,
+  onUnfollow,
   commentsOpen,
   commentsByPost,
   commentsLoading,
@@ -582,6 +647,8 @@ function PostCard({
   const displayName = isOwn ? (currentUserName || 'You') : (post.authorName || 'Someone');
   const handleStr = isOwn ? toHandle(currentUserName) : toHandle(post.authorName);
   const commentCount = (commentsByPost[post.id] || []).length;
+  const isFollowing = !isOwn && currentUserId && followingIds.includes(post.authorId);
+  const authorId = post.authorId;
 
   return (
     <article className="feed-card feed-card--post">
@@ -605,6 +672,16 @@ function PostCard({
           <span className="feed-card-date">{formatDateShort(post.createdAt)}</span>
         </div>
         <div className="feed-card-actions-top">
+          {!isOwn && authorId && (
+            <button
+              type="button"
+              className={`feed-follow-btn ${isFollowing ? 'following' : ''}`}
+              onClick={() => isFollowing ? onUnfollow(authorId) : onFollow(authorId)}
+              disabled={followLoading[authorId]}
+            >
+              {followLoading[authorId] ? '…' : isFollowing ? 'Following' : 'Follow'}
+            </button>
+          )}
           <button type="button" className="feed-card-action-icon" aria-label="More options">⋯</button>
           {isOwn && onDelete && (
             <button type="button" className="feed-card-action-delete" onClick={() => onDelete(post.id)}>Delete</button>

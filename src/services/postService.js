@@ -1,7 +1,17 @@
-import { addDoc, collection, deleteDoc, doc, getDocs, orderBy, query, where } from 'firebase/firestore';
+import { addDoc, collection, deleteDoc, doc, getDocs, limit, orderBy, query, where } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
 const POSTS_COLLECTION = 'posts';
+
+/** Sort posts by createdAt desc. */
+const sortPostsByDate = (list) => {
+  list.sort((a, b) => {
+    const aDate = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+    const bDate = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+    return bDate - aDate;
+  });
+  return list;
+};
 
 export const createPost = async (data) => {
   const payload = {
@@ -30,6 +40,49 @@ export const getPostsByAuthor = async (authorId) => {
     return bDate - aDate;
   });
   return list;
+};
+
+/**
+ * Get all posts on the platform, most recent first.
+ * @param {number} limitCount - max number of posts (default 50)
+ * @returns {Promise<Array>}
+ */
+export const getAllPosts = async (limitCount = 50) => {
+  try {
+    const q = query(
+      collection(db, POSTS_COLLECTION),
+      orderBy('createdAt', 'desc'),
+      limit(limitCount)
+    );
+    const snap = await getDocs(q);
+    const list = [];
+    snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
+    return list;
+  } catch (err) {
+    console.error('getAllPosts error', err);
+    return [];
+  }
+};
+
+/**
+ * Get posts by multiple authors, sorted by date desc.
+ * @param {string[]} authorIds - up to 30 authors (Firestore 'in' limit is 10, so we chunk)
+ * @returns {Promise<Array>}
+ */
+export const getPostsByAuthors = async (authorIds) => {
+  if (!authorIds || authorIds.length === 0) return [];
+  const list = [];
+  const chunkSize = 10;
+  for (let i = 0; i < authorIds.length; i += chunkSize) {
+    const chunk = authorIds.slice(i, i + chunkSize);
+    const q = query(
+      collection(db, POSTS_COLLECTION),
+      where('authorId', 'in', chunk)
+    );
+    const snap = await getDocs(q);
+    snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
+  }
+  return sortPostsByDate(list);
 };
 
 export const getPostsForProperties = async (propertyIds) => {
