@@ -155,9 +155,9 @@ export const acceptOffer = async (offerId) => {
     const offer = await getOfferById(offerId);
     if (offer.propertyId) {
       const { updateProperty, getPropertyById } = await import('./propertyService');
-      await updateProperty(offer.propertyId, { status: 'under_contract' });
-      // Only create transaction for PSA; LOI flow prompts user to convert to PSA
+      // Only set property under contract when a PSA is accepted; accepted LOI does not put property under contract
       if (offer.offerType !== 'loi') {
+        await updateProperty(offer.propertyId, { status: 'under_contract' });
         const property = await getPropertyById(offer.propertyId).catch(() => null);
         const { createTransaction } = await import('./transactionService');
         await createTransaction(offer, property || {});

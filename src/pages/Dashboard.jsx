@@ -7,6 +7,7 @@ import { getAllProperties } from '../services/propertyService';
 import { getSavedSearches, removeSavedSearch, getPurchaseProfile, setPurchaseProfile, updatePurchaseProfile } from '../services/profileService';
 import { addComment, createPost, deletePost, getCommentsForPost, getPostsByAuthor, getPostsForProperties } from '../services/postService';
 import { getOffersByProperty, getOffersByBuyer, getOfferById, acceptOffer, rejectOffer, withdrawOffer, counterOffer } from '../services/offerService';
+import { getPsaDraftsByBuyer, deletePsaDraft } from '../services/psaDraftService';
 import { getTransactionsByUser, getTransactionByOfferId, createTransaction } from '../services/transactionService';
 import { getVendorsByUser, createVendor, updateVendor, deleteVendor, addVendorContact, updateVendorContact, removeVendorContact, VENDOR_TYPES } from '../services/vendorService';
 import { updateUserProfile, getUserProfile } from '../services/authService';
@@ -105,6 +106,7 @@ const Dashboard = () => {
   const [uploadingDoc, setUploadingDoc] = useState(null);
   const [offersByProperty, setOffersByProperty] = useState({});
   const [sentOffers, setSentOffers] = useState([]);
+  const [psaDraftsWithProperty, setPsaDraftsWithProperty] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [dealCenterActionOfferId, setDealCenterActionOfferId] = useState(null);
   const [dealCenterSubTab, setDealCenterSubTab] = useState('received'); // 'received' | 'sent'
@@ -213,6 +215,19 @@ const Dashboard = () => {
         })
       );
       setSentOffers(sentWithProperty);
+
+      // Load PSA drafts (Deal Center – sent: pending PSAs)
+      const drafts = await getPsaDraftsByBuyer(user.uid).catch(() => []);
+      const draftsWithProperty = await Promise.all(
+        drafts.map(async (d) => {
+          let prop = null;
+          try {
+            prop = await getPropertyById(d.propertyId);
+          } catch (_) {}
+          return { draft: d, property: prop };
+        })
+      );
+      setPsaDraftsWithProperty(draftsWithProperty);
 
       // Load favorite properties
       const favoriteIds = await getUserFavoriteIds(user.uid);
@@ -1064,6 +1079,17 @@ const Dashboard = () => {
     }
   };
 
+  const handleDeletePsaDraft = async (draftId) => {
+    if (!window.confirm('Delete this draft? You won\'t be able to recover it.')) return;
+    try {
+      await deletePsaDraft(draftId);
+      setPsaDraftsWithProperty((prev) => prev.filter((p) => p.draft.id !== draftId));
+    } catch (err) {
+      console.error(err);
+      alert('Failed to delete draft. Please try again.');
+    }
+  };
+
   const handleCounterSubmit = async (formData) => {
     if (!counterOfferFor?.offer?.id) return;
     await counterOffer(counterOfferFor.offer.id, formData, { userId: user.uid });
@@ -1105,14 +1131,29 @@ const Dashboard = () => {
       if (property) byId[id].property = byId[id].property || property;
       byId[id].items.push({ offer, property });
     }
-    return Object.values(byId).sort((a, b) => {
-      const latest = (g) => Math.max(0, ...g.items.map(({ offer: o }) => {
-        const d = o.createdAt?.toDate ? o.createdAt.toDate() : new Date(o.createdAt || 0);
+    for (const { draft, property } of psaDraftsWithProperty) {
+      const id = draft.propertyId;
+      if (!id) continue;
+      if (!byId[id]) byId[id] = { propertyId: id, property: null, items: [] };
+      if (property) byId[id].property = byId[id].property || property;
+      byId[id].items.push({ draft, property });
+    }
+    const itemTime = (item) => {
+      if (item.offer) {
+        const d = item.offer.createdAt?.toDate ? item.offer.createdAt.toDate() : new Date(item.offer.createdAt || 0);
         return d.getTime();
-      }));
+      }
+      if (item.draft) {
+        const d = item.draft.updatedAt?.toDate ? item.draft.updatedAt.toDate() : new Date(item.draft.updatedAt || 0);
+        return d.getTime();
+      }
+      return 0;
+    };
+    return Object.values(byId).sort((a, b) => {
+      const latest = (g) => Math.max(0, ...g.items.map(itemTime));
       return latest(b) - latest(a);
     });
-  }, [sentOffers]);
+  }, [sentOffers, psaDraftsWithProperty]);
 
   if (authLoading || loading) {
     return (
@@ -1511,7 +1552,7 @@ const Dashboard = () => {
 
               {dealCenterSubTab === 'sent' && (
               <>
-              {sentOffers.length === 0 ? (
+              {sentByProperty.length === 0 ? (
                 <p className="empty-message">
                   You haven&apos;t sent any offers yet.{' '}
                   <Link to="/browse">Browse properties</Link> to submit an offer.
@@ -1530,7 +1571,38 @@ const Dashboard = () => {
                         </Link>
                       </div>
                       <div className="deal-offers">
-                        {items.map(({ offer, property: prop }) => (
+                        {items.map((item) => {
+                          if (item.draft) {
+                            const { draft, property: prop } = item;
+                            const draftPrice = draft.agreement?.purchase_terms?.purchase_price;
+                            return (
+                              <div key={`draft-${draft.id}`} className="deal-offer-row deal-offer-row--draft">
+                                <div className="deal-offer-main">
+                                  <span className="deal-offer-draft-badge">Pending PSA</span>
+                                  <span className="deal-offer-sent-meta">Draft · Last saved: {formatDateTime(draft.updatedAt)}</span>
+                                  <span className="deal-offer-amount">{draftPrice != null ? formatCurrency(draftPrice) : '—'}</span>
+                                </div>
+                                <div className="deal-offer-actions">
+                                  <Link
+                                    to={`/submit-offer/${draft.propertyId}`}
+                                    state={{ draftId: draft.id }}
+                                    className="btn btn-primary btn-small"
+                                  >
+                                    Resume
+                                  </Link>
+                                  <button
+                                    type="button"
+                                    className="btn btn-outline btn-small"
+                                    onClick={() => handleDeletePsaDraft(draft.id)}
+                                  >
+                                    Delete
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          }
+                          const { offer, property: prop } = item;
+                          return (
                             <div key={offer.id} className="deal-offer-row">
                               <div className="deal-offer-main">
                                 {offer.offerType === 'loi' && offer.status === 'accepted' && (
@@ -1624,7 +1696,8 @@ const Dashboard = () => {
                                 )}
                               </div>
                             </div>
-                          ))}
+                          );
+                        })}
                       </div>
                     </div>
                   ))}

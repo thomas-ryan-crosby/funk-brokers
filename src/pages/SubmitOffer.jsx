@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { getPropertyById } from '../services/propertyService';
 import { getPurchaseProfile } from '../services/profileService';
 import { createOffer, getOfferById } from '../services/offerService';
+import { savePsaDraft, getPsaDraftById, deletePsaDraft } from '../services/psaDraftService';
 import FieldInfoIcon from '../components/FieldInfoIcon';
 import './SubmitOffer.css';
 
@@ -229,6 +230,8 @@ const SubmitOffer = () => {
   const [sourceLoiRef, setSourceLoiRef] = useState(null);
   /** When converting: show modal with accepted LOI for quick reference. */
   const [showViewLoiModal, setShowViewLoiModal] = useState(false);
+  /** Current PSA draft id when resuming or after saving a draft. */
+  const [currentDraftId, setCurrentDraftId] = useState(null);
   const confettiPieces = useMemo(() => Array.from({ length: 60 }, (_, i) => {
     const angle = (i / 60) * 2 * Math.PI + Math.random() * 0.5;
     const dist = 120 + Math.random() * 180;
@@ -270,6 +273,25 @@ const SubmitOffer = () => {
       .catch(() => {});
     return () => { cancelled = true; };
   }, [loading, location.state?.convertFromLoi, location.state?.offerId]);
+
+  /** Load PSA draft when resuming from Deal Center (state.draftId). */
+  useEffect(() => {
+    const draftId = location.state?.draftId;
+    if (loading || !draftId || !user?.uid) return;
+    let cancelled = false;
+    getPsaDraftById(draftId)
+      .then((draft) => {
+        if (cancelled || !draft) return;
+        setAgreement(draft.agreement || defaultAgreement());
+        setSourceLoiRef(draft.sourceLoi ?? null);
+        setDocumentType('psa');
+        setStep('form');
+        setCongratsDismissed(true);
+        setCurrentDraftId(draft.id);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [loading, location.state?.draftId, user?.uid]);
 
   const load = async () => {
     try {
@@ -391,6 +413,25 @@ const SubmitOffer = () => {
     setStep('review');
   };
 
+  const handleSaveDraft = async () => {
+    if (!user?.uid || !propertyId) return;
+    setError(null);
+    try {
+      const id = await savePsaDraft({
+        propertyId,
+        buyerId: user.uid,
+        agreement,
+        sourceLoiOfferId: location.state?.offerId ?? null,
+        sourceLoi: sourceLoiRef ?? null,
+      }, currentDraftId || undefined);
+      setCurrentDraftId(id);
+      navigate(`/dashboard?tab=deal-center&sub=sent`, { replace: true });
+    } catch (err) {
+      setError('Failed to save draft. Please try again.');
+      console.error(err);
+    }
+  };
+
   const handleFinalSubmit = async () => {
     const expectedName = (verificationData?.buyerInfo?.name || (agreement.parties.buyer.legal_names?.[0] ?? '')).trim().toLowerCase();
     const signed = signatureName.trim().toLowerCase();
@@ -408,6 +449,10 @@ const SubmitOffer = () => {
     setError(null);
     try {
       await createOffer(buildOffer());
+      if (currentDraftId) {
+        try { await deletePsaDraft(currentDraftId); } catch (_) {}
+        setCurrentDraftId(null);
+      }
       if (documentType === 'loi') {
         navigate(`/dashboard?tab=deal-center&sub=sent`, { replace: true });
         return;
@@ -484,7 +529,7 @@ const SubmitOffer = () => {
         </div>
 
         {sourceLoiRef && (
-          <div className="offer-view-loi-float">
+          <div className="offer-view-loi-float" aria-hidden="true">
             <button type="button" className="offer-view-loi-btn" onClick={() => setShowViewLoiModal(true)}>
               View accepted LOI
             </button>
@@ -1107,6 +1152,11 @@ const SubmitOffer = () => {
 
             <div className="form-actions">
               <button type="button" onClick={() => navigate(`/property/${propertyId}`)} className="btn-secondary">Cancel</button>
+              {documentType === 'psa' && (
+                <button type="button" className="btn btn-outline" onClick={handleSaveDraft}>
+                  Save draft
+                </button>
+              )}
               <button type="submit" className="btn-primary">Review Offer</button>
             </div>
           </form>
