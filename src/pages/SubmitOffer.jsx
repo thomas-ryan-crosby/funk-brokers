@@ -317,6 +317,9 @@ const SubmitOffer = () => {
         buyerInfo: profile.buyerInfo,
       } : {});
       const next = defaultAgreement();
+      const buyerNameFromProfile = (profile?.buyerInfo?.name || '').toString().trim();
+      const buyerNameFallback = (user?.displayName || user?.email || '').toString().trim();
+      const buyerNameForAgreement = buyerNameFromProfile || buyerNameFallback;
       if (data) {
         next.property.street_address = data.address || '';
         next.property.city = data.city || '';
@@ -325,9 +328,11 @@ const SubmitOffer = () => {
         next.purchase_terms.purchase_price = Number(data.price) || 0;
         next.purchase_terms.earnest_money.amount = Number(data.price) ? Number(data.price) * 0.01 : 0;
         next.parties.seller.mailing_address = [data.address, data.city, data.state, data.zip].filter(Boolean).join(', ');
+        const sellerNameForAgreement = (data.sellerName || data.seller_name || '').toString().trim()
+          || (data.sellerId === user?.uid ? ((user.displayName || user.email || '').toString().trim()) : '');
+        next.parties.seller.legal_names = sellerNameForAgreement ? [sellerNameForAgreement] : [];
       }
-      const name = profile?.buyerInfo?.name;
-      next.parties.buyer.legal_names = name ? [name.trim()].filter(Boolean) : [];
+      next.parties.buyer.legal_names = buyerNameForAgreement ? [buyerNameForAgreement] : [];
       next.parties.buyer.mailing_address = profile?.buyerInfo?.address || '';
       setAgreement(next);
 
@@ -339,9 +344,13 @@ const SubmitOffer = () => {
         loiNext.property.zip = data.zip || data.zipCode || '';
         loiNext.economic_terms.purchase_price = Number(data.price) || Number(data.funkEstimate) || 0;
         loiNext.economic_terms.earnest_money.amount = Number(data.price) || Number(data.funkEstimate) ? Number(data.price || data.funkEstimate) * 0.01 : 0;
-        loiNext.parties.seller_name = data.sellerName || '';
+        // Seller: property listing name, or snake_case, or current user if they are the seller
+        const sellerName = (data.sellerName || data.seller_name || '').trim()
+          || (data.sellerId === user?.uid ? ((user.displayName || user.email || '').toString().trim()) : '');
+        loiNext.parties.seller_name = sellerName;
       }
-      loiNext.parties.buyer_name = name ? name.trim() : '';
+      // Buyer: purchase profile legal name, then auth display name or email (reuse agreement value)
+      loiNext.parties.buyer_name = buyerNameForAgreement;
       setLoi(loiNext);
     } catch (err) {
       setError('Failed to load. Please try again.');
