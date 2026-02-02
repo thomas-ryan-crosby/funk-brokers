@@ -166,6 +166,33 @@ const SearchFilters = ({ onFilterChange, initialFilters = {} }) => {
   return (
     <div className="search-filters search-filters--top" ref={barRef}>
       <div className="search-filters-row">
+        <div className="search-filters-location">
+          <AddressAutocomplete
+            value={locationInput}
+            onAddressChange={setLocationInput}
+            onAddressSelect={(obj) => {
+              const value = formatLocationValue(obj);
+              setLocationInput(value);
+              if (value.trim()) update({ ...filters, query: value.trim() });
+            }}
+            onKeyDown={(e) => e.key === 'Enter' && handleLocationSearch()}
+            placeholder="Address, neighborhood, city, ZIP"
+            className="search-filters-location-input"
+            aria-label="Search by address, neighborhood, city, or ZIP"
+          />
+          <button
+            type="button"
+            className="search-filters-location-btn"
+            onClick={handleLocationSearch}
+            aria-label="Search"
+          >
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="8" />
+              <path d="m21 21-4.35-4.35" />
+            </svg>
+          </button>
+        </div>
+
         <div className="search-filters-dropdown">
           <button
             type="button"
@@ -250,33 +277,6 @@ const SearchFilters = ({ onFilterChange, initialFilters = {} }) => {
               ))}
             </div>
           )}
-        </div>
-
-        <div className="search-filters-location">
-          <AddressAutocomplete
-            value={locationInput}
-            onAddressChange={setLocationInput}
-            onAddressSelect={(obj) => {
-              const value = formatLocationValue(obj);
-              setLocationInput(value);
-              if (value.trim()) update({ ...filters, query: value.trim() });
-            }}
-            onKeyDown={(e) => e.key === 'Enter' && handleLocationSearch()}
-            placeholder="Address, neighborhood, city, ZIP"
-            className="search-filters-location-input"
-            aria-label="Search by address, neighborhood, city, or ZIP"
-          />
-          <button
-            type="button"
-            className="search-filters-location-btn"
-            onClick={handleLocationSearch}
-            aria-label="Search"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.35-4.35" />
-            </svg>
-          </button>
         </div>
 
         <div className="search-filters-dropdown">
