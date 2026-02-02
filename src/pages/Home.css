@@ -103,28 +103,22 @@
   min-height: 100%;
 }
 
+/* Same grid as list view so cards are identical size, layout and shape */
 .home-map-split__list {
   flex: 1 1 50%;
   min-width: 320px;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 12px 14px;
+  padding: 16px 20px;
   background: var(--color-bg-dark, #0b1224);
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
   align-content: start;
 }
 
-/* Cards keep natural height; grid scrolls when needed */
 .home-map-split__list > * {
   min-width: 0;
-}
-
-/* Min height so ~4 cards (2×2) show at once; rest scroll. Cards don't squish. */
-.home-map-split__list .property-card {
-  height: auto;
-  min-height: 210px;
 }
 
 .home-map-split__empty {
@@ -292,5 +286,7 @@
     min-height: 200px;
     max-height: 50vh;
     grid-template-columns: 1fr;
+    padding: 16px 20px;
+    gap: 24px;
   }
 }
