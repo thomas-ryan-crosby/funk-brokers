@@ -46,6 +46,9 @@ const PropertyCard = ({ property, embedded, compact, listingTier }) => {
   };
 
   const hasValidPrice = property.price != null && Number.isFinite(Number(property.price));
+  const commissionAmount = hasValidPrice
+    ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(Number(property.price) * 0.05)
+    : null;
   const showImage = photoUrl && !imgError;
   const hasMultiplePhotos = photos.length > 1;
 
@@ -112,15 +115,17 @@ const PropertyCard = ({ property, embedded, compact, listingTier }) => {
       <div className="property-card__body">
         <div className="property-card__head">
           <span className="property-card__price">{formatPrice(property.price)}</span>
-          <div className="property-card__head-tags">
-            {hasValidPrice && (
-              <span className="property-card__commission-bubble" title="Typical agent commission">5%</span>
-            )}
-            {property.propertyType && (
-              <span className="property-card__type">{formatPropertyType(property.propertyType)}</span>
-            )}
-          </div>
+          {property.propertyType && (
+            <span className="property-card__type">{formatPropertyType(property.propertyType)}</span>
+          )}
         </div>
+        {commissionAmount && (
+          <div className="property-card__commission-row">
+            <span className="property-card__commission-bubble" title="Typical agent commission at 5%">
+              Agent Commissions {commissionAmount}
+            </span>
+          </div>
+        )}
         <p className="property-card__address">{formatAddress(property)}</p>
         <div className="property-card__meta">
           <span className="property-card__meta-item">
