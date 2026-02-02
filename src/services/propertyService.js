@@ -12,6 +12,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { getOffersByProperty } from './offerService';
+import { getListingTier } from '../utils/verificationScores';
 
 const PROPERTIES_COLLECTION = 'properties';
 
@@ -196,7 +197,7 @@ export const searchProperties = async (filters = {}) => {
         (p.status === 'active' || p.status === 'under_contract')
       );
     } else if (filters.listedStatus === 'not_listed') {
-      // Show only not listed properties
+      // Show only off-market properties
       properties = properties.filter((p) => 
         p.availableForSale === false || 
         p.status === 'not_listed' ||
@@ -204,6 +205,18 @@ export const searchProperties = async (filters = {}) => {
       );
     }
     // If listedStatus is 'all' or not set, show all properties
+
+    // Filter by property tier (client-side via getListingTier)
+    if (filters.propertyTier && filters.propertyTier !== 'all') {
+      properties = properties.filter((p) => getListingTier(p) === filters.propertyTier);
+    }
+
+    // Filter by communication status
+    if (filters.communicationStatus === 'accepting') {
+      properties = properties.filter((p) => p.acceptingCommunications !== false);
+    } else if (filters.communicationStatus === 'not_accepting') {
+      properties = properties.filter((p) => p.acceptingCommunications === false);
+    }
     
     // Filter out under contract properties if showUnderContract is false
     if (filters.showUnderContract === false) {

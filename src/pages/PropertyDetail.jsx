@@ -688,7 +688,7 @@ const PropertyDetail = () => {
                   {property.archived
                     ? 'Archived'
                     : property.status === 'not_listed'
-                    ? 'Not listed'
+                    ? 'Off Market'
                     : property.status === 'active'
                     ? 'Active'
                     : property.status === 'under_contract'

@@ -202,7 +202,7 @@ const UserProfile = () => {
                   <div>
                     <div className="user-profile-list-title">{p.address || 'Property'}</div>
                     <div className="user-profile-list-meta">
-                      Added {formatDate(p.createdAt)} · {p.availableForSale !== false ? 'Listed' : 'Not listed'}
+                      Added {formatDate(p.createdAt)} · {p.availableForSale !== false ? 'Listed' : 'Off Market'}
                     </div>
                   </div>
                   <button type="button" className="btn btn-outline btn-small" onClick={() => navigate(`/property/${p.id}`)}>

@@ -14,6 +14,22 @@ const PROPERTY_TYPES = [
 const BEDS = ['', '1', '2', '3', '4', '5'];
 const BATHS = ['', '1', '1.5', '2', '2.5', '3', '4'];
 
+const PROPERTY_TIERS = [
+  { value: 'all', label: 'Any tier' },
+  { value: 'basic', label: 'Claimed' },
+  { value: 'complete', label: 'Complete' },
+  { value: 'verified', label: 'Verified' },
+  { value: 'enhanced', label: 'Enhanced' },
+  { value: 'premium', label: 'Premium' },
+  { value: 'elite', label: 'Elite' },
+];
+
+const COMMUNICATION_OPTIONS = [
+  { value: 'all', label: 'Any' },
+  { value: 'accepting', label: 'Accepting' },
+  { value: 'not_accepting', label: 'Not accepting' },
+];
+
 const defaultFilters = () => ({
   query: '',
   minPrice: '',
@@ -26,6 +42,8 @@ const defaultFilters = () => ({
   city: '',
   state: '',
   listedStatus: 'all', // 'all', 'listed', 'not_listed'
+  propertyTier: 'all',
+  communicationStatus: 'all',
   showUnderContract: true,
   orderBy: 'createdAt',
   orderDirection: 'desc',
@@ -333,7 +351,7 @@ const SearchFilters = ({ onFilterChange, initialFilters = {} }) => {
                 />
               </div>
               <div className="search-filters-panel-row">
-                <label>Listed Status</label>
+                <label>Listed vs Off Market</label>
                 <select
                   value={draft.listedStatus || 'all'}
                   onChange={(e) => updateDraft('listedStatus', e.target.value)}
@@ -341,7 +359,31 @@ const SearchFilters = ({ onFilterChange, initialFilters = {} }) => {
                 >
                   <option value="all">All Properties</option>
                   <option value="listed">Listed Only</option>
-                  <option value="not_listed">Not Listed Only</option>
+                  <option value="not_listed">Off Market</option>
+                </select>
+              </div>
+              <div className="search-filters-panel-row">
+                <label>Property Tier</label>
+                <select
+                  value={draft.propertyTier || 'all'}
+                  onChange={(e) => updateDraft('propertyTier', e.target.value)}
+                  className="search-filters-input"
+                >
+                  {PROPERTY_TIERS.map((t) => (
+                    <option key={t.value} value={t.value}>{t.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="search-filters-panel-row">
+                <label>Communication Status</label>
+                <select
+                  value={draft.communicationStatus || 'all'}
+                  onChange={(e) => updateDraft('communicationStatus', e.target.value)}
+                  className="search-filters-input"
+                >
+                  {COMMUNICATION_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
                 </select>
               </div>
               <div className="search-filters-panel-row">

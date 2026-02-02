@@ -120,7 +120,7 @@ const PropertyCard = ({ property, embedded, compact, listingTier }) => {
             <span>{getListingTierLabel(tier)}</span>
           </span>
           <span className={`property-card__tag property-card__tag--status property-card__tag--${isListedStatus ? 'listed' : 'not-listed'}`}>
-            {isListedStatus ? 'Listed' : 'Not listed'}
+            {isListedStatus ? 'Listed' : 'Off Market'}
           </span>
           <span className={`property-card__tag property-card__tag--comms property-card__tag--comms-${property.acceptingCommunications !== false ? 'accepting' : 'not-accepting'}`}>
             {property.acceptingCommunications !== false ? 'Accepting' : 'Not accepting'}
