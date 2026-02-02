@@ -10,6 +10,7 @@ import {
   updateDoc,
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
+import { getOfferById } from './offerService';
 
 const TRANSACTIONS_COLLECTION = 'transactions';
 
@@ -170,6 +171,7 @@ export const getTransactionByOfferId = async (offerId) => {
 
 /**
  * Get all transactions for a user (as buyer or seller).
+ * Only returns PSA deals; excludes LOI (and legacy transactions whose offer is an LOI).
  */
 export const getTransactionsByUser = async (userId) => {
   const q = query(
@@ -182,8 +184,22 @@ export const getTransactionsByUser = async (userId) => {
     const data = d.data();
     list.push({ id: d.id, ...data });
   });
-  // Transaction Center: only PSA deals (fully executed / accepted); exclude LOI
-  const psaOnly = list.filter((t) => t.offerType !== 'loi');
+  const psaOnly = [];
+  for (const t of list) {
+    if (t.offerType === 'loi') continue;
+    if (t.offerType === 'psa') {
+      psaOnly.push(t);
+      continue;
+    }
+    // Legacy transaction (no offerType): resolve offer; exclude if offer is LOI
+    try {
+      const offer = await getOfferById(t.offerId);
+      if (offer?.offerType === 'loi') continue;
+    } catch (_) {
+      continue;
+    }
+    psaOnly.push(t);
+  }
   psaOnly.sort((a, b) => {
     const aDate = toDate(a.acceptedAt) || new Date(0);
     const bDate = toDate(b.acceptedAt) || new Date(0);
