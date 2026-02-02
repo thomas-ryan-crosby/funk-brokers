@@ -113,6 +113,9 @@ function buildSteps(offer, acceptedAt) {
  * @returns {Promise<string|null>} transaction id or null if skipped (duplicate)
  */
 export const createTransaction = async (offer, property, opts = {}) => {
+  // Only PSA (fully executed or accepted by both parties) enters Transaction Center; LOI does not
+  if (offer.offerType === 'loi') return null;
+
   const existing = await getTransactionByOfferId(offer.id);
   if (existing) return null;
 
@@ -128,6 +131,7 @@ export const createTransaction = async (offer, property, opts = {}) => {
   const docRef = await addDoc(collection(db, TRANSACTIONS_COLLECTION), {
     offerId: offer.id,
     propertyId: offer.propertyId,
+    offerType: offer.offerType ?? 'psa',
     buyerId: offer.buyerId,
     buyerName: offer.buyerName || null,
     buyerEmail: offer.buyerEmail || null,
@@ -175,14 +179,17 @@ export const getTransactionsByUser = async (userId) => {
   const snap = await getDocs(q);
   const list = [];
   snap.forEach((d) => {
-    list.push({ id: d.id, ...d.data() });
+    const data = d.data();
+    list.push({ id: d.id, ...data });
   });
-  list.sort((a, b) => {
+  // Transaction Center: only PSA deals (fully executed / accepted); exclude LOI
+  const psaOnly = list.filter((t) => t.offerType !== 'loi');
+  psaOnly.sort((a, b) => {
     const aDate = toDate(a.acceptedAt) || new Date(0);
     const bDate = toDate(b.acceptedAt) || new Date(0);
     return bDate - aDate;
   });
-  return list;
+  return psaOnly;
 };
 
 /**

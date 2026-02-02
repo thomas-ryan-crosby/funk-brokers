@@ -250,12 +250,12 @@ const Dashboard = () => {
       const profile = await getPurchaseProfile(user.uid);
       setPurchaseProfileState(profile);
 
-      // Backfill: create transactions for accepted offers that predate Transaction Manager
+      // Backfill: create transactions for accepted PSA offers only (LOI does not enter Transaction Center)
       const parseDt = (v) => { if (!v) return null; const d = v?.toDate ? v.toDate() : new Date(v); return Number.isNaN(d?.getTime()) ? null : d; };
       for (const p of properties) {
         const list = offersByPropertyMap[p.id] || [];
         for (const o of list) {
-          if (o.status !== 'accepted') continue;
+          if (o.status !== 'accepted' || o.offerType === 'loi') continue;
           try {
             const ex = await getTransactionByOfferId(o.id);
             if (!ex) await createTransaction(o, p, { acceptedAt: parseDt(o.updatedAt) || parseDt(o.createdAt) });
@@ -263,7 +263,7 @@ const Dashboard = () => {
         }
       }
       for (const { offer: o, property: p } of sentWithProperty) {
-        if (o.status !== 'accepted') continue;
+        if (o.status !== 'accepted' || o.offerType === 'loi') continue;
         try {
           const ex = await getTransactionByOfferId(o.id);
           if (!ex) await createTransaction(o, p || {}, { acceptedAt: parseDt(o.updatedAt) || parseDt(o.createdAt) });
