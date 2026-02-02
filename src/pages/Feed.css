@@ -389,6 +389,19 @@
   color: var(--color-text-primary, #f8fafc);
 }
 
+.feed-engagement-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.feed-engagement-like.liked {
+  color: #f472b6;
+}
+
+.feed-engagement-like.liked:hover {
+  color: #fb7185;
+}
+
 .feed-engagement-item {
   font-size: 14px;
   color: var(--color-text-muted, #94a3b8);

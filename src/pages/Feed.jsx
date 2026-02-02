@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { getPropertiesBySeller } from '../services/propertyService';
 import { getPostsByAuthor, getAllPosts, getPostsByAuthors, addComment, createPost, deletePost, getCommentsForPost } from '../services/postService';
 import { getFollowing, followUser, unfollowUser } from '../services/followService';
+import { getLikedPostIds, likePost, unlikePost } from '../services/likeService';
 import { getAllProperties } from '../services/propertyService';
 import { uploadFile } from '../services/storageService';
 import AddressAutocomplete from '../components/AddressAutocomplete';
@@ -78,6 +79,9 @@ const Feed = () => {
   const [commentDrafts, setCommentDrafts] = useState({});
   const [commentsLoading, setCommentsLoading] = useState({});
   const [followLoading, setFollowLoading] = useState({});
+  const [likedPostIds, setLikedPostIds] = useState([]);
+  const [likeCountByPost, setLikeCountByPost] = useState({});
+  const [likeLoading, setLikeLoading] = useState({});
 
   const loadFollowingIds = useCallback(async () => {
     if (!user?.uid) return;
@@ -131,12 +135,14 @@ const Feed = () => {
     try {
       setLoading(true);
       setError(null);
-      const [properties, ids] = await Promise.all([
+      const [properties, ids, likedIds] = await Promise.all([
         getPropertiesBySeller(user.uid),
         getFollowing(user.uid),
+        getLikedPostIds(user.uid),
       ]);
       setMyProperties(properties);
       setFollowingIds(ids);
+      setLikedPostIds(likedIds);
 
       const [forYou, following, profile] = await Promise.all([
         getAllPosts(50),
@@ -389,6 +395,31 @@ const Feed = () => {
     }
   };
 
+  const handleLike = async (postId) => {
+    if (!user?.uid) return;
+    const liked = likedPostIds.includes(postId);
+    setLikeLoading((prev) => ({ ...prev, [postId]: true }));
+    const currentPostsList = feedView === FEED_VIEW_PROFILE ? myPosts : feedTab === FEED_TAB_FOR_YOU ? forYouPosts : followingPosts;
+    const post = currentPostsList.find((p) => p.id === postId);
+    const prevCount = likeCountByPost[postId] ?? post?.likeCount ?? 0;
+    try {
+      if (liked) {
+        await unlikePost(postId, user.uid);
+        setLikedPostIds((prev) => prev.filter((id) => id !== postId));
+        setLikeCountByPost((prev) => ({ ...prev, [postId]: prevCount - 1 }));
+      } else {
+        await likePost(postId, user.uid);
+        setLikedPostIds((prev) => (prev.includes(postId) ? prev : [...prev, postId]));
+        setLikeCountByPost((prev) => ({ ...prev, [postId]: prevCount + 1 }));
+      }
+    } catch (err) {
+      console.error('Failed to like/unlike', err);
+      alert('Something went wrong. Please try again.');
+    } finally {
+      setLikeLoading((prev) => ({ ...prev, [postId]: false }));
+    }
+  };
+
   const currentPosts = feedView === FEED_VIEW_PROFILE
     ? myPosts
     : feedTab === FEED_TAB_FOR_YOU
@@ -501,6 +532,10 @@ const Feed = () => {
                   followLoading={followLoading}
                   onFollow={handleFollow}
                   onUnfollow={handleUnfollow}
+                  likedPostIds={likedPostIds}
+                  likeCountByPost={likeCountByPost}
+                  onLike={handleLike}
+                  likeLoading={likeLoading}
                   commentsOpen={commentsOpen}
                   commentsByPost={commentsByPost}
                   commentsLoading={commentsLoading}
@@ -639,6 +674,10 @@ function PostCard({
   followLoading,
   onFollow,
   onUnfollow,
+  likedPostIds,
+  likeCountByPost,
+  onLike,
+  likeLoading,
   commentsOpen,
   commentsByPost,
   commentsLoading,
@@ -651,6 +690,8 @@ function PostCard({
   const displayName = isOwn ? (currentUserName || 'You') : (post.authorName || 'Someone');
   const handleStr = isOwn ? toHandle(currentUserName) : toHandle(post.authorName);
   const commentCount = (commentsByPost[post.id] || []).length;
+  const likeCount = likeCountByPost[post.id] ?? post.likeCount ?? 0;
+  const isLiked = likedPostIds.includes(post.id);
   const isFollowing = !isOwn && currentUserId && followingIds.includes(post.authorId);
   const authorId = post.authorId;
 
@@ -718,18 +759,19 @@ function PostCard({
         )}
       </div>
       <div className="feed-card-engagement">
+        <button
+          type="button"
+          className={`feed-engagement-btn feed-engagement-like ${isLiked ? 'liked' : ''}`}
+          onClick={() => onLike(post.id)}
+          disabled={likeLoading[post.id]}
+          aria-label={isLiked ? 'Unlike' : 'Like'}
+        >
+          <span className="feed-engagement-icon" aria-hidden>{isLiked ? '❤️' : '🤍'}</span>
+          <span>{likeCount}</span>
+        </button>
         <button type="button" className="feed-engagement-btn" onClick={() => onToggleComments(post.id)}>
           <span className="feed-engagement-icon" aria-hidden>💬</span>
           <span>{commentCount}</span>
-        </button>
-        {post.propertyId && (
-          <Link to={`/property/${post.propertyId}`} className="feed-engagement-btn feed-engagement-share">
-            <span className="feed-engagement-icon" aria-hidden>↗</span>
-            <span>Share</span>
-          </Link>
-        )}
-        <button type="button" className="feed-engagement-btn" aria-label="Bookmark">
-          <span className="feed-engagement-icon" aria-hidden>🔖</span>
         </button>
       </div>
       {commentsOpen[post.id] && (

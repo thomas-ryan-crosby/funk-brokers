@@ -16,6 +16,7 @@ const sortPostsByDate = (list) => {
 export const createPost = async (data) => {
   const payload = {
     ...data,
+    likeCount: 0,
     createdAt: new Date(),
     updatedAt: new Date(),
   };
