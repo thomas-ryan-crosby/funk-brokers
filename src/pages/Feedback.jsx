@@ -95,7 +95,10 @@ const Feedback = () => {
   const formatDate = (v) => {
     if (!v) return '—';
     const d = v?.toDate ? v.toDate() : new Date(v);
-    return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
+    if (Number.isNaN(d.getTime())) return '—';
+    const dateStr = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    const timeStr = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    return `${dateStr}, ${timeStr}`;
   };
 
   const typeLabel = (t) => {
