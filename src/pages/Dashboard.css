@@ -2142,8 +2142,8 @@
 
 .deal-property-block {
   padding: 16px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 8px;
 }
 
@@ -2205,8 +2205,8 @@
   flex-wrap: wrap;
   gap: 12px;
   padding: 12px;
-  background: #fff;
-  border: 1px solid #e2e8f0;
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(148, 163, 184, 0.2);
   border-radius: 6px;
 }
 
@@ -2519,6 +2519,7 @@
 .dashboard-buyer-status,
 .search-item,
 .deal-property-block,
+.deal-offer-row,
 .transaction-card,
 .buying-power-card,
 .vendor-center-table-wrapper,
