@@ -1,11 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import './Landing.css';
 
 const Landing = () => {
   const navigate = useNavigate();
+  const { isAuthenticated, loading: authLoading } = useAuth();
   const [showTweet, setShowTweet] = useState(true);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(true);
   const tweetRef = useRef(null);
+
+  const showBetaWelcome = !authLoading && !isAuthenticated && showWelcomeModal;
 
   const handleBrowseClick = () => {
     navigate('/browse');
@@ -45,6 +50,53 @@ const Landing = () => {
 
   return (
     <div className="landing-page">
+      {showBetaWelcome && (
+        <div
+          className="landing-welcome-overlay"
+          onClick={() => setShowWelcomeModal(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="welcome-modal-title"
+        >
+          <div className="landing-welcome-modal" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="landing-welcome-close"
+              onClick={() => setShowWelcomeModal(false)}
+              aria-label="Close"
+            >
+              ×
+            </button>
+            <div className="landing-welcome-content">
+              <h2 id="welcome-modal-title" className="landing-welcome-title">
+                Welcome Beta Tester! We hope you are OpenTo our idea.
+              </h2>
+              <div className="landing-welcome-body">
+                <p>
+                  Welcome to OpenTo. We are building a completely new real estate platform that allows homeowners and prospective purchasers to engage directly—ultimately making it possible to close a transaction in a manner similar to how TurboTax simplified filing taxes.
+                </p>
+                <p>
+                  The platform aims to increase engagement and retain attention through features such as the <strong>Vendor Center</strong>—a one-stop place for a property’s key maintenance contractors—and the <strong>social media feed</strong>, a fun way to tag properties and create a social environment tailored to real estate. If walls could talk… now they can.
+                </p>
+                <p>
+                  The ultimate goal is twofold: (1) Create a fun platform for people to interact with properties (social platforms crush it), and (2) build confidence for users to take the real estate sales process into their own hands. Trillions of dollars in single-family residential real estate change hands every year, with hundreds of billions in realtor fees—we want a piece of it.
+                </p>
+                <p>
+                  Thanks for your willingness to beta test. Give it a test, try to break it, and share your opinions on strategy, technical implementation, design, and more. We’ve created a <strong>Feedback center</strong> for you (located at the top right once you’re in). Sign up with your email and use the password <code>@Dmin123</code> for now (full authentication is not in place yet). We know there’s plenty to do—very early stages. All feedback welcome.
+                </p>
+              </div>
+              <button
+                type="button"
+                className="landing-welcome-dismiss btn btn-primary"
+                onClick={() => setShowWelcomeModal(false)}
+              >
+                Got it — let me explore
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Hero Section */}
       <section className="landing-hero">
         <div className="hero-container">
