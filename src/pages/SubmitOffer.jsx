@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getPropertyById } from '../services/propertyService';
 import { getPurchaseProfile } from '../services/profileService';
-import { createOffer } from '../services/offerService';
+import { createOffer, getOfferById } from '../services/offerService';
 import FieldInfoIcon from '../components/FieldInfoIcon';
 import './SubmitOffer.css';
 
@@ -147,9 +147,73 @@ function setNested(obj, path, value) {
   return next;
 }
 
+/** Pre-fill PSA agreement from accepted LOI terms. User can change any field; changes show in diff. */
+function agreementFromLoi(loi) {
+  const base = defaultAgreement();
+  const l = loi || {};
+  if (l.parties?.seller_name) base.parties.seller.legal_names = [l.parties.seller_name].filter(Boolean);
+  if (l.parties?.buyer_name) base.parties.buyer.legal_names = [l.parties.buyer_name].filter(Boolean);
+  if (l.property) {
+    if (l.property.street_address != null) base.property.street_address = l.property.street_address;
+    if (l.property.city != null) base.property.city = l.property.city;
+    if (l.property.state != null) base.property.state = l.property.state;
+    if (l.property.zip != null) base.property.zip = l.property.zip;
+  }
+  if (l.economic_terms) {
+    if (l.economic_terms.purchase_price != null) base.purchase_terms.purchase_price = Number(l.economic_terms.purchase_price) || 0;
+    if (l.economic_terms.earnest_money?.amount != null) base.purchase_terms.earnest_money.amount = Number(l.economic_terms.earnest_money.amount) || 0;
+    base.purchase_terms.earnest_money.due_days_after_effective_date = l.economic_terms.earnest_money?.due_upon_psa_execution ? 0 : (base.purchase_terms.earnest_money.due_days_after_effective_date ?? 0);
+  }
+  if (l.timeline) {
+    if (l.timeline.due_diligence_days != null) base.inspection_due_diligence.inspection_period_days = Number(l.timeline.due_diligence_days) || 0;
+    if (l.timeline.target_closing_days_after_psa != null) {
+      const d = new Date();
+      d.setDate(d.getDate() + Number(l.timeline.target_closing_days_after_psa));
+      base.closing.closing_date = d.toISOString().slice(0, 10);
+    }
+  }
+  if (l.financing) {
+    base.financing.financing_contingency = !!l.financing.anticipated_financing;
+    base.financing.loan_type = l.financing.anticipated_all_cash ? 'cash' : (l.financing.anticipated_financing ? 'conventional' : '');
+  }
+  if (l.condition_of_sale) {
+    base.property_condition.sale_condition = l.condition_of_sale.anticipated_as_is_purchase ? 'as_is_where_is' : 'seller_disclosure';
+  }
+  return base;
+}
+
+/** Diff: PSA terms that were pre-filled from LOI but user changed. Used for convert-from-LOI flow. */
+function getLoiToPsaDiff(sourceLoi, agreement, formatPrice) {
+  const fmt = formatPrice || ((n) => (n != null && Number.isFinite(n) ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n) : String(n ?? '—')));
+  const rows = [];
+  const l = sourceLoi || {};
+  const push = (label, loiVal, psaVal) => {
+    const a = loiVal === true || loiVal === false ? (loiVal ? 'Yes' : 'No') : (loiVal ?? '—');
+    const b = psaVal === true || psaVal === false ? (psaVal ? 'Yes' : 'No') : (psaVal ?? '—');
+    if (String(a) !== String(b)) rows.push({ label, loiValue: a, psaValue: b });
+  };
+  push('Seller name', l.parties?.seller_name, (agreement.parties?.seller?.legal_names || [])[0] || (agreement.parties?.seller?.legal_names || []).join(', '));
+  push('Buyer name', l.parties?.buyer_name, (agreement.parties?.buyer?.legal_names || [])[0] || (agreement.parties?.buyer?.legal_names || []).join(', '));
+  push('Property address', [l.property?.street_address, l.property?.city, l.property?.state, l.property?.zip].filter(Boolean).join(', '), [agreement.property?.street_address, agreement.property?.city, agreement.property?.state, agreement.property?.zip].filter(Boolean).join(', '));
+  if ((l.economic_terms?.purchase_price ?? agreement.purchase_terms?.purchase_price) !== (agreement.purchase_terms?.purchase_price ?? l.economic_terms?.purchase_price)) rows.push({ label: 'Purchase price', loiValue: fmt(l.economic_terms?.purchase_price), psaValue: fmt(agreement.purchase_terms?.purchase_price) });
+  if ((l.economic_terms?.earnest_money?.amount ?? agreement.purchase_terms?.earnest_money?.amount) !== (agreement.purchase_terms?.earnest_money?.amount ?? l.economic_terms?.earnest_money?.amount)) rows.push({ label: 'Earnest money', loiValue: fmt(l.economic_terms?.earnest_money?.amount), psaValue: fmt(agreement.purchase_terms?.earnest_money?.amount) });
+  push('Due diligence / inspection period (days)', l.timeline?.due_diligence_days, agreement.inspection_due_diligence?.inspection_period_days);
+  push('Financing contingency', l.financing?.anticipated_financing, agreement.financing?.financing_contingency);
+  push('All cash', l.financing?.anticipated_all_cash, agreement.financing?.loan_type === 'cash');
+  push('As-is purchase', l.condition_of_sale?.anticipated_as_is_purchase, agreement.property_condition?.sale_condition === 'as_is_where_is');
+  const loiClosingDays = l.timeline?.target_closing_days_after_psa;
+  const psaDate = agreement.closing?.closing_date;
+  if (loiClosingDays != null || psaDate) {
+    const expectedDate = loiClosingDays != null ? (() => { const d = new Date(); d.setDate(d.getDate() + Number(loiClosingDays)); return d.toISOString().slice(0, 10); })() : null;
+    if (expectedDate !== psaDate) rows.push({ label: 'Closing date', loiValue: expectedDate ? `${loiClosingDays} days after PSA` : '—', psaValue: psaDate || '—' });
+  }
+  return rows;
+}
+
 const SubmitOffer = () => {
   const { propertyId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [verificationData, setVerificationData] = useState(null);
   const [property, setProperty] = useState(null);
@@ -161,6 +225,8 @@ const SubmitOffer = () => {
   const [documentType, setDocumentType] = useState(null); // 'psa' | 'loi'
   const [step, setStep] = useState('choose-type');
   const [congratsDismissed, setCongratsDismissed] = useState(false);
+  /** When converting from accepted LOI: source LOI object for diff report. */
+  const [sourceLoiRef, setSourceLoiRef] = useState(null);
   const confettiPieces = useMemo(() => Array.from({ length: 60 }, (_, i) => {
     const angle = (i / 60) * 2 * Math.PI + Math.random() * 0.5;
     const dist = 120 + Math.random() * 180;
@@ -183,6 +249,25 @@ const SubmitOffer = () => {
     if (!user?.uid || !propertyId) return;
     load();
   }, [propertyId, isAuthenticated, authLoading, user?.uid, navigate]);
+
+  /** Convert from LOI: when navigated with state.convertFromLoi + offerId, fetch LOI and pre-fill PSA form. */
+  useEffect(() => {
+    const offerId = location.state?.offerId;
+    if (loading || !location.state?.convertFromLoi || !offerId) return;
+    let cancelled = false;
+    getOfferById(offerId)
+      .then((offer) => {
+        if (cancelled) return;
+        if (offer?.offerType !== 'loi' || !offer?.loi) return;
+        setSourceLoiRef(offer.loi);
+        setAgreement(agreementFromLoi(offer.loi));
+        setDocumentType('psa');
+        setStep('form');
+        setCongratsDismissed(true);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [loading, location.state?.convertFromLoi, location.state?.offerId]);
 
   const load = async () => {
     try {
@@ -531,6 +616,26 @@ const SubmitOffer = () => {
 
         {step === 'form' && (
           <form onSubmit={handleReviewOffer} className="offer-form">
+            {sourceLoiRef && (() => {
+              const diffRows = getLoiToPsaDiff(sourceLoiRef, agreement, formatPrice);
+              if (diffRows.length === 0) return null;
+              return (
+                <div className="form-section offer-convert-diff">
+                  <h2>Changes from agreed LOI terms</h2>
+                  <p className="form-hint">LOIs are non-binding. You may change terms; any changes from the accepted LOI are listed below.</p>
+                  <ul className="offer-convert-diff-list">
+                    {diffRows.map((row, i) => (
+                      <li key={i} className="offer-convert-diff-row">
+                        <span className="offer-convert-diff-label">{row.label}</span>
+                        <span className="offer-convert-diff-loi">{row.loiValue}</span>
+                        <span className="offer-convert-diff-arrow">→</span>
+                        <span className="offer-convert-diff-psa">{row.psaValue}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })()}
             {/* Agreement metadata */}
             <div className="form-section">
               <h2>Agreement</h2>
@@ -1120,6 +1225,27 @@ const SubmitOffer = () => {
           <div className="offer-review">
             <h2 className="offer-review-title">{documentType === 'loi' ? 'Review Your Letter of Intent' : 'Review Your Offer'}</h2>
             <p className="offer-review-hint">Please confirm all terms below. Type your full legal name to sign and submit.</p>
+
+            {documentType === 'psa' && sourceLoiRef && (() => {
+              const diffRows = getLoiToPsaDiff(sourceLoiRef, agreement, formatPrice);
+              if (diffRows.length === 0) return null;
+              return (
+                <div className="offer-review-section offer-convert-diff">
+                  <h3>Changes from agreed LOI terms</h3>
+                  <p className="form-hint">These terms differ from the accepted LOI (LOIs are non-binding).</p>
+                  <ul className="offer-convert-diff-list">
+                    {diffRows.map((row, i) => (
+                      <li key={i} className="offer-convert-diff-row">
+                        <span className="offer-convert-diff-label">{row.label}</span>
+                        <span className="offer-convert-diff-loi">{row.loiValue}</span>
+                        <span className="offer-convert-diff-arrow">→</span>
+                        <span className="offer-convert-diff-psa">{row.psaValue}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })()}
 
             {documentType === 'loi' ? (
               <>

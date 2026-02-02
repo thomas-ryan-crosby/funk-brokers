@@ -1024,7 +1024,7 @@ const Dashboard = () => {
       await acceptOffer(offerId);
       await loadDashboardData();
       if (isLoi && offer?.propertyId) {
-        setConvertLoiAfterAccept({ propertyId: offer.propertyId });
+        setConvertLoiAfterAccept({ propertyId: offer.propertyId, offerId: offer.id });
         setActiveTab('deal-center');
         setDealCenterSubTab('sent');
       }
@@ -1351,7 +1351,7 @@ const Dashboard = () => {
                 <div className="deal-center-convert-loi">
                   <p className="deal-center-convert-loi-text">LOI accepted! Convert to a full Purchase and Sale Agreement (PSA) when you&apos;re ready to formalize the deal.</p>
                   <div className="deal-center-convert-loi-actions">
-                    <Link to={`/submit-offer/${convertLoiAfterAccept.propertyId}`} className="btn btn-primary btn-small" onClick={() => setConvertLoiAfterAccept(null)}>
+                    <Link to={`/submit-offer/${convertLoiAfterAccept.propertyId}`} state={convertLoiAfterAccept.offerId ? { convertFromLoi: true, offerId: convertLoiAfterAccept.offerId } : undefined} className="btn btn-primary btn-small" onClick={() => setConvertLoiAfterAccept(null)}>
                       Convert to PSA
                     </Link>
                     <button type="button" className="btn btn-outline btn-small" onClick={() => setConvertLoiAfterAccept(null)}>
@@ -1409,7 +1409,7 @@ const Dashboard = () => {
                                   {offer.offerType === 'loi' && offer.status === 'accepted' && (
                                     <div className="deal-offer-loi-accepted-badge">
                                       <span className="deal-offer-loi-accepted-text">LOI accepted! Convert to a full Purchase and Sale Agreement (PSA) when you&apos;re ready to formalize the deal.</span>
-                                      <Link to={`/submit-offer/${offer.propertyId}`} className="deal-offer-loi-accepted-link">Convert to PSA</Link>
+                                      <Link to={`/submit-offer/${offer.propertyId}`} state={{ convertFromLoi: true, offerId: offer.id }} className="deal-offer-loi-accepted-link">Convert to PSA</Link>
                                     </div>
                                   )}
                                   {(() => {
@@ -1536,7 +1536,7 @@ const Dashboard = () => {
                                 {offer.offerType === 'loi' && offer.status === 'accepted' && (
                                   <div className="deal-offer-loi-accepted-badge">
                                     <span className="deal-offer-loi-accepted-text">LOI accepted! Convert to a full Purchase and Sale Agreement (PSA) when you&apos;re ready to formalize the deal.</span>
-                                    <Link to={`/submit-offer/${offer.propertyId}`} className="deal-offer-loi-accepted-link">Convert to PSA</Link>
+                                    <Link to={`/submit-offer/${offer.propertyId}`} state={{ convertFromLoi: true, offerId: offer.id }} className="deal-offer-loi-accepted-link">Convert to PSA</Link>
                                   </div>
                                 )}
                                 {(() => {

@@ -534,6 +534,62 @@
   margin-top: 4px;
 }
 
+/* Convert from LOI: diff report (changes from agreed LOI terms) */
+.offer-convert-diff {
+  margin-bottom: 24px;
+  padding: 14px 16px;
+  background: #f0f9ff;
+  border: 1px solid #bae6fd;
+  border-radius: 8px;
+}
+
+.offer-convert-diff h2,
+.offer-convert-diff h3 {
+  margin: 0 0 8px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0369a1;
+}
+
+.offer-convert-diff .form-hint {
+  margin: 0 0 10px 0;
+}
+
+.offer-convert-diff-list {
+  margin: 0;
+  padding-left: 20px;
+  font-size: 13px;
+}
+
+.offer-convert-diff-row {
+  margin-bottom: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 8px;
+}
+
+.offer-convert-diff-label {
+  font-weight: 600;
+  color: #334155;
+  flex: 0 0 100%;
+}
+
+.offer-convert-diff-loi {
+  color: #64748b;
+  text-decoration: line-through;
+}
+
+.offer-convert-diff-arrow {
+  color: #0369a1;
+  font-weight: 600;
+}
+
+.offer-convert-diff-psa {
+  color: #0f766e;
+  font-weight: 600;
+}
+
 .contingencies-intro {
   margin: 0 0 16px 0;
   font-size: 14px;
