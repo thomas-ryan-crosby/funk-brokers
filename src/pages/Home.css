@@ -74,7 +74,7 @@
   min-height: 420px;
 }
 
-/* Map view: map left, property cards right; cards filtered by visible map bounds. Height sized so ≥4 cards visible. */
+/* Map view: map left, property cards right; cards filtered by visible map bounds. List scrolls to show all cards at full size. */
 .home-map-split {
   display: flex;
   gap: 0;
@@ -103,10 +103,11 @@
   min-height: 100%;
 }
 
-/* Same grid as list view so cards are identical size, layout and shape */
+/* Same grid as list view; full-size cards. min-height: 0 lets flex item shrink so list scrolls instead of truncating. */
 .home-map-split__list {
   flex: 1 1 50%;
   min-width: 320px;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
   padding: 16px 20px;
