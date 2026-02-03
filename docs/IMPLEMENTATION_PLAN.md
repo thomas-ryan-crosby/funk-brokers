@@ -115,6 +115,12 @@ Create composite indexes (Firestore Console will error with a link if missing):
 **Rollback:** Flag OFF; optionally remove /api routes.  
 **Effort:** L
 
+**Wave 2 implementation (done):**
+- **API routes:** `api/attom/map.js` (GET), `api/attom/address.js` (POST), `api/attom/snapshot.js` (GET). Helpers: `api/_redis.js`, `api/_attom.js` (no Firestore).
+- **Redis:** Upstash Redis via `@upstash/redis`; keys `attom:map:{tileKey}`, `attom:addr:{addressKey}`, `attom:snap:{attomId}` with TTLs 30min, 120d, 30d.
+- **Client:** `parcelService.js` uses `getAttomBase()`; when `VITE_USE_ATTOM_CACHE=true`, requests go to `{origin}/api/attom/*`.
+- **Env (Vercel + local):** `ATTOM_API_KEY`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`.
+
 ---
 
 ## Wave 3 — DAL: Client Calls API Only for ATTOM/Places

@@ -1,8 +1,17 @@
 import { firebaseConfig } from '../config/firebase-config';
 import { get as cacheGet, set as cacheSet } from '../utils/ttlCache';
 import metrics from '../utils/metrics';
+import { USE_ATTOM_CACHE } from '../config/featureFlags';
 
 const FUNCTIONS_BASE = `https://us-central1-${firebaseConfig.projectId}.cloudfunctions.net`;
+
+/** When USE_ATTOM_CACHE (Wave 2), use Vercel API + Redis instead of Firebase Functions. */
+function getAttomBase() {
+  if (USE_ATTOM_CACHE && typeof window !== 'undefined') {
+    return (import.meta.env.VITE_API_BASE || window.location.origin).replace(/\/$/, '') + '/api/attom';
+  }
+  return null;
+}
 
 const TTL_MAP_MS = 5 * 60 * 1000;   // 5 min – map tiles
 const TTL_ADDR_MS = 10 * 60 * 1000; // 10 min – address resolution
@@ -35,7 +44,8 @@ export const getMapParcels = async ({ bounds, zoom }) => {
   promise = (async () => {
     const startMs = Date.now();
     const params = new URLSearchParams({ n, s, e, w, zoom });
-    const url = `${FUNCTIONS_BASE}/getMapParcels?${params}`;
+    const base = getAttomBase();
+    const url = base ? `${base}/map?${params}` : `${FUNCTIONS_BASE}/getMapParcels?${params}`;
     const res = await fetch(url);
     if (!res.ok) {
       const err = await res.json().catch(() => ({ error: res.statusText }));
@@ -72,7 +82,8 @@ export const resolveAddressToParcel = async ({ address, bounds }) => {
       e: ne.lng(),
       w: sw.lng(),
     };
-    const url = `${FUNCTIONS_BASE}/resolveAddress`;
+    const base = getAttomBase();
+    const url = base ? `${base}/address` : `${FUNCTIONS_BASE}/resolveAddress`;
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -108,7 +119,8 @@ export const getPropertySnapshot = async ({ attomId, latitude, longitude }) => {
       lat: latitude,
       lng: longitude,
     });
-    const url = `${FUNCTIONS_BASE}/getPropertySnapshot?${params}`;
+    const base = getAttomBase();
+    const url = base ? `${base}/snapshot?${params}` : `${FUNCTIONS_BASE}/getPropertySnapshot?${params}`;
     const res = await fetch(url);
     if (!res.ok) {
       const err = await res.json().catch(() => ({ error: res.statusText }));
