@@ -63,10 +63,25 @@
   box-shadow: 0 8px 24px rgba(2, 6, 23, 0.3);
 }
 
+.feedback-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
 .feedback-list-section h2 {
   font-size: 20px;
-  margin: 0 0 20px 0;
+  margin: 0;
   color: var(--color-text-primary, #f8fafc);
+}
+
+.feedback-list-refresh {
+  flex-shrink: 0;
+  padding: 6px 14px;
+  font-size: 14px;
 }
 
 .feedback-list-loading,

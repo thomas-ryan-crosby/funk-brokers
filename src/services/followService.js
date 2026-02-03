@@ -1,7 +1,9 @@
-import { doc, getDoc, setDoc, updateDoc, arrayRemove, arrayUnion, collection, query, where, getDocs } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, arrayRemove, arrayUnion, collection, query, where, limit, getDocs } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
 const USER_FOLLOWING_COLLECTION = 'userFollowing';
+/** Max followers read per getFollowers (Firestore cost control). */
+const FOLLOWERS_QUERY_LIMIT = 100;
 
 /**
  * Get list of user IDs that the given user is following.
@@ -80,7 +82,7 @@ export const isFollowing = async (followerId, followingId) => {
 };
 
 /**
- * Get list of user IDs who follow the given user (followers).
+ * Get list of user IDs who follow the given user (followers). Capped at FOLLOWERS_QUERY_LIMIT.
  * @param {string} userId - user's uid
  * @returns {Promise<string[]>}
  */
@@ -88,7 +90,7 @@ export const getFollowers = async (userId) => {
   if (!userId) return [];
   try {
     const ref = collection(db, USER_FOLLOWING_COLLECTION);
-    const q = query(ref, where('following', 'array-contains', userId));
+    const q = query(ref, where('following', 'array-contains', userId), limit(FOLLOWERS_QUERY_LIMIT));
     const snap = await getDocs(q);
     return snap.docs.map((d) => d.id);
   } catch (err) {

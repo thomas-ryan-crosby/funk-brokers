@@ -25,21 +25,24 @@ export const createPost = async (data) => {
   return ref.id;
 };
 
+/** Max posts read per getPostsByAuthor (Firestore cost control). */
+const POSTS_BY_AUTHOR_LIMIT = 100;
+
+/**
+ * Get posts by author, newest first. Capped at POSTS_BY_AUTHOR_LIMIT.
+ */
 export const getPostsByAuthor = async (authorId) => {
   if (!authorId) return [];
   const q = query(
     collection(db, POSTS_COLLECTION),
-    where('authorId', '==', authorId)
+    where('authorId', '==', authorId),
+    orderBy('createdAt', 'desc'),
+    limit(POSTS_BY_AUTHOR_LIMIT)
   );
   const snap = await getDocs(q);
   const list = [];
   snap.forEach((d) => {
     list.push({ id: d.id, ...d.data() });
-  });
-  list.sort((a, b) => {
-    const aDate = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
-    const bDate = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
-    return bDate - aDate;
   });
   return list;
 };
@@ -66,8 +69,11 @@ export const getAllPosts = async (limitCount = 50) => {
   }
 };
 
+/** Max posts read per chunk in getPostsByAuthors (Firestore cost control). */
+const POSTS_BY_AUTHORS_CHUNK_LIMIT = 50;
+
 /**
- * Get posts by multiple authors, sorted by date desc.
+ * Get posts by multiple authors, sorted by date desc. Chunked (Firestore 'in' limit 10); each chunk limited to POSTS_BY_AUTHORS_CHUNK_LIMIT.
  * @param {string[]} authorIds - up to 30 authors (Firestore 'in' limit is 10, so we chunk)
  * @returns {Promise<Array>}
  */
@@ -79,7 +85,9 @@ export const getPostsByAuthors = async (authorIds) => {
     const chunk = authorIds.slice(i, i + chunkSize);
     const q = query(
       collection(db, POSTS_COLLECTION),
-      where('authorId', 'in', chunk)
+      where('authorId', 'in', chunk),
+      orderBy('createdAt', 'desc'),
+      limit(POSTS_BY_AUTHORS_CHUNK_LIMIT)
     );
     const snap = await getDocs(q);
     snap.forEach((d) => list.push({ id: d.id, ...d.data() }));

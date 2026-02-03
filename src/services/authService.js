@@ -9,19 +9,25 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, collection, getDocs, query, limit } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
+import { get as cacheGet, set as cacheSet } from '../utils/ttlCache';
 
 const USERS_COLLECTION = 'users';
+/** Cache TTL for searchUsers (reduce Firestore reads for repeated @-mention queries). */
+const SEARCH_USERS_CACHE_TTL_MS = 60 * 1000;
 
 /**
  * Search users by name, publicUsername, or email (for @ mention suggestions).
- * Returns up to 10 matches; requires query length >= 1.
+ * Returns up to 10 matches; requires query length >= 1. Results cached 60s per query (Firestore cost control).
  */
 export const searchUsers = async (searchQuery) => {
   const q = String(searchQuery || '').trim().toLowerCase();
   if (!q) return [];
+  const cacheKey = `searchUsers_${q}`;
+  const cached = cacheGet(cacheKey, SEARCH_USERS_CACHE_TTL_MS);
+  if (cached != null) return cached;
   try {
     const usersRef = collection(db, USERS_COLLECTION);
-    const qSnap = await getDocs(query(usersRef, limit(100)));
+    const qSnap = await getDocs(query(usersRef, limit(20)));
     const results = [];
     for (const docSnap of qSnap.docs) {
       if (results.length >= 10) break;
@@ -42,7 +48,9 @@ export const searchUsers = async (searchQuery) => {
           email: data.email || '',
         });
     }
-    return results.slice(0, 10);
+    const out = results.slice(0, 10);
+    cacheSet(cacheKey, out, SEARCH_USERS_CACHE_TTL_MS);
+    return out;
   } catch (err) {
     console.error('searchUsers error', err);
     return [];

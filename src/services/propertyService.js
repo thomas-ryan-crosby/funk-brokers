@@ -7,14 +7,18 @@ import {
   doc,
   query,
   where,
+  orderBy,
+  limit,
   updateDoc,
   deleteDoc,
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { getOffersByProperty } from './offerService';
 import { getListingTier } from '../utils/verificationScores';
+import { get as cacheGet, set as cacheSet, remove as cacheRemove } from '../utils/ttlCache';
 
 const PROPERTIES_COLLECTION = 'properties';
+const PROPERTIES_CACHE_TTL_MS = 3 * 60 * 1000; // 3 min – Tier 2
 
 /**
  * Create a new property listing (full listing workflow)
@@ -71,38 +75,36 @@ export const claimProperty = async (parcel, sellerId) => {
     updatedAt: now,
   };
   const docRef = await addDoc(collection(db, PROPERTIES_COLLECTION), data);
+  cacheRemove('properties_all');
   return docRef.id;
 };
 
+/** Max properties read per getAllProperties / searchProperties (Firestore efficiency). */
+const PROPERTIES_QUERY_CAP = 1000;
+
 /**
- * Get all active properties
- * Note: Firestore requires a composite index for queries with where + orderBy on different fields
- * For now, we'll fetch all and sort client-side to avoid index requirement
+ * Get active properties, newest first. Capped at PROPERTIES_QUERY_CAP to limit Firestore reads.
+ * Archived are filtered out client-side. Results cached 3 min (Tier 2).
  */
 export const getAllProperties = async () => {
+  const cacheKey = 'properties_all';
+  const cached = cacheGet(cacheKey, PROPERTIES_CACHE_TTL_MS);
+  if (cached != null) return cached;
   try {
-    // Get all properties (except archived)
-    const allPropertiesQuery = collection(db, PROPERTIES_COLLECTION);
-    const querySnapshot = await getDocs(allPropertiesQuery);
-    
+    const q = query(
+      collection(db, PROPERTIES_COLLECTION),
+      orderBy('createdAt', 'desc'),
+      limit(PROPERTIES_QUERY_CAP)
+    );
+    const querySnapshot = await getDocs(q);
+
     const properties = [];
-    querySnapshot.forEach((doc) => {
-      properties.push({
-        id: doc.id,
-        ...doc.data(),
-      });
-    });
-    
-    // Filter out only archived properties - show everything else
-    const visibleProperties = properties.filter((p) => p.archived !== true);
-    
-    // Sort client-side by createdAt (newest first)
-    visibleProperties.sort((a, b) => {
-      const aDate = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt);
-      const bDate = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt);
-      return bDate - aDate; // Descending order
+    querySnapshot.forEach((docSnap) => {
+      properties.push({ id: docSnap.id, ...docSnap.data() });
     });
 
+    const visibleProperties = properties.filter((p) => p.archived !== true);
+    cacheSet(cacheKey, visibleProperties, PROPERTIES_CACHE_TTL_MS);
     return visibleProperties;
   } catch (error) {
     console.error('Error fetching properties:', error);
@@ -170,23 +172,33 @@ export const getPropertyById = async (propertyId) => {
   }
 };
 
+function searchCacheKey(filters) {
+  const keys = Object.keys(filters || {}).sort();
+  const o = keys.reduce((acc, k) => ({ ...acc, [k]: filters[k] }), {});
+  return `properties_search_${JSON.stringify(o)}`;
+}
+
 /**
- * Search properties with filters
- * Fetches all active properties, then filters and sorts client-side to avoid
- * Firestore composite index requirements. For production, consider Algolia or similar.
+ * Search properties with filters. Fetches up to PROPERTIES_QUERY_CAP (newest first),
+ * then filters client-side. Capped to limit Firestore reads. Results cached 3 min (Tier 2).
  */
 export const searchProperties = async (filters = {}) => {
+  const cacheKey = searchCacheKey(filters);
+  const cached = cacheGet(cacheKey, PROPERTIES_CACHE_TTL_MS);
+  if (cached != null) return cached;
   try {
-    // Get all properties and filter client-side
-    const allPropertiesQuery = collection(db, PROPERTIES_COLLECTION);
-    const querySnapshot = await getDocs(allPropertiesQuery);
-    
+    const q = query(
+      collection(db, PROPERTIES_COLLECTION),
+      orderBy('createdAt', 'desc'),
+      limit(PROPERTIES_QUERY_CAP)
+    );
+    const querySnapshot = await getDocs(q);
+
     let properties = [];
-    querySnapshot.forEach((doc) => {
-      properties.push({ id: doc.id, ...doc.data() });
+    querySnapshot.forEach((docSnap) => {
+      properties.push({ id: docSnap.id, ...docSnap.data() });
     });
 
-    // Filter out only archived properties - show everything else
     properties = properties.filter((p) => p.archived !== true);
     
     // Filter by listed status
@@ -296,6 +308,7 @@ export const searchProperties = async (filters = {}) => {
       properties = properties.slice(0, parseInt(filters.limit, 10));
     }
 
+    cacheSet(cacheKey, properties, PROPERTIES_CACHE_TTL_MS);
     return properties;
   } catch (error) {
     console.error('Error searching properties:', error);

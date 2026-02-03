@@ -38,10 +38,10 @@ const Feedback = () => {
     }
   }, [authLoading, isAuthenticated, navigate]);
 
-  const loadList = useCallback(async () => {
+  const loadList = useCallback(async (forceRefresh = false) => {
     setListLoading(true);
     try {
-      const items = await getFeedbackList(100);
+      const items = await getFeedbackList(100, forceRefresh ? { skipCache: true } : {});
       setList(items);
     } catch (err) {
       console.error('Failed to load feedback list', err);
@@ -79,7 +79,7 @@ const Feedback = () => {
       setSectionExpanded(false);
       setSubmitted(true);
       setTimeout(() => setSubmitted(false), 3000);
-      await loadList();
+      await loadList(true);
     } catch (err) {
       console.error('Failed to submit feedback', err);
       setError('Failed to submit. Please try again.');
@@ -130,7 +130,18 @@ const Feedback = () => {
         <div className="feedback-layout">
           <main className="feedback-main">
             <section className="feedback-list-section" id="feedback-list">
-              <h2>What others are saying</h2>
+              <div className="feedback-list-header">
+                <h2>What others are saying</h2>
+                <button
+                  type="button"
+                  className="feedback-list-refresh btn btn-secondary"
+                  onClick={() => loadList(true)}
+                  disabled={listLoading}
+                  aria-label="Refresh feedback list"
+                >
+                  {listLoading ? 'Loading...' : 'Refresh'}
+                </button>
+              </div>
               {listLoading ? (
                 <p className="feedback-list-loading">Loading feedback...</p>
               ) : list.length === 0 ? (

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { USE_MAP_DEBOUNCE } from '../config/featureFlags';
 import { loadGooglePlaces } from '../utils/loadGooglePlaces';
 import { getMapParcels } from '../services/parcelService';
 import { claimProperty } from '../services/propertyService';
@@ -141,6 +142,10 @@ const PropertyMap = ({ properties = [], onPropertiesInView }) => {
     const debouncedRef = { current: null };
     const lastFetchAtRef = { current: 0 };
 
+    const minDistanceM = USE_MAP_DEBOUNCE ? 500 : 350;
+    const debounceMs = USE_MAP_DEBOUNCE ? 1000 : 600;
+    const minIntervalMs = USE_MAP_DEBOUNCE ? 1200 : 800;
+
     const movedEnough = (prev, next) => {
       if (!prev) return true;
       const zoomChange = Math.abs((prev.zoom ?? 0) - (next.zoom ?? 0));
@@ -152,7 +157,7 @@ const PropertyMap = ({ properties = [], onPropertiesInView }) => {
       const a = Math.sin(dLat / 2) ** 2
         + Math.cos(toRadians(prev.lat)) * Math.cos(toRadians(next.lat)) * Math.sin(dLng / 2) ** 2;
       const distance = 2 * earth * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-      return distance > 350;
+      return distance > minDistanceM;
     };
 
     const updatePropertiesInView = () => {
@@ -181,7 +186,7 @@ const PropertyMap = ({ properties = [], onPropertiesInView }) => {
         window.clearTimeout(debouncedRef.current);
       }
       debouncedRef.current = window.setTimeout(() => {
-        if (Date.now() - lastFetchAtRef.current < 800) return;
+        if (Date.now() - lastFetchAtRef.current < minIntervalMs) return;
         lastFetchAtRef.current = Date.now();
         const requestId = lastRequestRef.current + 1;
         lastRequestRef.current = requestId;
@@ -194,7 +199,7 @@ const PropertyMap = ({ properties = [], onPropertiesInView }) => {
             if (requestId !== lastRequestRef.current) return;
             setUnlistedParcels([]);
           });
-      }, 600);
+      }, debounceMs);
     };
 
     const idleListener = map.addListener('idle', updatePropertiesInView);

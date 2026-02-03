@@ -5,10 +5,14 @@ import {
   getDocs,
   query,
   where,
+  limit,
+  orderBy,
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
 const MESSAGES_COLLECTION = 'messages';
+/** Max messages read per query (Firestore cost control). */
+const MESSAGES_QUERY_LIMIT = 200;
 
 /**
  * Create a new message.
@@ -30,12 +34,22 @@ export const createMessage = async ({ senderId, senderName, recipientId, recipie
 
 /**
  * Get all messages for a user (sent or received). Merges two queries and sorts by createdAt desc.
- * Client-side filtering by fromUserId and propertyId can be applied to the result.
+ * Capped at MESSAGES_QUERY_LIMIT per query (Firestore cost control).
  */
 export const getMessagesForUser = async (uid) => {
   const [recvSnap, sendSnap] = await Promise.all([
-    getDocs(query(collection(db, MESSAGES_COLLECTION), where('recipientId', '==', uid))),
-    getDocs(query(collection(db, MESSAGES_COLLECTION), where('senderId', '==', uid))),
+    getDocs(query(
+      collection(db, MESSAGES_COLLECTION),
+      where('recipientId', '==', uid),
+      orderBy('createdAt', 'desc'),
+      limit(MESSAGES_QUERY_LIMIT)
+    )),
+    getDocs(query(
+      collection(db, MESSAGES_COLLECTION),
+      where('senderId', '==', uid),
+      orderBy('createdAt', 'desc'),
+      limit(MESSAGES_QUERY_LIMIT)
+    )),
   ]);
   const map = new Map();
   const add = (d) => {
