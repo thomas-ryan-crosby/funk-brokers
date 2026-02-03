@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { loadGooglePlaces, API_KEY } from '../utils/loadGooglePlaces';
 import metrics from '../utils/metrics';
+import { USE_SERVER_DATA_LAYER } from '../config/featureFlags';
+import { getPredictions as apiGetPredictions, getDetails as apiGetDetails, geocode as apiGeocode } from '../services/placesApiService';
 
 function parseAddressComponents(components) {
   let address = '';
@@ -48,6 +50,9 @@ const AddressAutocomplete = ({
   onAddressChangeRef.current = onAddressChange;
 
   const createSessionToken = useCallback(() => {
+    if (USE_SERVER_DATA_LAYER && typeof crypto !== 'undefined' && crypto.randomUUID) {
+      return crypto.randomUUID();
+    }
     if (typeof window === 'undefined' || !window.google?.maps?.places) return null;
     try {
       if (window.google.maps.places.AutocompleteSessionToken) {
@@ -58,6 +63,11 @@ const AddressAutocomplete = ({
   }, []);
 
   useEffect(() => {
+    if (USE_SERVER_DATA_LAYER) {
+      setReady(true);
+      sessionTokenRef.current = createSessionToken();
+      return;
+    }
     if (!API_KEY) return;
     loadGooglePlaces()
       .then(() => {
@@ -68,7 +78,7 @@ const AddressAutocomplete = ({
   }, [createSessionToken]);
 
   useEffect(() => {
-    if (!ready || !inputRef.current || !window.google?.maps?.places?.AutocompleteService) return;
+    if (!ready || !inputRef.current) return;
 
     const input = inputRef.current;
     const requestPredictions = (query) => {
@@ -80,6 +90,22 @@ const AddressAutocomplete = ({
       }
       setLoading(true);
       const token = sessionTokenRef.current;
+
+      if (USE_SERVER_DATA_LAYER) {
+        apiGetPredictions(q, token)
+          .then((resultPredictions) => {
+            setLoading(false);
+            setPredictions(resultPredictions);
+            setShowDropdown(true);
+          })
+          .catch(() => {
+            setLoading(false);
+            setPredictions([]);
+          });
+        return;
+      }
+
+      if (!window.google?.maps?.places?.AutocompleteService) return;
       const request = {
         input: q,
         types: ['address'],
@@ -114,7 +140,7 @@ const AddressAutocomplete = ({
       if (debounceRef.current) clearTimeout(debounceRef.current);
       input.removeEventListener('input', onInputChange);
     };
-  }, [ready, predictions.length]);
+  }, [ready, predictions.length, USE_SERVER_DATA_LAYER]);
 
   useEffect(() => {
     if (!ready || !showDropdown) return;
@@ -138,7 +164,33 @@ const AddressAutocomplete = ({
       sessionTokenRef.current = createSessionToken();
     };
 
+    const tryGeocoderApi = async (addr, baseParsed = null) => {
+      try {
+        const result = await apiGeocode(addr);
+        if (result) {
+          const p = baseParsed
+            ? { ...baseParsed }
+            : parseAddressComponents(result.address_components || []);
+          if (!p.address) p.address = result.formatted_address || addr;
+          const loc = result.geometry?.location;
+          if (loc) {
+            p.latitude = typeof loc.lat === 'function' ? loc.lat() : loc.lat;
+            p.longitude = typeof loc.lng === 'function' ? loc.lng() : loc.lng;
+          }
+          done(p);
+        } else {
+          done(baseParsed || { address: addr, city: '', state: '', zipCode: '' });
+        }
+      } catch {
+        done(baseParsed || { address: addr, city: '', state: '', zipCode: '' });
+      }
+    };
+
     const tryGeocoder = (addr, baseParsed = null) => {
+      if (USE_SERVER_DATA_LAYER) {
+        tryGeocoderApi(addr, baseParsed);
+        return;
+      }
       if (!addr || !window.google?.maps?.Geocoder) {
         done(baseParsed || { address: addr || '', city: '', state: '', zipCode: '' });
         return;
@@ -161,6 +213,37 @@ const AddressAutocomplete = ({
         }
       });
     };
+
+    if (USE_SERVER_DATA_LAYER) {
+      if (!placeId) {
+        tryGeocoderApi(description || '');
+        return;
+      }
+      apiGetDetails(placeId, token)
+        .then((details) => {
+          if (details) {
+            const fa = details.formatted_address || description || '';
+            if (details.address_components?.length) {
+              const p = parseAddressComponents(details.address_components);
+              p.address = p.address || fa;
+              const loc = details.geometry?.location;
+              if (loc) {
+                p.latitude = typeof loc.lat === 'function' ? loc.lat() : loc.lat;
+                p.longitude = typeof loc.lng === 'function' ? loc.lng() : loc.lng;
+                done(p);
+              } else {
+                tryGeocoderApi(fa, p);
+              }
+            } else {
+              tryGeocoderApi(fa);
+            }
+          } else {
+            tryGeocoderApi(description || '');
+          }
+        })
+        .catch(() => tryGeocoderApi(description || ''));
+      return;
+    }
 
     if (!placeId || !window.google?.maps?.places?.PlacesService) {
       tryGeocoder(description || '');

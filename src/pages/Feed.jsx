@@ -11,6 +11,8 @@ import { uploadFile } from '../services/storageService';
 import { loadGooglePlaces } from '../utils/loadGooglePlaces';
 import metrics from '../utils/metrics';
 import AddressAutocomplete from '../components/AddressAutocomplete';
+import { USE_SERVER_DATA_LAYER } from '../config/featureFlags';
+import { getPredictions as apiGetPredictions, getDetails as apiGetDetails } from '../services/placesApiService';
 import './Feed.css';
 
 function formatDateShort(v) {
@@ -100,6 +102,9 @@ const Feed = () => {
   const [addressSelectedIndex, setAddressSelectedIndex] = useState(0);
 
   const createPlacesSessionToken = useCallback(() => {
+    if (USE_SERVER_DATA_LAYER && typeof crypto !== 'undefined' && crypto.randomUUID) {
+      return crypto.randomUUID();
+    }
     if (typeof window === 'undefined' || !window.google?.maps?.places) return null;
     try {
       if (window.google.maps.places.AutocompleteSessionToken) {
@@ -165,6 +170,22 @@ const Feed = () => {
     }
     let cancelled = false;
     setAddressLoading(true);
+
+    if (USE_SERVER_DATA_LAYER) {
+      if (!placesSessionTokenRef.current) {
+        placesSessionTokenRef.current = createPlacesSessionToken();
+      }
+      apiGetPredictions(addressInlineQuery, placesSessionTokenRef.current)
+        .then((predictions) => {
+          if (cancelled) return;
+          setAddressLoading(false);
+          setAddressSuggestions(predictions.map((p) => ({ description: p.description, place_id: p.place_id })));
+          setAddressSelectedIndex(0);
+        })
+        .catch(() => { if (!cancelled) setAddressLoading(false); setAddressSuggestions([]); });
+      return () => { cancelled = true; };
+    }
+
     loadGooglePlaces()
       .then(() => {
         if (cancelled || !window.google?.maps?.places?.AutocompleteService) return;
@@ -228,6 +249,19 @@ const Feed = () => {
   }, [postBody, composerCursorPosition, lastCaret]);
 
   const getPlaceFormattedAddress = useCallback((placeId) => {
+    if (USE_SERVER_DATA_LAYER) {
+      if (!placeId) return Promise.resolve('');
+      const token = placesSessionTokenRef.current;
+      return apiGetDetails(placeId, token)
+        .then((place) => {
+          placesSessionTokenRef.current = createPlacesSessionToken();
+          return place?.formatted_address || '';
+        })
+        .catch(() => {
+          placesSessionTokenRef.current = createPlacesSessionToken();
+          return '';
+        });
+    }
     return new Promise((resolve) => {
       if (!placeId || !window.google?.maps?.places?.PlacesService) {
         resolve('');

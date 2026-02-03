@@ -121,6 +121,8 @@ Create composite indexes (Firestore Console will error with a link if missing):
 - **Client:** `parcelService.js` uses `getAttomBase()`; when `VITE_USE_ATTOM_CACHE=true`, requests go to `{origin}/api/attom/*`.
 - **Env (Vercel + local):** `ATTOM_API_KEY`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`.
 
+**Preview / CORS:** If the Vercel *preview* deployment calls Firebase (`cloudfunctions.net/getMapParcels`) and you see "blocked by CORS" plus 500/503, the Cloud Function is failing and error responses often omit CORS headers. **Fix:** Enable `VITE_USE_ATTOM_CACHE=true` for the project (or for Preview env only) and redeploy so map/address/snapshot requests go to `/api/attom/*` on the same origin (no cross-origin, no Firebase for ATTOM on that build).
+
 ---
 
 ## Wave 3 — DAL: Client Calls API Only for ATTOM/Places
@@ -142,6 +144,11 @@ Create composite indexes (Firestore Console will error with a link if missing):
 **QA:** All address inputs and Feed ^address; unlisted search on Home.  
 **Rollback:** Flag OFF.  
 **Effort:** L
+
+**Wave 3 implementation (done):**
+- **API routes:** `api/places/autocomplete.js` (POST), `api/places/details.js` (POST), `api/places/geocode.js` (POST). Proxy to Google Place Autocomplete (Legacy), Place Details (Legacy), Geocoding REST. Session token passed through for billing.
+- **Client:** `src/services/placesApiService.js` — getPredictions, getDetails, geocode calling `/api/places/*`. AddressAutocomplete, Feed ^address, Home unlisted search use it when `VITE_USE_SERVER_DATA_LAYER=true`; session token is UUID when using API.
+- **Env (Vercel):** `GOOGLE_MAPS_API_KEY` (server-side only; can be same key as client or a server-restricted key).
 
 ---
 
