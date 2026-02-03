@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { loadGooglePlaces, API_KEY } from '../utils/loadGooglePlaces';
+import metrics from '../utils/metrics';
 
 function parseAddressComponents(components) {
   let address = '';
@@ -82,6 +83,7 @@ const AddressAutocomplete = ({
           done(baseParsed || { address: addr || '', city: '', state: '', zipCode: '' });
           return;
         }
+        metrics.recordPlacesCall();
         new window.google.maps.Geocoder().geocode({ address: addr }, (results, status) => {
           if (status === 'OK' && results?.[0]) {
             const p = baseParsed
@@ -125,6 +127,7 @@ const AddressAutocomplete = ({
       // 2) place_id → Place Details (single-click often has place_id only; getDetails returns full data)
       if (place.place_id && window.google?.maps?.places?.PlacesService) {
         showImmediate(place.formatted_address || '');
+        metrics.recordPlacesCall();
         try {
           const svc = new window.google.maps.places.PlacesService(document.createElement('div'));
           svc.getDetails(

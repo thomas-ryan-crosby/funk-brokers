@@ -9,6 +9,7 @@ import { getLikedPostIds, likePost, unlikePost } from '../services/likeService';
 import { getAllProperties } from '../services/propertyService';
 import { uploadFile } from '../services/storageService';
 import { loadGooglePlaces } from '../utils/loadGooglePlaces';
+import metrics from '../utils/metrics';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import './Feed.css';
 
@@ -122,22 +123,27 @@ const Feed = () => {
   const showAddressInline = Boolean(addressInlineQuery) && !addressInlineSegment.endsWith(' ');
 
   useEffect(() => {
-    if (!mentionQuery) {
+    if (!mentionQuery || mentionQuery.length < 2) {
       setMentionSuggestions([]);
       setMentionSelectedIndex(0);
       return;
     }
     let cancelled = false;
-    setMentionLoading(true);
-    searchUsers(mentionQuery)
-      .then((list) => {
-        if (!cancelled) {
-          setMentionSuggestions(list);
-          setMentionSelectedIndex(0);
-        }
-      })
-      .finally(() => { if (!cancelled) setMentionLoading(false); });
-    return () => { cancelled = true; };
+    const timeoutId = setTimeout(() => {
+      setMentionLoading(true);
+      searchUsers(mentionQuery)
+        .then((list) => {
+          if (!cancelled) {
+            setMentionSuggestions(list);
+            setMentionSelectedIndex(0);
+          }
+        })
+        .finally(() => { if (!cancelled) setMentionLoading(false); });
+    }, 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+    };
   }, [mentionQuery]);
 
   useEffect(() => {
@@ -151,6 +157,7 @@ const Feed = () => {
     loadGooglePlaces()
       .then(() => {
         if (cancelled || !window.google?.maps?.places?.AutocompleteService) return;
+        metrics.recordPlacesCall();
         const service = new window.google.maps.places.AutocompleteService();
         service.getPlacePredictions(
           { input: addressInlineQuery, types: ['address'], componentRestrictions: { country: 'us' } },
@@ -209,6 +216,7 @@ const Feed = () => {
         resolve('');
         return;
       }
+      metrics.recordPlacesCall();
       const div = document.createElement('div');
       const service = new window.google.maps.places.PlacesService(div);
       service.getDetails(
@@ -281,6 +289,7 @@ const Feed = () => {
 
   const loadFeedData = useCallback(async () => {
     if (!user?.uid) return;
+    const startMs = Date.now();
     try {
       setLoading(true);
       setError(null);
@@ -306,6 +315,7 @@ const Feed = () => {
       setError('Unable to load feed.');
     } finally {
       setLoading(false);
+      metrics.recordLatency('feed', Date.now() - startMs);
     }
   }, [user?.uid]);
 

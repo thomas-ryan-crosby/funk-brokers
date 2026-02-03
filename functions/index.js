@@ -34,12 +34,17 @@ const getMapParcelsEndpoint = functions.https.onRequest(async (req, res) => {
     return;
   }
   const requesterKey = req.headers['x-forwarded-for'] || req.ip || 'unknown';
+  const metrics = { firestoreReads: 0, firestoreWrites: 0, attomCalls: 0 };
+  const startMs = Date.now();
   try {
     const result = await getMapParcels({
       bounds: { n, s, e, w },
       zoom,
       requesterKey,
+      metrics,
     });
+    const latencyMs = Date.now() - startMs;
+    console.log(JSON.stringify({ route: 'getMapParcels', latencyMs, ...metrics }));
     res.json(result);
   } catch (err) {
     console.error('Map parcels error', err);
@@ -78,8 +83,12 @@ const resolveAddressEndpoint = functions.https.onRequest(async (req, res) => {
     res.status(400).json({ error: 'Missing bounds' });
     return;
   }
+  const metrics = { firestoreReads: 0, firestoreWrites: 0, attomCalls: 0 };
+  const startMs = Date.now();
   try {
-    const result = await resolveAddress({ address, bounds });
+    const result = await resolveAddress({ address, bounds, metrics });
+    const latencyMs = Date.now() - startMs;
+    console.log(JSON.stringify({ route: 'resolveAddress', latencyMs, ...metrics }));
     res.json(result || { attomId: null, parcel: null });
   } catch (err) {
     console.error('Resolve address error', err);
@@ -106,8 +115,12 @@ const getPropertySnapshotEndpoint = functions.https.onRequest(async (req, res) =
     res.status(400).json({ error: 'Missing attomId' });
     return;
   }
+  const metrics = { firestoreReads: 0, firestoreWrites: 0, attomCalls: 0 };
+  const startMs = Date.now();
   try {
-    const result = await getPropertySnapshot({ attomId, latitude, longitude });
+    const result = await getPropertySnapshot({ attomId, latitude, longitude, metrics });
+    const latencyMs = Date.now() - startMs;
+    console.log(JSON.stringify({ route: 'getPropertySnapshot', latencyMs, ...metrics }));
     res.json(result || { payload: null });
   } catch (err) {
     console.error('Property snapshot error', err);

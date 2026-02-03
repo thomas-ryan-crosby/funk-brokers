@@ -1,6 +1,7 @@
 // Storage Service - Firebase Storage operations for file uploads
 import { ref, uploadBytes, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { storage } from '../config/firebase';
+import metrics from '../utils/metrics';
 
 /**
  * Upload a file to Firebase Storage
@@ -10,9 +11,11 @@ import { storage } from '../config/firebase';
  */
 export const uploadFile = async (file, path) => {
   try {
+    const bytes = file?.size ?? 0;
     const storageRef = ref(storage, path);
     const snapshot = await uploadBytes(storageRef, file);
     const downloadURL = await getDownloadURL(snapshot.ref);
+    metrics.recordStorageUpload(bytes);
     return downloadURL;
   } catch (error) {
     console.error('Error uploading file:', error);
@@ -76,6 +79,7 @@ export const uploadMultipleFilesWithProgress = async (files, basePath, onProgres
           (error) => reject(error),
           async () => {
             const url = await getDownloadURL(task.snapshot.ref);
+            metrics.recordStorageUpload(file?.size ?? 0);
             resolve(url);
           }
         );

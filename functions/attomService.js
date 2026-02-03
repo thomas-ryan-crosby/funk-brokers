@@ -23,6 +23,9 @@ const inMemorySnapshots = new Map();
 const inMemoryAddress = new Map();
 const rateBuckets = new Map();
 
+/** Optional per-request metrics (set by getMapParcels/resolveAddress/getPropertySnapshot). */
+let _metrics = null;
+
 const ensureAdmin = () => {
   if (!admin.apps.length) {
     admin.initializeApp();
@@ -153,6 +156,7 @@ const isExpired = (expiresAt) => !expiresAt || expiresAt <= now();
 const getCachedDoc = async (collection, docId) => {
   const db = getDb();
   const snap = await db.collection(collection).doc(docId).get();
+  if (_metrics && typeof _metrics.firestoreReads === 'number') _metrics.firestoreReads++;
   if (!snap.exists) return null;
   return snap.data();
 };
@@ -160,6 +164,7 @@ const getCachedDoc = async (collection, docId) => {
 const setCachedDoc = async (collection, docId, payload) => {
   const db = getDb();
   await db.collection(collection).doc(docId).set(payload, { merge: true });
+  if (_metrics && typeof _metrics.firestoreWrites === 'number') _metrics.firestoreWrites++;
 };
 
 const checkRateLimit = (key, limitMs) => {
@@ -257,28 +262,32 @@ const resolveAttomIdFromSnapshot = (data, normalizedAddress) => {
   return match || mapped[0];
 };
 
-const getMapParcels = async ({ bounds, zoom, requesterKey }) => {
-  const { n, s, e, w } = bounds;
-  const centerLat = (n + s) / 2;
-  const centerLng = (e + w) / 2;
-  const tileKey = tileKeyForCenter(centerLat, centerLng, zoom);
+const getMapParcels = async (opts) => {
+  const { bounds, zoom, requesterKey, metrics: reqMetrics } = opts || {};
+  _metrics = reqMetrics || null;
+  try {
+    const { n, s, e, w } = bounds || {};
+    const centerLat = (n + s) / 2;
+    const centerLng = (e + w) / 2;
+    const tileKey = tileKeyForCenter(centerLat, centerLng, zoom);
 
-  const rateOk = checkRateLimit(`${requesterKey}:${tileKey}`, 600);
-  if (!rateOk) {
-    return { parcels: [], tileKey, cache: 'rate_limited', suppressed: true };
-  }
-
-  const { record, cache } = await readMapTile(tileKey);
-  if (record && !isExpired(record.expiresAt)) {
-    return { parcels: record.payload, tileKey, cache };
-  }
-
-  return singleflightWrap(`map:${tileKey}`, async () => {
-    const { record: refreshed } = await readMapTile(tileKey);
-    if (refreshed && !isExpired(refreshed.expiresAt)) {
-      return { parcels: refreshed.payload, tileKey, cache: 'singleflight' };
+    const rateOk = checkRateLimit(`${requesterKey}:${tileKey}`, 600);
+    if (!rateOk) {
+      return { parcels: [], tileKey, cache: 'rate_limited', suppressed: true };
     }
-    const data = await attomFetchSnapshot({ n, s, e, w });
+
+    const { record, cache } = await readMapTile(tileKey);
+    if (record && !isExpired(record.expiresAt)) {
+      return { parcels: record.payload, tileKey, cache };
+    }
+
+    return singleflightWrap(`map:${tileKey}`, async () => {
+      const { record: refreshed } = await readMapTile(tileKey);
+      if (refreshed && !isExpired(refreshed.expiresAt)) {
+        return { parcels: refreshed.payload, tileKey, cache: 'singleflight' };
+      }
+      if (_metrics && typeof _metrics.attomCalls === 'number') _metrics.attomCalls++;
+      const data = await attomFetchSnapshot({ n, s, e, w });
     const list = data.property ?? data.properties ?? data ?? [];
     const arr = Array.isArray(list) ? list : [list];
     const parcels = mapAttomToLightweight(arr);
@@ -286,9 +295,15 @@ const getMapParcels = async ({ bounds, zoom, requesterKey }) => {
     console.log('[attom][map]', { tileKey, cache: 'miss', count: parcels.length });
     return { parcels: stored.payload, tileKey, cache: 'miss' };
   });
+  } finally {
+    _metrics = null;
+  }
 };
 
-const resolveAddress = async ({ address, bounds }) => {
+const resolveAddress = async (opts) => {
+  const { address, bounds, metrics: reqMetrics } = opts || {};
+  _metrics = reqMetrics || null;
+  try {
   const normalized = normalizeAddress(address);
   const addressKey = normalized || `lat:${bounds.n}-${bounds.e}`;
   const { record, cache } = await readAddressMapping(addressKey);
@@ -301,6 +316,7 @@ const resolveAddress = async ({ address, bounds }) => {
     if (refreshed && !isExpired(refreshed.expiresAt)) {
       return { ...refreshed, cache: 'singleflight' };
     }
+    if (_metrics && typeof _metrics.attomCalls === 'number') _metrics.attomCalls++;
     const data = await attomFetchSnapshot(bounds);
     const match = resolveAttomIdFromSnapshot(data, normalized);
     if (!match) return null;
@@ -312,6 +328,9 @@ const resolveAddress = async ({ address, bounds }) => {
     console.log('[attom][address]', { addressKey, cache: 'miss', attomId: match.attomId });
     return { ...stored, cache: 'miss' };
   });
+  } finally {
+    _metrics = null;
+  }
 };
 
 const refreshSnapshot = async ({ attomId, latitude, longitude }) => {
@@ -325,7 +344,10 @@ const refreshSnapshot = async ({ attomId, latitude, longitude }) => {
   return cacheSnapshot(attomId, data, { sectionExpiry: buildSectionExpiry(), hint: { latitude, longitude } });
 };
 
-const getPropertySnapshot = async ({ attomId, latitude, longitude }) => {
+const getPropertySnapshot = async (opts) => {
+  const { attomId, latitude, longitude, metrics: reqMetrics } = opts || {};
+  _metrics = reqMetrics || null;
+  try {
   const { record, cache } = await readSnapshot(attomId);
   if (record && !isExpired(record.expiresAt)) {
     return { ...record, cache };
@@ -354,10 +376,14 @@ const getPropertySnapshot = async ({ attomId, latitude, longitude }) => {
     if (!Number.isFinite(hintLat) || !Number.isFinite(hintLng)) {
       throw new Error('Latitude/longitude required to fetch snapshot.');
     }
+    if (_metrics && typeof _metrics.attomCalls === 'number') _metrics.attomCalls++;
     const stored = await refreshSnapshot({ attomId, latitude: hintLat, longitude: hintLng });
     console.log('[attom][snapshot]', { attomId, cache: 'miss' });
     return { ...stored, cache: 'miss' };
   });
+  } finally {
+    _metrics = null;
+  }
 };
 
 module.exports = {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getPropertyById, updateProperty, archiveProperty, restoreProperty, deletePropertyPermanently } from '../services/propertyService';
@@ -10,6 +10,7 @@ import { createPing } from '../services/pingService';
 import { getPostsForPropertyOrAddress } from '../services/postService';
 import { getPropertySnapshot } from '../services/parcelService';
 import { normalizeAttomSnapshot } from '../utils/attomSnapshotNormalizer';
+import metrics from '../utils/metrics';
 import PingOwnerModal from '../components/PingOwnerModal';
 import './PropertyDetail.css';
 
@@ -17,6 +18,7 @@ const PropertyDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, userProfile, isAuthenticated } = useAuth();
+  const propertyDetailStartRef = useRef(null);
   const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -111,7 +113,11 @@ const PropertyDetail = () => {
         if (!cancelled) setSnapshotSections(null);
       })
       .finally(() => {
-        if (!cancelled) setSnapshotLoading(false);
+        if (!cancelled) {
+          setSnapshotLoading(false);
+          const start = propertyDetailStartRef.current;
+          if (start) metrics.recordLatency('propertyDetail', Date.now() - start);
+        }
       });
     return () => { cancelled = true; };
   }, [property?.attomId, property?.latitude, property?.longitude]);
