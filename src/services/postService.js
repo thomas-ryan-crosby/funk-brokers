@@ -2,6 +2,7 @@ import { addDoc, collection, deleteDoc, doc, getDocs, limit, orderBy, query, whe
 import { db } from '../config/firebase';
 import { USE_SOCIAL_READS } from '../config/featureFlags';
 import { syncPost as syncPostToApi, syncComment as syncCommentToApi } from './socialApiWrite';
+import metrics from '../utils/metrics';
 
 const POSTS_COLLECTION = 'posts';
 
@@ -45,6 +46,8 @@ export const getPostsByAuthor = async (authorId) => {
     limit(POSTS_BY_AUTHOR_LIMIT)
   );
   const snap = await getDocs(q);
+  metrics.recordFirestoreRead(snap.size);
+  metrics.recordReadByFeature('feed', snap.size);
   const list = [];
   snap.forEach((d) => {
     list.push({ id: d.id, ...d.data() });
@@ -65,6 +68,8 @@ export const getAllPosts = async (limitCount = 50) => {
       limit(limitCount)
     );
     const snap = await getDocs(q);
+    metrics.recordFirestoreRead(snap.size);
+    metrics.recordReadByFeature('feed', snap.size);
     const list = [];
     snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
     return list;
@@ -95,6 +100,8 @@ export const getPostsByAuthors = async (authorIds) => {
       limit(POSTS_BY_AUTHORS_CHUNK_LIMIT)
     );
     const snap = await getDocs(q);
+    metrics.recordFirestoreRead(snap.size);
+    metrics.recordReadByFeature('feed', snap.size);
     snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
   }
   return sortPostsByDate(list);
@@ -192,11 +199,14 @@ export const addComment = async (postId, data) => {
   return ref.id;
 };
 
+const COMMENTS_PER_POST_CAP = 200;
+
 export const getCommentsForPost = async (postId) => {
   if (!postId) return [];
   const q = query(
     collection(db, POSTS_COLLECTION, postId, 'comments'),
-    orderBy('createdAt', 'asc')
+    orderBy('createdAt', 'asc'),
+    limit(COMMENTS_PER_POST_CAP)
   );
   const snap = await getDocs(q);
   const list = [];

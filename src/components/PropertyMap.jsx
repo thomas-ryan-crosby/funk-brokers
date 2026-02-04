@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { USE_MAP_DEBOUNCE } from '../config/featureFlags';
+import { USE_MAP_DEBOUNCE, ENABLE_MAP_QUERY_DEBOUNCE } from '../config/featureFlags';
 import { loadGooglePlaces } from '../utils/loadGooglePlaces';
 import { getMapParcels } from '../services/parcelService';
 import { claimProperty } from '../services/propertyService';
@@ -142,9 +142,10 @@ const PropertyMap = ({ properties = [], onPropertiesInView }) => {
     const debouncedRef = { current: null };
     const lastFetchAtRef = { current: 0 };
 
-    const minDistanceM = USE_MAP_DEBOUNCE ? 500 : 350;
-    const debounceMs = USE_MAP_DEBOUNCE ? 1000 : 600;
-    const minIntervalMs = USE_MAP_DEBOUNCE ? 1200 : 800;
+    const useStrongDebounce = USE_MAP_DEBOUNCE || ENABLE_MAP_QUERY_DEBOUNCE;
+    const minDistanceM = useStrongDebounce ? 500 : 350;
+    const debounceMs = useStrongDebounce ? 1000 : 600;
+    const minIntervalMs = useStrongDebounce ? 1200 : 800;
 
     const movedEnough = (prev, next) => {
       if (!prev) return true;

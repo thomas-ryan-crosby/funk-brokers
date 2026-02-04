@@ -7,6 +7,7 @@ import {
   doc,
   query,
   where,
+  limit,
   getDoc,
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
@@ -73,6 +74,10 @@ export const getFavorite = async (userId, propertyId) => {
   }
 };
 
+const FAVORITES_QUERY_CAP = 200;
+const FAVORITES_FOR_PROPERTY_CAP = 50;
+const FAVORITES_USER_PROFILES_CAP = 20;
+
 /**
  * Get all favorite property IDs for a user
  */
@@ -80,7 +85,8 @@ export const getUserFavoriteIds = async (userId) => {
   try {
     const q = query(
       collection(db, FAVORITES_COLLECTION),
-      where('userId', '==', userId)
+      where('userId', '==', userId),
+      limit(FAVORITES_QUERY_CAP)
     );
     const querySnapshot = await getDocs(q);
     const favoriteIds = [];
@@ -126,11 +132,13 @@ export const getFavoritesForProperty = async (propertyId) => {
   try {
     const q = query(
       collection(db, FAVORITES_COLLECTION),
-      where('propertyId', '==', propertyId)
+      where('propertyId', '==', propertyId),
+      limit(FAVORITES_FOR_PROPERTY_CAP)
     );
     const snap = await getDocs(q);
-    const favorites = await Promise.all(
-      snap.docs.map(async (d) => {
+    const docsToHydrate = snap.docs.slice(0, FAVORITES_USER_PROFILES_CAP);
+    const hydrated = await Promise.all(
+      docsToHydrate.map(async (d) => {
         const fav = { id: d.id, ...d.data() };
         let userProfile = null;
         try {
@@ -142,6 +150,8 @@ export const getFavoritesForProperty = async (propertyId) => {
         return { ...fav, userProfile };
       })
     );
+    const rest = snap.docs.slice(FAVORITES_USER_PROFILES_CAP).map((d) => ({ id: d.id, ...d.data(), userProfile: null }));
+    const favorites = [...hydrated, ...rest];
     favorites.sort((a, b) => {
       const aDate = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
       const bDate = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);

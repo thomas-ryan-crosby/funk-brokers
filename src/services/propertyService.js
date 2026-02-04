@@ -16,6 +16,8 @@ import { db } from '../config/firebase';
 import { getOffersByProperty } from './offerService';
 import { getListingTier } from '../utils/verificationScores';
 import { get as cacheGet, set as cacheSet, remove as cacheRemove } from '../utils/ttlCache';
+import { FIRESTORE_READ_KILL_SWITCH } from '../config/featureFlags';
+import metrics from '../utils/metrics';
 
 const PROPERTIES_COLLECTION = 'properties';
 const PROPERTIES_CACHE_TTL_MS = 10 * 60 * 1000; // 10 min – reduce refetch volume (emergency read cap)
@@ -90,6 +92,7 @@ export const getAllProperties = async () => {
   const cacheKey = 'properties_all';
   const cached = cacheGet(cacheKey, PROPERTIES_CACHE_TTL_MS);
   if (cached != null) return cached;
+  if (FIRESTORE_READ_KILL_SWITCH) return [];
   try {
     const q = query(
       collection(db, PROPERTIES_COLLECTION),
@@ -97,6 +100,9 @@ export const getAllProperties = async () => {
       limit(PROPERTIES_QUERY_CAP)
     );
     const querySnapshot = await getDocs(q);
+    const n = querySnapshot.size;
+    metrics.recordFirestoreRead(n);
+    metrics.recordReadByFeature('propertiesBrowse', n);
 
     const properties = [];
     querySnapshot.forEach((docSnap) => {
@@ -156,6 +162,8 @@ export const getPropertyById = async (propertyId) => {
   try {
     const docRef = doc(db, PROPERTIES_COLLECTION, propertyId);
     const docSnap = await getDoc(docRef);
+    metrics.recordFirestoreRead(1);
+    metrics.recordReadByFeature('propertyDetail', 1);
     if (!docSnap.exists()) throw new Error('Property not found');
     const data = docSnap.data();
     const property = { id: docSnap.id, ...data };
@@ -190,6 +198,7 @@ export const searchProperties = async (filters = {}) => {
   const cacheKey = searchCacheKey(filters);
   const cached = cacheGet(cacheKey, PROPERTIES_CACHE_TTL_MS);
   if (cached != null) return cached;
+  if (FIRESTORE_READ_KILL_SWITCH) return [];
   try {
     const q = query(
       collection(db, PROPERTIES_COLLECTION),

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { loadGooglePlaces } from '../utils/loadGooglePlaces';
 import { getMapParcels } from '../services/parcelService';
+import { ENABLE_MAP_QUERY_DEBOUNCE } from '../config/featureFlags';
 import './CompsMap.css';
 
 const SELECTED_COLOR = '#3b82f6';
@@ -96,7 +97,7 @@ const CompsMap = ({ center, onCompSelect, selectedComps = [] }) => {
             if (requestId !== lastRequestRef.current) return;
             setParcels([]);
           });
-      }, 600);
+      }, debounceMs);
     };
 
     const idleListener = map.addListener('idle', updateParcels);

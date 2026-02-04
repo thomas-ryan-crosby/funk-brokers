@@ -9,6 +9,7 @@ const MAX_LATENCY_SAMPLES = 100;
 const state = {
   firestoreReads: 0,
   firestoreWrites: 0,
+  readsByFeature: { map: 0, feed: 0, propertyDetail: 0, propertiesBrowse: 0, other: 0 },
   attomCalls: { mapParcels: 0, resolveAddress: 0, propertySnapshot: 0 },
   placesCalls: 0,
   storageUploadBytes: 0,
@@ -73,10 +74,15 @@ export const metrics = {
     return p95(state.latencies[operation] || []);
   },
 
+  getReadsByFeature() {
+    return { ...state.readsByFeature };
+  },
+
   getSummary() {
     return {
       firestoreReads: state.firestoreReads,
       firestoreWrites: state.firestoreWrites,
+      readsByFeature: this.getReadsByFeature(),
       attomCalls: { ...state.attomCalls },
       placesCalls: state.placesCalls,
       storageUploadBytes: state.storageUploadBytes,
@@ -100,6 +106,7 @@ export const metrics = {
   reset() {
     state.firestoreReads = 0;
     state.firestoreWrites = 0;
+    state.readsByFeature = { map: 0, feed: 0, propertyDetail: 0, propertiesBrowse: 0, other: 0 };
     state.attomCalls = { mapParcels: 0, resolveAddress: 0, propertySnapshot: 0 };
     state.placesCalls = 0;
     state.storageUploadBytes = 0;

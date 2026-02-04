@@ -1,7 +1,7 @@
 import { firebaseConfig } from '../config/firebase-config';
 import { get as cacheGet, set as cacheSet } from '../utils/ttlCache';
 import metrics from '../utils/metrics';
-import { USE_ATTOM_CACHE } from '../config/featureFlags';
+import { USE_ATTOM_CACHE, FIRESTORE_READ_KILL_SWITCH } from '../config/featureFlags';
 
 const FUNCTIONS_BASE = `https://us-central1-${firebaseConfig.projectId}.cloudfunctions.net`;
 
@@ -39,6 +39,7 @@ export const getMapParcels = async ({ bounds, zoom }) => {
   const cacheKey = `map_${n}_${s}_${e}_${w}_${zoom}`;
   const cached = cacheGet(cacheKey, TTL_MAP_MS);
   if (cached != null) return cached;
+  if (FIRESTORE_READ_KILL_SWITCH) return { parcels: [] };
   let promise = inFlightMap.get(cacheKey);
   if (promise) return promise;
   promise = (async () => {
@@ -54,6 +55,7 @@ export const getMapParcels = async ({ bounds, zoom }) => {
     const data = await res.json();
     cacheSet(cacheKey, data, TTL_MAP_MS);
     metrics.recordAttomCall('mapParcels', Date.now() - startMs);
+    metrics.recordReadByFeature('map', 1);
     return data;
   })();
   inFlightMap.set(cacheKey, promise);

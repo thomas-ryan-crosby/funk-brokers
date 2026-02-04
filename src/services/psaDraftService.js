@@ -7,6 +7,7 @@ import {
   doc,
   query,
   where,
+  limit,
   updateDoc,
   deleteDoc,
 } from 'firebase/firestore';
@@ -55,13 +56,16 @@ export const savePsaDraft = async (data, draftId = null) => {
   return ref.id;
 };
 
+const DRAFTS_QUERY_CAP = 50;
+
 /**
  * Get all PSA drafts for a buyer.
  */
 export const getPsaDraftsByBuyer = async (buyerId) => {
   const q = query(
     collection(db, DRAFTS_COLLECTION),
-    where('buyerId', '==', buyerId)
+    where('buyerId', '==', buyerId),
+    limit(DRAFTS_QUERY_CAP)
   );
   const snap = await getDocs(q);
   const list = [];

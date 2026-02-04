@@ -6,7 +6,7 @@ import { getPropertiesBySeller } from '../services/propertyService';
 import { getPostsByAuthor, getAllPosts, getPostsByAuthors, addComment, createPost, deletePost, getCommentsForPost, setPostCommentCount } from '../services/postService';
 import { getFollowing, followUser, unfollowUser } from '../services/followService';
 import { getLikedPostIds, likePost, unlikePost } from '../services/likeService';
-import { getAllProperties } from '../services/propertyService';
+import { fetchPropertiesForBrowse } from '../data/firestoreLayer';
 import { uploadFile } from '../services/storageService';
 import { loadGooglePlaces } from '../utils/loadGooglePlaces';
 import metrics from '../utils/metrics';
@@ -397,7 +397,7 @@ const Feed = () => {
     let propertiesToMatch = allPropertiesCache;
     if (!propertiesToMatch?.length) {
       try {
-        propertiesToMatch = await getAllProperties();
+        propertiesToMatch = await fetchPropertiesForBrowse({});
         setAllPropertiesCache(propertiesToMatch);
       } catch (_) {
         propertiesToMatch = myProperties;
@@ -439,7 +439,7 @@ const Feed = () => {
     let propertiesToMatch = allPropertiesCache;
     if (!propertiesToMatch?.length) {
       try {
-        propertiesToMatch = await getAllProperties();
+        propertiesToMatch = await fetchPropertiesForBrowse({});
         setAllPropertiesCache(propertiesToMatch);
       } catch (_) {
         propertiesToMatch = myProperties;

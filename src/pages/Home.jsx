@@ -5,6 +5,7 @@ import { loadGooglePlaces } from '../utils/loadGooglePlaces';
 import { resolveAddressToParcel } from '../services/parcelService';
 import { USE_SERVER_DATA_LAYER } from '../config/featureFlags';
 import { geocode as apiGeocode } from '../services/placesApiService';
+import { fetchPropertiesForBrowse } from '../data/firestoreLayer';
 import { claimProperty, getAllProperties, searchProperties } from '../services/propertyService';
 import { addSavedSearch } from '../services/profileService';
 import PropertyCard from '../components/PropertyCard';
@@ -52,7 +53,7 @@ const Home = () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await searchProperties(filters);
+      const data = await fetchPropertiesForBrowse(filters);
       setProperties(data);
       const query = String(filters.query || '').trim();
       if (!query || data.length > 0) {

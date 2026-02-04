@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { fetchPropertyDetail } from '../data/firestoreLayer';
 import { getPropertyById, updateProperty, archiveProperty, restoreProperty, deletePropertyPermanently } from '../services/propertyService';
 import { addToFavorites, removeFromFavorites, isFavorited, getFavoriteCountForProperty, getFavoritesForProperty } from '../services/favoritesService';
 import { getPreListingChecklist, isPreListingChecklistComplete } from '../services/preListingChecklistService';
@@ -196,7 +197,7 @@ const PropertyDetail = () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await getPropertyById(id);
+      const data = await fetchPropertyDetail(id);
       setProperty(data);
     } catch (err) {
       setError('Property not found or failed to load.');

@@ -7,6 +7,7 @@ import {
   doc,
   query,
   where,
+  limit,
   updateDoc,
   deleteDoc,
 } from 'firebase/firestore';
@@ -56,11 +57,14 @@ export const createOffer = async (offerData) => {
  * Get all offers for a property.
  * Uses where-only query (no orderBy) to avoid composite index; sorts by createdAt client-side.
  */
+const OFFERS_QUERY_CAP = 100;
+
 export const getOffersByProperty = async (propertyId) => {
   try {
     const q = query(
       collection(db, OFFERS_COLLECTION),
-      where('propertyId', '==', propertyId)
+      where('propertyId', '==', propertyId),
+      limit(OFFERS_QUERY_CAP)
     );
     const querySnapshot = await getDocs(q);
     const offers = [];
@@ -87,7 +91,8 @@ export const getOffersByBuyer = async (buyerId) => {
   try {
     const q = query(
       collection(db, OFFERS_COLLECTION),
-      where('buyerId', '==', buyerId)
+      where('buyerId', '==', buyerId),
+      limit(OFFERS_QUERY_CAP)
     );
     const querySnapshot = await getDocs(q);
     const offers = [];

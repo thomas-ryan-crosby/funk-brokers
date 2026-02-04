@@ -7,6 +7,7 @@ import {
   doc,
   query,
   where,
+  limit,
   updateDoc,
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
@@ -173,10 +174,13 @@ export const getTransactionByOfferId = async (offerId) => {
  * Get all transactions for a user (as buyer or seller).
  * Only returns PSA deals; excludes LOI (and legacy transactions whose offer is an LOI).
  */
+const TRANSACTIONS_QUERY_CAP = 100;
+
 export const getTransactionsByUser = async (userId) => {
   const q = query(
     collection(db, TRANSACTIONS_COLLECTION),
-    where('parties', 'array-contains', userId)
+    where('parties', 'array-contains', userId),
+    limit(TRANSACTIONS_QUERY_CAP)
   );
   const snap = await getDocs(q);
   const list = [];

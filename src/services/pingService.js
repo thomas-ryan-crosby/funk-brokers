@@ -5,6 +5,7 @@ import {
   getDocs,
   query,
   where,
+  limit,
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
@@ -43,11 +44,14 @@ export const createPing = async ({
  * @param {string} sellerId
  * @returns {Promise<Array>}
  */
+const PINGS_QUERY_CAP = 100;
+
 export const getPingsForSeller = async (sellerId) => {
   if (!sellerId) return [];
   const q = query(
     collection(db, PINGS_COLLECTION),
-    where('sellerId', '==', sellerId)
+    where('sellerId', '==', sellerId),
+    limit(PINGS_QUERY_CAP)
   );
   const snap = await getDocs(q);
   const list = [];
@@ -69,7 +73,8 @@ export const getPingsForSender = async (senderId) => {
   if (!senderId) return [];
   const q = query(
     collection(db, PINGS_COLLECTION),
-    where('senderId', '==', senderId)
+    where('senderId', '==', senderId),
+    limit(PINGS_QUERY_CAP)
   );
   const snap = await getDocs(q);
   const list = [];

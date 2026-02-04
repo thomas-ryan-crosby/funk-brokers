@@ -30,6 +30,7 @@ import UserProfile from './pages/UserProfile';
 import Pitch from './pages/Pitch';
 import Feedback from './pages/Feedback';
 import { getMessagesForUser } from './services/messageService';
+import metrics from './utils/metrics';
 import './App.css';
 
 function AppContent() {
@@ -86,6 +87,15 @@ function AppContent() {
       clearInterval(intervalId);
     };
   }, [isAuthenticated, user?.uid, loadUnreadCount]);
+
+  useEffect(() => {
+    if (typeof import.meta.env.DEV === 'boolean' && !import.meta.env.DEV) return;
+    const intervalId = setInterval(() => {
+      const s = metrics.getSummary();
+      console.info('[metrics 60s] Firestore reads:', s.firestoreReads, '| by feature:', s.readsByFeature);
+    }, 60_000);
+    return () => clearInterval(intervalId);
+  }, []);
 
   return (
     <Router>

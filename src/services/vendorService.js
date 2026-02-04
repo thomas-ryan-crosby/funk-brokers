@@ -7,6 +7,7 @@ import {
   doc,
   query,
   where,
+  limit,
   updateDoc,
   deleteDoc,
 } from 'firebase/firestore';
@@ -50,11 +51,14 @@ export const createVendor = async (userId, data) => {
 /**
  * Get all vendors for a user.
  */
+const VENDORS_QUERY_CAP = 100;
+
 export const getVendorsByUser = async (userId) => {
   if (!userId) return [];
   const q = query(
     collection(db, VENDORS_COLLECTION),
-    where('userId', '==', userId)
+    where('userId', '==', userId),
+    limit(VENDORS_QUERY_CAP)
   );
   const snap = await getDocs(q);
   const list = [];

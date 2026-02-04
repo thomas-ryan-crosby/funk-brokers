@@ -1,5 +1,5 @@
 // Profile Service - Firestore operations for sale and purchase profiles
-import { doc, getDoc, setDoc, collection, addDoc, getDocs, query, where, deleteDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, addDoc, getDocs, query, where, limit, deleteDoc, updateDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
 const SALE_PROFILES = 'saleProfiles';
@@ -99,12 +99,15 @@ export const updatePurchaseProfile = async (userId, data) => {
  * @param {string} userId
  * @returns {Promise<Array<{ id: string, name: string, filters: object, createdAt: Date }>>}
  */
+const SAVED_SEARCHES_CAP = 50;
+
 export const getSavedSearches = async (userId) => {
   if (!userId) return [];
   try {
     const q = query(
       collection(db, SAVED_SEARCHES),
-      where('userId', '==', userId)
+      where('userId', '==', userId),
+      limit(SAVED_SEARCHES_CAP)
     );
     const snap = await getDocs(q);
     const list = [];
