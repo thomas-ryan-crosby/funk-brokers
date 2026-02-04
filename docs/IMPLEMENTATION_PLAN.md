@@ -5,6 +5,8 @@
 
 **Note:** Firebase billing must be **enabled** on the project during migration. With billing disabled, Firestore composite indexes may not build, Cloud Functions can fail (503), and Maps/Places can return BillingNotEnabledMapError. Re-enable billing for the migration window; the goal of this plan is to reduce cost long-term by moving traffic off Firebase where possible.
 
+**Emergency read cap (Feb 2025):** After observing ~20k reads/min, caps were tightened: `PROPERTIES_QUERY_CAP` 300→75, properties cache 3min→10min, message unread polling 30s→5min, `getPropertiesBySeller` capped at 100. Deploy to stop runaway read volume; re-adjust after monitoring.
+
 ---
 
 ## Scale context (why this matters)
@@ -203,12 +205,13 @@ Firebase usage shows **`COLLECTION /properties LIMIT 500`** (or the cap in code)
 
 **Wave 4 (in progress):**
 - **Schema doc:** `docs/PHASE5_SOCIAL_SCHEMA.md` (tables + indexes). Run the DDL on Neon (or your Postgres) before enabling social reads.
+- **Runnable migration:** `scripts/migrations/001_social_schema.sql` — run once on Neon (Neon extension "Run SQL", or `psql $DATABASE_URL -f scripts/migrations/001_social_schema.sql`).
 - **DB client:** `api/_db.js` (Postgres Pool, env `DATABASE_URL`).
 - **Read APIs:** `api/social/feed/for-you.js`, `api/social/feed/following.js`, `api/social/posts/by-author.js` (return `{ posts }`).
 - **Write APIs (dual-write):** `api/social/create-post.js` (POST), `api/social/create-comment.js` (POST), `api/social/like.js` (POST/DELETE), `api/social/follow.js` (POST/DELETE). Each writes to Postgres only; client calls after Firestore write when `VITE_USE_SOCIAL_READS=true`.
 - **Client:** When `VITE_USE_SOCIAL_READS=true`, Feed reads use `/api/social/*` (for-you, following, by-author). After each Firestore write (createPost, addComment, likePost, unlikePost, followUser, unfollowUser), client also calls the corresponding write API (fire-and-forget) so Postgres stays in sync.
-- **Env:** `DATABASE_URL` (Neon connection string).
-- **Next:** Optional backfill script to copy existing Firestore posts/follows/likes into Postgres so historical data appears when reads are on Postgres; then enable `VITE_USE_SOCIAL_READS=true` in production and monitor.
+- **Env:** `DATABASE_URL` (Neon connection string). Get it from Neon dashboard → Connection details, or from the Neon extension after connecting.
+- **Next:** (1) Run `scripts/migrations/001_social_schema.sql` on your Neon branch. (2) Set `DATABASE_URL` in Vercel and local `.env`. (3) Optional: backfill script for existing Firestore data. (4) Enable `VITE_USE_SOCIAL_READS=true` and monitor.
 
 ---
 

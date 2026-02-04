@@ -18,7 +18,7 @@ import { getListingTier } from '../utils/verificationScores';
 import { get as cacheGet, set as cacheSet, remove as cacheRemove } from '../utils/ttlCache';
 
 const PROPERTIES_COLLECTION = 'properties';
-const PROPERTIES_CACHE_TTL_MS = 3 * 60 * 1000; // 3 min – Tier 2
+const PROPERTIES_CACHE_TTL_MS = 10 * 60 * 1000; // 10 min – reduce refetch volume (emergency read cap)
 
 /**
  * Create a new property listing (full listing workflow)
@@ -79,8 +79,8 @@ export const claimProperty = async (parcel, sellerId) => {
   return docRef.id;
 };
 
-/** Max properties read per getAllProperties / searchProperties (Firestore efficiency). Lowered from 1000 to cut /properties read cost (top Firestore cost driver). Wave 5 (Meilisearch) will replace for map/search. */
-const PROPERTIES_QUERY_CAP = 300;
+/** Max properties read per getAllProperties / searchProperties (Firestore efficiency). Emergency cap: was 300; lowered to 75 to stop high read volume. Wave 5 (Meilisearch) will replace for map/search. */
+const PROPERTIES_QUERY_CAP = 75;
 
 /**
  * Get active properties, newest first. Capped at PROPERTIES_QUERY_CAP to limit Firestore reads.
@@ -112,14 +112,18 @@ export const getAllProperties = async () => {
   }
 };
 
+/** Max properties read per getPropertiesBySeller (Firestore cost control). */
+const PROPERTIES_BY_SELLER_CAP = 100;
+
 /**
- * Get all properties by a specific seller (includes archived; caller may split)
+ * Get all properties by a specific seller (includes archived; caller may split). Capped to limit read volume.
  */
 export const getPropertiesBySeller = async (sellerId) => {
   try {
     const q = query(
       collection(db, PROPERTIES_COLLECTION),
-      where('sellerId', '==', sellerId)
+      where('sellerId', '==', sellerId),
+      limit(PROPERTIES_BY_SELLER_CAP)
     );
     const querySnapshot = await getDocs(q);
     const properties = [];
