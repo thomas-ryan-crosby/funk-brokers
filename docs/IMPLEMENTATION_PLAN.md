@@ -3,6 +3,20 @@
 **Branch:** `dev/cost-architecture-refactor`  
 **Reference:** Phase 0 (review), Phase 1 (instrumentation/flags), Phase 3 (target architecture).
 
+**Note:** Firebase billing must be **enabled** on the project during migration. With billing disabled, Firestore composite indexes may not build, Cloud Functions can fail (503), and Maps/Places can return BillingNotEnabledMapError. Re-enable billing for the migration window; the goal of this plan is to reduce cost long-term by moving traffic off Firebase where possible.
+
+---
+
+## Scale context (why this matters)
+
+Firebase billable metrics (7-day window) show **~104M reads**, with a steep upward trend (daily reads approaching 100M). Writes (~690K) and deletes (~174) are comparatively low. **Reads are the primary cost and scaling risk.** This plan directly targets:
+
+1. **Properties:** `COLLECTION /properties LIMIT N` — top single-query cost; cap lowered (Wave 1.5), Dashboard favorites by ID; Wave 5 (Meilisearch) will replace for map/search.
+2. **Social (posts, comments, likes, follows):** High read volume from Feed and profile; Wave 4 moves reads (and dual-writes) to Postgres.
+3. **Other:** Messages, followers, searchUsers — limits and TTL cache (Wave 1) already applied.
+
+Success = flattening and then reducing daily read volume while keeping the app functional and ready to scale.
+
 ---
 
 ## Overview
@@ -83,6 +97,17 @@ Create composite indexes (Firestore Console will error with a link if missing):
 - **1.3** Map debounce (USE_MAP_DEBOUNCE): done.
 - **1.4** Parcel in-flight deduplication: done.
 - **Firestore indexes:** `firestore.indexes.json` defines composite indexes for `posts` (authorId + createdAt) and `messages` (recipientId + createdAt, senderId + createdAt). Deploy with: `firebase deploy --only firestore:indexes`. Indexes may take a few minutes to build.
+
+### 1.5 Properties query cap and Dashboard favorites (top Firestore cost driver)
+
+Firebase usage shows **`COLLECTION /properties LIMIT 500`** (or the cap in code) as the **#1 read operation** (hundreds of thousands of reads). It is used by `getAllProperties()` and `searchProperties()` (Home, Feed address match, Dashboard favorites).
+
+| Task | File(s) | Change | Expected impact |
+|------|---------|--------|-----------------|
+| Lower PROPERTIES_QUERY_CAP | `src/services/propertyService.js` | 1000 → 300 | ~70% fewer docs read per execution; same call sites (Home, Feed, search). |
+| Dashboard favorites by ID | `src/pages/Dashboard.jsx` | Replace getAllProperties + filter with getPropertyById per favorite ID | Dashboard: N reads (N = favorites) instead of 300 per load. |
+
+**Done:** PROPERTIES_QUERY_CAP set to 300; Dashboard loads favorites via `getPropertyById(id)` per favorite instead of fetching full property list. Wave 5 (Meilisearch) will replace this pattern for map/search.
 
 ---
 
@@ -175,6 +200,15 @@ Create composite indexes (Firestore Console will error with a link if missing):
 **QA:** Create post, comment, like, follow; load For You and Following; compare Firestore vs Postgres data.  
 **Rollback:** Disable flags; stop dual-write if needed.  
 **Effort:** L
+
+**Wave 4 (in progress):**
+- **Schema doc:** `docs/PHASE5_SOCIAL_SCHEMA.md` (tables + indexes). Run the DDL on Neon (or your Postgres) before enabling social reads.
+- **DB client:** `api/_db.js` (Postgres Pool, env `DATABASE_URL`).
+- **Read APIs:** `api/social/feed/for-you.js`, `api/social/feed/following.js`, `api/social/posts/by-author.js` (return `{ posts }`).
+- **Write APIs (dual-write):** `api/social/create-post.js` (POST), `api/social/create-comment.js` (POST), `api/social/like.js` (POST/DELETE), `api/social/follow.js` (POST/DELETE). Each writes to Postgres only; client calls after Firestore write when `VITE_USE_SOCIAL_READS=true`.
+- **Client:** When `VITE_USE_SOCIAL_READS=true`, Feed reads use `/api/social/*` (for-you, following, by-author). After each Firestore write (createPost, addComment, likePost, unlikePost, followUser, unfollowUser), client also calls the corresponding write API (fire-and-forget) so Postgres stays in sync.
+- **Env:** `DATABASE_URL` (Neon connection string).
+- **Next:** Optional backfill script to copy existing Firestore posts/follows/likes into Postgres so historical data appears when reads are on Postgres; then enable `VITE_USE_SOCIAL_READS=true` in production and monitor.
 
 ---
 

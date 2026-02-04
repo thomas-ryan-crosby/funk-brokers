@@ -79,8 +79,8 @@ export const claimProperty = async (parcel, sellerId) => {
   return docRef.id;
 };
 
-/** Max properties read per getAllProperties / searchProperties (Firestore efficiency). */
-const PROPERTIES_QUERY_CAP = 1000;
+/** Max properties read per getAllProperties / searchProperties (Firestore efficiency). Lowered from 1000 to cut /properties read cost (top Firestore cost driver). Wave 5 (Meilisearch) will replace for map/search. */
+const PROPERTIES_QUERY_CAP = 300;
 
 /**
  * Get active properties, newest first. Capped at PROPERTIES_QUERY_CAP to limit Firestore reads.

@@ -1,5 +1,7 @@
 import { doc, getDoc, setDoc, updateDoc, arrayRemove, arrayUnion, collection, query, where, limit, getDocs } from 'firebase/firestore';
 import { db } from '../config/firebase';
+import { USE_SOCIAL_READS } from '../config/featureFlags';
+import { syncFollow as syncFollowToApi, syncUnfollow as syncUnfollowToApi } from './socialApiWrite';
 
 const USER_FOLLOWING_COLLECTION = 'userFollowing';
 /** Max followers read per getFollowers (Firestore cost control). */
@@ -63,6 +65,7 @@ export const unfollowUser = async (followerId, followingId) => {
       following: arrayRemove(followingId),
       updatedAt: new Date(),
     });
+    if (USE_SOCIAL_READS) syncUnfollowToApi(followerId, followingId);
   } catch (err) {
     console.error('Error unfollowing user', err);
     throw err;

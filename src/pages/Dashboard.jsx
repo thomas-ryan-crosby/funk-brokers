@@ -3,7 +3,6 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getPropertiesBySeller, getPropertyById, archiveProperty, restoreProperty, deletePropertyPermanently, reconcileUnderContractStatus } from '../services/propertyService';
 import { getUserFavoriteIds, removeFromFavorites } from '../services/favoritesService';
-import { getAllProperties } from '../services/propertyService';
 import { getSavedSearches, removeSavedSearch, getPurchaseProfile, setPurchaseProfile, updatePurchaseProfile } from '../services/profileService';
 import { getOffersByProperty, getOffersByBuyer, getOfferById, acceptOffer, rejectOffer, withdrawOffer, counterOffer } from '../services/offerService';
 import { getPsaDraftsByBuyer, deletePsaDraft } from '../services/psaDraftService';
@@ -210,17 +209,18 @@ const Dashboard = () => {
       );
       setPsaDraftsWithProperty(draftsWithProperty);
 
-      // Load favorite properties
+      // Load favorite properties (by ID to avoid full /properties query – cost optimization)
       const favoriteIds = await getUserFavoriteIds(user.uid);
-      let allProperties = [];
       if (favoriteIds.length > 0) {
-        // Fetch all properties and filter by favorite IDs
-        allProperties = await getAllProperties();
-        setAllPropertiesCache(allProperties);
-        const favorites = allProperties.filter((p) => favoriteIds.includes(p.id));
+        const favoriteProps = await Promise.all(
+          favoriteIds.map((id) => getPropertyById(id).catch(() => null))
+        );
+        const favorites = favoriteProps.filter(Boolean);
         setFavoriteProperties(favorites);
+        setAllPropertiesCache(favorites);
       } else {
         setFavoriteProperties([]);
+        setAllPropertiesCache([]);
       }
 
       // Load saved searches

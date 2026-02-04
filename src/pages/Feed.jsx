@@ -11,8 +11,9 @@ import { uploadFile } from '../services/storageService';
 import { loadGooglePlaces } from '../utils/loadGooglePlaces';
 import metrics from '../utils/metrics';
 import AddressAutocomplete from '../components/AddressAutocomplete';
-import { USE_SERVER_DATA_LAYER } from '../config/featureFlags';
+import { USE_SERVER_DATA_LAYER, USE_SOCIAL_READS } from '../config/featureFlags';
 import { getPredictions as apiGetPredictions, getDetails as apiGetDetails } from '../services/placesApiService';
+import { getForYouPosts, getFollowingPosts, getPostsByAuthorApi } from '../services/socialApiService';
 import './Feed.css';
 
 function formatDateShort(v) {
@@ -124,6 +125,7 @@ const Feed = () => {
   const [likeLoading, setLikeLoading] = useState({});
 
   const textBeforeCursor = postBody.slice(0, composerCursorPosition);
+  const useSocialApi = USE_SERVER_DATA_LAYER && USE_SOCIAL_READS;
   const lastAt = textBeforeCursor.lastIndexOf('@');
   const lastCaret = textBeforeCursor.lastIndexOf('^');
   const mentionQuerySegment = lastAt >= 0 && (lastCaret < 0 || lastAt > lastCaret)
@@ -307,17 +309,22 @@ const Feed = () => {
 
   const loadForYou = useCallback(async () => {
     try {
-      const list = await getAllPosts(50);
+      const list = useSocialApi ? await getForYouPosts(50) : await getAllPosts(50);
       setForYouPosts(list);
     } catch (err) {
       console.error('Failed to load For You feed', err);
       setForYouPosts([]);
     }
-  }, []);
+  }, [useSocialApi]);
 
   const loadFollowing = useCallback(async () => {
     if (!user?.uid) return;
     try {
+      if (useSocialApi) {
+        const list = await getFollowingPosts(user.uid, 50);
+        setFollowingPosts(list);
+        return;
+      }
       const ids = await getFollowing(user.uid);
       if (ids.length === 0) {
         setFollowingPosts([]);
@@ -329,18 +336,18 @@ const Feed = () => {
       console.error('Failed to load Following feed', err);
       setFollowingPosts([]);
     }
-  }, [user?.uid]);
+  }, [user?.uid, useSocialApi]);
 
   const loadProfilePosts = useCallback(async () => {
     if (!user?.uid) return;
     try {
-      const list = await getPostsByAuthor(user.uid);
+      const list = useSocialApi ? await getPostsByAuthorApi(user.uid, 100) : await getPostsByAuthor(user.uid);
       setMyPosts(list || []);
     } catch (err) {
       console.error('Failed to load profile posts', err);
       setMyPosts([]);
     }
-  }, [user?.uid]);
+  }, [user?.uid, useSocialApi]);
 
   const loadFeedData = useCallback(async () => {
     if (!user?.uid) return;
@@ -358,9 +365,9 @@ const Feed = () => {
       setLikedPostIds(likedIds);
 
       const [forYou, following, profile] = await Promise.all([
-        getAllPosts(50),
-        ids.length > 0 ? getPostsByAuthors(ids) : Promise.resolve([]),
-        getPostsByAuthor(user.uid),
+        useSocialApi ? getForYouPosts(50) : getAllPosts(50),
+        useSocialApi ? getFollowingPosts(user.uid, 50) : (ids.length > 0 ? getPostsByAuthors(ids) : Promise.resolve([])),
+        useSocialApi ? getPostsByAuthorApi(user.uid, 100) : getPostsByAuthor(user.uid),
       ]);
       setForYouPosts(forYou);
       setFollowingPosts(following);

@@ -44,6 +44,7 @@ export const likePost = async (postId, userId) => {
     } else {
       await updateDoc(userLikesRef, { postIds: arrayUnion(postId), updatedAt: new Date() });
     }
+    if (USE_SOCIAL_READS) syncLikeToApi(postId, userId);
   } catch (err) {
     console.error('Error liking post', err);
     throw err;
@@ -69,6 +70,7 @@ export const unlikePost = async (postId, userId) => {
     if (snap.exists()) {
       await updateDoc(userLikesRef, { postIds: arrayRemove(postId), updatedAt: new Date() });
     }
+    if (USE_SOCIAL_READS) syncUnlikeToApi(postId, userId);
   } catch (err) {
     console.error('Error unliking post', err);
     throw err;

@@ -1,5 +1,7 @@
 import { addDoc, collection, deleteDoc, doc, getDocs, limit, orderBy, query, where, updateDoc, increment } from 'firebase/firestore';
 import { db } from '../config/firebase';
+import { USE_SOCIAL_READS } from '../config/featureFlags';
+import { syncPost as syncPostToApi, syncComment as syncCommentToApi } from './socialApiWrite';
 
 const POSTS_COLLECTION = 'posts';
 
@@ -22,6 +24,9 @@ export const createPost = async (data) => {
     updatedAt: new Date(),
   };
   const ref = await addDoc(collection(db, POSTS_COLLECTION), payload);
+  if (USE_SOCIAL_READS) {
+    syncPostToApi({ id: ref.id, ...payload });
+  }
   return ref.id;
 };
 
@@ -181,6 +186,9 @@ export const addComment = async (postId, data) => {
   };
   const ref = await addDoc(collection(db, POSTS_COLLECTION, postId, 'comments'), payload);
   await updateDoc(doc(db, POSTS_COLLECTION, postId), { commentCount: increment(1) });
+  if (USE_SOCIAL_READS) {
+    syncCommentToApi({ postId, id: ref.id, ...payload });
+  }
   return ref.id;
 };
 

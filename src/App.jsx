@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import Landing from './pages/Landing';
@@ -36,12 +36,14 @@ function AppContent() {
   const { user, userProfile, isAuthenticated } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
   const [unreadLoading, setUnreadLoading] = useState(false);
+  const unreadInFlightRef = useRef(false);
 
   const buildThreadKey = (otherUserId, propertyId) => `${otherUserId}_${propertyId || 'none'}`;
   const getMessageDate = (m) => (m?.createdAt?.toDate ? m.createdAt.toDate() : new Date(m?.createdAt || 0));
 
   const loadUnreadCount = useCallback(async () => {
-    if (!isAuthenticated || !user?.uid || unreadLoading) return;
+    if (!isAuthenticated || !user?.uid || unreadInFlightRef.current) return;
+    unreadInFlightRef.current = true;
     setUnreadLoading(true);
     try {
       const list = await getMessagesForUser(user.uid);
@@ -59,9 +61,10 @@ function AppContent() {
     } catch (error) {
       console.error('Error loading unread messages:', error);
     } finally {
+      unreadInFlightRef.current = false;
       setUnreadLoading(false);
     }
-  }, [isAuthenticated, user?.uid, unreadLoading]);
+  }, [isAuthenticated, user?.uid]);
 
   useEffect(() => {
     if (!isAuthenticated || !user?.uid) {
