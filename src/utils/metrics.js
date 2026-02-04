@@ -55,6 +55,14 @@ export const metrics = {
     state.placesCalls++;
   },
 
+  recordReadByFeature(feature, n = 1) {
+    if (state.readsByFeature[feature] !== undefined) {
+      state.readsByFeature[feature] += n;
+    } else {
+      state.readsByFeature.other += n;
+    }
+  },
+
   recordStorageUpload(bytes = 0) {
     state.storageUploadBytes += bytes;
     state.storageUploadCount++;

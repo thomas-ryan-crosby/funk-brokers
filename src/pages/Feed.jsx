@@ -12,6 +12,7 @@ import AddressAutocomplete from '../components/AddressAutocomplete';
 import { USE_SERVER_DATA_LAYER, USE_SOCIAL_READS } from '../config/featureFlags';
 import { getPredictions as getMapboxPredictions } from '../services/mapboxGeocodeService';
 import { getForYouPosts, getFollowingPosts, getPostsByAuthorApi } from '../services/socialApiService';
+import metrics from '../utils/metrics';
 import './Feed.css';
 
 function formatDateShort(v) {
