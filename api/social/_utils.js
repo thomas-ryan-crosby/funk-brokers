@@ -25,4 +25,16 @@ function parseLimit(value, fallback = 50, max = 100) {
   return Math.min(n, max);
 }
 
-module.exports = { mapRowToPost, parseLimit };
+function mapRowToComment(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    postId: row.post_id,
+    authorId: row.author_id,
+    authorName: row.author_name,
+    body: row.body,
+    createdAt: row.created_at,
+  };
+}
+
+module.exports = { mapRowToPost, mapRowToComment, parseLimit };

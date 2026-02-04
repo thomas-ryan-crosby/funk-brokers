@@ -44,3 +44,53 @@ export async function getPostsByAuthorApi(authorId, limit = 100, before = null) 
   const url = `${getSocialBase()}/posts/by-author?${params}`;
   return fetchPosts(() => fetchJson(url));
 }
+
+async function fetchJsonSafe(url) {
+  const res = await fetch(url);
+  const data = await res.json().catch(() => ({}));
+  return { ok: res.ok, data };
+}
+
+export async function getLikedPostIdsApi(userId) {
+  try {
+    const url = `${getSocialBase()}/me/liked-post-ids?userId=${encodeURIComponent(userId)}`;
+    const { ok, data } = await fetchJsonSafe(url);
+    if (!ok) return [];
+    return Array.isArray(data?.postIds) ? data.postIds : [];
+  } catch (_) {
+    return [];
+  }
+}
+
+export async function getFollowingApi(userId) {
+  try {
+    const url = `${getSocialBase()}/me/following?userId=${encodeURIComponent(userId)}`;
+    const { ok, data } = await fetchJsonSafe(url);
+    if (!ok) return [];
+    return Array.isArray(data?.following) ? data.following : [];
+  } catch (_) {
+    return [];
+  }
+}
+
+export async function getCommentsForPostApi(postId) {
+  try {
+    const url = `${getSocialBase()}/posts/comments?postId=${encodeURIComponent(postId)}`;
+    const { ok, data } = await fetchJsonSafe(url);
+    if (!ok) return [];
+    return Array.isArray(data?.comments) ? data.comments : [];
+  } catch (_) {
+    return [];
+  }
+}
+
+export async function getFollowersApi(userId) {
+  try {
+    const url = `${getSocialBase()}/users/followers?userId=${encodeURIComponent(userId)}`;
+    const { ok, data } = await fetchJsonSafe(url);
+    if (!ok) return [];
+    return Array.isArray(data?.followers) ? data.followers : [];
+  } catch (_) {
+    return [];
+  }
+}

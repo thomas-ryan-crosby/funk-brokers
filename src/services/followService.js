@@ -1,7 +1,8 @@
 import { doc, getDoc, setDoc, updateDoc, arrayRemove, arrayUnion, collection, query, where, limit, getDocs } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { USE_SOCIAL_READS } from '../config/featureFlags';
-import { syncFollow as syncFollowToApi, syncUnfollow as syncUnfollowToApi } from './socialApiWrite';
+import { getFollowingApi, getFollowersApi } from './socialApiService';
+import { followUserViaApi, unfollowUserViaApi } from './socialApiWrite';
 
 const USER_FOLLOWING_COLLECTION = 'userFollowing';
 /** Max followers read per getFollowers (Firestore cost control). */
@@ -14,6 +15,7 @@ const FOLLOWERS_QUERY_LIMIT = 100;
  */
 export const getFollowing = async (userId) => {
   if (!userId) return [];
+  if (USE_SOCIAL_READS) return getFollowingApi(userId);
   try {
     const ref = doc(db, USER_FOLLOWING_COLLECTION, userId);
     const snap = await getDoc(ref);
@@ -33,6 +35,10 @@ export const getFollowing = async (userId) => {
  */
 export const followUser = async (followerId, followingId) => {
   if (!followerId || !followingId || followerId === followingId) return;
+  if (USE_SOCIAL_READS) {
+    await followUserViaApi(followerId, followingId);
+    return;
+  }
   try {
     const ref = doc(db, USER_FOLLOWING_COLLECTION, followerId);
     const snap = await getDoc(ref);
@@ -57,6 +63,10 @@ export const followUser = async (followerId, followingId) => {
  */
 export const unfollowUser = async (followerId, followingId) => {
   if (!followerId || !followingId) return;
+  if (USE_SOCIAL_READS) {
+    await unfollowUserViaApi(followerId, followingId);
+    return;
+  }
   try {
     const ref = doc(db, USER_FOLLOWING_COLLECTION, followerId);
     const snap = await getDoc(ref);
@@ -65,7 +75,6 @@ export const unfollowUser = async (followerId, followingId) => {
       following: arrayRemove(followingId),
       updatedAt: new Date(),
     });
-    if (USE_SOCIAL_READS) syncUnfollowToApi(followerId, followingId);
   } catch (err) {
     console.error('Error unfollowing user', err);
     throw err;
@@ -91,6 +100,7 @@ export const isFollowing = async (followerId, followingId) => {
  */
 export const getFollowers = async (userId) => {
   if (!userId) return [];
+  if (USE_SOCIAL_READS) return getFollowersApi(userId);
   try {
     const ref = collection(db, USER_FOLLOWING_COLLECTION);
     const q = query(ref, where('following', 'array-contains', userId), limit(FOLLOWERS_QUERY_LIMIT));

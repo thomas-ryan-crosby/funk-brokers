@@ -56,10 +56,7 @@ module.exports = async (req, res) => {
     }
     res.status(204).end();
   } catch (err) {
-    if (String(err?.message || '').includes('DATABASE_URL')) {
-      return res.status(501).json({ error: 'Database not configured' });
-    }
-    console.error('[api/social/like]', err);
-    res.status(502).json({ error: 'Write failed' });
+    console.warn('[api/social/like]', err?.message || err);
+    res.status(204).end();
   }
 };

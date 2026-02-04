@@ -1,7 +1,8 @@
 import { addDoc, collection, deleteDoc, doc, getDocs, limit, orderBy, query, where, updateDoc, increment } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { USE_SOCIAL_READS } from '../config/featureFlags';
-import { syncPost as syncPostToApi, syncComment as syncCommentToApi } from './socialApiWrite';
+import { createPostViaApi, syncPost as syncPostToApi, syncComment as syncCommentToApi, deletePostViaApi } from './socialApiWrite';
+import { getCommentsForPostApi } from './socialApiService';
 import metrics from '../utils/metrics';
 
 const POSTS_COLLECTION = 'posts';
@@ -16,6 +17,10 @@ const sortPostsByDate = (list) => {
   return list;
 };
 
+function generateId() {
+  return typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `id_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+}
+
 export const createPost = async (data) => {
   const payload = {
     ...data,
@@ -24,10 +29,12 @@ export const createPost = async (data) => {
     createdAt: new Date(),
     updatedAt: new Date(),
   };
-  const ref = await addDoc(collection(db, POSTS_COLLECTION), payload);
   if (USE_SOCIAL_READS) {
-    syncPostToApi({ id: ref.id, ...payload });
+    const id = generateId();
+    const apiId = await createPostViaApi({ id, ...payload });
+    return apiId ?? id;
   }
+  const ref = await addDoc(collection(db, POSTS_COLLECTION), payload);
   return ref.id;
 };
 
@@ -182,6 +189,10 @@ export const getPostsForPropertyOrAddress = async (propertyId, address) => {
 
 export const deletePost = async (postId) => {
   if (!postId) return;
+  if (USE_SOCIAL_READS) {
+    await deletePostViaApi(postId);
+    return;
+  }
   await deleteDoc(doc(db, POSTS_COLLECTION, postId));
 };
 
@@ -191,11 +202,13 @@ export const addComment = async (postId, data) => {
     ...data,
     createdAt: new Date(),
   };
+  if (USE_SOCIAL_READS) {
+    const id = generateId();
+    await syncCommentToApi({ postId, id, ...payload });
+    return id;
+  }
   const ref = await addDoc(collection(db, POSTS_COLLECTION, postId, 'comments'), payload);
   await updateDoc(doc(db, POSTS_COLLECTION, postId), { commentCount: increment(1) });
-  if (USE_SOCIAL_READS) {
-    syncCommentToApi({ postId, id: ref.id, ...payload });
-  }
   return ref.id;
 };
 
@@ -203,6 +216,9 @@ const COMMENTS_PER_POST_CAP = 200;
 
 export const getCommentsForPost = async (postId) => {
   if (!postId) return [];
+  if (USE_SOCIAL_READS) {
+    return getCommentsForPostApi(postId);
+  }
   const q = query(
     collection(db, POSTS_COLLECTION, postId, 'comments'),
     orderBy('createdAt', 'asc'),
@@ -223,5 +239,6 @@ export const getCommentsForPost = async (postId) => {
  */
 export const setPostCommentCount = async (postId, count) => {
   if (!postId || count == null) return;
+  if (USE_SOCIAL_READS) return;
   await updateDoc(doc(db, POSTS_COLLECTION, postId), { commentCount: count });
 };

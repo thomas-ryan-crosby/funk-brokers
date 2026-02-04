@@ -1,5 +1,8 @@
 import { doc, getDoc, setDoc, updateDoc, deleteDoc, arrayUnion, arrayRemove, increment } from 'firebase/firestore';
 import { db } from '../config/firebase';
+import { USE_SOCIAL_READS } from '../config/featureFlags';
+import { getLikedPostIdsApi } from './socialApiService';
+import { likePostViaApi, unlikePostViaApi } from './socialApiWrite';
 
 const POSTS_COLLECTION = 'posts';
 const USER_LIKES_COLLECTION = 'userLikes';
@@ -11,6 +14,7 @@ const USER_LIKES_COLLECTION = 'userLikes';
  */
 export const getLikedPostIds = async (userId) => {
   if (!userId) return [];
+  if (USE_SOCIAL_READS) return getLikedPostIdsApi(userId);
   try {
     const ref = doc(db, USER_LIKES_COLLECTION, userId);
     const snap = await getDoc(ref);
@@ -30,6 +34,10 @@ export const getLikedPostIds = async (userId) => {
  */
 export const likePost = async (postId, userId) => {
   if (!postId || !userId) return;
+  if (USE_SOCIAL_READS) {
+    await likePostViaApi(postId, userId);
+    return;
+  }
   try {
     const likeRef = doc(db, POSTS_COLLECTION, postId, 'likes', userId);
     const postRef = doc(db, POSTS_COLLECTION, postId);
@@ -44,7 +52,6 @@ export const likePost = async (postId, userId) => {
     } else {
       await updateDoc(userLikesRef, { postIds: arrayUnion(postId), updatedAt: new Date() });
     }
-    if (USE_SOCIAL_READS) syncLikeToApi(postId, userId);
   } catch (err) {
     console.error('Error liking post', err);
     throw err;
@@ -58,6 +65,10 @@ export const likePost = async (postId, userId) => {
  */
 export const unlikePost = async (postId, userId) => {
   if (!postId || !userId) return;
+  if (USE_SOCIAL_READS) {
+    await unlikePostViaApi(postId, userId);
+    return;
+  }
   try {
     const likeRef = doc(db, POSTS_COLLECTION, postId, 'likes', userId);
     const postRef = doc(db, POSTS_COLLECTION, postId);
@@ -70,7 +81,6 @@ export const unlikePost = async (postId, userId) => {
     if (snap.exists()) {
       await updateDoc(userLikesRef, { postIds: arrayRemove(postId), updatedAt: new Date() });
     }
-    if (USE_SOCIAL_READS) syncUnlikeToApi(postId, userId);
   } catch (err) {
     console.error('Error unliking post', err);
     throw err;
