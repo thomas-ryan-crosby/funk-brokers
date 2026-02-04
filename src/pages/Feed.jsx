@@ -8,11 +8,9 @@ import { getFollowing, followUser, unfollowUser } from '../services/followServic
 import { getLikedPostIds, likePost, unlikePost } from '../services/likeService';
 import { fetchPropertiesForBrowse } from '../data/firestoreLayer';
 import { uploadFile } from '../services/storageService';
-import { loadGooglePlaces } from '../utils/loadGooglePlaces';
-import metrics from '../utils/metrics';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import { USE_SERVER_DATA_LAYER, USE_SOCIAL_READS } from '../config/featureFlags';
-import { getPredictions as apiGetPredictions, getDetails as apiGetDetails } from '../services/placesApiService';
+import { getPredictions as getMapboxPredictions } from '../services/mapboxGeocodeService';
 import { getForYouPosts, getFollowingPosts, getPostsByAuthorApi } from '../services/socialApiService';
 import './Feed.css';
 
@@ -93,7 +91,6 @@ const Feed = () => {
   const [posting, setPosting] = useState(false);
   const postImageInputRef = useRef(null);
   const composerTextareaRef = useRef(null);
-  const placesSessionTokenRef = useRef(null);
   const [composerCursorPosition, setComposerCursorPosition] = useState(0);
   const [mentionSuggestions, setMentionSuggestions] = useState([]);
   const [mentionLoading, setMentionLoading] = useState(false);
@@ -101,19 +98,6 @@ const Feed = () => {
   const [addressSuggestions, setAddressSuggestions] = useState([]);
   const [addressLoading, setAddressLoading] = useState(false);
   const [addressSelectedIndex, setAddressSelectedIndex] = useState(0);
-
-  const createPlacesSessionToken = useCallback(() => {
-    if (USE_SERVER_DATA_LAYER && typeof crypto !== 'undefined' && crypto.randomUUID) {
-      return crypto.randomUUID();
-    }
-    if (typeof window === 'undefined' || !window.google?.maps?.places) return null;
-    try {
-      if (window.google.maps.places.AutocompleteSessionToken) {
-        return new window.google.maps.places.AutocompleteSessionToken();
-      }
-    } catch (_) {}
-    return null;
-  }, []);
 
   const [commentsByPost, setCommentsByPost] = useState({});
   const [commentsOpen, setCommentsOpen] = useState({});
@@ -172,50 +156,19 @@ const Feed = () => {
     }
     let cancelled = false;
     setAddressLoading(true);
-
-    if (USE_SERVER_DATA_LAYER) {
-      if (!placesSessionTokenRef.current) {
-        placesSessionTokenRef.current = createPlacesSessionToken();
-      }
-      apiGetPredictions(addressInlineQuery, placesSessionTokenRef.current)
-        .then((predictions) => {
-          if (cancelled) return;
-          setAddressLoading(false);
-          setAddressSuggestions(predictions.map((p) => ({ description: p.description, place_id: p.place_id })));
-          setAddressSelectedIndex(0);
-        })
-        .catch(() => { if (!cancelled) setAddressLoading(false); setAddressSuggestions([]); });
-      return () => { cancelled = true; };
-    }
-
-    loadGooglePlaces()
-      .then(() => {
-        if (cancelled || !window.google?.maps?.places?.AutocompleteService) return;
-        if (!placesSessionTokenRef.current) {
-          placesSessionTokenRef.current = createPlacesSessionToken();
-        }
-        const request = {
-          input: addressInlineQuery,
-          types: ['address'],
-          componentRestrictions: { country: 'us' },
-          ...(placesSessionTokenRef.current ? { sessionToken: placesSessionTokenRef.current } : {}),
-        };
-        metrics.recordPlacesCall();
-        const service = new window.google.maps.places.AutocompleteService();
-        service.getPlacePredictions(request, (predictions, status) => {
-          if (cancelled) return;
-          setAddressLoading(false);
-          if (status === window.google.maps.places.PlacesServiceStatus.OK && Array.isArray(predictions)) {
-            setAddressSuggestions(predictions.map((p) => ({ description: p.description, place_id: p.place_id })));
-            setAddressSelectedIndex(0);
-          } else {
-            setAddressSuggestions([]);
-          }
-        });
+    getMapboxPredictions(addressInlineQuery)
+      .then((list) => {
+        if (cancelled) return;
+        setAddressLoading(false);
+        setAddressSuggestions(list.map((p) => ({ description: p.description || p.place_name, place_name: p.place_name, center: p.center })));
+        setAddressSelectedIndex(0);
       })
-      .catch(() => { if (!cancelled) setAddressLoading(false); });
+      .catch(() => {
+        if (!cancelled) setAddressLoading(false);
+        setAddressSuggestions([]);
+      });
     return () => { cancelled = true; };
-  }, [addressInlineQuery, createPlacesSessionToken]);
+  }, [addressInlineQuery]);
 
   const insertMention = useCallback((handle) => {
     const before = postBody.slice(0, lastAt);
@@ -250,52 +203,10 @@ const Feed = () => {
     }, 0);
   }, [postBody, composerCursorPosition, lastCaret]);
 
-  const getPlaceFormattedAddress = useCallback((placeId) => {
-    if (USE_SERVER_DATA_LAYER) {
-      if (!placeId) return Promise.resolve('');
-      const token = placesSessionTokenRef.current;
-      return apiGetDetails(placeId, token)
-        .then((place) => {
-          placesSessionTokenRef.current = createPlacesSessionToken();
-          return place?.formatted_address || '';
-        })
-        .catch(() => {
-          placesSessionTokenRef.current = createPlacesSessionToken();
-          return '';
-        });
-    }
-    return new Promise((resolve) => {
-      if (!placeId || !window.google?.maps?.places?.PlacesService) {
-        resolve('');
-        return;
-      }
-      const token = placesSessionTokenRef.current;
-      metrics.recordPlacesCall();
-      const div = document.createElement('div');
-      const service = new window.google.maps.places.PlacesService(div);
-      const request = {
-        placeId,
-        fields: ['formatted_address'],
-        ...(token ? { sessionToken: token } : {}),
-      };
-      service.getDetails(request, (place, status) => {
-        placesSessionTokenRef.current = createPlacesSessionToken();
-        if (status === window.google.maps.places.PlacesServiceStatus.OK && place?.formatted_address) {
-          resolve(place.formatted_address);
-        } else {
-          resolve('');
-        }
-      });
-    });
-  }, [createPlacesSessionToken]);
-
-  const handleAddressSelect = useCallback(async (suggestion) => {
-    const formatted = suggestion.place_id
-      ? await getPlaceFormattedAddress(suggestion.place_id)
-      : (suggestion.description || '');
-    if (formatted) insertAddress(formatted);
-    else insertAddress(suggestion.description || '');
-  }, [getPlaceFormattedAddress, insertAddress]);
+  const handleAddressSelect = useCallback((suggestion) => {
+    const formatted = suggestion.place_name || suggestion.description || '';
+    insertAddress(formatted);
+  }, [insertAddress]);
 
   const loadFollowingIds = useCallback(async () => {
     if (!user?.uid) return;
@@ -898,7 +809,7 @@ const Feed = () => {
                       ) : (
                         addressSuggestions.map((a, idx) => (
                           <button
-                            key={a.place_id || idx}
+                            key={a.id || a.description || idx}
                             type="button"
                             className={`feed-composer-mention-item ${idx === addressSelectedIndex ? 'selected' : ''}`}
                             role="option"

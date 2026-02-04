@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import mapboxgl from 'mapbox-gl';
+import 'mapbox-gl/dist/mapbox-gl.css';
 import { useAuth } from '../contexts/AuthContext';
 import { USE_MAP_DEBOUNCE, ENABLE_MAP_QUERY_DEBOUNCE } from '../config/featureFlags';
-import { loadGooglePlaces } from '../utils/loadGooglePlaces';
+import { MAPBOX_ACCESS_TOKEN } from '../utils/mapbox';
 import { getMapParcels } from '../services/parcelService';
 import { claimProperty } from '../services/propertyService';
 import UnlistedPropertyModal from './UnlistedPropertyModal';
@@ -10,8 +12,7 @@ import './PropertyMap.css';
 
 const LISTED_COLOR = '#059669';
 const UNLISTED_COLOR = '#64748b';
-
-const DEFAULT_CENTER = { lat: 39.5, lng: -98.5 };
+const DEFAULT_CENTER = [-98.5, 39.5];
 const DEFAULT_ZOOM = 4;
 const DEDUP_DEG = 0.0001;
 
@@ -33,6 +34,17 @@ const unlistedTooltipContent = (p) => `
   </div>
 `;
 
+/** Mapbox LngLatBounds -> adapter with getNorthEast/getSouthWest returning { lat(), lng() } for parcelService */
+function boundsAdapter(mapboxBounds) {
+  if (!mapboxBounds) return null;
+  const ne = mapboxBounds.getNorthEast();
+  const sw = mapboxBounds.getSouthWest();
+  return {
+    getNorthEast: () => ({ lat: () => ne.lat, lng: () => ne.lng }),
+    getSouthWest: () => ({ lat: () => sw.lat, lng: () => sw.lng }),
+  };
+}
+
 const PropertyMap = ({ properties = [], onPropertiesInView }) => {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
@@ -40,7 +52,8 @@ const PropertyMap = ({ properties = [], onPropertiesInView }) => {
   const mapInstanceRef = useRef(null);
   const markersRef = useRef([]);
   const unlistedMarkersRef = useRef([]);
-  const unlistedTooltipRef = useRef(null);
+  const popupsRef = useRef([]);
+  const unlistedPopupRef = useRef(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState(null);
   const [unlistedParcels, setUnlistedParcels] = useState([]);
@@ -67,16 +80,21 @@ const PropertyMap = ({ properties = [], onPropertiesInView }) => {
   };
 
   useEffect(() => {
-    loadGooglePlaces()
-      .then(() => setReady(true))
-      .catch((e) => setError(e?.message || 'Failed to load map'));
+    if (!MAPBOX_ACCESS_TOKEN) {
+      setError('Mapbox token not configured');
+      return;
+    }
+    setReady(true);
   }, []);
 
   useEffect(() => {
-    if (!ready || !mapRef.current || !window.google?.maps) return;
+    if (!ready || !mapRef.current || !MAPBOX_ACCESS_TOKEN) return;
 
     if (!mapInstanceRef.current) {
-      mapInstanceRef.current = new window.google.maps.Map(mapRef.current, {
+      mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
+      mapInstanceRef.current = new mapboxgl.Map({
+        container: mapRef.current,
+        style: 'mapbox://styles/mapbox/streets-v12',
         center: DEFAULT_CENTER,
         zoom: DEFAULT_ZOOM,
       });
@@ -84,54 +102,60 @@ const PropertyMap = ({ properties = [], onPropertiesInView }) => {
 
     const map = mapInstanceRef.current;
 
-    markersRef.current.forEach((m) => m.setMap(null));
+    markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
+    popupsRef.current.forEach((p) => p.remove());
+    popupsRef.current = [];
 
     const withCoords = properties.filter(
       (p) => typeof p.latitude === 'number' && typeof p.longitude === 'number'
     );
 
-    const bounds = new window.google.maps.LatLngBounds();
+    const bounds = new mapboxgl.LngLatBounds();
 
     withCoords.forEach((p) => {
-      const pos = { lat: p.latitude, lng: p.longitude };
-      const marker = new window.google.maps.Marker({
-        position: pos,
-        map,
-        property: p,
-        zIndex: 2,
-        icon: {
-          path: window.google.maps.SymbolPath.CIRCLE,
-          scale: 7,
-          fillColor: LISTED_COLOR,
-          fillOpacity: 1,
-          strokeColor: '#fff',
-          strokeWeight: 1.5
-        }
-      });
-      bounds.extend(pos);
+      const lngLat = [p.longitude, p.latitude];
+      bounds.extend(lngLat);
 
-      const info = new window.google.maps.InfoWindow({
-        content: `
+      const el = document.createElement('div');
+      el.className = 'property-map-marker property-map-marker--listed';
+      el.style.width = '14px';
+      el.style.height = '14px';
+      el.style.borderRadius = '50%';
+      el.style.backgroundColor = LISTED_COLOR;
+      el.style.border = '2px solid #fff';
+      el.style.cursor = 'pointer';
+
+      const marker = new mapboxgl.Marker(el)
+        .setLngLat(lngLat)
+        .addTo(map);
+
+      const popup = new mapboxgl.Popup({ offset: 12, closeButton: true })
+        .setHTML(`
           <div class="property-map-info">
             <strong>${[p.address, p.city, p.state].filter(Boolean).join(', ') || 'Property'}</strong>
             <p>${formatPrice(p.price)}</p>
-            <a href="/funk-brokers/property/${p.id}">View details</a>
+            <a href="/property/${p.id}">View details</a>
           </div>
-        `,
-      });
+        `);
 
-      marker.addListener('click', () => {
-        info.open(map, marker);
+      el.addEventListener('click', () => {
+        popupsRef.current.forEach((pp) => pp.remove());
+        popupsRef.current = [popup];
+        marker.setPopup(popup);
+        popup.addTo(map);
       });
       markersRef.current.push(marker);
+      popupsRef.current.push(popup);
     });
 
-    if (bounds.getNorthEast().lat() !== bounds.getSouthWest().lat() || bounds.getNorthEast().lng() !== bounds.getSouthWest().lng()) {
-      map.fitBounds(bounds, { top: 48, right: 48, bottom: 48, left: 48 });
-    } else if (withCoords.length === 1) {
-      map.setCenter({ lat: withCoords[0].latitude, lng: withCoords[0].longitude });
-      map.setZoom(14);
+    if (withCoords.length > 0) {
+      if (bounds.getNorthEast().lat() !== bounds.getSouthWest().lat() || bounds.getNorthEast().lng() !== bounds.getSouthWest().lng()) {
+        map.fitBounds(bounds, { padding: 48 });
+      } else {
+        map.setCenter([withCoords[0].longitude, withCoords[0].latitude]);
+        map.setZoom(14);
+      }
     } else {
       map.setCenter(DEFAULT_CENTER);
       map.setZoom(DEFAULT_ZOOM);
@@ -165,12 +189,11 @@ const PropertyMap = ({ properties = [], onPropertiesInView }) => {
       if (typeof onPropertiesInView === 'function') {
         const b = map.getBounds();
         if (b) {
-          const inView = withCoords.filter((p) => b.contains({ lat: p.latitude, lng: p.longitude }));
+          const inView = withCoords.filter((p) => b.contains([p.longitude, p.latitude]));
           onPropertiesInView(inView);
         }
       }
       const zoom = map.getZoom();
-      // Unlisted parcels when zoomed in (~10–20 acres on screen). Zoom 18 shows sooner than 19.
       if (zoom == null || zoom < 18) {
         setUnlistedParcels([]);
         return;
@@ -178,20 +201,16 @@ const PropertyMap = ({ properties = [], onPropertiesInView }) => {
       const b = map.getBounds();
       if (!b) return;
       const center = map.getCenter();
-      const nextState = { lat: center.lat(), lng: center.lng(), zoom };
-      if (!movedEnough(lastMapStateRef.current, nextState)) {
-        return;
-      }
+      const nextState = { lat: center.lat, lng: center.lng, zoom };
+      if (!movedEnough(lastMapStateRef.current, nextState)) return;
       lastMapStateRef.current = nextState;
-      if (debouncedRef.current) {
-        window.clearTimeout(debouncedRef.current);
-      }
+      if (debouncedRef.current) window.clearTimeout(debouncedRef.current);
       debouncedRef.current = window.setTimeout(() => {
         if (Date.now() - lastFetchAtRef.current < minIntervalMs) return;
         lastFetchAtRef.current = Date.now();
         const requestId = lastRequestRef.current + 1;
         lastRequestRef.current = requestId;
-        getMapParcels({ bounds: b, zoom })
+        getMapParcels({ bounds: boundsAdapter(b), zoom })
           .then(({ parcels }) => {
             if (requestId !== lastRequestRef.current) return;
             setUnlistedParcels(parcels || []);
@@ -203,23 +222,24 @@ const PropertyMap = ({ properties = [], onPropertiesInView }) => {
       }, debounceMs);
     };
 
-    const idleListener = map.addListener('idle', updatePropertiesInView);
+    map.on('idle', updatePropertiesInView);
     updatePropertiesInView();
 
     return () => {
-      if (idleListener && window.google?.maps?.event?.removeListener) {
-        window.google.maps.event.removeListener(idleListener);
-      }
+      map.off('idle', updatePropertiesInView);
     };
   }, [ready, properties, onPropertiesInView]);
 
-  // Unlisted markers (circle) + hover tooltip; dedup against listed
   useEffect(() => {
-    if (!ready || !mapInstanceRef.current || !window.google?.maps) return;
+    if (!ready || !mapInstanceRef.current) return;
     const map = mapInstanceRef.current;
 
-    unlistedMarkersRef.current.forEach((m) => m.setMap(null));
+    unlistedMarkersRef.current.forEach((m) => m.remove());
     unlistedMarkersRef.current = [];
+    if (unlistedPopupRef.current) {
+      unlistedPopupRef.current.remove();
+      unlistedPopupRef.current = null;
+    }
 
     const withCoords = (properties || []).filter(
       (p) => typeof p.latitude === 'number' && typeof p.longitude === 'number'
@@ -230,36 +250,32 @@ const PropertyMap = ({ properties = [], onPropertiesInView }) => {
       );
     const parcels = (unlistedParcels || []).filter((p) => !isListed(p.latitude, p.longitude));
 
-    if (!unlistedTooltipRef.current) {
-      unlistedTooltipRef.current = new window.google.maps.InfoWindow();
+    if (!unlistedPopupRef.current) {
+      unlistedPopupRef.current = new mapboxgl.Popup({ offset: 12, closeButton: false });
     }
-    const tip = unlistedTooltipRef.current;
+    const tip = unlistedPopupRef.current;
 
     parcels.forEach((p) => {
-      const marker = new window.google.maps.Marker({
-        position: { lat: p.latitude, lng: p.longitude },
-        map,
-        icon: {
-          path: window.google.maps.SymbolPath.CIRCLE,
-          scale: 6,
-          fillColor: '#64748b',
-          fillOpacity: 1,
-          strokeColor: '#fff',
-          strokeWeight: 1
-        },
-        zIndex: 1
-      });
-      marker.parcel = p;
+      const el = document.createElement('div');
+      el.className = 'property-map-marker property-map-marker--unlisted';
+      el.style.width = '12px';
+      el.style.height = '12px';
+      el.style.borderRadius = '50%';
+      el.style.backgroundColor = UNLISTED_COLOR;
+      el.style.border = '1px solid #fff';
+      el.style.cursor = 'pointer';
 
-      marker.addListener('mouseover', () => {
-        tip.setContent(unlistedTooltipContent(p));
-        tip.open(map, marker);
+      const marker = new mapboxgl.Marker(el)
+        .setLngLat([p.longitude, p.latitude])
+        .addTo(map);
+
+      el.addEventListener('mouseover', () => {
+        tip.setHTML(unlistedTooltipContent(p));
+        tip.setLngLat([p.longitude, p.latitude]).addTo(map);
       });
-      marker.addListener('mouseout', () => {
-        tip.close();
-      });
-      marker.addListener('click', () => {
-        tip.close();
+      el.addEventListener('mouseout', () => tip.remove());
+      el.addEventListener('click', () => {
+        tip.remove();
         setSelectedUnlistedParcel(p);
       });
       unlistedMarkersRef.current.push(marker);

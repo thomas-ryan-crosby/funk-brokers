@@ -38,6 +38,30 @@
 
 ---
 
+## Firebase vs Neon for social (dev branch)
+
+**When `VITE_USE_SOCIAL_READS=true` and (for feed) `VITE_USE_SERVER_DATA_LAYER=true`:**
+
+| Feature | Data source | Firebase used? |
+|--------|--------------|-----------------|
+| Feed (For You / Following / Profile) | `/api/social/feed/*`, `/api/social/posts/by-author` → Neon | **No** |
+| Create post | `postService.createPost` → `socialApiWrite.createPostViaApi` → Neon | **No** |
+| Delete post | `postService.deletePost` → `deletePostViaApi` → Neon | **No** |
+| Add comment | `postService.addComment` → `syncCommentToApi` → Neon | **No** |
+| Get comments | `postService.getCommentsForPost` → `getCommentsForPostApi` → Neon | **No** |
+| Like / unlike | `likeService` → `socialApiWrite` + `socialApiService` → Neon | **No** |
+| Follow / unfollow / get following / get followers | `followService` → API → Neon | **No** |
+| Liked post IDs | `likeService.getLikedPostIds` → `getLikedPostIdsApi` → Neon | **No** |
+
+**How it’s gated:**  
+- `postService`: `createPost`, `deletePost`, `addComment`, `getCommentsForPost`, `setPostCommentCount` check `USE_SOCIAL_READS` and use API when true; Firestore paths are not run.  
+- `likeService` and `followService`: every export checks `USE_SOCIAL_READS` first and calls the API; Firestore is only used when the flag is false.  
+- `Feed.jsx` uses `useSocialApi = USE_SERVER_DATA_LAYER && USE_SOCIAL_READS` and loads posts via `getForYouPosts`, `getFollowingPosts`, `getPostsByAuthorApi` (all API). It never calls `getAllPosts`, `getPostsByAuthors`, or `getPostsByAuthor` when `useSocialApi` is true.
+
+**Conclusion:** On this branch, with the flags above set, **all social reads and writes go to Neon/Postgres**. No Firestore is used for posts, comments, likes, or follows. Other app areas (properties, offers, messages, auth, storage, etc.) still use Firebase where implemented.
+
+---
+
 ## Waves 5 & 6 — when to do them
 
 - **Wave 5 (Meilisearch):** Do when you want map pins to come from a search index instead of `getAllProperties` + client filter. Reduces Firestore property reads for map browse.  
@@ -54,7 +78,10 @@ Both are independent and can be done after Wave 4 is live and stable.
 | `ATTOM_API_KEY` | Vercel + local | ATTOM API (Wave 2). |
 | `UPSTASH_REDIS_REST_URL` | Vercel + local | Redis for ATTOM cache (Wave 2). |
 | `UPSTASH_REDIS_REST_TOKEN` | Vercel + local | Redis (Wave 2). |
-| `GOOGLE_MAPS_API_KEY` | Vercel (server) | Places proxy (Wave 3). |
+| `MAPBOX_ACCESS_TOKEN` | Vercel (server) | Mapbox Geocoding API proxy (`/api/mapbox/geocode`). |
+| `VITE_MAPBOX_ACCESS_TOKEN` | Vercel + local | Mapbox GL JS (maps). Can be same token with URL restrictions. |
 | `VITE_USE_ATTOM_CACHE` | Vercel + local | Use Vercel ATTOM API (Wave 2). |
-| `VITE_USE_SERVER_DATA_LAYER` | Vercel + local | Use API for Places (Wave 3) and gate social API (Wave 4). |
+| `VITE_USE_SERVER_DATA_LAYER` | Vercel + local | Gate social API (Wave 4). |
 | `VITE_USE_SOCIAL_READS` | Vercel + local | Feed reads from Postgres (Wave 4). |
+
+**Mapbox (maps + geocoding):** Maps and address/place search use Mapbox. Set `MAPBOX_ACCESS_TOKEN` (server) for `/api/mapbox/geocode` and `VITE_MAPBOX_ACCESS_TOKEN` (client) for map display. Google Maps / Places are no longer used.

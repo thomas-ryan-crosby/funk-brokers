@@ -26,6 +26,7 @@
     "canvas-confetti": "^1.9.4",
     "firebase": "^10.7.1",
     "firebase-admin": "^12.7.0",
+    "mapbox-gl": "^3.18.1",
     "pdfjs-dist": "^5.4.530",
     "persona": "^5.5.0",
     "pg": "^8.18.0",

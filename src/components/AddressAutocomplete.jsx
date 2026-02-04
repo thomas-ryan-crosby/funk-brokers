@@ -1,26 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { loadGooglePlaces, API_KEY } from '../utils/loadGooglePlaces';
-import metrics from '../utils/metrics';
-import { USE_SERVER_DATA_LAYER } from '../config/featureFlags';
-import { getPredictions as apiGetPredictions, getDetails as apiGetDetails, geocode as apiGeocode } from '../services/placesApiService';
-
-function parseAddressComponents(components) {
-  let address = '';
-  let city = '';
-  let state = '';
-  let zipCode = '';
-  for (const c of components) {
-    if (c.types.includes('street_number')) address = (address + ' ' + c.long_name).trim();
-    if (c.types.includes('route')) address = (address + ' ' + c.long_name).trim();
-    if (c.types.includes('locality')) city = c.long_name;
-    if (!city && c.types.includes('sublocality')) city = c.long_name;
-    if (!city && c.types.includes('sublocality_level_1')) city = c.long_name;
-    if (!city && c.types.includes('administrative_area_level_2')) city = c.long_name;
-    if (c.types.includes('administrative_area_level_1')) state = c.short_name;
-    if (c.types.includes('postal_code')) zipCode = c.long_name;
-  }
-  return { address, city, state, zipCode };
-}
+import { getPredictions, geocode } from '../services/mapboxGeocodeService';
 
 const PREDICTION_DEBOUNCE_MS = 300;
 
@@ -38,49 +17,19 @@ const AddressAutocomplete = ({
 }) => {
   const inputRef = useRef(null);
   const wrapperRef = useRef(null);
-  const [ready, setReady] = useState(false);
+  const [ready, setReady] = useState(true);
   const [predictions, setPredictions] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
-  const sessionTokenRef = useRef(null);
   const debounceRef = useRef(null);
   const onAddressSelectRef = useRef(onAddressSelect);
   const onAddressChangeRef = useRef(onAddressChange);
   onAddressSelectRef.current = onAddressSelect;
   onAddressChangeRef.current = onAddressChange;
 
-  const createSessionToken = useCallback(() => {
-    if (USE_SERVER_DATA_LAYER && typeof crypto !== 'undefined' && crypto.randomUUID) {
-      return crypto.randomUUID();
-    }
-    if (typeof window === 'undefined' || !window.google?.maps?.places) return null;
-    try {
-      if (window.google.maps.places.AutocompleteSessionToken) {
-        return new window.google.maps.places.AutocompleteSessionToken();
-      }
-    } catch (_) {}
-    return null;
-  }, []);
-
   useEffect(() => {
-    if (USE_SERVER_DATA_LAYER) {
-      setReady(true);
-      sessionTokenRef.current = createSessionToken();
-      return;
-    }
-    if (!API_KEY) return;
-    loadGooglePlaces()
-      .then(() => {
-        setReady(true);
-        sessionTokenRef.current = createSessionToken();
-      })
-      .catch(() => {});
-  }, [createSessionToken]);
+    if (!inputRef.current) return;
 
-  useEffect(() => {
-    if (!ready || !inputRef.current) return;
-
-    const input = inputRef.current;
     const requestPredictions = (query) => {
       const q = String(query || '').trim();
       if (!q) {
@@ -89,39 +38,16 @@ const AddressAutocomplete = ({
         return;
       }
       setLoading(true);
-      const token = sessionTokenRef.current;
-
-      if (USE_SERVER_DATA_LAYER) {
-        apiGetPredictions(q, token)
-          .then((resultPredictions) => {
-            setLoading(false);
-            setPredictions(resultPredictions);
-            setShowDropdown(true);
-          })
-          .catch(() => {
-            setLoading(false);
-            setPredictions([]);
-          });
-        return;
-      }
-
-      if (!window.google?.maps?.places?.AutocompleteService) return;
-      const request = {
-        input: q,
-        types: ['address'],
-        componentRestrictions: { country: 'us' },
-        ...(token ? { sessionToken: token } : {}),
-      };
-      const service = new window.google.maps.places.AutocompleteService();
-      service.getPlacePredictions(request, (resultPredictions, status) => {
-        setLoading(false);
-        if (status === window.google.maps.places.PlacesServiceStatus.OK && Array.isArray(resultPredictions)) {
-          setPredictions(resultPredictions);
+      getPredictions(q)
+        .then((list) => {
+          setLoading(false);
+          setPredictions(list);
           setShowDropdown(true);
-        } else {
+        })
+        .catch(() => {
+          setLoading(false);
           setPredictions([]);
-        }
-      });
+        });
     };
 
     const onInputChange = (e) => {
@@ -132,6 +58,7 @@ const AddressAutocomplete = ({
       debounceRef.current = setTimeout(() => requestPredictions(v), PREDICTION_DEBOUNCE_MS);
     };
 
+    const input = inputRef.current;
     input.addEventListener('input', onInputChange);
     input.addEventListener('focus', () => {
       if (predictions.length > 0) setShowDropdown(true);
@@ -140,10 +67,10 @@ const AddressAutocomplete = ({
       if (debounceRef.current) clearTimeout(debounceRef.current);
       input.removeEventListener('input', onInputChange);
     };
-  }, [ready, predictions.length, USE_SERVER_DATA_LAYER]);
+  }, [predictions.length]);
 
   useEffect(() => {
-    if (!ready || !showDropdown) return;
+    if (!showDropdown) return;
     const handleClickOutside = (e) => {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target)) {
         setShowDropdown(false);
@@ -151,134 +78,44 @@ const AddressAutocomplete = ({
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [ready, showDropdown]);
+  }, [showDropdown]);
 
-  const selectPlace = useCallback((placeId, description) => {
+  const selectPlace = useCallback((suggestion) => {
     setShowDropdown(false);
     setPredictions([]);
-    onAddressChangeRef.current?.(description || '');
+    const placeName = suggestion.place_name || suggestion.description || '';
+    onAddressChangeRef.current?.(placeName);
 
-    const token = sessionTokenRef.current;
     const done = (parsed) => {
       onAddressSelectRef.current?.(parsed);
-      sessionTokenRef.current = createSessionToken();
     };
 
-    const tryGeocoderApi = async (addr, baseParsed = null) => {
-      try {
-        const result = await apiGeocode(addr);
-        if (result) {
-          const p = baseParsed
-            ? { ...baseParsed }
-            : parseAddressComponents(result.address_components || []);
-          if (!p.address) p.address = result.formatted_address || addr;
-          const loc = result.geometry?.location;
-          if (loc) {
-            p.latitude = typeof loc.lat === 'function' ? loc.lat() : loc.lat;
-            p.longitude = typeof loc.lng === 'function' ? loc.lng() : loc.lng;
-          }
-          done(p);
-        } else {
-          done(baseParsed || { address: addr, city: '', state: '', zipCode: '' });
-        }
-      } catch {
-        done(baseParsed || { address: addr, city: '', state: '', zipCode: '' });
-      }
-    };
-
-    const tryGeocoder = (addr, baseParsed = null) => {
-      if (USE_SERVER_DATA_LAYER) {
-        tryGeocoderApi(addr, baseParsed);
-        return;
-      }
-      if (!addr || !window.google?.maps?.Geocoder) {
-        done(baseParsed || { address: addr || '', city: '', state: '', zipCode: '' });
-        return;
-      }
-      metrics.recordPlacesCall();
-      new window.google.maps.Geocoder().geocode({ address: addr }, (results, status) => {
-        if (status === 'OK' && results?.[0]) {
-          const p = baseParsed
-            ? { ...baseParsed }
-            : parseAddressComponents(results[0].address_components || []);
-          if (!p.address) p.address = results[0].formatted_address || addr;
-          const loc = results[0].geometry?.location;
-          if (loc) {
-            p.latitude = typeof loc.lat === 'function' ? loc.lat() : loc.lat;
-            p.longitude = typeof loc.lng === 'function' ? loc.lng() : loc.lng;
-          }
-          done(p);
-        } else {
-          done(baseParsed || { address: addr, city: '', state: '', zipCode: '' });
-        }
-      });
-    };
-
-    if (USE_SERVER_DATA_LAYER) {
-      if (!placeId) {
-        tryGeocoderApi(description || '');
-        return;
-      }
-      apiGetDetails(placeId, token)
-        .then((details) => {
-          if (details) {
-            const fa = details.formatted_address || description || '';
-            if (details.address_components?.length) {
-              const p = parseAddressComponents(details.address_components);
-              p.address = p.address || fa;
-              const loc = details.geometry?.location;
-              if (loc) {
-                p.latitude = typeof loc.lat === 'function' ? loc.lat() : loc.lat;
-                p.longitude = typeof loc.lng === 'function' ? loc.lng() : loc.lng;
-                done(p);
-              } else {
-                tryGeocoderApi(fa, p);
-              }
-            } else {
-              tryGeocoderApi(fa);
-            }
+    if (suggestion.center && suggestion.center.length >= 2) {
+      const [lng, lat] = suggestion.center;
+      const parsed = {
+        address: placeName,
+        city: '',
+        state: '',
+        zipCode: '',
+        latitude: lat,
+        longitude: lng,
+      };
+      geocode(placeName)
+        .then((res) => {
+          if (res) {
+            done({ ...res, latitude: res.latitude ?? lat, longitude: res.longitude ?? lng });
           } else {
-            tryGeocoderApi(description || '');
+            done(parsed);
           }
         })
-        .catch(() => tryGeocoderApi(description || ''));
+        .catch(() => done(parsed));
       return;
     }
 
-    if (!placeId || !window.google?.maps?.places?.PlacesService) {
-      tryGeocoder(description || '');
-      return;
-    }
-    metrics.recordPlacesCall();
-    const div = document.createElement('div');
-    const svc = new window.google.maps.places.PlacesService(div);
-    const detailsRequest = {
-      placeId: placeId,
-      fields: ['address_components', 'formatted_address', 'geometry'],
-      ...(token ? { sessionToken: token } : {}),
-    };
-    svc.getDetails(detailsRequest, (details, status) => {
-      if (status === 'OK' && details) {
-        const fa = details.formatted_address || description || '';
-        if (details.address_components?.length) {
-          const p = parseAddressComponents(details.address_components);
-          p.address = p.address || fa;
-          if (details.geometry?.location) {
-            const loc = details.geometry.location;
-            p.latitude = typeof loc.lat === 'function' ? loc.lat() : loc.lat;
-            p.longitude = typeof loc.lng === 'function' ? loc.lng() : loc.lng;
-            done(p);
-          } else {
-            tryGeocoder(fa, p);
-          }
-        } else {
-          tryGeocoder(fa);
-        }
-      } else {
-        tryGeocoder(description || '');
-      }
-    });
-  }, [createSessionToken]);
+    geocode(placeName)
+      .then((res) => done(res || { address: placeName, city: '', state: '', zipCode: '' }))
+      .catch(() => done({ address: placeName, city: '', state: '', zipCode: '' }));
+  }, []);
 
   return (
     <div ref={wrapperRef} style={{ position: 'relative' }}>
@@ -319,9 +156,9 @@ const AddressAutocomplete = ({
           {loading && predictions.length === 0 ? (
             <li style={{ padding: '8px 12px', color: '#666' }}>Loading...</li>
           ) : (
-            predictions.map((p) => (
+            predictions.map((p, idx) => (
               <li
-                key={p.place_id || p.description}
+                key={p.id || p.description || idx}
                 role="option"
                 tabIndex={0}
                 style={{
@@ -331,16 +168,16 @@ const AddressAutocomplete = ({
                 }}
                 onMouseDown={(e) => {
                   e.preventDefault();
-                  selectPlace(p.place_id, p.description);
+                  selectPlace(p);
                 }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    selectPlace(p.place_id, p.description);
+                    selectPlace(p);
                   }
                 }}
               >
-                {p.description}
+                {p.description || p.place_name}
               </li>
             ))
           )}

@@ -1,10 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { loadGooglePlaces } from '../utils/loadGooglePlaces';
 import { resolveAddressToParcel } from '../services/parcelService';
-import { USE_SERVER_DATA_LAYER } from '../config/featureFlags';
-import { geocode as apiGeocode } from '../services/placesApiService';
+import { geocode as mapboxGeocode } from '../services/mapboxGeocodeService';
 import { fetchPropertiesForBrowse } from '../data/firestoreLayer';
 import { claimProperty, getAllProperties, searchProperties } from '../services/propertyService';
 import { addSavedSearch } from '../services/profileService';
@@ -105,51 +103,19 @@ const Home = () => {
     unlistedRequestRef.current = requestId;
     setUnlistedLoading(true);
     try {
-      let lat;
-      let lng;
-      if (USE_SERVER_DATA_LAYER) {
-        const result = await apiGeocode(query);
-        if (!result?.geometry?.location) {
-          setUnlistedParcel(fallbackUnlistedParcel(query));
-          return;
-        }
-        const loc = result.geometry.location;
-        lat = typeof loc.lat === 'function' ? loc.lat() : loc.lat;
-        lng = typeof loc.lng === 'function' ? loc.lng() : loc.lng;
-      } else {
-        await loadGooglePlaces();
-        if (!window.google?.maps?.Geocoder) {
-          setUnlistedParcel(fallbackUnlistedParcel(query));
-          return;
-        }
-        const geocoder = new window.google.maps.Geocoder();
-        const { location } = await new Promise((resolve, reject) => {
-          geocoder.geocode({ address: query }, (results, status) => {
-            if (status === 'OK' && results?.[0]?.geometry?.location) {
-              resolve({ location: results[0].geometry.location });
-            } else {
-              reject(new Error('Geocode failed'));
-            }
-          });
-        });
-        lat = typeof location.lat === 'function' ? location.lat() : location.lat;
-        lng = typeof location.lng === 'function' ? location.lng() : location.lng;
-      }
+      const result = await mapboxGeocode(query);
       if (requestId !== unlistedRequestRef.current) return;
+      const lat = result?.latitude;
+      const lng = result?.longitude;
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
         setUnlistedParcel(fallbackUnlistedParcel(query));
         return;
       }
       const delta = 0.003;
-      const bounds = USE_SERVER_DATA_LAYER
-        ? {
-            getNorthEast: () => ({ lat: () => lat + delta, lng: () => lng + delta }),
-            getSouthWest: () => ({ lat: () => lat - delta, lng: () => lng - delta }),
-          }
-        : new window.google.maps.LatLngBounds(
-            new window.google.maps.LatLng(lat - delta, lng - delta),
-            new window.google.maps.LatLng(lat + delta, lng + delta)
-          );
+      const bounds = {
+        getNorthEast: () => ({ lat: () => lat + delta, lng: () => lng + delta }),
+        getSouthWest: () => ({ lat: () => lat - delta, lng: () => lng - delta }),
+      };
       const { parcel } = await resolveAddressToParcel({ address: query, bounds });
       if (requestId !== unlistedRequestRef.current) return;
       const normalized = query.toLowerCase();
