@@ -150,7 +150,7 @@ const PropertyMap = ({ properties = [], onPropertiesInView }) => {
     });
 
     if (withCoords.length > 0) {
-      if (bounds.getNorthEast().lat() !== bounds.getSouthWest().lat() || bounds.getNorthEast().lng() !== bounds.getSouthWest().lng()) {
+      if (bounds.getNorthEast().lat !== bounds.getSouthWest().lat || bounds.getNorthEast().lng !== bounds.getSouthWest().lng) {
         map.fitBounds(bounds, { padding: 48 });
       } else {
         map.setCenter([withCoords[0].longitude, withCoords[0].latitude]);
