@@ -49,10 +49,7 @@ module.exports = async (req, res) => {
     const posts = result.rows.map(mapRowToPost).filter(Boolean);
     res.status(200).json({ posts });
   } catch (err) {
-    if (String(err?.message || '').includes('DATABASE_URL')) {
-      return res.status(501).json({ error: 'Database not configured' });
-    }
-    console.error('[api/social/posts/by-author]', err);
-    res.status(502).json({ error: 'Upstream request failed' });
+    console.warn('[api/social/posts/by-author]', err?.message || err);
+    res.status(200).json({ posts: [] });
   }
 };

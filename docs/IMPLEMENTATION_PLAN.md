@@ -211,7 +211,7 @@ Firebase usage shows **`COLLECTION /properties LIMIT 500`** (or the cap in code)
 - **Write APIs (dual-write):** `api/social/create-post.js` (POST), `api/social/create-comment.js` (POST), `api/social/like.js` (POST/DELETE), `api/social/follow.js` (POST/DELETE). Each writes to Postgres only; client calls after Firestore write when `VITE_USE_SOCIAL_READS=true`.
 - **Client:** When `VITE_USE_SOCIAL_READS=true`, Feed reads use `/api/social/*` (for-you, following, by-author). After each Firestore write (createPost, addComment, likePost, unlikePost, followUser, unfollowUser), client also calls the corresponding write API (fire-and-forget) so Postgres stays in sync.
 - **Env:** `DATABASE_URL` (Neon connection string). Get it from Neon dashboard → Connection details, or from the Neon extension after connecting.
-- **Next:** (1) Run `scripts/migrations/001_social_schema.sql` on your Neon branch. (2) Set `DATABASE_URL` in Vercel and local `.env`. (3) Optional: backfill script for existing Firestore data. (4) Enable `VITE_USE_SOCIAL_READS=true` and monitor.
+- **Next:** (1) Run `scripts/migrations/001_social_schema.sql` on your Neon branch. (2) Set `DATABASE_URL` in Vercel and local `.env`. (3) Enable `VITE_USE_SOCIAL_READS=true` and monitor. Backfill is optional only if you need to copy existing Firestore social data; you can start from scratch with an empty Postgres.
 
 ---
 
