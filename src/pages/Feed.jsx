@@ -99,6 +99,7 @@ const Feed = () => {
   const [addressSuggestions, setAddressSuggestions] = useState([]);
   const [addressLoading, setAddressLoading] = useState(false);
   const [addressSelectedIndex, setAddressSelectedIndex] = useState(0);
+  const [addressTagJustCompleted, setAddressTagJustCompleted] = useState(false);
 
   const [commentsByPost, setCommentsByPost] = useState({});
   const [commentsOpen, setCommentsOpen] = useState({});
@@ -123,7 +124,7 @@ const Feed = () => {
   const addressInlineQuery =
     addressInlineSegment.includes('\n') ? '' : addressInlineSegment.replace(/\s+$/, '');
   const showMentionDropdown = Boolean(mentionQuery);
-  const showAddressInline = Boolean(addressInlineQuery) && !addressInlineSegment.endsWith(' ');
+  const showAddressInline = Boolean(addressInlineQuery) && !addressInlineSegment.endsWith(' ') && !addressTagJustCompleted;
 
   useEffect(() => {
     if (!mentionQuery || mentionQuery.length < 2) {
@@ -194,6 +195,7 @@ const Feed = () => {
     const newBody = before + text + ' ' + after;
     setPostBody(newBody);
     setAddressSuggestions([]);
+    setAddressTagJustCompleted(true);
     const newCursor = lastCaret + 1 + text.length + 1;
     setComposerCursorPosition(newCursor);
     setTimeout(() => {
@@ -724,8 +726,10 @@ const Feed = () => {
                     className="feed-composer-textarea"
                     value={postBody}
                     onChange={(e) => {
-                      setPostBody(e.target.value);
+                      const next = e.target.value;
+                      setPostBody(next);
                       setComposerCursorPosition(e.target.selectionStart ?? 0);
+                      if ((next.match(/\^/g) || []).length > (postBody.match(/\^/g) || []).length) setAddressTagJustCompleted(false);
                     }}
                     onSelect={(e) => setComposerCursorPosition(e.target.selectionStart ?? 0)}
                     onKeyDown={(e) => {
