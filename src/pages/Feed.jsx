@@ -267,13 +267,13 @@ const Feed = () => {
   const loadProfilePosts = useCallback(async () => {
     if (!user?.uid) return;
     try {
-      const list = useSocialApi ? await getPostsByAuthorApi(user.uid, 100) : await getPostsByAuthor(user.uid);
+      const list = await getPostsByAuthor(user.uid);
       setMyPosts(list || []);
     } catch (err) {
       console.error('Failed to load profile posts', err);
       setMyPosts([]);
     }
-  }, [user?.uid, useSocialApi]);
+  }, [user?.uid]);
 
   const loadFeedData = useCallback(async () => {
     if (!user?.uid) return;
