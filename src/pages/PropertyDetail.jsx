@@ -816,7 +816,7 @@ const PropertyDetail = () => {
             )}
             {!snapshotLoading && (
               <>
-                {/* A) Physical Characteristics — snapshot or Firestore fallback */}
+                {/* A) Physical Characteristics — snapshot or property fallback */}
                 {(snapshotSections?.physical || property.bedrooms != null || property.squareFeet != null || property.propertyType || property.yearBuilt) && (
                   <div className="property-details-card property-detail-section-card">
                     <h3>Physical Characteristics</h3>

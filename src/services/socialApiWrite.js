@@ -35,7 +35,7 @@ async function deleteJson(path, body) {
   if (!res.ok) throw new Error(`Social write: ${res.status}`);
 }
 
-/** Create post in Postgres only (when USE_SOCIAL_READS). Returns Promise<{ id } | null>. Payload: { id, authorId, authorName, type, body, propertyId?, propertyAddress?, imageUrl?, pollOptions?, hashtags?, userTags?, likeCount, commentCount, createdAt, updatedAt } */
+/** Create post in Postgres only. Returns Promise<{ id } | null>. Payload: { id, authorId, authorName, type, body, propertyId?, propertyAddress?, imageUrl?, pollOptions?, hashtags?, userTags?, likeCount, commentCount, createdAt, updatedAt } */
 export async function createPostViaApi(payload) {
   const data = await postJson('/create-post', payload);
   return data?.id ?? null;
@@ -72,7 +72,7 @@ export function syncUnlike(postId, userId) {
   deleteJson('/like', { postId, userId }).catch((err) => console.warn('[socialApiWrite] syncUnlike', err));
 }
 
-/** Unlike post in Postgres only (when USE_SOCIAL_READS). Await this. */
+/** Unlike post in Postgres only. Await this. */
 export function unlikePostViaApi(postId, userId) {
   return deleteJson('/like', { postId, userId });
 }
@@ -92,7 +92,7 @@ export function syncUnfollow(followerId, followingId) {
   deleteJson('/follow', { followerId, followingId }).catch((err) => console.warn('[socialApiWrite] syncUnfollow', err));
 }
 
-/** Unfollow in Postgres only (when USE_SOCIAL_READS). Await this. */
+/** Unfollow in Postgres only. Await this. */
 export function unfollowUserViaApi(followerId, followingId) {
   return deleteJson('/follow', { followerId, followingId });
 }

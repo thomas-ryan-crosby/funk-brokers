@@ -1,14 +1,10 @@
 import { get as cacheGet, set as cacheSet } from '../utils/ttlCache';
 import metrics from '../utils/metrics';
 
-/** Use Vercel API for ATTOM; or set VITE_ATTOM_FUNCTIONS_BASE for a custom backend. */
+/** Use Vercel API for ATTOM. */
 function getAttomBase() {
   if (typeof window === 'undefined') return null;
   return (import.meta.env.VITE_API_BASE || window.location.origin).replace(/\/$/, '') + '/api/attom';
-}
-
-function getFunctionsBase() {
-  return (typeof import.meta !== 'undefined' && import.meta.env?.VITE_ATTOM_FUNCTIONS_BASE) || '';
 }
 
 const TTL_MAP_MS = 5 * 60 * 1000;   // 5 min – map tiles
@@ -43,9 +39,8 @@ export const getMapParcels = async ({ bounds, zoom }) => {
     const startMs = Date.now();
     const params = new URLSearchParams({ n, s, e, w, zoom });
     const base = getAttomBase();
-    const fallback = getFunctionsBase();
-    const url = base ? `${base}/map?${params}` : (fallback ? `${fallback}/getMapParcels?${params}` : null);
-    if (!url) throw new Error('Configure VITE_API_BASE or VITE_ATTOM_FUNCTIONS_BASE for map parcels');
+    const url = base ? `${base}/map?${params}` : null;
+    if (!url) throw new Error('Configure VITE_API_BASE for map parcels');
     const res = await fetch(url);
     if (!res.ok) {
       const err = await res.json().catch(() => ({ error: res.statusText }));
@@ -84,9 +79,8 @@ export const resolveAddressToParcel = async ({ address, bounds }) => {
       w: sw.lng(),
     };
     const base = getAttomBase();
-    const fallback = getFunctionsBase();
-    const url = base ? `${base}/address` : (fallback ? `${fallback}/resolveAddress` : null);
-    if (!url) throw new Error('Configure VITE_API_BASE or VITE_ATTOM_FUNCTIONS_BASE for address resolution');
+    const url = base ? `${base}/address` : null;
+    if (!url) throw new Error('Configure VITE_API_BASE for address resolution');
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -123,9 +117,8 @@ export const getPropertySnapshot = async ({ attomId, latitude, longitude }) => {
       lng: longitude,
     });
     const base = getAttomBase();
-    const fallback = getFunctionsBase();
-    const url = base ? `${base}/snapshot?${params}` : (fallback ? `${fallback}/getPropertySnapshot?${params}` : null);
-    if (!url) throw new Error('Configure VITE_API_BASE or VITE_ATTOM_FUNCTIONS_BASE for property snapshot');
+    const url = base ? `${base}/snapshot?${params}` : null;
+    if (!url) throw new Error('Configure VITE_API_BASE for property snapshot');
     const res = await fetch(url);
     if (!res.ok) {
       const err = await res.json().catch(() => ({ error: res.statusText }));

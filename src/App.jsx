@@ -92,7 +92,7 @@ function AppContent() {
     if (typeof import.meta.env.DEV === 'boolean' && !import.meta.env.DEV) return;
     const intervalId = setInterval(() => {
       const s = metrics.getSummary();
-      console.info('[metrics 60s] Firestore reads:', s.firestoreReads, '| by feature:', s.readsByFeature);
+      console.info('[metrics 60s] Reads by feature:', s.readsByFeature);
     }, 60_000);
     return () => clearInterval(intervalId);
   }, []);

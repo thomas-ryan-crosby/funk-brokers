@@ -5,7 +5,6 @@
 
 const asBool = (v) => v === true || v === 'true' || v === '1';
 
-export const USE_ATTOM_CACHE = asBool(import.meta.env.VITE_USE_ATTOM_CACHE);
 export const USE_MAP_DEBOUNCE = asBool(import.meta.env.VITE_USE_MAP_DEBOUNCE);
 export const USE_SEARCH_INDEX = asBool(import.meta.env.VITE_USE_SEARCH_INDEX);
 export const USE_OBJECT_STORAGE_PROXY = asBool(import.meta.env.VITE_USE_OBJECT_STORAGE_PROXY);
@@ -15,7 +14,6 @@ export const ENABLE_QUERY_DEDUPE = import.meta.env.VITE_ENABLE_QUERY_DEDUPE !== 
 export const ENABLE_SAFE_LIMITS = import.meta.env.VITE_ENABLE_SAFE_LIMITS !== 'false';
 
 export default {
-  USE_ATTOM_CACHE,
   USE_MAP_DEBOUNCE,
   USE_SEARCH_INDEX,
   USE_OBJECT_STORAGE_PROXY,

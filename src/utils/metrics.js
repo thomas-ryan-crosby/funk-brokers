@@ -1,14 +1,12 @@
 /**
  * Lightweight client-side metrics for cost/performance visibility.
  * In-memory only; no network by default. Use logSummary() or getSummary() for debugging.
- * Records: Firestore read/write counts, ATTOM proxy calls, Places usage, Storage bytes, latencies.
+ * Records: read counts, ATTOM proxy calls, Places usage, Storage bytes, latencies.
  */
 
 const MAX_LATENCY_SAMPLES = 100;
 
 const state = {
-  firestoreReads: 0,
-  firestoreWrites: 0,
   readsByFeature: { map: 0, feed: 0, propertyDetail: 0, propertiesBrowse: 0, other: 0 },
   attomCalls: { mapParcels: 0, resolveAddress: 0, propertySnapshot: 0 },
   placesCalls: 0,
@@ -38,14 +36,6 @@ function p95(arr) {
 }
 
 export const metrics = {
-  recordFirestoreRead(n = 1) {
-    state.firestoreReads += n;
-  },
-
-  recordFirestoreWrite(n = 1) {
-    state.firestoreWrites += n;
-  },
-
   recordAttomCall(route, latencyMs) {
     if (state.attomCalls[route] !== undefined) state.attomCalls[route]++;
     if (typeof latencyMs === 'number' && route === 'mapParcels') addLatency('mapPins', latencyMs);
@@ -88,8 +78,6 @@ export const metrics = {
 
   getSummary() {
     return {
-      firestoreReads: state.firestoreReads,
-      firestoreWrites: state.firestoreWrites,
       readsByFeature: this.getReadsByFeature(),
       attomCalls: { ...state.attomCalls },
       placesCalls: state.placesCalls,
@@ -112,8 +100,6 @@ export const metrics = {
   },
 
   reset() {
-    state.firestoreReads = 0;
-    state.firestoreWrites = 0;
     state.readsByFeature = { map: 0, feed: 0, propertyDetail: 0, propertiesBrowse: 0, other: 0 };
     state.attomCalls = { mapParcels: 0, resolveAddress: 0, propertySnapshot: 0 };
     state.placesCalls = 0;

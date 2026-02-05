@@ -8,10 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
-    "format": "prettier --write \"src/**/*.{js,jsx,css,md}\"",
-    "populate-data": "node scripts/populateDummyData.js",
-    "backfill-coordinates": "node scripts/backfillPropertyCoordinates.js",
-    "clear-data": "node scripts/clearAllData.js"
+    "format": "prettier --write \"src/**/*.{js,jsx,css,md}\""
   },
   "keywords": [
     "real-estate",
@@ -26,7 +23,6 @@
     "@vercel/blob": "^0.25.0",
     "canvas-confetti": "^1.9.4",
     "firebase": "^10.7.1",
-    "firebase-admin": "^12.7.0",
     "mapbox-gl": "^3.18.1",
     "pdfjs-dist": "^5.4.530",
     "persona": "^5.5.0",
