@@ -217,7 +217,7 @@ module.exports = async (req, res) => {
       'address', 'city', 'state', 'zipCode', 'latitude', 'longitude', 'attomId', 'propertyType',
       'bedrooms', 'bathrooms', 'squareFeet', 'price', 'funkEstimate', 'photos', 'features',
       'status', 'availableForSale', 'acceptingOffers', 'acceptingCommunications', 'archived',
-      'description', 'lotSize', 'yearBuilt', 'hoaFee', 'propertyTax', 'imGonePrice', 'hasHOA',
+      'description', 'lotSize', 'yearBuilt', 'hoaFee', 'propertyTax', 'imGonePrice', 'hasHOA', 'has_h_o_a',
       'deedUrl', 'propertyTaxRecordUrl', 'hoaDocsUrl', 'disclosureFormsUrl', 'inspectionReportUrl',
       'sellerName', 'sellerEmail', 'professionalPhotos',
     ];
@@ -225,15 +225,23 @@ module.exports = async (req, res) => {
     allowed.forEach((k) => {
       if (body[k] !== undefined) updates[k] = body[k];
     });
+    // Normalize body keys that may arrive as has_h_o_a from some clients
+    if (updates.has_h_o_a !== undefined && updates.hasHOA === undefined) {
+      updates.hasHOA = updates.has_h_o_a;
+      delete updates.has_h_o_a;
+    }
     if (Object.keys(updates).length === 0) return res.status(200).json({ id });
 
     const setCols = [];
     const params = [];
     let idx = 0;
     const snake = (s) => s.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`);
+    // Normalize column names (some clients/middleware send has_h_o_a instead of has_hoa)
+    const colAliases = { has_h_o_a: 'has_hoa' };
+    const toCol = (key) => colAliases[snake(key)] ?? snake(key);
     Object.entries(updates).forEach(([k, v]) => {
       idx++;
-      const col = snake(k);
+      const col = toCol(k);
       if (col === 'photos' || col === 'features') {
         setCols.push(`${col} = $${idx}`);
         params.push(JSON.stringify(Array.isArray(v) ? v : (v && typeof v === 'object' ? v : [])));
