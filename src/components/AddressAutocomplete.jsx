@@ -51,33 +51,28 @@ const AddressAutocomplete = ({
       });
   });
 
+  const handleInputChange = (e) => {
+    const v = e.target.value;
+    onAddressChangeRef.current?.(v);
+    setShowDropdown(false);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => requestPredictionsRef.current(v), PREDICTION_DEBOUNCE_MS);
+  };
+
+  const handleFocus = () => {
+    const currentValue = inputRef.current?.value?.trim() || value?.trim() || '';
+    if (predictions.length > 0) {
+      setShowDropdown(true);
+    } else if (currentValue) {
+      requestPredictionsRef.current(currentValue);
+    }
+  };
+
   useEffect(() => {
-    if (!inputRef.current) return;
-    const requestPredictions = requestPredictionsRef.current;
-    const onInputChange = (e) => {
-      const v = e.target.value;
-      onAddressChangeRef.current?.(v);
-      setShowDropdown(false);
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-      debounceRef.current = setTimeout(() => requestPredictions(v), PREDICTION_DEBOUNCE_MS);
-    };
-    const onFocus = () => {
-      const currentValue = inputRef.current?.value?.trim() || value?.trim() || '';
-      if (predictions.length > 0) {
-        setShowDropdown(true);
-      } else if (currentValue) {
-        requestPredictions(currentValue);
-      }
-    };
-    const input = inputRef.current;
-    input.addEventListener('input', onInputChange);
-    input.addEventListener('focus', onFocus);
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
-      input.removeEventListener('input', onInputChange);
-      input.removeEventListener('focus', onFocus);
     };
-  }, [value, predictions.length]);
+  }, []);
 
   useEffect(() => {
     if (!showDropdown) return;
@@ -134,7 +129,8 @@ const AddressAutocomplete = ({
         type="text"
         name={name}
         value={value}
-        onChange={(e) => onAddressChange?.(e.target.value)}
+        onChange={handleInputChange}
+        onFocus={handleFocus}
         placeholder={placeholder}
         id={id}
         required={!!required}
