@@ -17,39 +17,43 @@ const AddressAutocomplete = ({
 }) => {
   const inputRef = useRef(null);
   const wrapperRef = useRef(null);
-  const [ready, setReady] = useState(true);
   const [predictions, setPredictions] = useState([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const debounceRef = useRef(null);
   const onAddressSelectRef = useRef(onAddressSelect);
   const onAddressChangeRef = useRef(onAddressChange);
   onAddressSelectRef.current = onAddressSelect;
   onAddressChangeRef.current = onAddressChange;
 
+  const requestPredictionsRef = useRef((query) => {
+    const q = String(query || '').trim();
+    if (!q) {
+      setPredictions([]);
+      setShowDropdown(false);
+      setLoadError(false);
+      return;
+    }
+    setLoading(true);
+    setLoadError(false);
+    getPredictions(q)
+      .then((list) => {
+        setLoading(false);
+        setPredictions(Array.isArray(list) ? list : []);
+        setShowDropdown(true);
+      })
+      .catch(() => {
+        setLoading(false);
+        setPredictions([]);
+        setLoadError(true);
+        setShowDropdown(true);
+      });
+  });
+
   useEffect(() => {
     if (!inputRef.current) return;
-
-    const requestPredictions = (query) => {
-      const q = String(query || '').trim();
-      if (!q) {
-        setPredictions([]);
-        setShowDropdown(false);
-        return;
-      }
-      setLoading(true);
-      getPredictions(q)
-        .then((list) => {
-          setLoading(false);
-          setPredictions(list);
-          setShowDropdown(true);
-        })
-        .catch(() => {
-          setLoading(false);
-          setPredictions([]);
-        });
-    };
-
+    const requestPredictions = requestPredictionsRef.current;
     const onInputChange = (e) => {
       const v = e.target.value;
       onAddressChangeRef.current?.(v);
@@ -57,17 +61,23 @@ const AddressAutocomplete = ({
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(() => requestPredictions(v), PREDICTION_DEBOUNCE_MS);
     };
-
+    const onFocus = () => {
+      const currentValue = inputRef.current?.value?.trim() || value?.trim() || '';
+      if (predictions.length > 0) {
+        setShowDropdown(true);
+      } else if (currentValue) {
+        requestPredictions(currentValue);
+      }
+    };
     const input = inputRef.current;
     input.addEventListener('input', onInputChange);
-    input.addEventListener('focus', () => {
-      if (predictions.length > 0) setShowDropdown(true);
-    });
+    input.addEventListener('focus', onFocus);
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       input.removeEventListener('input', onInputChange);
+      input.removeEventListener('focus', onFocus);
     };
-  }, [predictions.length]);
+  }, [value, predictions.length]);
 
   useEffect(() => {
     if (!showDropdown) return;
@@ -133,7 +143,7 @@ const AddressAutocomplete = ({
         autoComplete="off"
         {...inputProps}
       />
-      {showDropdown && (predictions.length > 0 || loading) && (
+      {showDropdown && (predictions.length > 0 || loading || loadError) && (
         <ul
           className="address-autocomplete-dropdown"
           style={{
@@ -153,7 +163,11 @@ const AddressAutocomplete = ({
             zIndex: 1000,
           }}
         >
-          {loading && predictions.length === 0 ? (
+          {loadError ? (
+            <li style={{ padding: '8px 12px', color: '#c00', fontSize: '0.9em' }}>
+              Suggestions unavailable. Set MAPBOX_ACCESS_TOKEN in Vercel (Settings → Environment Variables) or try again.
+            </li>
+          ) : loading && predictions.length === 0 ? (
             <li style={{ padding: '8px 12px', color: '#666' }}>Loading...</li>
           ) : (
             predictions.map((p, idx) => (
