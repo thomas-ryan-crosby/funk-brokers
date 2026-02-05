@@ -42,11 +42,13 @@ body {
   display: inline-flex;
   align-items: center;
   line-height: 0;
+  max-height: 100%;
+  overflow: hidden;
 }
 
 .nav-logo .logo > img,
 .nav-logo .logo > svg {
-  max-height: 40px;
+  max-height: 128px;
 }
 
 .nav-links {
@@ -62,7 +64,7 @@ body {
 
   .nav-logo .logo > img,
   .nav-logo .logo > svg {
-    max-height: 32px;
+    max-height: 96px;
   }
 }
 
