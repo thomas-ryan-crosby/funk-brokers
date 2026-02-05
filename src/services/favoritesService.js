@@ -18,13 +18,12 @@ const FAVORITES_COLLECTION = 'favorites';
  * Add a property to user's favorites
  */
 export const addToFavorites = async (userId, propertyId) => {
+  if (USE_POSTGRES_FOR_ALL) {
+    return addToFavoritesApi(userId, propertyId);
+  }
   try {
-    // Check if already favorited
     const existing = await getFavorite(userId, propertyId);
-    if (existing) {
-      return existing.id; // Already favorited
-    }
-
+    if (existing) return existing.id;
     const docRef = await addDoc(collection(db, FAVORITES_COLLECTION), {
       userId,
       propertyId,
@@ -56,6 +55,9 @@ export const removeFromFavorites = async (userId, propertyId) => {
  * Get a specific favorite
  */
 export const getFavorite = async (userId, propertyId) => {
+  if (USE_POSTGRES_FOR_ALL) {
+    return getFavoriteApi(userId, propertyId);
+  }
   try {
     const q = query(
       collection(db, FAVORITES_COLLECTION),
@@ -64,8 +66,8 @@ export const getFavorite = async (userId, propertyId) => {
     );
     const querySnapshot = await getDocs(q);
     if (!querySnapshot.empty) {
-      const doc = querySnapshot.docs[0];
-      return { id: doc.id, ...doc.data() };
+      const d = querySnapshot.docs[0];
+      return { id: d.id, ...d.data() };
     }
     return null;
   } catch (error) {
@@ -112,6 +114,9 @@ export const isFavorited = async (userId, propertyId) => {
  * Get the number of users who favorited a property
  */
 export const getFavoriteCountForProperty = async (propertyId) => {
+  if (USE_POSTGRES_FOR_ALL) {
+    return getFavoriteCountForPropertyApi(propertyId);
+  }
   try {
     const q = query(
       collection(db, FAVORITES_COLLECTION),
@@ -129,6 +134,9 @@ export const getFavoriteCountForProperty = async (propertyId) => {
  * Get favorites for a property with user profile info
  */
 export const getFavoritesForProperty = async (propertyId) => {
+  if (USE_POSTGRES_FOR_ALL) {
+    return getFavoritesForPropertyApi(propertyId, getUserProfile);
+  }
   try {
     const q = query(
       collection(db, FAVORITES_COLLECTION),

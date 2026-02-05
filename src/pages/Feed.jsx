@@ -26,8 +26,27 @@ function formatAddress(property) {
   return parts.join(', ');
 }
 
+/** US state full name -> abbreviation (lowercase) for address matching */
+const STATE_TO_ABBR = {
+  alabama: 'al', alaska: 'ak', arizona: 'az', arkansas: 'ar', california: 'ca',
+  colorado: 'co', connecticut: 'ct', delaware: 'de', florida: 'fl', georgia: 'ga',
+  hawaii: 'hi', idaho: 'id', illinois: 'il', indiana: 'in', iowa: 'ia',
+  kansas: 'ks', kentucky: 'ky', louisiana: 'la', maine: 'me', maryland: 'md',
+  massachusetts: 'ma', michigan: 'mi', minnesota: 'mn', mississippi: 'ms',
+  missouri: 'mo', montana: 'mt', nebraska: 'ne', nevada: 'nv', 'new hampshire': 'nh',
+  'new jersey': 'nj', 'new mexico': 'nm', 'new york': 'ny', 'north carolina': 'nc',
+  'north dakota': 'nd', ohio: 'oh', oklahoma: 'ok', oregon: 'or', pennsylvania: 'pa',
+  'rhode island': 'ri', 'south carolina': 'sc', 'south dakota': 'sd', tennessee: 'tn',
+  texas: 'tx', utah: 'ut', vermont: 'vt', virginia: 'va', washington: 'wa',
+  'west virginia': 'wv', wisconsin: 'wi', wyoming: 'wy', 'district of columbia': 'dc',
+};
+
 function normalizeAddress(value) {
-  const base = String(value ?? '').toLowerCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim();
+  let base = String(value ?? '').toLowerCase().replace(/[^\w\s]/g, ' ').replace(/\s+/g, ' ').trim();
+  Object.entries(STATE_TO_ABBR).forEach(([name, abbr]) => {
+    base = base.replace(new RegExp(`\\b${name.replace(/\s/g, '\\s+')}\\b`, 'g'), abbr);
+  });
+  base = base.replace(/\bunited states\b/g, '').replace(/\s+/g, ' ').trim();
   const replacements = [
     ['north', 'n'], ['south', 's'], ['east', 'e'], ['west', 'w'],
     ['street', 'st'], ['avenue', 'ave'], ['road', 'rd'], ['drive', 'dr'],
@@ -42,7 +61,7 @@ function parseTagList(value, prefix) {
     .map((t) => (t.startsWith(prefix) ? t.slice(1) : t)).filter(Boolean);
 }
 
-/** Extract #hashtags, @mentions, ^property from post body. */
+/** Extract #hashtags, @mentions, ^property from post body. Trims property to address-only (drops trailing " is ..." etc.). */
 function parseBodyTags(body) {
   const text = String(body || '').trim();
   const hashtags = [];
@@ -53,7 +72,12 @@ function parseBodyTags(body) {
   const atMatches = text.matchAll(/@([a-zA-Z0-9_]+)/g);
   for (const m of atMatches) userTags.push(m[1]);
   const caretMatch = text.match(/\^([^#@\n]+)/);
-  if (caretMatch) propertyText = caretMatch[1].trim();
+  if (caretMatch) {
+    propertyText = caretMatch[1].trim()
+      .replace(/\s+is\s+.+$/i, '')  // "15 X St ... is awesome!" -> address only
+      .replace(/\s+-\s+.+$/, '')    // trailing " - comment"
+      .trim();
+  }
   return { hashtags: [...new Set(hashtags)], userTags: [...new Set(userTags)], propertyText };
 }
 

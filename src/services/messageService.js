@@ -1,4 +1,4 @@
-// Message Service - Firestore operations for internal messaging
+// Message Service - Firestore or Postgres API (when USE_POSTGRES_FOR_ALL)
 import {
   collection,
   addDoc,
@@ -9,6 +9,8 @@ import {
   orderBy,
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
+import { USE_POSTGRES_FOR_ALL } from '../config/featureFlags';
+import { getMessagesForUserApi, createMessageApi } from './messagesApiService';
 
 const MESSAGES_COLLECTION = 'messages';
 /** Max messages read per query (Firestore cost control). */
@@ -37,6 +39,9 @@ export const createMessage = async ({ senderId, senderName, recipientId, recipie
  * Capped at MESSAGES_QUERY_LIMIT per query (Firestore cost control).
  */
 export const getMessagesForUser = async (uid) => {
+  if (USE_POSTGRES_FOR_ALL) {
+    return getMessagesForUserApi(uid);
+  }
   const [recvSnap, sendSnap] = await Promise.all([
     getDocs(query(
       collection(db, MESSAGES_COLLECTION),

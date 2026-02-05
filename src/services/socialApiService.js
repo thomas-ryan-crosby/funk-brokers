@@ -45,6 +45,16 @@ export async function getPostsByAuthorApi(authorId, limit = 100, before = null) 
   return fetchPosts(() => fetchJson(url));
 }
 
+/** Posts linked to a property (by property_id or property_address). Used for Community Posts on property detail. */
+export async function getPostsForPropertyOrAddressApi(propertyId, address) {
+  if (!propertyId && !address) return [];
+  const params = new URLSearchParams();
+  if (propertyId) params.set('propertyId', propertyId);
+  if (address) params.set('address', address);
+  const url = `${getSocialBase()}/feed/by-property?${params}`;
+  return fetchPosts(() => fetchJson(url));
+}
+
 async function fetchJsonSafe(url) {
   const res = await fetch(url);
   const data = await res.json().catch(() => ({}));

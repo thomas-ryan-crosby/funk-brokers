@@ -1,4 +1,4 @@
-// Offer Service - Firestore operations for offers
+// Offer Service - Firestore or Postgres API (when USE_POSTGRES_FOR_ALL)
 import {
   collection,
   addDoc,
@@ -12,6 +12,14 @@ import {
   deleteDoc,
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
+import { USE_POSTGRES_FOR_ALL } from '../config/featureFlags';
+import {
+  getOffersByPropertyApi,
+  getOffersByBuyerApi,
+  getOfferByIdApi,
+  createOfferApi,
+  updateOfferStatusApi,
+} from './offersApiService';
 
 const OFFERS_COLLECTION = 'offers';
 
@@ -38,6 +46,9 @@ function sanitizeForFirestore(obj) {
  * Create a new offer
  */
 export const createOffer = async (offerData) => {
+  if (USE_POSTGRES_FOR_ALL) {
+    return createOfferApi(offerData);
+  }
   try {
     const sanitized = sanitizeForFirestore({
       ...offerData,
@@ -88,6 +99,9 @@ export const getOffersByProperty = async (propertyId) => {
  * Uses where-only query (no orderBy) to avoid composite index; sorts by createdAt client-side.
  */
 export const getOffersByBuyer = async (buyerId) => {
+  if (USE_POSTGRES_FOR_ALL) {
+    return getOffersByBuyerApi(buyerId);
+  }
   try {
     const q = query(
       collection(db, OFFERS_COLLECTION),
@@ -136,6 +150,10 @@ export const getOfferById = async (offerId) => {
  * Update offer status
  */
 export const updateOfferStatus = async (offerId, status, additionalData = {}) => {
+  if (USE_POSTGRES_FOR_ALL) {
+    await updateOfferStatusApi(offerId, status, additionalData);
+    return;
+  }
   try {
     const docRef = doc(db, OFFERS_COLLECTION, offerId);
     await updateDoc(docRef, {

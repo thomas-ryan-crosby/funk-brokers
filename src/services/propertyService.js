@@ -1,4 +1,4 @@
-// Property Service - Firestore operations for properties
+// Property Service - Firestore or Postgres API (when USE_POSTGRES_FOR_ALL)
 import {
   collection,
   addDoc,
@@ -16,8 +16,19 @@ import { db } from '../config/firebase';
 import { getOffersByProperty } from './offerService';
 import { getListingTier } from '../utils/verificationScores';
 import { get as cacheGet, set as cacheSet, remove as cacheRemove } from '../utils/ttlCache';
-import { FIRESTORE_READ_KILL_SWITCH } from '../config/featureFlags';
+import { FIRESTORE_READ_KILL_SWITCH, USE_POSTGRES_FOR_ALL } from '../config/featureFlags';
 import metrics from '../utils/metrics';
+import {
+  getAllPropertiesApi,
+  getPropertiesBySellerApi,
+  getPropertyByIdApi,
+  searchPropertiesApi,
+  createPropertyApi,
+  claimPropertyApi,
+  updatePropertyApi,
+  deletePropertyApi,
+  deletePropertyPermanentlyApi,
+} from './propertyApiService';
 
 const PROPERTIES_COLLECTION = 'properties';
 const PROPERTIES_CACHE_TTL_MS = 10 * 60 * 1000; // 10 min – reduce refetch volume (emergency read cap)
@@ -50,6 +61,9 @@ export const createProperty = async (propertyData) => {
  */
 export const claimProperty = async (parcel, sellerId) => {
   if (!sellerId) throw new Error('User ID required to claim property');
+  if (USE_POSTGRES_FOR_ALL) {
+    return claimPropertyApi(parcel, sellerId);
+  }
   const now = new Date();
   const data = {
     sellerId,
@@ -125,6 +139,9 @@ const PROPERTIES_BY_SELLER_CAP = 100;
  * Get all properties by a specific seller (includes archived; caller may split). Capped to limit read volume.
  */
 export const getPropertiesBySeller = async (sellerId) => {
+  if (USE_POSTGRES_FOR_ALL) {
+    return getPropertiesBySellerApi(sellerId, PROPERTIES_BY_SELLER_CAP);
+  }
   try {
     const q = query(
       collection(db, PROPERTIES_COLLECTION),
@@ -195,6 +212,9 @@ function searchCacheKey(filters) {
  * then filters client-side. Capped to limit Firestore reads. Results cached 3 min (Tier 2).
  */
 export const searchProperties = async (filters = {}) => {
+  if (USE_POSTGRES_FOR_ALL) {
+    return searchPropertiesApi({ ...filters, limit: filters.limit || PROPERTIES_QUERY_CAP });
+  }
   const cacheKey = searchCacheKey(filters);
   const cached = cacheGet(cacheKey, PROPERTIES_CACHE_TTL_MS);
   if (cached != null) return cached;
@@ -351,6 +371,10 @@ export const reconcileUnderContractStatus = async (propertyId, offers = []) => {
  * Update a property
  */
 export const updateProperty = async (propertyId, updates) => {
+  if (USE_POSTGRES_FOR_ALL) {
+    await updatePropertyApi(propertyId, updates);
+    return;
+  }
   try {
     const docRef = doc(db, PROPERTIES_COLLECTION, propertyId);
     const clean = { ...updates, updatedAt: new Date() };
@@ -368,6 +392,10 @@ export const updateProperty = async (propertyId, updates) => {
  * Delete a property (soft delete by setting status to withdrawn)
  */
 export const deleteProperty = async (propertyId) => {
+  if (USE_POSTGRES_FOR_ALL) {
+    await deletePropertyApi(propertyId);
+    return;
+  }
   try {
     await updateProperty(propertyId, { status: 'withdrawn' });
   } catch (error) {
@@ -401,9 +429,13 @@ export const restoreProperty = async (propertyId) => {
 };
 
 /**
- * Permanently delete a property (removes from Firestore; cannot be undone)
+ * Permanently delete a property (removes from DB; cannot be undone)
  */
 export const deletePropertyPermanently = async (propertyId) => {
+  if (USE_POSTGRES_FOR_ALL) {
+    await deletePropertyPermanentlyApi(propertyId);
+    return;
+  }
   try {
     const docRef = doc(db, PROPERTIES_COLLECTION, propertyId);
     await deleteDoc(docRef);

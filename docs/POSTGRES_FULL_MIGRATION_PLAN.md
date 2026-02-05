@@ -146,6 +146,32 @@ Recommendation: Start with per-domain flags (Option A) for properties and favori
 
 ---
 
-## Next step
+## Implemented (this branch)
 
-Implement **Phase 1 (Properties)** first: add `002_properties_schema.sql`, `/api/properties/*` routes, then replace `propertyService.js` Firestore usage with API calls.
+- **Phase 1 Properties:** `002_properties_schema.sql`, `GET/POST/PATCH/DELETE /api/properties`, `propertyApiService.js`, `propertyService.js` uses API when `VITE_USE_POSTGRES_FOR_ALL=true`.
+- **Phase 2 Users:** Extended `users` in `003_...`, `GET/PUT/POST /api/users`, `usersApiService.js`, `authService.js` (getUserProfile, updateUserProfile, signup/signin sync).
+- **Phase 3 Favorites:** `003_...` favorites table, `GET/POST/DELETE /api/favorites`, `favoritesApiService.js`, `favoritesService.js`.
+- **Phase 4 Offers:** `003_...` offers table, `GET/POST/PATCH /api/offers`, `offersApiService.js`, `offerService.js`.
+- **Phase 5 Messages:** `003_...` messages table, `GET/POST /api/messages`, `messagesApiService.js`, `messageService.js`.
+
+**Cutover flag:** Set `VITE_USE_POSTGRES_FOR_ALL=true` (and `VITE_API_BASE` to your API origin) to use Postgres for properties, users, favorites, offers, and messages. Social feed remains gated by `VITE_USE_SOCIAL_READS` (set both for full Postgres).
+
+---
+
+## How to run migrations
+
+1. Ensure `DATABASE_URL` (Neon Postgres) is set in the environment that runs the API (e.g. Vercel).
+2. Run in order (Neon SQL console or `psql $DATABASE_URL -f ...`):
+   - `scripts/migrations/001_social_schema.sql`
+   - `scripts/migrations/002_properties_schema.sql`
+   - `scripts/migrations/003_users_favorites_offers_messages.sql`
+3. Deploy API routes (e.g. `api/properties/`, `api/users/`, `api/favorites/`, `api/offers/`, `api/messages/`).
+4. In the app env, set `VITE_USE_POSTGRES_FOR_ALL=true` and `VITE_API_BASE` (e.g. your Vercel app URL). Optionally set `VITE_USE_SOCIAL_READS=true` for feed from Postgres.
+
+**Note:** No backfill scripts are run; the DB starts empty. Use for new deployments or after clearing Firestore.
+
+---
+
+## Next steps (remaining domains)
+
+Implement **Phases 6–13** (transactions, pings, vendors, sale/purchase profiles, PSA drafts, pre-listing checklists, listing progress, feedback) with the same pattern: migration SQL → API routes → client service uses API when `USE_POSTGRES_FOR_ALL`.

@@ -10,6 +10,8 @@ import {
 import { doc, setDoc, getDoc, collection, getDocs, query, limit } from 'firebase/firestore';
 import { auth, db } from '../config/firebase';
 import { get as cacheGet, set as cacheSet } from '../utils/ttlCache';
+import { USE_POSTGRES_FOR_ALL } from '../config/featureFlags';
+import { getUserProfileApi, updateUserProfileApi, upsertUserApi } from './usersApiService';
 
 const USERS_COLLECTION = 'users';
 /** Cache TTL for searchUsers (reduce Firestore reads for repeated @-mention queries). */
@@ -102,10 +104,18 @@ export const signIn = async (email, password) => {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
 
-    // Get user profile from Firestore
-    const userDoc = await getDoc(doc(db, USERS_COLLECTION, user.uid));
-    const userProfile = userDoc.exists() ? userDoc.data() : null;
-
+    // Get user profile from Firestore or Postgres
+    let userProfile = null;
+    if (USE_POSTGRES_FOR_ALL) {
+      userProfile = await getUserProfileApi(user.uid).catch(() => null);
+    }
+    if (!userProfile) {
+      const userDoc = await getDoc(doc(db, USERS_COLLECTION, user.uid));
+      userProfile = userDoc.exists() ? userDoc.data() : null;
+      if (USE_POSTGRES_FOR_ALL && userProfile) {
+        upsertUserApi(user.uid, { ...userProfile, email: user.email }).catch((e) => console.warn('Postgres user sync', e));
+      }
+    }
     return { user, userProfile };
   } catch (error) {
     console.error('Error signing in:', error);
@@ -152,6 +162,10 @@ export const getUserProfile = async (uid) => {
  * Update user profile
  */
 export const updateUserProfile = async (uid, updates) => {
+  if (USE_POSTGRES_FOR_ALL) {
+    await updateUserProfileApi(uid, updates);
+    return;
+  }
   try {
     const userRef = doc(db, USERS_COLLECTION, uid);
     await setDoc(

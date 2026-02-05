@@ -178,6 +178,9 @@ export const getPostsForAddress = async (address) => {
 };
 
 export const getPostsForPropertyOrAddress = async (propertyId, address) => {
+  if (USE_SOCIAL_READS) {
+    return getPostsForPropertyOrAddressApi(propertyId, address);
+  }
   const byProperty = await getPostsForProperty(propertyId);
   if (byProperty.length > 0) return byProperty;
   if (address) {
