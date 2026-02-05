@@ -80,7 +80,7 @@ function AppContent() {
     const handler = () => loadUnreadCount();
     window.addEventListener('messages:read', handler);
     window.addEventListener('storage', handler);
-    const intervalId = setInterval(loadUnreadCount, 300_000); // 5 min – was 30s; reduced to cut Firestore read volume
+    const intervalId = setInterval(loadUnreadCount, 300_000); // 5 min – was 30s; reduced to cut read volume
     return () => {
       window.removeEventListener('messages:read', handler);
       window.removeEventListener('storage', handler);

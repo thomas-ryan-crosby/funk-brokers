@@ -15,11 +15,8 @@ Funk Brokers is a comprehensive web application that enables:
 
 - **Frontend:** React + Vite
 - **Hosting:** GitHub Pages
-- **Backend:** Firebase
-  - Firestore (Database)
-  - Firebase Authentication
-  - Firebase Storage (Documents & Images)
-  - Cloud Functions (Serverless operations)
+- **Backend:** Vercel serverless APIs + Neon Postgres
+- **Auth:** Firebase Authentication
 
 ## Getting Started
 
@@ -27,7 +24,7 @@ Funk Brokers is a comprehensive web application that enables:
 
 - Node.js (v18 or higher)
 - npm or yarn
-- Firebase project with Firestore and Storage enabled
+- Firebase project with Authentication enabled
 
 ### Installation
 
@@ -42,8 +39,7 @@ cd funk-brokers
 npm install
 ```
 
-3. Set up Firebase configuration:
-   - Copy your Firebase service account key to `firebase/serviceAccountKey.json`
+3. Set up Firebase Auth configuration:
    - Create `src/config/firebase-config.js` with your Firebase web app config (see `src/config/firebase-config.example.js`)
 
 4. Start the development server:
@@ -56,24 +52,10 @@ npm run dev
 npm run build
 ```
 
-## Populating Dummy Data
-
-To populate the Firestore database with sample properties for testing:
-
-```bash
-npm run populate-data
-```
-
-This will add 10 sample properties with various property types, prices, and locations to help visualize the application.
-
-## Firebase Setup
+## Firebase Auth Setup
 
 1. Create a Firebase project at [Firebase Console](https://console.firebase.google.com/)
-2. Enable the following services:
-   - Authentication (Email/Password)
-   - Firestore Database
-   - Storage
-   - Cloud Functions (optional, for future features)
+2. Enable Authentication (Email/Password)
 3. Get your Firebase web app configuration from Project Settings
 4. Copy the config to `src/config/firebase-config.js`
 
@@ -83,14 +65,13 @@ This will add 10 sample properties with various property types, prices, and loca
 funk-brokers/
 ├── src/
 │   ├── components/     # React components
-│   ├── config/        # Firebase and app configuration
+│   ├── config/        # Firebase Auth + app configuration
 │   ├── pages/          # Page components
-│   ├── services/       # Firebase services and API calls
+│   ├── services/       # API clients and service layer
 │   ├── utils/          # Utility functions
 │   ├── styles/         # CSS/styling files
 │   └── App.jsx         # Main app component
-├── firebase/           # Firebase admin SDK and functions
-├── scripts/            # Utility scripts (populate data, etc.)
+├── scripts/            # Utility scripts and migrations
 ├── public/             # Static assets
 ├── dist/               # Build output (for GitHub Pages)
 ├── PRD.md              # Product Requirements Document
@@ -116,7 +97,6 @@ npm run build
 - `npm run preview` - Preview production build
 - `npm run lint` - Run ESLint
 - `npm run format` - Format code with Prettier
-- `npm run populate-data` - Populate Firestore with dummy properties
 
 ## Implementation Status
 

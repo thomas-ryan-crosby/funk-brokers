@@ -117,27 +117,10 @@ Make sure in repository Settings → Pages:
 - **Source**: GitHub Actions (if using workflow) OR `gh-pages` branch
 - **Custom domain**: Leave blank unless you have one
 
-### 11. Firestore Security Rules
-
-If the page loads but data doesn't appear, check Firestore Security Rules:
-
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /properties/{document=**} {
-      allow read: if true;  // Allow public read for now
-      allow write: if false; // Restrict writes (update later)
-    }
-  }
-}
-```
-
-### 12. Still Not Working?
+### 11. Still Not Working?
 
 1. Check the GitHub Actions logs for build errors
-2. Verify Firebase config is correct in `src/config/firebase-config.js`
-3. Make sure Firestore and Storage are enabled in Firebase Console
+2. Verify API env vars are set (e.g. `VITE_API_BASE`, `DATABASE_URL`, `ATTOM_API_KEY`)
 4. Try accessing the site in an incognito/private window
 5. Try a different browser
 
@@ -148,7 +131,6 @@ service cloud.firestore {
 - [ ] Latest workflow run completed successfully
 - [ ] Accessing URL with `/funk-brokers/` path
 - [ ] Browser cache cleared
-- [ ] Firebase services enabled (Firestore, Storage)
 - [ ] `vite.config.js` has correct `base` path
 - [ ] Build completes without errors locally
 
