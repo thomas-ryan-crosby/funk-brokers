@@ -3,11 +3,27 @@
  * Proxies Mapbox Geocoding v5 (forward). Token server-side only.
  */
 const GEOCODE_BASE = 'https://api.mapbox.com/geocoding/v5/mapbox.places';
+const CACHE_TTL_MS = 60 * 1000;
+const cache = new Map();
 
 function cors(res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+}
+
+function getCache(key) {
+  const entry = cache.get(key);
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) {
+    cache.delete(key);
+    return null;
+  }
+  return entry.value;
+}
+
+function setCache(key, value) {
+  cache.set(key, { value, expiresAt: Date.now() + CACHE_TTL_MS });
 }
 
 module.exports = async (req, res) => {
@@ -33,6 +49,13 @@ module.exports = async (req, res) => {
   const limit = Math.min(parseInt(req.query.limit, 10) || 5, 10);
   const types = (req.query.types || 'address,place').toString();
   const country = (req.query.country || 'US').toString();
+  const cacheKey = `${q}|${limit}|${types}|${country}`;
+
+  const cached = getCache(cacheKey);
+  if (cached) {
+    res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
+    return res.status(200).json(cached);
+  }
 
   try {
     const encoded = encodeURIComponent(q);
@@ -50,6 +73,8 @@ module.exports = async (req, res) => {
       console.error('[api/mapbox/geocode]', data?.message || response.status);
       return res.status(response.status === 401 ? 401 : 502).json(data || { error: 'Upstream error' });
     }
+    setCache(cacheKey, data);
+    res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300');
     res.status(200).json(data);
   } catch (err) {
     console.error('[api/mapbox/geocode]', err);
