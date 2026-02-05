@@ -1,31 +1,9 @@
-// Ping Service - lightweight property pings
-import {
-  collection,
-  addDoc,
-  getDocs,
-  query,
-  where,
-  limit,
-} from 'firebase/firestore';
-import { db } from '../config/firebase';
+// Ping service - Postgres API only (Firestore removed)
+import { createPingApi, getPingsForSellerApi, getPingsForSenderApi } from './pingApiService';
 
-const PINGS_COLLECTION = 'pings';
-
-/**
- * Create a new ping.
- * @param {{ propertyId: string, propertyAddress?: string, sellerId: string, senderId: string, senderName: string, reasonType: string, note?: string }}
- */
-export const createPing = async ({
-  propertyId,
-  propertyAddress,
-  sellerId,
-  senderId,
-  senderName,
-  reasonType,
-  note,
-}) => {
+export const createPing = async ({ propertyId, propertyAddress, sellerId, senderId, senderName, reasonType, note }) => {
   if (!propertyId || !sellerId || !senderId) throw new Error('Missing ping fields');
-  const docRef = await addDoc(collection(db, PINGS_COLLECTION), {
+  return createPingApi({
     propertyId,
     propertyAddress: propertyAddress || null,
     sellerId,
@@ -34,55 +12,15 @@ export const createPing = async ({
     reasonType,
     note: note ? String(note).trim() : null,
     status: 'new',
-    createdAt: new Date(),
   });
-  return docRef.id;
 };
-
-/**
- * Get all pings for a seller (incoming pings).
- * @param {string} sellerId
- * @returns {Promise<Array>}
- */
-const PINGS_QUERY_CAP = 100;
 
 export const getPingsForSeller = async (sellerId) => {
   if (!sellerId) return [];
-  const q = query(
-    collection(db, PINGS_COLLECTION),
-    where('sellerId', '==', sellerId),
-    limit(PINGS_QUERY_CAP)
-  );
-  const snap = await getDocs(q);
-  const list = [];
-  snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
-  list.sort((a, b) => {
-    const aDate = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
-    const bDate = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
-    return bDate - aDate;
-  });
-  return list;
+  return getPingsForSellerApi(sellerId);
 };
 
-/**
- * Get all pings sent by a user (outgoing pings).
- * @param {string} senderId
- * @returns {Promise<Array>}
- */
 export const getPingsForSender = async (senderId) => {
   if (!senderId) return [];
-  const q = query(
-    collection(db, PINGS_COLLECTION),
-    where('senderId', '==', senderId),
-    limit(PINGS_QUERY_CAP)
-  );
-  const snap = await getDocs(q);
-  const list = [];
-  snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
-  list.sort((a, b) => {
-    const aDate = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
-    const bDate = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
-    return bDate - aDate;
-  });
-  return list;
+  return getPingsForSenderApi(senderId);
 };

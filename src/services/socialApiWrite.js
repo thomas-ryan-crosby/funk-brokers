@@ -1,6 +1,5 @@
 /**
- * Social write API (Wave 4 dual-write). Call after Firestore write when USE_SOCIAL_READS is true.
- * Non-blocking: fire-and-forget so Firestore remains source of truth; Postgres is synced for read path.
+ * Social write API (Postgres). Posts, comments, likes, follows, delete post.
  */
 
 function getBase() {
@@ -52,12 +51,18 @@ export function syncComment(payload) {
   postJson('/create-comment', payload).catch((err) => console.warn('[socialApiWrite] syncComment', err));
 }
 
+/** Create comment via API. Payload must include postId, id, authorId. Returns comment id. */
+export async function createCommentViaApi(payload) {
+  await postJson('/create-comment', payload);
+  return payload.id;
+}
+
 /** Sync like (postId, userId). */
 export function syncLike(postId, userId) {
   postJson('/like', { postId, userId }).catch((err) => console.warn('[socialApiWrite] syncLike', err));
 }
 
-/** Like post in Postgres only (when USE_SOCIAL_READS). Await this. */
+/** Like post in Postgres. Await this. */
 export function likePostViaApi(postId, userId) {
   return postJson('/like', { postId, userId });
 }
@@ -77,7 +82,7 @@ export function syncFollow(followerId, followingId) {
   postJson('/follow', { followerId, followingId }).catch((err) => console.warn('[socialApiWrite] syncFollow', err));
 }
 
-/** Follow in Postgres only (when USE_SOCIAL_READS). Await this. */
+/** Follow in Postgres. Await this. */
 export function followUserViaApi(followerId, followingId) {
   return postJson('/follow', { followerId, followingId });
 }
@@ -92,7 +97,7 @@ export function unfollowUserViaApi(followerId, followingId) {
   return deleteJson('/follow', { followerId, followingId });
 }
 
-/** Delete post from Postgres only (when USE_SOCIAL_READS). */
+/** Delete post from Postgres. */
 export function deletePostViaApi(postId) {
   return fetch(`${getBase()}/delete-post`, {
     method: 'POST',

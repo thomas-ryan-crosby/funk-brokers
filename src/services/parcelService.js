@@ -1,16 +1,14 @@
-import { firebaseConfig } from '../config/firebase-config';
 import { get as cacheGet, set as cacheSet } from '../utils/ttlCache';
 import metrics from '../utils/metrics';
-import { USE_ATTOM_CACHE, FIRESTORE_READ_KILL_SWITCH } from '../config/featureFlags';
 
-const FUNCTIONS_BASE = `https://us-central1-${firebaseConfig.projectId}.cloudfunctions.net`;
-
-/** When USE_ATTOM_CACHE (Wave 2), use Vercel API + Redis instead of Firebase Functions. */
+/** Use Vercel API for ATTOM; or set VITE_ATTOM_FUNCTIONS_BASE for a custom backend. */
 function getAttomBase() {
-  if (USE_ATTOM_CACHE && typeof window !== 'undefined') {
-    return (import.meta.env.VITE_API_BASE || window.location.origin).replace(/\/$/, '') + '/api/attom';
-  }
-  return null;
+  if (typeof window === 'undefined') return null;
+  return (import.meta.env.VITE_API_BASE || window.location.origin).replace(/\/$/, '') + '/api/attom';
+}
+
+function getFunctionsBase() {
+  return (typeof import.meta !== 'undefined' && import.meta.env?.VITE_ATTOM_FUNCTIONS_BASE) || '';
 }
 
 const TTL_MAP_MS = 5 * 60 * 1000;   // 5 min – map tiles
@@ -39,14 +37,15 @@ export const getMapParcels = async ({ bounds, zoom }) => {
   const cacheKey = `map_${n}_${s}_${e}_${w}_${zoom}`;
   const cached = cacheGet(cacheKey, TTL_MAP_MS);
   if (cached != null) return cached;
-  if (FIRESTORE_READ_KILL_SWITCH) return { parcels: [] };
   let promise = inFlightMap.get(cacheKey);
   if (promise) return promise;
   promise = (async () => {
     const startMs = Date.now();
     const params = new URLSearchParams({ n, s, e, w, zoom });
     const base = getAttomBase();
-    const url = base ? `${base}/map?${params}` : `${FUNCTIONS_BASE}/getMapParcels?${params}`;
+    const fallback = getFunctionsBase();
+    const url = base ? `${base}/map?${params}` : (fallback ? `${fallback}/getMapParcels?${params}` : null);
+    if (!url) throw new Error('Configure VITE_API_BASE or VITE_ATTOM_FUNCTIONS_BASE for map parcels');
     const res = await fetch(url);
     if (!res.ok) {
       const err = await res.json().catch(() => ({ error: res.statusText }));
@@ -85,7 +84,9 @@ export const resolveAddressToParcel = async ({ address, bounds }) => {
       w: sw.lng(),
     };
     const base = getAttomBase();
-    const url = base ? `${base}/address` : `${FUNCTIONS_BASE}/resolveAddress`;
+    const fallback = getFunctionsBase();
+    const url = base ? `${base}/address` : (fallback ? `${fallback}/resolveAddress` : null);
+    if (!url) throw new Error('Configure VITE_API_BASE or VITE_ATTOM_FUNCTIONS_BASE for address resolution');
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -122,7 +123,9 @@ export const getPropertySnapshot = async ({ attomId, latitude, longitude }) => {
       lng: longitude,
     });
     const base = getAttomBase();
-    const url = base ? `${base}/snapshot?${params}` : `${FUNCTIONS_BASE}/getPropertySnapshot?${params}`;
+    const fallback = getFunctionsBase();
+    const url = base ? `${base}/snapshot?${params}` : (fallback ? `${fallback}/getPropertySnapshot?${params}` : null);
+    if (!url) throw new Error('Configure VITE_API_BASE or VITE_ATTOM_FUNCTIONS_BASE for property snapshot');
     const res = await fetch(url);
     if (!res.ok) {
       const err = await res.json().catch(() => ({ error: res.statusText }));

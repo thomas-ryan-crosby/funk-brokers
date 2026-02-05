@@ -1,113 +1,29 @@
-import { doc, getDoc, setDoc, updateDoc, arrayRemove, arrayUnion, collection, query, where, limit, getDocs } from 'firebase/firestore';
-import { db } from '../config/firebase';
-import { USE_SOCIAL_READS } from '../config/featureFlags';
+// Follow Service - Postgres/social API only (Firestore removed)
 import { getFollowingApi, getFollowersApi } from './socialApiService';
 import { followUserViaApi, unfollowUserViaApi } from './socialApiWrite';
 
-const USER_FOLLOWING_COLLECTION = 'userFollowing';
-/** Max followers read per getFollowers (Firestore cost control). */
-const FOLLOWERS_QUERY_LIMIT = 100;
-
-/**
- * Get list of user IDs that the given user is following.
- * @param {string} userId - user's uid
- * @returns {Promise<string[]>}
- */
 export const getFollowing = async (userId) => {
   if (!userId) return [];
-  if (USE_SOCIAL_READS) return getFollowingApi(userId);
-  try {
-    const ref = doc(db, USER_FOLLOWING_COLLECTION, userId);
-    const snap = await getDoc(ref);
-    const data = snap.data();
-    const list = data?.following ?? [];
-    return Array.isArray(list) ? list : [];
-  } catch (err) {
-    console.error('Error fetching following list', err);
-    return [];
-  }
+  return getFollowingApi(userId);
 };
 
-/**
- * Follow a user.
- * @param {string} followerId - current user's uid
- * @param {string} followingId - user to follow
- */
 export const followUser = async (followerId, followingId) => {
   if (!followerId || !followingId || followerId === followingId) return;
-  if (USE_SOCIAL_READS) {
-    await followUserViaApi(followerId, followingId);
-    return;
-  }
-  try {
-    const ref = doc(db, USER_FOLLOWING_COLLECTION, followerId);
-    const snap = await getDoc(ref);
-    if (!snap.exists()) {
-      await setDoc(ref, { following: [followingId], updatedAt: new Date() });
-    } else {
-      await updateDoc(ref, {
-        following: arrayUnion(followingId),
-        updatedAt: new Date(),
-      });
-    }
-  } catch (err) {
-    console.error('Error following user', err);
-    throw err;
-  }
+  await followUserViaApi(followerId, followingId);
 };
 
-/**
- * Unfollow a user.
- * @param {string} followerId - current user's uid
- * @param {string} followingId - user to unfollow
- */
 export const unfollowUser = async (followerId, followingId) => {
   if (!followerId || !followingId) return;
-  if (USE_SOCIAL_READS) {
-    await unfollowUserViaApi(followerId, followingId);
-    return;
-  }
-  try {
-    const ref = doc(db, USER_FOLLOWING_COLLECTION, followerId);
-    const snap = await getDoc(ref);
-    if (!snap.exists()) return;
-    await updateDoc(ref, {
-      following: arrayRemove(followingId),
-      updatedAt: new Date(),
-    });
-  } catch (err) {
-    console.error('Error unfollowing user', err);
-    throw err;
-  }
+  await unfollowUserViaApi(followerId, followingId);
 };
 
-/**
- * Check if current user is following target user.
- * @param {string} followerId - current user's uid
- * @param {string} followingId - target user's uid
- * @returns {Promise<boolean>}
- */
 export const isFollowing = async (followerId, followingId) => {
   if (!followerId || !followingId) return false;
   const list = await getFollowing(followerId);
   return list.includes(followingId);
 };
 
-/**
- * Get list of user IDs who follow the given user (followers). Capped at FOLLOWERS_QUERY_LIMIT.
- * @param {string} userId - user's uid
- * @returns {Promise<string[]>}
- */
 export const getFollowers = async (userId) => {
   if (!userId) return [];
-  if (USE_SOCIAL_READS) return getFollowersApi(userId);
-  try {
-    const ref = collection(db, USER_FOLLOWING_COLLECTION);
-    const q = query(ref, where('following', 'array-contains', userId), limit(FOLLOWERS_QUERY_LIMIT));
-    const snap = await getDocs(q);
-    return snap.docs.map((d) => d.id);
-  } catch (err) {
-    console.error('Error fetching followers', err);
-    return [];
-  }
+  return getFollowersApi(userId);
 };

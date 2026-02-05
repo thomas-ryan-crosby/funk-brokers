@@ -10,7 +10,6 @@ import { getTransactionsByUser, getTransactionByOfferId, createTransaction } fro
 import { getVendorsByUser, createVendor, updateVendor, deleteVendor, addVendorContact, updateVendorContact, removeVendorContact, VENDOR_TYPES } from '../services/vendorService';
 import { updateUserProfile, getUserProfile } from '../services/authService';
 import { uploadFile } from '../services/storageService';
-import { deleteField } from 'firebase/firestore';
 import { getListingTier, getListingTierLabel, getListingTierProgress, meetsVerifiedBuyerCriteria } from '../utils/verificationScores';
 import PropertyCard from '../components/PropertyCard';
 import Logo from '../components/Logo';
@@ -345,7 +344,7 @@ const Dashboard = () => {
 
   const handleRemoveBuyerInfo = async () => {
     if (!window.confirm('Remove your buyer name and email? You may need to provide them again to submit offers.')) return;
-    const updates = { buyerInfo: {}, buyerVerified: false, buyerVerifiedAt: deleteField() };
+    const updates = { buyerInfo: {}, buyerVerified: false, buyerVerifiedAt: null };
     try {
       await setPurchaseProfile(user.uid, updates);
       setPurchaseProfileState((p) => (p ? { ...p, buyerInfo: {}, buyerVerified: false, buyerVerifiedAt: null } : null));

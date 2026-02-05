@@ -1,5 +1,5 @@
 /**
- * Social read API (Wave 4). Use when VITE_USE_SOCIAL_READS is true.
+ * Social read API (Postgres).
  */
 
 function getSocialBase() {

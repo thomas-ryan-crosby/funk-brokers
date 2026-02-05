@@ -1,6 +1,5 @@
 /**
- * Client-side Places API (Wave 3). Use when USE_SERVER_DATA_LAYER is true.
- * Calls /api/places/* so Google key stays server-side only.
+ * Client-side Places API. Calls /api/places/* so Google key stays server-side only.
  */
 
 import metrics from '../utils/metrics';

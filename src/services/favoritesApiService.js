@@ -1,5 +1,5 @@
 /**
- * Favorites via Postgres API (when USE_POSTGRES_FOR_ALL).
+ * Favorites via Postgres API.
  */
 
 function getBase() {

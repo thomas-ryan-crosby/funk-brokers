@@ -1,6 +1,5 @@
 /**
- * Property read/write via Postgres API (full migration).
- * Used when VITE_USE_POSTGRES_FOR_ALL is true.
+ * Property read/write via Postgres API.
  */
 
 import { getListingTier } from '../utils/verificationScores';

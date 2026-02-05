@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { createProperty } from '../services/propertyService';
 import { uploadFile, uploadMultipleFiles } from '../services/storageService';
-import { saveListingProgress, getListingProgress } from '../services/listingProgressService';
+import { saveListingProgress, getListingProgress, deleteListingProgress } from '../services/listingProgressService';
 import AddressAutocomplete from '../components/AddressAutocomplete';
 import DragDropFileInput from '../components/DragDropFileInput';
 import './ListProperty.css';
@@ -315,10 +315,7 @@ const ListProperty = () => {
       
       // Clear saved progress after successful creation
       try {
-        const { doc: firestoreDoc, deleteDoc } = await import('firebase/firestore');
-        const { db } = await import('../config/firebase');
-        const ref = firestoreDoc(db, 'listingProgress', propertyId);
-        await deleteDoc(ref);
+        await deleteListingProgress(propertyId);
       } catch (err) {
         console.error('Error clearing progress:', err);
       }

@@ -1,5 +1,5 @@
 /**
- * Offers via Postgres API (when USE_POSTGRES_FOR_ALL).
+ * Offers via Postgres API.
  */
 
 function getBase() {

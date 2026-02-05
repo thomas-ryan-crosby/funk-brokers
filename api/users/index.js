@@ -120,10 +120,18 @@ module.exports = async (req, res) => {
     if (body.phone !== undefined) updates.phone = body.phone;
     if (body.role !== undefined) updates.role = body.role;
     if (body.email !== undefined) updates.email = body.email;
+    if (body.saleProfile !== undefined) updates.sale_profile = body.saleProfile;
+    if (body.purchaseProfile !== undefined) updates.purchase_profile = body.purchaseProfile;
     if (Object.keys(updates).length === 0) return res.status(200).json({ id });
     try {
-      const setCols = Object.keys(updates).map((k, i) => `${k} = $${i + 1}`).join(', ');
-      const vals = Object.values(updates);
+      const setCols = Object.keys(updates).map((k, i) => {
+        const val = updates[k];
+        if (val !== null && typeof val === 'object' && !(val instanceof Date)) {
+          return `${k} = $${i + 1}::jsonb`;
+        }
+        return `${k} = $${i + 1}`;
+      }).join(', ');
+      const vals = Object.values(updates).map((v) => (v !== null && typeof v === 'object' && !(v instanceof Date) ? JSON.stringify(v) : v));
       vals.push(id);
       await query(
         `UPDATE users SET ${setCols}, updated_at = now() WHERE id = $${vals.length}`,

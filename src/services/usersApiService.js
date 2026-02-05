@@ -1,5 +1,5 @@
 /**
- * User profile read/write via Postgres API (when USE_POSTGRES_FOR_ALL).
+ * User profile read/write via Postgres API.
  */
 
 function getBase() {
@@ -64,5 +64,46 @@ export async function updateUserProfileApi(uid, updates) {
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.error || `Profile update failed: ${res.status}`);
+  }
+}
+
+function getSavedSearchesBase() {
+  if (typeof window === 'undefined') return '';
+  const base = (import.meta.env.VITE_API_BASE || window.location.origin).replace(/\/$/, '');
+  return `${base}/api/saved-searches`;
+}
+
+export async function getSavedSearchesApi(userId) {
+  if (!userId) return [];
+  const res = await fetch(`${getSavedSearchesBase()}?userId=${encodeURIComponent(userId)}`);
+  if (!res.ok) return [];
+  const data = await res.json().catch(() => ({}));
+  return Array.isArray(data?.savedSearches) ? data.savedSearches : [];
+}
+
+export async function addSavedSearchApi(userId, { name, filters }) {
+  const res = await fetch(getSavedSearchesBase(), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ userId, name: name || 'My search', filters: filters || {} }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `Add saved search failed: ${res.status}`);
+  }
+  const data = await res.json().catch(() => ({}));
+  return data?.id;
+}
+
+export async function removeSavedSearchApi(searchId) {
+  if (!searchId) throw new Error('searchId is required');
+  const res = await fetch(getSavedSearchesBase(), {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id: searchId }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || `Remove saved search failed: ${res.status}`);
   }
 }

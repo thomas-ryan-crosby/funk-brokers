@@ -5,7 +5,6 @@ import { getUserProfile } from '../services/authService';
 import { getPurchaseProfile, getSavedSearches, setPurchaseProfile as setPurchaseProfileApi, updatePurchaseProfile } from '../services/profileService';
 import { getPropertiesBySeller } from '../services/propertyService';
 import { uploadFile } from '../services/storageService';
-import { deleteField } from 'firebase/firestore';
 import { meetsVerifiedBuyerCriteria } from '../utils/verificationScores';
 import DragDropFileInput from '../components/DragDropFileInput';
 import { extractPdfAmount } from '../utils/pdfAmount';
@@ -217,7 +216,7 @@ const UserProfile = () => {
     };
     if (!stillVerified) {
       updates.buyerVerified = false;
-      updates.buyerVerifiedAt = deleteField();
+      updates.buyerVerifiedAt = null;
     }
     try {
       await updatePurchaseProfile(userId, updates);

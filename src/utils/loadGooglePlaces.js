@@ -18,9 +18,7 @@
  * https://developers.google.com/maps/documentation/javascript/places-migration-overview
  */
 
-import { firebaseConfig } from '../config/firebase-config';
-
-export const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || firebaseConfig?.apiKey;
+export const API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
 let loadPromise = null;
 

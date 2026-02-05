@@ -1,19 +1,11 @@
-// Vendor Service - Firestore CRUD for user's vendors/contacts (title, inspection, mortgage, other)
+// Vendor service - Postgres API only (Firestore removed)
 import {
-  collection,
-  addDoc,
-  getDocs,
-  getDoc,
-  doc,
-  query,
-  where,
-  limit,
-  updateDoc,
-  deleteDoc,
-} from 'firebase/firestore';
-import { db } from '../config/firebase';
-
-const VENDORS_COLLECTION = 'vendors';
+  getVendorsByUserApi,
+  getVendorByIdApi,
+  createVendorApi,
+  updateVendorApi,
+  deleteVendorApi,
+} from './vendorApiService';
 
 export const VENDOR_TYPES = [
   { id: 'title_company', label: 'Title company' },
@@ -22,17 +14,9 @@ export const VENDOR_TYPES = [
   { id: 'other', label: 'Other' },
 ];
 
-/**
- * Create a vendor for a user.
- * @param {string} userId
- * @param {object} data - { vendorName, type, website?, phone?, email?, address?, notes?, contacts?: [{ name, phone?, email? }] }
- * @returns {Promise<string>} vendor id
- */
 export const createVendor = async (userId, data) => {
   if (!userId) throw new Error('userId is required');
-  const now = new Date();
-  const ref = await addDoc(collection(db, VENDORS_COLLECTION), {
-    userId,
+  return createVendorApi(userId, {
     vendorName: data.vendorName || '',
     type: data.type || 'other',
     customType: data.type === 'other' ? (data.customType || null) : null,
@@ -42,97 +26,55 @@ export const createVendor = async (userId, data) => {
     address: data.address || null,
     notes: data.notes || null,
     contacts: data.contacts || [],
-    createdAt: now,
-    updatedAt: now,
   });
-  return ref.id;
 };
-
-/**
- * Get all vendors for a user.
- */
-const VENDORS_QUERY_CAP = 100;
 
 export const getVendorsByUser = async (userId) => {
   if (!userId) return [];
-  const q = query(
-    collection(db, VENDORS_COLLECTION),
-    where('userId', '==', userId),
-    limit(VENDORS_QUERY_CAP)
-  );
-  const snap = await getDocs(q);
-  const list = [];
-  snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
-  list.sort((a, b) => (a.vendorName || '').localeCompare(b.vendorName || ''));
-  return list;
+  const list = await getVendorsByUserApi(userId);
+  return list.sort((a, b) => (a.vendorName || '').localeCompare(b.vendorName || ''));
 };
 
-/**
- * Get a single vendor by ID.
- */
 export const getVendorById = async (vendorId) => {
   if (!vendorId) return null;
-  const ref = doc(db, VENDORS_COLLECTION, vendorId);
-  const d = await getDoc(ref);
-  if (!d.exists()) return null;
-  return { id: d.id, ...d.data() };
+  return getVendorByIdApi(vendorId);
 };
 
-/**
- * Update a vendor.
- */
 export const updateVendor = async (vendorId, data) => {
   if (!vendorId) throw new Error('vendorId is required');
-  const ref = doc(db, VENDORS_COLLECTION, vendorId);
   const payload = { updatedAt: new Date() };
   ['vendorName', 'type', 'customType', 'website', 'phone', 'email', 'address', 'notes', 'contacts'].forEach((k) => {
     if (data[k] !== undefined) payload[k] = data[k];
   });
-  // Clear customType if type is not 'other'
-  if (data.type !== 'other' && data.type !== undefined) {
-    payload.customType = null;
-  }
-  await updateDoc(ref, payload);
+  if (data.type !== 'other' && data.type !== undefined) payload.customType = null;
+  await updateVendorApi(vendorId, payload);
 };
 
-/**
- * Add a contact to a vendor.
- */
 export const addVendorContact = async (vendorId, contact) => {
   if (!vendorId) throw new Error('vendorId is required');
-  const v = await getVendorById(vendorId);
+  const v = await getVendorByIdApi(vendorId);
   if (!v) throw new Error('Vendor not found');
-  const contacts = v.contacts || [];
-  contacts.push({ ...contact, id: Date.now().toString() });
-  await updateVendor(vendorId, { contacts });
+  const contacts = [...(v.contacts || []), { ...contact, id: Date.now().toString() }];
+  await updateVendorApi(vendorId, { contacts });
 };
 
-/**
- * Update a contact in a vendor.
- */
 export const updateVendorContact = async (vendorId, contactId, contact) => {
   if (!vendorId) throw new Error('vendorId is required');
-  const v = await getVendorById(vendorId);
+  const v = await getVendorByIdApi(vendorId);
   if (!v) throw new Error('Vendor not found');
   const contacts = (v.contacts || []).map((c) => (c.id === contactId ? { ...c, ...contact } : c));
-  await updateVendor(vendorId, { contacts });
+  await updateVendorApi(vendorId, { contacts });
 };
 
-/**
- * Remove a contact from a vendor.
- */
 export const removeVendorContact = async (vendorId, contactId) => {
   if (!vendorId) throw new Error('vendorId is required');
-  const v = await getVendorById(vendorId);
+  const v = await getVendorByIdApi(vendorId);
   if (!v) throw new Error('Vendor not found');
   const contacts = (v.contacts || []).filter((c) => c.id !== contactId);
-  await updateVendor(vendorId, { contacts });
+  await updateVendorApi(vendorId, { contacts });
 };
 
-/**
- * Delete a vendor.
- */
 export const deleteVendor = async (vendorId) => {
   if (!vendorId) throw new Error('vendorId is required');
-  await deleteDoc(doc(db, VENDORS_COLLECTION, vendorId));
+  await deleteVendorApi(vendorId);
 };
