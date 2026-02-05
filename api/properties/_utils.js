@@ -1,3 +1,13 @@
+/** Normalize JSON/JSONB column to array (pg can return string or object). */
+function normalizeJsonArray(val) {
+  if (Array.isArray(val)) return val;
+  if (val && typeof val === 'object') return Array.isArray(val) ? val : (Array.isArray(val) ? val : []);
+  if (typeof val === 'string') {
+    try { return JSON.parse(val); } catch (_) { return []; }
+  }
+  return [];
+}
+
 /**
  * Map Postgres property row to client shape (camelCase).
  */
@@ -15,12 +25,12 @@ function mapRowToProperty(row) {
     attomId: row.attom_id,
     propertyType: row.property_type,
     bedrooms: row.bedrooms,
-    bathrooms: row.bathrooms,
+    bathrooms: row.bathrooms != null ? Number(row.bathrooms) : null,
     squareFeet: row.square_feet,
     price: row.price != null ? Number(row.price) : null,
     funkEstimate: row.funk_estimate != null ? Number(row.funk_estimate) : null,
-    photos: Array.isArray(row.photos) ? row.photos : (row.photos && typeof row.photos === 'object' ? row.photos : []),
-    features: Array.isArray(row.features) ? row.features : (row.features && typeof row.features === 'object' ? row.features : []),
+    photos: normalizeJsonArray(row.photos),
+    features: normalizeJsonArray(row.features),
     status: row.status,
     availableForSale: row.available_for_sale === true,
     acceptingOffers: row.accepting_offers === true,
@@ -28,6 +38,22 @@ function mapRowToProperty(row) {
     archived: row.archived === true,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    // Extended fields (migration 008)
+    description: row.description ?? undefined,
+    lotSize: row.lot_size != null ? Number(row.lot_size) : null,
+    yearBuilt: row.year_built != null ? Number(row.year_built) : null,
+    hoaFee: row.hoa_fee != null ? Number(row.hoa_fee) : null,
+    propertyTax: row.property_tax != null ? Number(row.property_tax) : null,
+    imGonePrice: row.im_gone_price != null ? Number(row.im_gone_price) : null,
+    hasHOA: row.has_hoa === true,
+    deedUrl: row.deed_url ?? undefined,
+    propertyTaxRecordUrl: row.property_tax_record_url ?? undefined,
+    hoaDocsUrl: row.hoa_docs_url ?? undefined,
+    disclosureFormsUrl: row.disclosure_forms_url ?? undefined,
+    inspectionReportUrl: row.inspection_report_url ?? undefined,
+    sellerName: row.seller_name ?? undefined,
+    sellerEmail: row.seller_email ?? undefined,
+    professionalPhotos: row.professional_photos === true,
   };
 }
 
@@ -44,4 +70,4 @@ function parseLimit(value, fallback = 75, max = 200) {
   return Math.min(n, max);
 }
 
-module.exports = { mapRowToProperty, parseDate, parseLimit };
+module.exports = { mapRowToProperty, parseDate, parseLimit, normalizeJsonArray };

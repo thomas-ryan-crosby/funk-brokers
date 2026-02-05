@@ -138,7 +138,7 @@ module.exports = async (req, res) => {
 
     const created = parseDate(body.createdAt) || new Date();
     const updated = parseDate(body.updatedAt) || new Date();
-    const photos = Array.isArray(body.photos) ? body.photos : [];
+    const photos = Array.isArray(body.photos) ? body.photos : (Array.isArray(body.photoUrls) ? body.photoUrls : []);
     const features = Array.isArray(body.features) ? body.features : [];
 
     try {
@@ -146,8 +146,14 @@ module.exports = async (req, res) => {
         `INSERT INTO properties (
           id, seller_id, address, city, state, zip_code, latitude, longitude, attom_id,
           property_type, bedrooms, bathrooms, square_feet, price, funk_estimate, photos, features,
-          status, available_for_sale, accepting_offers, accepting_communications, archived, created_at, updated_at
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24)
+          status, available_for_sale, accepting_offers, accepting_communications, archived, created_at, updated_at,
+          description, lot_size, year_built, hoa_fee, property_tax, im_gone_price, has_hoa,
+          deed_url, property_tax_record_url, hoa_docs_url, disclosure_forms_url, inspection_report_url,
+          seller_name, seller_email, professional_photos
+        ) VALUES (
+          $1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22, $23, $24,
+          $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39
+        )
         ON CONFLICT (id) DO NOTHING`,
         [
           id,
@@ -174,6 +180,21 @@ module.exports = async (req, res) => {
           body.archived === true,
           created,
           updated,
+          body.description ?? null,
+          body.lotSize != null ? Number(body.lotSize) : null,
+          body.yearBuilt != null ? Number(body.yearBuilt) : null,
+          body.hoaFee != null ? Number(body.hoaFee) : null,
+          body.propertyTax != null ? Number(body.propertyTax) : null,
+          body.imGonePrice != null ? Number(body.imGonePrice) : null,
+          body.hasHOA === true,
+          body.deedUrl ?? null,
+          body.propertyTaxRecordUrl ?? null,
+          body.hoaDocsUrl ?? null,
+          body.disclosureFormsUrl ?? null,
+          body.inspectionReportUrl ?? null,
+          body.sellerName ?? null,
+          body.sellerEmail ?? null,
+          body.professionalPhotos === true,
         ]
       );
       return res.status(201).json({ id });
@@ -195,7 +216,10 @@ module.exports = async (req, res) => {
     const allowed = [
       'address', 'city', 'state', 'zipCode', 'latitude', 'longitude', 'attomId', 'propertyType',
       'bedrooms', 'bathrooms', 'squareFeet', 'price', 'funkEstimate', 'photos', 'features',
-      'status', 'availableForSale', 'acceptingOffers', 'acceptingCommunications', 'archived'
+      'status', 'availableForSale', 'acceptingOffers', 'acceptingCommunications', 'archived',
+      'description', 'lotSize', 'yearBuilt', 'hoaFee', 'propertyTax', 'imGonePrice', 'hasHOA',
+      'deedUrl', 'propertyTaxRecordUrl', 'hoaDocsUrl', 'disclosureFormsUrl', 'inspectionReportUrl',
+      'sellerName', 'sellerEmail', 'professionalPhotos',
     ];
     const updates = {};
     allowed.forEach((k) => {
@@ -213,13 +237,13 @@ module.exports = async (req, res) => {
       if (col === 'photos' || col === 'features') {
         setCols.push(`${col} = $${idx}`);
         params.push(JSON.stringify(Array.isArray(v) ? v : (v && typeof v === 'object' ? v : [])));
-      } else if (col === 'available_for_sale' || col === 'accepting_offers' || col === 'accepting_communications' || col === 'archived') {
+      } else if (col === 'available_for_sale' || col === 'accepting_offers' || col === 'accepting_communications' || col === 'archived' || col === 'has_hoa' || col === 'professional_photos') {
         setCols.push(`${col} = $${idx}`);
         params.push(v === true);
-      } else if (k === 'bedrooms' || k === 'squareFeet') {
+      } else if (k === 'bedrooms' || k === 'squareFeet' || k === 'yearBuilt') {
         setCols.push(`${snake(k)} = $${idx}`);
         params.push(v == null ? null : Number(v));
-      } else if (k === 'bathrooms' || k === 'price' || k === 'funkEstimate') {
+      } else if (k === 'bathrooms' || k === 'price' || k === 'funkEstimate' || k === 'lotSize' || k === 'hoaFee' || k === 'propertyTax' || k === 'imGonePrice') {
         setCols.push(`${snake(k)} = $${idx}`);
         params.push(v == null ? null : Number(v));
       } else {
