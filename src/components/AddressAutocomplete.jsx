@@ -155,6 +155,7 @@ const AddressAutocomplete = ({
             padding: 0,
             listStyle: 'none',
             background: '#fff',
+            color: '#1a1a1a',
             border: '1px solid #ccc',
             borderRadius: 4,
             boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
@@ -168,7 +169,7 @@ const AddressAutocomplete = ({
               Suggestions unavailable. Set MAPBOX_ACCESS_TOKEN in Vercel (Settings → Environment Variables) or try again.
             </li>
           ) : loading && predictions.length === 0 ? (
-            <li style={{ padding: '8px 12px', color: '#666' }}>Loading...</li>
+            <li style={{ padding: '8px 12px', color: '#555' }}>Loading...</li>
           ) : (
             predictions.map((p, idx) => (
               <li
@@ -179,6 +180,7 @@ const AddressAutocomplete = ({
                   padding: '8px 12px',
                   cursor: 'pointer',
                   borderBottom: '1px solid #eee',
+                  color: '#1a1a1a',
                 }}
                 onMouseDown={(e) => {
                   e.preventDefault();
