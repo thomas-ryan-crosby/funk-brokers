@@ -12,6 +12,8 @@ export const USE_MAP_DEBOUNCE = asBool(import.meta.env.VITE_USE_MAP_DEBOUNCE);
 export const USE_SEARCH_INDEX = asBool(import.meta.env.VITE_USE_SEARCH_INDEX);
 export const USE_OBJECT_STORAGE_PROXY = asBool(import.meta.env.VITE_USE_OBJECT_STORAGE_PROXY);
 export const USE_SOCIAL_READS = asBool(import.meta.env.VITE_USE_SOCIAL_READS);
+/** When true, properties, users, favorites, offers, messages use Postgres API instead of Firestore. */
+export const USE_POSTGRES_FOR_ALL = asBool(import.meta.env.VITE_USE_POSTGRES_FOR_ALL);
 
 /** Emergency read-reduction flags (default ON for safety). Set false to roll back. */
 export const USE_FIRESTORE_REALTIME = asBool(import.meta.env.VITE_USE_FIRESTORE_REALTIME); // false = one-time only (no onSnapshot in codebase)
