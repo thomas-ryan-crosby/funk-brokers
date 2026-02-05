@@ -25,8 +25,8 @@
   max-width: 380px;
   border: 1px solid var(--color-border-light, rgba(148, 163, 184, 0.2));
   border-radius: 8px;
-  overflow: hidden;
   background: var(--color-bg-secondary, #0f172a);
+  position: relative;
 }
 
 .search-filters-location:focus-within {
@@ -40,6 +40,7 @@
   border: none;
   font-size: 14px;
   outline: none;
+  border-radius: 8px 0 0 8px;
 }
 
 .search-filters-location-input::placeholder {
@@ -53,6 +54,7 @@
   color: var(--color-text-secondary, #cbd5e1);
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
+  border-radius: 0 8px 8px 0;
 }
 
 .search-filters-location-btn:hover {
