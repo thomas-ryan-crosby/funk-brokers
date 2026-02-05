@@ -1,6 +1,7 @@
 // Property Service - Postgres API only (Firestore removed)
 import { getOffersByProperty } from './offerService';
 import { getListingTier } from '../utils/verificationScores';
+import { invalidatePropertyDetailCache } from '../data/firestoreLayer';
 import {
   getAllPropertiesApi,
   getPropertiesBySellerApi,
@@ -63,20 +64,25 @@ export const reconcileUnderContractStatus = async (propertyId, offers = []) => {
 
 export const updateProperty = async (propertyId, updates) => {
   await updatePropertyApi(propertyId, updates);
+  invalidatePropertyDetailCache(propertyId);
 };
 
 export const deleteProperty = async (propertyId) => {
   await deletePropertyApi(propertyId);
+  invalidatePropertyDetailCache(propertyId);
 };
 
 export const archiveProperty = async (propertyId) => {
   await updatePropertyApi(propertyId, { archived: true });
+  invalidatePropertyDetailCache(propertyId);
 };
 
 export const restoreProperty = async (propertyId) => {
   await updatePropertyApi(propertyId, { archived: false });
+  invalidatePropertyDetailCache(propertyId);
 };
 
 export const deletePropertyPermanently = async (propertyId) => {
   await deletePropertyPermanentlyApi(propertyId);
+  invalidatePropertyDetailCache(propertyId);
 };

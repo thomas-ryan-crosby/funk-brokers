@@ -6,7 +6,7 @@
 
 import { getAllProperties, searchProperties, getPropertyById } from '../services/propertyService';
 import { getMapParcels } from '../services/parcelService';
-import { get as cacheGet, set as cacheSet } from '../utils/ttlCache';
+import { get as cacheGet, set as cacheSet, remove as cacheRemove } from '../utils/ttlCache';
 import { ENABLE_CLIENT_CACHE, ENABLE_QUERY_DEDUPE } from '../config/featureFlags';
 
 const PROPERTY_DETAIL_CACHE_TTL_MS = 5 * 60 * 1000; // 5 min
@@ -46,6 +46,12 @@ export async function fetchPropertyDetail(propertyId) {
     promise.finally(() => propertyDetailInFlight.delete(propertyId));
   }
   return promise;
+}
+
+export function invalidatePropertyDetailCache(propertyId) {
+  if (!propertyId) return;
+  const cacheKey = `property_detail_${propertyId}`;
+  cacheRemove(cacheKey);
 }
 
 /**
