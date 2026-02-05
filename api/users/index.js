@@ -41,6 +41,22 @@ module.exports = async (req, res) => {
 
   if (req.method === 'GET') {
     const id = (req.query && req.query.id) ? req.query.id.trim() : null;
+    const search = (req.query && req.query.search) ? req.query.search.trim() : null;
+    if (search) {
+      if (search.length < 1) return res.status(200).json({ users: [] });
+      try {
+        const term = `%${search.replace(/%/g, '\\%').replace(/_/g, '\\_')}%`;
+        const result = await query(
+          `SELECT * FROM users WHERE LOWER(COALESCE(name,'')) LIKE LOWER($1) OR LOWER(COALESCE(public_username,'')) LIKE LOWER($1) OR LOWER(COALESCE(email,'')) LIKE LOWER($1) LIMIT 20`,
+          [term]
+        );
+        const users = result.rows.map(mapRowToUser).filter(Boolean);
+        return res.status(200).json({ users: users.slice(0, 10) });
+      } catch (err) {
+        console.warn('[api/users search]', err?.message || err);
+        return res.status(200).json({ users: [] });
+      }
+    }
     if (!id) return res.status(400).json({ error: 'Missing id' });
     try {
       const result = await query('SELECT * FROM users WHERE id = $1', [id]);

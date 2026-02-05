@@ -40,6 +40,21 @@ export async function upsertUserApi(uid, profile = {}) {
   }
 }
 
+export async function searchUsersApi(query) {
+  const q = String(query || '').trim().toLowerCase();
+  if (!q) return [];
+  try {
+    const res = await fetch(`${getBase()}?search=${encodeURIComponent(q)}`);
+    if (!res.ok) return [];
+    const data = await res.json();
+    const list = Array.isArray(data?.users) ? data.users : [];
+    return list.map((u) => ({ id: u.id, name: u.name || '', publicUsername: u.publicUsername || '', email: u.email || '' }));
+  } catch (err) {
+    console.error('searchUsersApi', err);
+    return [];
+  }
+}
+
 export async function updateUserProfileApi(uid, updates) {
   const res = await fetch(getBase(), {
     method: 'PUT',
