@@ -8,6 +8,12 @@ function normalizeJsonArray(val) {
   return [];
 }
 
+function normalizeTriBool(val) {
+  if (val === true) return true;
+  if (val === false) return false;
+  return null;
+}
+
 /**
  * Map Postgres property row to client shape (camelCase).
  */
@@ -45,7 +51,7 @@ function mapRowToProperty(row) {
     hoaFee: row.hoa_fee != null ? Number(row.hoa_fee) : null,
     propertyTax: row.property_tax != null ? Number(row.property_tax) : null,
     imGonePrice: row.im_gone_price != null ? Number(row.im_gone_price) : null,
-    hasHOA: row.has_hoa === true,
+    hasHOA: normalizeTriBool(row.has_hoa),
     deedUrl: row.deed_url ?? undefined,
     propertyTaxRecordUrl: row.property_tax_record_url ?? undefined,
     hoaDocsUrl: row.hoa_docs_url ?? undefined,
@@ -54,6 +60,31 @@ function mapRowToProperty(row) {
     sellerName: row.seller_name ?? undefined,
     sellerEmail: row.seller_email ?? undefined,
     professionalPhotos: row.professional_photos === true,
+    estimatedWorth: row.estimated_worth != null ? Number(row.estimated_worth) : null,
+    makeMeMovePrice: row.make_me_move_price != null ? Number(row.make_me_move_price) : null,
+    hasInsurance: normalizeTriBool(row.has_insurance),
+    insuranceApproximation: row.insurance_approximation != null ? Number(row.insurance_approximation) : null,
+    hasMortgage: normalizeTriBool(row.has_mortgage),
+    remainingMortgage: row.remaining_mortgage != null ? Number(row.remaining_mortgage) : null,
+    mortgageDocUrl: row.mortgage_doc_url ?? undefined,
+    payoffOrLienReleaseUrl: row.payoff_or_lien_release_url ?? undefined,
+    lienTax: normalizeTriBool(row.lien_tax),
+    lienHOA: normalizeTriBool(row.lien_hoa),
+    lienMechanic: normalizeTriBool(row.lien_mechanic),
+    lienOtherDetails: row.lien_other_details ?? undefined,
+    verifiedComps: normalizeJsonArray(row.verified_comps),
+    videoFiles: normalizeJsonArray(row.video_files),
+    floorPlanUrl: row.floor_plan_url ?? undefined,
+    valuationDocUrl: row.valuation_doc_url ?? undefined,
+    compReportUrl: row.comp_report_url ?? undefined,
+    matterportTourUrl: row.matterport_tour_url ?? undefined,
+    hasInsuranceClaims: normalizeTriBool(row.has_insurance_claims),
+    insuranceClaimsDescription: row.insurance_claims_description ?? undefined,
+    insuranceClaimsReportUrl: row.insurance_claims_report_url ?? undefined,
+    thirdPartyReviewConfirmed: normalizeTriBool(row.third_party_review_confirmed),
+    thirdPartyReviewVendorId: row.third_party_review_vendor_id ?? undefined,
+    verified: normalizeTriBool(row.verified),
+    verifiedAt: row.verified_at ?? undefined,
   };
 }
 

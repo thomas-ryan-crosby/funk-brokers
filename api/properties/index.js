@@ -220,6 +220,12 @@ module.exports = async (req, res) => {
       'description', 'lotSize', 'yearBuilt', 'hoaFee', 'propertyTax', 'imGonePrice', 'hasHOA', 'has_h_o_a',
       'deedUrl', 'propertyTaxRecordUrl', 'hoaDocsUrl', 'disclosureFormsUrl', 'inspectionReportUrl',
       'sellerName', 'sellerEmail', 'professionalPhotos',
+      'estimatedWorth', 'makeMeMovePrice', 'hasInsurance', 'insuranceApproximation',
+      'hasMortgage', 'remainingMortgage', 'mortgageDocUrl', 'payoffOrLienReleaseUrl',
+      'lienTax', 'lienHOA', 'lienMechanic', 'lienOtherDetails',
+      'verifiedComps', 'videoFiles', 'floorPlanUrl', 'valuationDocUrl', 'compReportUrl',
+      'matterportTourUrl', 'hasInsuranceClaims', 'insuranceClaimsDescription', 'insuranceClaimsReportUrl',
+      'thirdPartyReviewConfirmed', 'thirdPartyReviewVendorId', 'verified', 'verifiedAt',
     ];
     const updates = {};
     allowed.forEach((k) => {
@@ -242,16 +248,16 @@ module.exports = async (req, res) => {
     Object.entries(updates).forEach(([k, v]) => {
       idx++;
       const col = toCol(k);
-      if (col === 'photos' || col === 'features') {
+      if (col === 'photos' || col === 'features' || col === 'verified_comps' || col === 'video_files') {
         setCols.push(`${col} = $${idx}`);
         params.push(JSON.stringify(Array.isArray(v) ? v : (v && typeof v === 'object' ? v : [])));
-      } else if (col === 'available_for_sale' || col === 'accepting_offers' || col === 'accepting_communications' || col === 'archived' || col === 'has_hoa' || col === 'professional_photos') {
+      } else if (col === 'available_for_sale' || col === 'accepting_offers' || col === 'accepting_communications' || col === 'archived' || col === 'has_hoa' || col === 'professional_photos' || col === 'has_insurance' || col === 'has_mortgage' || col === 'lien_tax' || col === 'lien_hoa' || col === 'lien_mechanic' || col === 'has_insurance_claims' || col === 'third_party_review_confirmed' || col === 'verified') {
         setCols.push(`${col} = $${idx}`);
         params.push(v === true);
       } else if (k === 'bedrooms' || k === 'squareFeet' || k === 'yearBuilt') {
         setCols.push(`${snake(k)} = $${idx}`);
         params.push(v == null ? null : Number(v));
-      } else if (k === 'bathrooms' || k === 'price' || k === 'funkEstimate' || k === 'lotSize' || k === 'hoaFee' || k === 'propertyTax' || k === 'imGonePrice') {
+      } else if (k === 'bathrooms' || k === 'price' || k === 'funkEstimate' || k === 'lotSize' || k === 'hoaFee' || k === 'propertyTax' || k === 'imGonePrice' || k === 'estimatedWorth' || k === 'makeMeMovePrice' || k === 'insuranceApproximation' || k === 'remainingMortgage') {
         setCols.push(`${snake(k)} = $${idx}`);
         params.push(v == null ? null : Number(v));
       } else {
