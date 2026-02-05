@@ -2,7 +2,7 @@ import { addDoc, collection, deleteDoc, doc, getDocs, limit, orderBy, query, whe
 import { db } from '../config/firebase';
 import { USE_SOCIAL_READS } from '../config/featureFlags';
 import { createPostViaApi, syncPost as syncPostToApi, syncComment as syncCommentToApi, deletePostViaApi } from './socialApiWrite';
-import { getCommentsForPostApi } from './socialApiService';
+import { getCommentsForPostApi, getPostsForPropertyOrAddressApi } from './socialApiService';
 import metrics from '../utils/metrics';
 
 const POSTS_COLLECTION = 'posts';
