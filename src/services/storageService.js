@@ -18,6 +18,7 @@ export const uploadFile = async (file, path) => {
   const bytes = file?.size ?? 0;
   const blob = await upload(path, file, {
     handleUploadUrl: getUploadBase(),
+    access: 'public',
     contentType: file?.type || undefined,
   });
   metrics.recordStorageUpload(bytes);
