@@ -37,6 +37,12 @@ function genId() {
   return `msg_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 }
 
+function parseLimit(value, fallback = 200, max = 500) {
+  const n = Number.parseInt(value, 10);
+  if (!Number.isFinite(n) || n <= 0) return fallback;
+  return Math.min(n, max);
+}
+
 module.exports = async (req, res) => {
   cors(res);
   if (req.method === 'OPTIONS') {
@@ -47,14 +53,15 @@ module.exports = async (req, res) => {
   if (req.method === 'GET') {
     const userId = (req.query && req.query.userId) ? req.query.userId.trim() : null;
     if (!userId) return res.status(400).json({ error: 'Missing userId' });
+    const limit = parseLimit(req.query && req.query.limit, 200, 500);
     try {
       const result = await query(
         `SELECT * FROM (
            (SELECT * FROM messages WHERE recipient_id = $1)
            UNION ALL
            (SELECT * FROM messages WHERE sender_id = $1)
-         ) t ORDER BY created_at DESC LIMIT 400`,
-        [userId]
+         ) t ORDER BY created_at DESC LIMIT $2`,
+        [userId, limit]
       );
       const byId = new Map();
       result.rows.forEach((r) => {
@@ -62,7 +69,7 @@ module.exports = async (req, res) => {
       });
       const list = Array.from(byId.values());
       list.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      return res.status(200).json({ messages: list.slice(0, 400) });
+      return res.status(200).json({ messages: list.slice(0, limit) });
     } catch (err) {
       console.warn('[api/messages list]', err?.message || err);
       return res.status(200).json({ messages: [] });

@@ -244,8 +244,9 @@ const Messages = () => {
         setNotifications([]);
         return;
       }
+      const capped = properties.slice(0, 25);
       const favoritesByProperty = await Promise.all(
-        properties.map(async (property) => {
+        capped.map(async (property) => {
           const favorites = await getFavoritesForProperty(property.id);
           return favorites.map((fav) => ({
             id: `${property.id}_${fav.id}`,

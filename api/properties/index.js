@@ -43,6 +43,7 @@ module.exports = async (req, res) => {
     const limit = parseLimit(req.query && req.query.limit, 75, 200);
     const sellerId = (req.query && req.query.sellerId) ? req.query.sellerId.trim() : null;
     const includeArchived = (req.query && req.query.includeArchived) === 'true' || (req.query && req.query.includeArchived) === true;
+    const listedStatus = (req.query && req.query.listedStatus) ? req.query.listedStatus : null;
 
     try {
       let sql = 'SELECT * FROM properties';
@@ -55,22 +56,18 @@ module.exports = async (req, res) => {
         params.push(sellerId);
         conditions.push(`seller_id = $${paramIdx}`);
       }
+      if (listedStatus === 'listed') {
+        conditions.push(`available_for_sale = true AND status IN ('active', 'under_contract')`);
+      } else if (listedStatus === 'not_listed') {
+        conditions.push(`(available_for_sale = false OR status = 'not_listed' OR status NOT IN ('active', 'under_contract'))`);
+      }
       if (conditions.length) sql += ' WHERE ' + conditions.join(' AND ');
       paramIdx++;
       params.push(limit);
       sql += ` ORDER BY created_at DESC LIMIT $${paramIdx}`;
       const result = await query(sql, params);
       const list = result.rows.map(mapRowToProperty).filter(Boolean);
-
-      const listedStatus = (req.query && req.query.listedStatus) ? req.query.listedStatus : null;
-      let filtered = list;
-      if (listedStatus === 'listed') {
-        filtered = list.filter((p) => p.availableForSale !== false && (p.status === 'active' || p.status === 'under_contract'));
-      } else if (listedStatus === 'not_listed') {
-        filtered = list.filter((p) => p.availableForSale === false || p.status === 'not_listed' || (p.status !== 'active' && p.status !== 'under_contract'));
-      }
-
-      return res.status(200).json({ properties: filtered });
+      return res.status(200).json({ properties: list });
     } catch (err) {
       console.warn('[api/properties list]', err?.message || err);
       return res.status(200).json({ properties: [] });

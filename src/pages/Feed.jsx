@@ -132,6 +132,7 @@ const Feed = () => {
   const [likedPostIds, setLikedPostIds] = useState([]);
   const [likeCountByPost, setLikeCountByPost] = useState({});
   const [likeLoading, setLikeLoading] = useState({});
+  const allPropertiesLoadRef = useRef(null);
 
   const textBeforeCursor = postBody.slice(0, composerCursorPosition);
   const lastAt = textBeforeCursor.lastIndexOf('@');
@@ -317,18 +318,28 @@ const Feed = () => {
     await loadFeedData();
   }, [loadFeedData]);
 
+  const loadAllPropertiesCache = useCallback(async () => {
+    if (allPropertiesCache?.length) return allPropertiesCache;
+    if (allPropertiesLoadRef.current) return allPropertiesLoadRef.current;
+    const promise = fetchPropertiesForBrowse({})
+      .then((list) => {
+        setAllPropertiesCache(list);
+        return list;
+      })
+      .catch(() => {
+        return myProperties;
+      })
+      .finally(() => {
+        allPropertiesLoadRef.current = null;
+      });
+    allPropertiesLoadRef.current = promise;
+    return promise;
+  }, [allPropertiesCache, myProperties]);
+
   const resolvePropertyMatch = async (addressText) => {
     const normalized = normalizeAddress(addressText);
     if (!normalized) return null;
-    let propertiesToMatch = allPropertiesCache;
-    if (!propertiesToMatch?.length) {
-      try {
-        propertiesToMatch = await fetchPropertiesForBrowse({});
-        setAllPropertiesCache(propertiesToMatch);
-      } catch (_) {
-        propertiesToMatch = myProperties;
-      }
-    }
+    const propertiesToMatch = await loadAllPropertiesCache();
     return propertiesToMatch.find((p) => {
       const prop = normalizeAddress(formatAddress(p));
       return prop === normalized || prop.includes(normalized) || normalized.includes(prop);
@@ -362,15 +373,7 @@ const Feed = () => {
       setPostPropertyId('');
       return;
     }
-    let propertiesToMatch = allPropertiesCache;
-    if (!propertiesToMatch?.length) {
-      try {
-        propertiesToMatch = await fetchPropertiesForBrowse({});
-        setAllPropertiesCache(propertiesToMatch);
-      } catch (_) {
-        propertiesToMatch = myProperties;
-      }
-    }
+    const propertiesToMatch = await loadAllPropertiesCache();
     const match = propertiesToMatch.find((p) => {
       const prop = normalizeAddress(formatAddress(p));
       return prop === normalized || prop.includes(normalized) || normalized.includes(prop);
