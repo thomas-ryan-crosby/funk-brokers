@@ -1,23 +1,11 @@
 // Storage Service - Upload API (Vercel Blob); no Firebase
+import { upload } from '@vercel/blob/client';
 import metrics from '../utils/metrics';
 
 function getUploadBase() {
   if (typeof window === 'undefined') return '';
   const base = (import.meta.env.VITE_API_BASE || window.location.origin).replace(/\/$/, '');
   return `${base}/api/upload`;
-}
-
-function fileToBase64(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const dataUrl = reader.result;
-      const base64 = dataUrl.indexOf(',') >= 0 ? dataUrl.split(',')[1] : dataUrl;
-      resolve(base64);
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(file);
-  });
 }
 
 /**
@@ -28,23 +16,12 @@ function fileToBase64(file) {
  */
 export const uploadFile = async (file, path) => {
   const bytes = file?.size ?? 0;
-  const base64 = await fileToBase64(file);
-  const res = await fetch(getUploadBase(), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      path,
-      content: base64,
-      contentType: file?.type || undefined,
-    }),
+  const blob = await upload(path, file, {
+    handleUploadUrl: getUploadBase(),
+    contentType: file?.type || undefined,
   });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || `Upload failed: ${res.status}`);
-  }
-  const data = await res.json();
   metrics.recordStorageUpload(bytes);
-  return data.url;
+  return blob.url;
 };
 
 /**

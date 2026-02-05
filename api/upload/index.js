@@ -1,6 +1,6 @@
 /**
- * POST /api/upload — upload file (body: { path, content: base64, contentType? })
- * Uses Vercel Blob if BLOB_READ_WRITE_TOKEN is set; otherwise returns 503.
+ * POST /api/upload — Vercel Blob client uploads (token + completion callbacks).
+ * Uses BLOB_READ_WRITE_TOKEN to mint short-lived client tokens.
  */
 
 function cors(res) {
@@ -31,20 +31,22 @@ module.exports = async (req, res) => {
   } catch (_) {
     return res.status(400).json({ error: 'Invalid JSON' });
   }
-  const path = (body.path || '').trim();
-  const content = body.content; // base64 string
-  if (!path || content == null) {
-    return res.status(400).json({ error: 'Missing path or content' });
-  }
-
   try {
-    const { put } = require('@vercel/blob');
-    const buffer = Buffer.from(content, 'base64');
-    const blob = await put(path, buffer, {
-      access: 'public',
-      contentType: body.contentType || undefined,
+    const { handleUpload } = require('@vercel/blob/client');
+    const json = await handleUpload({
+      token: process.env.BLOB_READ_WRITE_TOKEN,
+      request: req,
+      body,
+      onBeforeGenerateToken: async (pathname) => {
+        return {
+          pathname,
+          access: 'public',
+          allowedContentTypes: ['image/*', 'video/*', 'application/pdf'],
+        };
+      },
+      onUploadCompleted: async () => {},
     });
-    return res.status(200).json({ url: blob.url });
+    return res.status(200).json(json);
   } catch (err) {
     if (err.message && err.message.includes('BLOB_READ_WRITE_TOKEN')) {
       return res.status(503).json({ error: 'Upload not configured. Set BLOB_READ_WRITE_TOKEN.' });
