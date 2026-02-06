@@ -103,6 +103,53 @@
   margin: 0 0 16px 0;
 }
 
+/* Feed profile header */
+.feed-profile-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.feed-profile-avatar {
+  width: 64px;
+  height: 64px;
+  min-width: 64px;
+  border-radius: 999px;
+  background: var(--color-bg-elevated, #10182f);
+  border: 2px solid var(--color-border-light, rgba(148, 163, 184, 0.25));
+  color: var(--color-text-primary, #f8fafc);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 24px;
+}
+
+.feed-profile-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.feed-profile-info h1 {
+  margin: 0 0 4px 0;
+}
+
+.feed-profile-stats {
+  display: flex;
+  gap: 16px;
+}
+
+.feed-profile-stat {
+  font-size: 14px;
+  color: var(--color-text-muted, #94a3b8);
+}
+
+.feed-profile-stat strong {
+  color: var(--color-text-primary, #f8fafc);
+  margin-right: 3px;
+}
+
 .feed-header-actions {
   display: flex;
   justify-content: flex-end;

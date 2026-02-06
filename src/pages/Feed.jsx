@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { searchUsers } from '../services/authService';
 import { getPropertiesBySeller } from '../services/propertyService';
 import { getPostsByAuthor, addComment, createPost, deletePost, getCommentsForPost, setPostCommentCount } from '../services/postService';
-import { getFollowing, followUser, unfollowUser } from '../services/followService';
+import { getFollowing, getFollowers, followUser, unfollowUser } from '../services/followService';
 import { getLikedPostIds, likePost, unlikePost } from '../services/likeService';
 import { fetchPropertiesForBrowse } from '../data/firestoreLayer';
 import { uploadFile } from '../services/storageService';
@@ -102,6 +102,7 @@ const Feed = () => {
   const [followingPosts, setFollowingPosts] = useState([]);
   const [myPosts, setMyPosts] = useState([]);
   const [followingIds, setFollowingIds] = useState([]);
+  const [followerIds, setFollowerIds] = useState([]);
 
   const [showPostModal, setShowPostModal] = useState(false);
   const [postBody, setPostBody] = useState('');
@@ -282,13 +283,15 @@ const Feed = () => {
     try {
       setLoading(true);
       setError(null);
-      const [properties, ids, likedIds] = await Promise.all([
+      const [properties, ids, followers, likedIds] = await Promise.all([
         getPropertiesBySeller(user.uid),
         getFollowing(user.uid),
+        getFollowers(user.uid),
         getLikedPostIds(user.uid),
       ]);
       setMyProperties(properties);
       setFollowingIds(ids);
+      setFollowerIds(followers);
       setLikedPostIds(likedIds);
 
       const [forYou, following, profile] = await Promise.all([
@@ -647,7 +650,18 @@ const Feed = () => {
           )}
           {feedView === FEED_VIEW_PROFILE && (
             <header className="feed-header">
-              <h1>Profile</h1>
+              <div className="feed-profile-header">
+                <div className="feed-profile-avatar" aria-hidden>
+                  {(userProfile?.name || user?.displayName || 'U').charAt(0).toUpperCase()}
+                </div>
+                <div className="feed-profile-info">
+                  <h1>{userProfile?.publicUsername || userProfile?.name || user?.displayName || 'User'}</h1>
+                  <div className="feed-profile-stats">
+                    <span className="feed-profile-stat"><strong>{followerIds.length}</strong> followers</span>
+                    <span className="feed-profile-stat"><strong>{followingIds.length}</strong> following</span>
+                  </div>
+                </div>
+              </div>
               <p className="feed-subtitle">Posts you have posted.</p>
               <div className="feed-header-actions">
                 <button type="button" className="btn btn-primary" onClick={openPostModal}>

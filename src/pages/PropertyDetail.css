@@ -15,7 +15,7 @@
 
 .property-posts {
   padding: 32px;
-  border-top: 1px solid #e0e0e0;
+  border-top: 1px solid var(--color-border-light, rgba(148, 163, 184, 0.2));
 }
 
 .property-posts-header {
@@ -25,17 +25,17 @@
 .property-posts-header h2 {
   margin: 0 0 6px 0;
   font-size: 22px;
-  color: var(--color-text-primary);
+  color: var(--color-text-primary, #f8fafc);
 }
 
 .property-posts-header p {
   margin: 0;
-  color: var(--color-text-secondary);
+  color: var(--color-text-secondary, #cbd5e1);
   font-size: 14px;
 }
 
 .property-posts-empty {
-  color: var(--color-text-secondary);
+  color: var(--color-text-secondary, #cbd5e1);
   margin: 0;
 }
 
@@ -46,8 +46,8 @@
 }
 
 .property-post {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--color-bg-secondary, #0f172a);
+  border: 1px solid var(--color-border-light, rgba(148, 163, 184, 0.2));
   border-radius: 12px;
   padding: 16px;
 }
@@ -56,17 +56,17 @@
   display: flex;
   justify-content: space-between;
   font-size: 13px;
-  color: #64748b;
+  color: var(--color-text-muted, #94a3b8);
   margin-bottom: 8px;
 }
 
 .property-post-author {
   font-weight: 600;
-  color: var(--color-text-primary);
+  color: var(--color-text-primary, #f8fafc);
 }
 
 .property-post-body {
-  color: var(--color-text-secondary);
+  color: var(--color-text-secondary, #cbd5e1);
   font-size: 14px;
   line-height: 1.6;
 }
@@ -79,8 +79,8 @@
 }
 
 .property-post-tag {
-  background: #eef2ff;
-  color: #4f46e5;
+  background: rgba(124, 58, 237, 0.15);
+  color: var(--color-blue-medium, #a78bfa);
   border-radius: 999px;
   padding: 2px 8px;
   font-size: 12px;
@@ -92,7 +92,7 @@
 
 .property-post-link a {
   font-size: 13px;
-  color: #3b82f6;
+  color: var(--color-blue-medium, #a78bfa);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
@@ -116,12 +116,12 @@
 }
 
 .property-post-poll-option {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
+  background: var(--color-bg-elevated, #10182f);
+  border: 1px solid var(--color-border-light, rgba(148, 163, 184, 0.2));
   border-radius: 8px;
   padding: 8px 10px;
   font-size: 14px;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary, #cbd5e1);
 }
 
 .property-detail-header {

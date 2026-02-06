@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { updateUserProfile, updateUserPassword, logout } from '../services/authService';
-import { getFollowing, getFollowers } from '../services/followService';
+
 import { getPurchaseProfile, setPurchaseProfile, updatePurchaseProfile } from '../services/profileService';
 import { uploadFile } from '../services/storageService';
 import { meetsVerifiedBuyerCriteria } from '../utils/verificationScores';
@@ -43,20 +43,10 @@ const Profile = () => {
   const [editingBuyingPower, setEditingBuyingPower] = useState(false);
   const [buyingPowerForm, setBuyingPowerForm] = useState('');
   const [uploadingDoc, setUploadingDoc] = useState(null);
-  const [followerCount, setFollowerCount] = useState(0);
-  const [followingCount, setFollowingCount] = useState(0);
 
   useEffect(() => {
     if (!user?.uid) return;
     getPurchaseProfile(user.uid).then(setPurchaseProfileState);
-  }, [user?.uid]);
-
-  useEffect(() => {
-    if (!user?.uid) return;
-    Promise.all([getFollowers(user.uid), getFollowing(user.uid)]).then(([followers, following]) => {
-      setFollowerCount(followers.length);
-      setFollowingCount(following.length);
-    });
   }, [user?.uid]);
 
   useEffect(() => {
@@ -586,10 +576,6 @@ const Profile = () => {
         <div className="profile-header">
           <h1>Profile</h1>
           <p>Manage how you appear to others and keep your account secure.</p>
-          <div className="profile-stats">
-            <span className="profile-stat"><strong>{followerCount}</strong> followers</span>
-            <span className="profile-stat"><strong>{followingCount}</strong> following</span>
-          </div>
           <div className="profile-header-actions">
             {!isEditingProfile && (
               <button type="button" className="btn btn-outline" onClick={() => setIsEditingProfile(true)}>
