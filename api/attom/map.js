@@ -1,5 +1,6 @@
 /**
  * GET /api/attom/map?n=&s=&e=&w=&zoom=
+ * CompsMap only — browse map now uses /api/addresses/map (OpenAddresses).
  * Same contract as Firebase getMapParcels. Cache in Redis (attom:map:{tileKey}).
  */
 

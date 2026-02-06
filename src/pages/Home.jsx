@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { resolveAddressToParcel } from '../services/parcelService';
+import { lookupParcelByLocation } from '../services/parcelService';
 import { geocode as mapboxGeocode } from '../services/mapboxGeocodeService';
 import { fetchPropertiesForBrowse } from '../data/firestoreLayer';
 import { claimProperty, getAllProperties, searchProperties } from '../services/propertyService';
@@ -111,16 +111,9 @@ const Home = () => {
         setUnlistedParcel(fallbackUnlistedParcel(query));
         return;
       }
-      const delta = 0.003;
-      const bounds = {
-        getNorthEast: () => ({ lat: () => lat + delta, lng: () => lng + delta }),
-        getSouthWest: () => ({ lat: () => lat - delta, lng: () => lng - delta }),
-      };
-      const { parcel } = await resolveAddressToParcel({ address: query, bounds });
+      const { parcel } = await lookupParcelByLocation({ latitude: lat, longitude: lng, address: query });
       if (requestId !== unlistedRequestRef.current) return;
-      const normalized = query.toLowerCase();
-      const match = parcel && (parcel.address || '').toLowerCase().includes(normalized) ? parcel : parcel;
-      setUnlistedParcel(match || fallbackUnlistedParcel(query));
+      setUnlistedParcel(parcel || fallbackUnlistedParcel(query));
     } catch (err) {
       console.error('Unlisted lookup failed:', err);
       setUnlistedParcel(fallbackUnlistedParcel(query));

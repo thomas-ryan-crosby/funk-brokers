@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { lookupParcelByLocation } from '../services/parcelService';
 import './UnlistedPropertyModal.css';
 
 const formatPrice = (n) =>
@@ -30,9 +31,38 @@ const formatLastSale = (date, price) => {
 const UnlistedPropertyModal = ({ parcel, onClose, onClaim, claiming = false }) => {
   const [confirmed, setConfirmed] = useState(false);
   const [showConfirmStep, setShowConfirmStep] = useState(false);
+  const [attomData, setAttomData] = useState(null);
+  const [attomLoading, setAttomLoading] = useState(false);
+
+  useEffect(() => {
+    if (!parcel) {
+      setAttomData(null);
+      setAttomLoading(false);
+      return;
+    }
+    // If parcel already has ATTOM details (e.g. from Home search), skip lookup
+    if (parcel.attomId || parcel.estimate != null || parcel.beds != null) {
+      setAttomData(parcel);
+      return;
+    }
+    // OpenAddresses pin — only has address + lat/lng. Fetch ATTOM on demand.
+    const { latitude, longitude, address } = parcel;
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
+    setAttomLoading(true);
+    lookupParcelByLocation({ latitude, longitude, address })
+      .then(({ parcel: attomParcel }) => {
+        setAttomData(attomParcel || null);
+      })
+      .catch(() => {
+        setAttomData(null);
+      })
+      .finally(() => setAttomLoading(false));
+  }, [parcel]);
+
   if (!parcel) return null;
 
-  const { address, estimate, lastSaleDate, lastSalePrice, beds, baths, squareFeet } = parcel;
+  const merged = { ...parcel, ...attomData };
+  const { address, estimate, lastSaleDate, lastSalePrice, beds, baths, squareFeet } = merged;
   const hasDetails = [beds, baths, squareFeet].some((v) => v != null && v !== '');
 
   const handleClaimClick = () => {
@@ -42,7 +72,7 @@ const UnlistedPropertyModal = ({ parcel, onClose, onClaim, claiming = false }) =
 
   const handleConfirmOwnership = () => {
     if (claiming) return;
-    if (typeof onClaim === 'function') onClaim(parcel);
+    if (typeof onClaim === 'function') onClaim(merged);
     onClose();
   };
 
@@ -88,19 +118,25 @@ const UnlistedPropertyModal = ({ parcel, onClose, onClaim, claiming = false }) =
           <p className="unlisted-property-address">{address || 'Address unknown'}</p>
           <span className="unlisted-property-badge">Unlisted</span>
 
-          <dl className="unlisted-property-dl">
-            <dt>Funk Estimate</dt>
-            <dd>{formatPrice(estimate)}</dd>
-            <dt>Last sale</dt>
-            <dd>{formatLastSale(lastSaleDate, lastSalePrice)}</dd>
-          </dl>
+          {attomLoading ? (
+            <p className="unlisted-property-loading">Loading property details…</p>
+          ) : (
+            <>
+              <dl className="unlisted-property-dl">
+                <dt>Funk Estimate</dt>
+                <dd>{formatPrice(estimate)}</dd>
+                <dt>Last sale</dt>
+                <dd>{formatLastSale(lastSaleDate, lastSalePrice)}</dd>
+              </dl>
 
-          {hasDetails && (
-            <dl className="unlisted-property-dl unlisted-property-dl--details">
-              {beds != null && beds !== '' && <><dt>Beds</dt><dd>{beds}</dd></>}
-              {baths != null && baths !== '' && <><dt>Baths</dt><dd>{baths}</dd></>}
-              {squareFeet != null && squareFeet !== '' && <><dt>Sq ft</dt><dd>{Number(squareFeet).toLocaleString()}</dd></>}
-            </dl>
+              {hasDetails && (
+                <dl className="unlisted-property-dl unlisted-property-dl--details">
+                  {beds != null && beds !== '' && <><dt>Beds</dt><dd>{beds}</dd></>}
+                  {baths != null && baths !== '' && <><dt>Baths</dt><dd>{baths}</dd></>}
+                  {squareFeet != null && squareFeet !== '' && <><dt>Sq ft</dt><dd>{Number(squareFeet).toLocaleString()}</dd></>}
+                </dl>
+              )}
+            </>
           )}
 
           <label className="unlisted-property-confirm">

@@ -5,7 +5,7 @@
  */
 
 import { getAllProperties, searchProperties, getPropertyById } from '../services/propertyService';
-import { getMapParcels } from '../services/parcelService';
+import { getMapAddresses } from '../services/parcelService';
 import { get as cacheGet, set as cacheSet, remove as cacheRemove } from '../utils/ttlCache';
 import { ENABLE_CLIENT_CACHE, ENABLE_QUERY_DEDUPE } from '../config/featureFlags';
 
@@ -58,5 +58,5 @@ export function invalidatePropertyDetailCache(propertyId) {
  * Map pins (unlisted parcels). Delegates to parcelService (already has cache, dedupe, kill switch).
  */
 export async function fetchMapPins({ bounds, zoom }) {
-  return getMapParcels({ bounds, zoom });
+  return getMapAddresses({ bounds, zoom });
 }

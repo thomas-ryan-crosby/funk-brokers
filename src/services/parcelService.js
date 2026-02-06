@@ -7,19 +7,28 @@ function getAttomBase() {
   return (import.meta.env.VITE_API_BASE || window.location.origin).replace(/\/$/, '') + '/api/attom';
 }
 
-const TTL_MAP_MS = 5 * 60 * 1000;   // 5 min – map tiles
-const TTL_ADDR_MS = 10 * 60 * 1000; // 10 min – address resolution
+/** Use Vercel API for OpenAddresses. */
+function getAddressesBase() {
+  if (typeof window === 'undefined') return null;
+  return (import.meta.env.VITE_API_BASE || window.location.origin).replace(/\/$/, '') + '/api/addresses';
+}
+
+const TTL_MAP_MS = 5 * 60 * 1000;   // 5 min – map tiles (CompsMap / ATTOM)
+const TTL_ADDR_MAP_MS = 10 * 60 * 1000; // 10 min – OpenAddresses map pins
+const TTL_LOOKUP_MS = 10 * 60 * 1000; // 10 min – on-demand ATTOM lookup
 const TTL_SNAPSHOT_MS = 10 * 60 * 1000; // 10 min – property snapshot
 
 /** In-flight request coalescing: same key returns same promise (Firestore/ATTOM cost control). */
 const inFlightMap = new Map();
-const inFlightAddr = new Map();
+const inFlightAddrMap = new Map();
+const inFlightLookup = new Map();
 const inFlightSnap = new Map();
 
 function round4(v) {
   return typeof v === 'number' && Number.isFinite(v) ? Math.round(v * 1e4) / 1e4 : v;
 }
 
+/** CompsMap still uses ATTOM data for beds/baths/sqft. */
 export const getMapParcels = async ({ bounds, zoom }) => {
   if (!bounds || typeof bounds.getNorthEast !== 'function') {
     return { parcels: [] };
@@ -57,46 +66,72 @@ export const getMapParcels = async ({ bounds, zoom }) => {
   return promise;
 };
 
-export const resolveAddressToParcel = async ({ address, bounds }) => {
-  if (!address || !bounds) {
-    return { attomId: null, parcel: null };
+/** Browse map — OpenAddresses pins (address only, no beds/baths/sqft). */
+export const getMapAddresses = async ({ bounds, zoom }) => {
+  if (!bounds || typeof bounds.getNorthEast !== 'function') {
+    return { addresses: [] };
   }
   const ne = bounds.getNorthEast();
   const sw = bounds.getSouthWest();
-  const boundsStr = `${round4(ne.lat())}_${round4(sw.lat())}_${round4(ne.lng())}_${round4(sw.lng())}`;
-  const cacheKey = `addr_${String(address).trim().toLowerCase()}_${boundsStr}`;
-  const cached = cacheGet(cacheKey, TTL_ADDR_MS);
+  const n = round4(ne.lat());
+  const s = round4(sw.lat());
+  const e = round4(ne.lng());
+  const w = round4(sw.lng());
+  const cacheKey = `oa_map_${n}_${s}_${e}_${w}_${zoom}`;
+  const cached = cacheGet(cacheKey, TTL_ADDR_MAP_MS);
   if (cached != null) return cached;
-  let promise = inFlightAddr.get(cacheKey);
+  let promise = inFlightAddrMap.get(cacheKey);
+  if (promise) return promise;
+  promise = (async () => {
+    const params = new URLSearchParams({ n, s, e, w, zoom });
+    const base = getAddressesBase();
+    const url = base ? `${base}/map?${params}` : null;
+    if (!url) throw new Error('Configure VITE_API_BASE for address map');
+    const res = await fetch(url);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: res.statusText }));
+      throw new Error(err.error || `getMapAddresses: ${res.status}`);
+    }
+    const data = await res.json();
+    cacheSet(cacheKey, data, TTL_ADDR_MAP_MS);
+    return data;
+  })();
+  inFlightAddrMap.set(cacheKey, promise);
+  promise.finally(() => inFlightAddrMap.delete(cacheKey));
+  return promise;
+};
+
+/** On-demand ATTOM lookup by lat/lng — called when user clicks a specific address pin. */
+export const lookupParcelByLocation = async ({ latitude, longitude, address }) => {
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    return { attomId: null, parcel: null };
+  }
+  const rLat = round4(latitude);
+  const rLng = round4(longitude);
+  const cacheKey = `lookup_${rLat}_${rLng}`;
+  const cached = cacheGet(cacheKey, TTL_LOOKUP_MS);
+  if (cached != null) return cached;
+  let promise = inFlightLookup.get(cacheKey);
   if (promise) return promise;
   promise = (async () => {
     const startMs = Date.now();
-    const body = {
-      address,
-      n: ne.lat(),
-      s: sw.lat(),
-      e: ne.lng(),
-      w: sw.lng(),
-    };
+    const params = new URLSearchParams({ lat: latitude, lng: longitude });
+    if (address) params.set('address', address);
     const base = getAttomBase();
-    const url = base ? `${base}/address` : null;
-    if (!url) throw new Error('Configure VITE_API_BASE for address resolution');
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    });
+    const url = base ? `${base}/lookup?${params}` : null;
+    if (!url) throw new Error('Configure VITE_API_BASE for parcel lookup');
+    const res = await fetch(url);
     if (!res.ok) {
       const err = await res.json().catch(() => ({ error: res.statusText }));
-      throw new Error(err.error || `resolveAddress: ${res.status}`);
+      throw new Error(err.error || `lookupParcelByLocation: ${res.status}`);
     }
     const data = await res.json();
-    cacheSet(cacheKey, data, TTL_ADDR_MS);
-    metrics.recordAttomCall('resolveAddress', Date.now() - startMs);
+    cacheSet(cacheKey, data, TTL_LOOKUP_MS);
+    metrics.recordAttomCall('lookupParcel', Date.now() - startMs);
     return data;
   })();
-  inFlightAddr.set(cacheKey, promise);
-  promise.finally(() => inFlightAddr.delete(cacheKey));
+  inFlightLookup.set(cacheKey, promise);
+  promise.finally(() => inFlightLookup.delete(cacheKey));
   return promise;
 };
 

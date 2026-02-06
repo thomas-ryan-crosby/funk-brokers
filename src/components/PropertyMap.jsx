@@ -5,7 +5,7 @@ import 'mapbox-gl/dist/mapbox-gl.css';
 import { useAuth } from '../contexts/AuthContext';
 import { USE_MAP_DEBOUNCE, ENABLE_MAP_QUERY_DEBOUNCE } from '../config/featureFlags';
 import { MAPBOX_ACCESS_TOKEN } from '../utils/mapbox';
-import { getMapParcels } from '../services/parcelService';
+import { getMapAddresses } from '../services/parcelService';
 import { claimProperty } from '../services/propertyService';
 import UnlistedPropertyModal from './UnlistedPropertyModal';
 import './PropertyMap.css';
@@ -16,9 +16,6 @@ const DEFAULT_CENTER = [-98.5, 39.5];
 const DEFAULT_ZOOM = 4;
 const DEDUP_DEG = 0.0001;
 
-const formatNumber = (value) =>
-  value != null && Number.isFinite(value) ? new Intl.NumberFormat('en-US').format(value) : '—';
-
 const formatPrice = (value) =>
   value != null && Number.isFinite(value)
     ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value)
@@ -28,9 +25,6 @@ const unlistedTooltipContent = (p) => `
   <div class="property-map-unlisted-tooltip">
     <div class="property-map-unlisted-tooltip__address">${(p.address || 'Address unknown').replace(/</g, '&lt;')}</div>
     <div class="property-map-unlisted-tooltip__badge">Unlisted</div>
-    <div class="property-map-unlisted-tooltip__row">
-      ${formatNumber(p.beds)} bd · ${formatNumber(p.baths)} ba · ${formatNumber(p.squareFeet)} sqft
-    </div>
   </div>
 `;
 
@@ -210,10 +204,10 @@ const PropertyMap = ({ properties = [], onPropertiesInView }) => {
         lastFetchAtRef.current = Date.now();
         const requestId = lastRequestRef.current + 1;
         lastRequestRef.current = requestId;
-        getMapParcels({ bounds: boundsAdapter(b), zoom })
-          .then(({ parcels }) => {
+        getMapAddresses({ bounds: boundsAdapter(b), zoom })
+          .then(({ addresses }) => {
             if (requestId !== lastRequestRef.current) return;
-            setUnlistedParcels(parcels || []);
+            setUnlistedParcels(addresses || []);
           })
           .catch(() => {
             if (requestId !== lastRequestRef.current) return;
