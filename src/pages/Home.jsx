@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { lookupParcelByLocation } from '../services/parcelService';
 import { geocode as mapboxGeocode } from '../services/mapboxGeocodeService';
 import { fetchPropertiesForBrowse } from '../data/firestoreLayer';
 import { claimProperty, getAllProperties, searchProperties } from '../services/propertyService';
@@ -10,6 +9,7 @@ import PropertyCard from '../components/PropertyCard';
 import PropertyMap from '../components/PropertyMap';
 import SearchFilters from '../components/SearchFilters';
 import UnlistedPropertyModal from '../components/UnlistedPropertyModal';
+import betaMarkets from '../data/betaMarkets.json';
 import './Home.css';
 
 const Home = () => {
@@ -83,16 +83,6 @@ const Home = () => {
     squareFeet: null,
   });
 
-  const formatUnknown = (value) => (value == null || value === '' ? '?' : value);
-
-  const formatLastSale = (date, price) => {
-    const d = date ? String(date).slice(0, 10) : '';
-    const p = price != null && Number.isFinite(price) ? `$${Number(price).toLocaleString()}` : '';
-    if (!d && !p) return '?';
-    if (d && p) return `${d} · ${p}`;
-    return d || p || '?';
-  };
-
   const loadUnlistedForQuery = async (query) => {
     if (!/\d/.test(query)) {
       setUnlistedParcel(null);
@@ -111,11 +101,14 @@ const Home = () => {
         setUnlistedParcel(fallbackUnlistedParcel(query));
         return;
       }
-      const { parcel } = await lookupParcelByLocation({ latitude: lat, longitude: lng, address: query });
-      if (requestId !== unlistedRequestRef.current) return;
-      setUnlistedParcel(parcel || fallbackUnlistedParcel(query));
+      // Address-only parcel — ATTOM lookup deferred until user claims
+      setUnlistedParcel({
+        address: result?.address || query,
+        latitude: lat,
+        longitude: lng,
+      });
     } catch (err) {
-      console.error('Unlisted lookup failed:', err);
+      console.error('Unlisted geocode failed:', err);
       setUnlistedParcel(fallbackUnlistedParcel(query));
     } finally {
       if (requestId === unlistedRequestRef.current) setUnlistedLoading(false);
@@ -172,6 +165,12 @@ const Home = () => {
 
           {!loading && !error && (
             <>
+              <div className="home-beta-banner">
+                <span className="home-beta-banner__tag">Beta</span>
+                <span className="home-beta-banner__text">
+                  Currently available in {betaMarkets.features.map((f) => f.properties.name).join(' & ')}
+                </span>
+              </div>
               <div className="home-view-bar">
                 <h2 className="home-view-count">
                   {viewMode === 'map' ? `${propertiesInMapView.length} in view` : `${properties.length} Properties Found`}
@@ -233,18 +232,8 @@ const Home = () => {
                           Claim property
                         </button>
                       </div>
-                      <div className="unlisted-search-card__details">
-                        <div>
-                          <span>Funk Estimate</span>
-                          <strong>{formatUnknown(unlistedParcel.estimate != null && Number.isFinite(unlistedParcel.estimate) ? `$${Number(unlistedParcel.estimate).toLocaleString()}` : null)}</strong>
-                        </div>
-                        <div>
-                          <span>Last sale</span>
-                          <strong>{formatLastSale(unlistedParcel.lastSaleDate, unlistedParcel.lastSalePrice)}</strong>
-                        </div>
-                      </div>
                       <p className="unlisted-search-card__note">
-                        This address isn’t on OpenTo yet. Claiming lets you add it and manage the listing.
+                        This address isn't on OpenTo yet. Claiming lets you add it and manage the listing.
                       </p>
                     </div>
                   )}

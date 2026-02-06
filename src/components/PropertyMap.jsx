@@ -7,6 +7,7 @@ import { USE_MAP_DEBOUNCE, ENABLE_MAP_QUERY_DEBOUNCE } from '../config/featureFl
 import { MAPBOX_ACCESS_TOKEN } from '../utils/mapbox';
 import { getMapAddresses } from '../services/parcelService';
 import { claimProperty } from '../services/propertyService';
+import betaMarkets from '../data/betaMarkets.json';
 import UnlistedPropertyModal from './UnlistedPropertyModal';
 import './PropertyMap.css';
 
@@ -91,6 +92,25 @@ const PropertyMap = ({ properties = [], onPropertiesInView }) => {
         style: 'mapbox://styles/mapbox/streets-v12',
         center: DEFAULT_CENTER,
         zoom: DEFAULT_ZOOM,
+      });
+
+      mapInstanceRef.current.on('load', () => {
+        const m = mapInstanceRef.current;
+        if (!m.getSource('beta-markets')) {
+          m.addSource('beta-markets', { type: 'geojson', data: betaMarkets });
+          m.addLayer({
+            id: 'beta-markets-fill',
+            type: 'fill',
+            source: 'beta-markets',
+            paint: { 'fill-color': '#3b82f6', 'fill-opacity': 0.08 },
+          });
+          m.addLayer({
+            id: 'beta-markets-line',
+            type: 'line',
+            source: 'beta-markets',
+            paint: { 'line-color': '#3b82f6', 'line-width': 1.5, 'line-opacity': 0.4 },
+          });
+        }
       });
     }
 

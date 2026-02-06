@@ -17,6 +17,36 @@
   min-height: 400px;
 }
 
+.home-beta-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  margin-bottom: 16px;
+  border-radius: 8px;
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.home-beta-banner__tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.15);
+  padding: 2px 8px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+
+.home-beta-banner__text {
+  font-size: 14px;
+  color: var(--color-text-secondary, #cbd5e1);
+}
+
 .home-view-bar {
   display: flex;
   align-items: center;
