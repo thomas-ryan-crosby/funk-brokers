@@ -629,7 +629,7 @@
   word-break: break-word;
   overflow: hidden;
   pointer-events: none;
-  color: transparent;
+  color: var(--color-text-primary, #f8fafc);
 }
 
 .feed-composer-textarea--highlighted {
