@@ -217,7 +217,7 @@ const Feed = () => {
     const before = postBody.slice(0, lastCaret + 1);
     const after = postBody.slice(composerCursorPosition);
     const text = (formattedAddress || '').trim();
-    const newBody = before + text + ' ' + after;
+    const newBody = before + text + '\n' + after;
     setPostBody(newBody);
     setAddressSuggestions([]);
     setAddressTagJustCompleted(true);
@@ -586,7 +586,7 @@ const Feed = () => {
       .replace(/\n$/g, '\n\n'); // trailing newline needs extra for height match
     return escaped
       .replace(/@([a-zA-Z0-9_]+)/g, '<span class="feed-composer-highlight">@$1</span>')
-      .replace(/\^([^\n@#]+?)(?=\s*[@#\n]|$)/g, '<span class="feed-composer-highlight">^$1</span>')
+      .replace(/\^([^\n]+)/g, '<span class="feed-composer-highlight">^$1</span>')
       .replace(/#([a-zA-Z0-9_]+)/g, '<span class="feed-composer-highlight-hash">#$1</span>');
   }, []);
 
