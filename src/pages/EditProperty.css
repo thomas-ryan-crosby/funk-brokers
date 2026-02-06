@@ -138,3 +138,92 @@
   background: #3b82f6;
 }
 
+/* Photo drag-to-reorder */
+.photo-previews--reorder {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.photo-preview--draggable {
+  position: relative;
+  cursor: grab;
+  transition: opacity 0.2s, box-shadow 0.2s, border-color 0.2s;
+  border: 2px solid transparent;
+  border-radius: 8px;
+}
+
+.photo-preview--draggable:active {
+  cursor: grabbing;
+}
+
+.photo-preview--dragging {
+  opacity: 0.4;
+}
+
+.photo-preview--drag-over {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
+.photo-preview__drag-handle {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 14px;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.photo-preview__cover-badge {
+  position: absolute;
+  top: 4px;
+  right: 28px;
+  background: rgba(59, 130, 246, 0.85);
+  color: #fff;
+  border-radius: 4px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  pointer-events: none;
+}
+
+.photo-preview__arrows {
+  position: absolute;
+  bottom: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 4px;
+}
+
+.photo-preview__arrow {
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.5);
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s;
+}
+
+.photo-preview__arrow:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.75);
+}
+
+.photo-preview__arrow:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+

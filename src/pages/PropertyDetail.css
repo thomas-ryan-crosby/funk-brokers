@@ -173,6 +173,7 @@
 }
 
 .property-main-photo {
+  position: relative;
   width: 100%;
   height: 500px;
   overflow: hidden;
@@ -183,6 +184,75 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* Photo navigation arrows */
+.property-photo-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.property-photo-nav:hover {
+  background: rgba(0, 0, 0, 0.7);
+  transform: translateY(-50%) scale(1.08);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.property-photo-nav:active {
+  transform: translateY(-50%) scale(0.95);
+}
+
+.property-photo-nav:focus {
+  outline: none;
+}
+
+.property-photo-nav:focus-visible {
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.6);
+}
+
+.property-photo-nav svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
+.property-photo-nav--prev {
+  left: 16px;
+}
+
+.property-photo-nav--next {
+  right: 16px;
+}
+
+/* Photo counter badge */
+.property-photo-counter {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  z-index: 2;
+  padding: 4px 12px;
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  pointer-events: none;
 }
 
 .property-photo-thumbnails {
@@ -1030,6 +1100,24 @@
 
   .property-main-photo {
     height: 300px;
+  }
+
+  .property-photo-nav {
+    width: 36px;
+    height: 36px;
+  }
+
+  .property-photo-nav svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .property-photo-nav--prev {
+    left: 10px;
+  }
+
+  .property-photo-nav--next {
+    right: 10px;
   }
 
   .property-stats {

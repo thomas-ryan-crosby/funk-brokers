@@ -43,6 +43,24 @@ const PropertyDetail = () => {
   const [snapshotLoading, setSnapshotLoading] = useState(false);
 
   const isOwner = !!(property && user && property.sellerId === user.uid);
+  const photos = property?.photos || [];
+
+  const goPrevPhoto = () => {
+    setSelectedPhotoIndex((i) => (i <= 0 ? photos.length - 1 : i - 1));
+  };
+  const goNextPhoto = () => {
+    setSelectedPhotoIndex((i) => (i >= photos.length - 1 ? 0 : i + 1));
+  };
+
+  useEffect(() => {
+    if (photos.length <= 1) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'ArrowLeft') goPrevPhoto();
+      else if (e.key === 'ArrowRight') goNextPhoto();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [photos.length]);
 
   // Listing readiness: use checklist completion when available, else property-based %
   useEffect(() => {
@@ -466,17 +484,44 @@ const PropertyDetail = () => {
           ) : null}
         </div>
 
-        {property.photos && property.photos.length > 0 && (
+        {photos.length > 0 && (
           <div className="property-photos">
             <div className="property-main-photo">
               <img
-                src={property.photos[selectedPhotoIndex]}
+                src={photos[selectedPhotoIndex]}
                 alt={property.address}
               />
+              {photos.length > 1 && (
+                <>
+                  <button
+                    type="button"
+                    className="property-photo-nav property-photo-nav--prev"
+                    onClick={goPrevPhoto}
+                    aria-label="Previous photo"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <path d="M15 18l-6-6 6-6" />
+                    </svg>
+                  </button>
+                  <button
+                    type="button"
+                    className="property-photo-nav property-photo-nav--next"
+                    onClick={goNextPhoto}
+                    aria-label="Next photo"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <path d="M9 18l6-6-6-6" />
+                    </svg>
+                  </button>
+                  <div className="property-photo-counter">
+                    {selectedPhotoIndex + 1} / {photos.length}
+                  </div>
+                </>
+              )}
             </div>
-            {property.photos.length > 1 && (
+            {photos.length > 1 && (
               <div className="property-photo-thumbnails">
-                {property.photos.map((photo, index) => (
+                {photos.map((photo, index) => (
                   <img
                     key={index}
                     src={photo}

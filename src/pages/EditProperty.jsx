@@ -30,6 +30,7 @@ const EditProperty = () => {
   const [addressInputValue, setAddressInputValue] = useState('');
   const [documentFiles, setDocumentFiles] = useState({
     deed: null, propertyTaxRecord: null, hoaDocs: null, disclosureForms: null, inspectionReport: null,
+    mortgage: null, payoff: null, floorPlan: null, valuationDoc: null, compReport: null, insuranceClaims: null,
   });
   const [existingDocUrls, setExistingDocUrls] = useState({});
   const [currentTier, setCurrentTier] = useState(null);
@@ -39,6 +40,21 @@ const EditProperty = () => {
   const [hasHOA, setHasHOA] = useState('');
   const [hasInsurance, setHasInsurance] = useState('');
   const [insuranceApproximation, setInsuranceApproximation] = useState('');
+  // New comprehensive fields
+  const [hasMortgage, setHasMortgage] = useState('');
+  const [remainingMortgage, setRemainingMortgage] = useState('');
+  const [lienTax, setLienTax] = useState(false);
+  const [lienHOA, setLienHOA] = useState(false);
+  const [lienMechanic, setLienMechanic] = useState(false);
+  const [lienOther, setLienOther] = useState('');
+  const [matterportTourUrl, setMatterportTourUrl] = useState('');
+  const [professionalPhotos, setProfessionalPhotos] = useState(false);
+  const [hasInsuranceClaims, setHasInsuranceClaims] = useState('');
+  const [insuranceClaimsDescription, setInsuranceClaimsDescription] = useState('');
+  // Drag-to-reorder photos
+  const [unifiedPhotos, setUnifiedPhotos] = useState([]); // [{type:'existing',url} | {type:'new',file,preview}]
+  const [dragIndex, setDragIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -104,14 +120,35 @@ const EditProperty = () => {
       if (p.hasInsurance === true) setHasInsurance('yes');
       else if (p.hasInsurance === false) setHasInsurance('no');
       setInsuranceApproximation(p.insuranceApproximation != null ? String(p.insuranceApproximation) : '');
+      // New comprehensive fields
+      if (p.hasMortgage === true) setHasMortgage('yes');
+      else if (p.hasMortgage === false) setHasMortgage('no');
+      setRemainingMortgage(p.remainingMortgage != null ? String(p.remainingMortgage) : '');
+      setLienTax(!!p.lienTax);
+      setLienHOA(!!p.lienHOA);
+      setLienMechanic(!!p.lienMechanic);
+      setLienOther(p.lienOther || '');
+      setMatterportTourUrl(p.matterportTourUrl || '');
+      setProfessionalPhotos(!!p.professionalPhotos);
+      if (p.hasInsuranceClaims === true) setHasInsuranceClaims('yes');
+      else if (p.hasInsuranceClaims === false) setHasInsuranceClaims('no');
+      setInsuranceClaimsDescription(p.insuranceClaimsDescription || '');
       setAddressInputValue([p.address, p.city, p.state, p.zipCode].filter(Boolean).join(', '));
-      setExistingPhotos(Array.isArray(p.photos) ? [...p.photos] : []);
+      const photoArr = Array.isArray(p.photos) ? [...p.photos] : [];
+      setExistingPhotos(photoArr);
+      setUnifiedPhotos(photoArr.map((url) => ({ type: 'existing', url })));
       setExistingDocUrls({
         deedUrl: p.deedUrl || '',
         propertyTaxRecordUrl: p.propertyTaxRecordUrl || '',
         hoaDocsUrl: p.hoaDocsUrl || '',
         disclosureFormsUrl: p.disclosureFormsUrl || '',
         inspectionReportUrl: p.inspectionReportUrl || '',
+        mortgageDocUrl: p.mortgageDocUrl || '',
+        payoffOrLienReleaseUrl: p.payoffOrLienReleaseUrl || '',
+        floorPlanUrl: p.floorPlanUrl || '',
+        valuationDocUrl: p.valuationDocUrl || '',
+        compReportUrl: p.compReportUrl || '',
+        insuranceClaimsReportUrl: p.insuranceClaimsReportUrl || '',
       });
       // Determine current tier
       const tier = getListingTier(p);
@@ -155,12 +192,48 @@ const EditProperty = () => {
 
   const handleNewPhotoFiles = (files) => {
     const list = Array.isArray(files) ? files : (files ? [files] : []);
-    setNewPhotoFiles(list);
-    setNewPhotoPreviews(list.map((f) => URL.createObjectURL(f)));
+    const newItems = list.map((f) => ({ type: 'new', file: f, preview: URL.createObjectURL(f) }));
+    setNewPhotoFiles((prev) => [...prev, ...list]);
+    setNewPhotoPreviews((prev) => [...prev, ...newItems.map((i) => i.preview)]);
+    setUnifiedPhotos((prev) => [...prev, ...newItems]);
   };
 
   const removeExistingPhoto = (index) => {
     setExistingPhotos((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const removeUnifiedPhoto = (index) => {
+    setUnifiedPhotos((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  // Drag-to-reorder handlers
+  const handleDragStart = (index) => {
+    setDragIndex(index);
+  };
+  const handleDragOver = (e, index) => {
+    e.preventDefault();
+    setDragOverIndex(index);
+  };
+  const handleDragEnd = () => {
+    if (dragIndex !== null && dragOverIndex !== null && dragIndex !== dragOverIndex) {
+      setUnifiedPhotos((prev) => {
+        const copy = [...prev];
+        const [dragged] = copy.splice(dragIndex, 1);
+        copy.splice(dragOverIndex, 0, dragged);
+        return copy;
+      });
+    }
+    setDragIndex(null);
+    setDragOverIndex(null);
+  };
+  const movePhoto = (fromIndex, direction) => {
+    const toIndex = fromIndex + direction;
+    if (toIndex < 0 || toIndex >= unifiedPhotos.length) return;
+    setUnifiedPhotos((prev) => {
+      const copy = [...prev];
+      [copy[fromIndex], copy[toIndex]] = [copy[toIndex], copy[fromIndex]];
+      return copy;
+    });
   };
 
   const handleDocumentFileChange = (field, file) => {
@@ -283,22 +356,43 @@ const EditProperty = () => {
     setSaving(true);
     setError(null);
     try {
-      console.debug('[EditProperty] Uploading photos', {
-        existingPhotos: existingPhotos.length,
-        newPhotoFiles: newPhotoFiles.length,
+      // Build photo list from unified order: upload new files, keep existing URLs in order
+      console.debug('[EditProperty] Building photos from unified list', {
+        unifiedCount: unifiedPhotos.length,
       });
+      const newFilesToUpload = unifiedPhotos.filter((p) => p.type === 'new').map((p) => p.file);
       let newUrls = [];
-      if (newPhotoFiles.length > 0) {
-        newUrls = await uploadMultipleFiles(newPhotoFiles, `properties/${id}/photos`);
+      if (newFilesToUpload.length > 0) {
+        newUrls = await uploadMultipleFiles(newFilesToUpload, `properties/${id}/photos`);
       }
-      const photos = [...existingPhotos, ...newUrls];
+      let newUrlIdx = 0;
+      const photos = unifiedPhotos.map((item) => {
+        if (item.type === 'existing') return item.url;
+        return newUrls[newUrlIdx++];
+      });
       console.debug('[EditProperty] Photos ready', { totalPhotos: photos.length });
 
-      const docUrlKeys = ['deed', 'propertyTaxRecord', 'hoaDocs', 'disclosureForms', 'inspectionReport'];
+      const docUrlKeys = [
+        'deed', 'propertyTaxRecord', 'hoaDocs', 'disclosureForms', 'inspectionReport',
+        'mortgage', 'payoff', 'floorPlan', 'valuationDoc', 'compReport', 'insuranceClaims',
+      ];
+      const docUrlFieldMap = {
+        deed: 'deedUrl',
+        propertyTaxRecord: 'propertyTaxRecordUrl',
+        hoaDocs: 'hoaDocsUrl',
+        disclosureForms: 'disclosureFormsUrl',
+        inspectionReport: 'inspectionReportUrl',
+        mortgage: 'mortgageDocUrl',
+        payoff: 'payoffOrLienReleaseUrl',
+        floorPlan: 'floorPlanUrl',
+        valuationDoc: 'valuationDocUrl',
+        compReport: 'compReportUrl',
+        insuranceClaims: 'insuranceClaimsReportUrl',
+      };
       const docUrls = {};
       for (const key of docUrlKeys) {
         const file = documentFiles[key];
-        const existingKey = `${key}Url`;
+        const existingKey = docUrlFieldMap[key];
         if (file) {
           const ext = file.name.split('.').pop() || 'pdf';
           docUrls[existingKey] = await uploadFile(file, `properties/${id}/docs/${key}_${Date.now()}.${ext}`);
@@ -334,6 +428,17 @@ const EditProperty = () => {
         ...docUrls,
         acceptingOffers: !!formData.acceptingOffers,
         acceptingCommunications: !!formData.acceptingCommunications,
+        // New comprehensive fields
+        hasMortgage: hasMortgage === 'yes',
+        remainingMortgage: hasMortgage === 'yes' && remainingMortgage ? parseFloat(remainingMortgage) : null,
+        lienTax,
+        lienHOA,
+        lienMechanic,
+        lienOther: lienOther.trim(),
+        matterportTourUrl: matterportTourUrl.trim(),
+        professionalPhotos,
+        hasInsuranceClaims: hasInsuranceClaims === 'yes',
+        insuranceClaimsDescription: hasInsuranceClaims === 'yes' ? insuranceClaimsDescription.trim() : '',
       };
       if (typeof formData.latitude === 'number' && !Number.isNaN(formData.latitude) && typeof formData.longitude === 'number' && !Number.isNaN(formData.longitude)) {
         updates.latitude = formData.latitude;
@@ -591,8 +696,8 @@ const EditProperty = () => {
             </div>
           )}
 
-          {/* Step 3: Photos (only for Basic → Complete step 3, or always if not tier advancement) */}
-          {((isBasicToComplete && step === 3) || (!isTierAdvancement)) && (
+          {/* Step 3: Photos (only for Basic → Complete step 3) */}
+          {(isBasicToComplete && step === 3) && (
             <div className="form-step">
               <h2>Property Photos</h2>
               <p className="form-note">Upload photos of your property. At least 1 photo is required.</p>
@@ -604,9 +709,6 @@ const EditProperty = () => {
                     {existingPhotos.map((url, i) => (
                       <div key={`ex-${i}`} className="photo-preview">
                         <img src={url} alt={`Photo ${i + 1}`} />
-                        {!isTierAdvancement && (
-                          <button type="button" className="photo-remove" onClick={() => removeExistingPhoto(i)} aria-label="Remove">×</button>
-                        )}
                       </div>
                     ))}
                   </div>
@@ -625,6 +727,43 @@ const EditProperty = () => {
                   </div>
                 )}
                 <p className="form-hint">Total photos: {(existingPhotos.length + newPhotoPreviews.length)}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Regular edit: Photos with drag-to-reorder */}
+          {!isTierAdvancement && (
+            <div className="form-step">
+              <h2>Photos</h2>
+              <p className="form-note">Drag to reorder. First photo is the cover image.</p>
+
+              {unifiedPhotos.length > 0 ? (
+                <div className="photo-previews photo-previews--reorder">
+                  {unifiedPhotos.map((item, i) => (
+                    <div
+                      key={item.type === 'existing' ? `ex-${item.url}` : `new-${i}`}
+                      className={`photo-preview photo-preview--draggable${dragIndex === i ? ' photo-preview--dragging' : ''}${dragOverIndex === i ? ' photo-preview--drag-over' : ''}`}
+                      draggable
+                      onDragStart={() => handleDragStart(i)}
+                      onDragOver={(e) => handleDragOver(e, i)}
+                      onDragEnd={handleDragEnd}
+                    >
+                      <img src={item.type === 'existing' ? item.url : item.preview} alt={`Photo ${i + 1}`} />
+                      <span className="photo-preview__drag-handle" title="Drag to reorder">⠿</span>
+                      {i === 0 && <span className="photo-preview__cover-badge">Cover</span>}
+                      <button type="button" className="photo-remove" onClick={() => removeUnifiedPhoto(i)} aria-label="Remove">×</button>
+                      <div className="photo-preview__arrows">
+                        <button type="button" disabled={i === 0} onClick={() => movePhoto(i, -1)} aria-label="Move left" className="photo-preview__arrow">←</button>
+                        <button type="button" disabled={i === unifiedPhotos.length - 1} onClick={() => movePhoto(i, 1)} aria-label="Move right" className="photo-preview__arrow">→</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : <p className="form-hint">No photos yet. Add photos below.</p>}
+
+              <div className="form-group">
+                <DragDropFileInput multiple accept="image/*" onChange={(files) => handleNewPhotoFiles(files || [])} placeholder="Drop photos here or click to browse" />
+                <p className="form-hint">Total photos: {unifiedPhotos.length}</p>
               </div>
             </div>
           )}
@@ -695,46 +834,168 @@ const EditProperty = () => {
           {/* Additional sections for non-tier-advancement editing */}
           {!isTierAdvancement && (
             <>
-              <div className="form-group">
-                <div className="toggle-row">
-                  <label className="toggle-row__label">Accepting offers (even when not listed)</label>
-                  <label className="toggle-switch">
-                    <input
-                      type="checkbox"
-                      checked={!!formData.acceptingOffers}
-                      onChange={(e) => setFormData((prev) => prev ? { ...prev, acceptingOffers: e.target.checked } : prev)}
-                      aria-label="Allow buyers to submit a PSA/offer even when not formally listed"
-                    />
-                    <span className="toggle-switch__track" aria-hidden />
-                  </label>
+              {/* Description & Legal */}
+              <div className="form-step">
+                <h2>Description &amp; Legal</h2>
+                <div className="form-group">
+                  <label>Property Description</label>
+                  <textarea
+                    name="description"
+                    value={formData.description || ''}
+                    onChange={handleInputChange}
+                    rows={6}
+                    placeholder="Describe your property in detail..."
+                    minLength={200}
+                  />
+                  <p className="form-hint">
+                    {(formData.description || '').length} / 200 characters minimum
+                    {(formData.description || '').length >= 200 && ' ✓'}
+                  </p>
                 </div>
-                <p className="form-hint">When on, buyers can submit an offer to this property even if it is not formally listed for sale.</p>
-              </div>
-              <div className="form-group">
-                <div className="toggle-row">
-                  <label className="toggle-row__label">Accepting communications from buyers</label>
-                  <label className="toggle-switch">
-                    <input
-                      type="checkbox"
-                      checked={!!formData.acceptingCommunications}
-                      onChange={(e) => setFormData((prev) => prev ? { ...prev, acceptingCommunications: e.target.checked } : prev)}
-                      aria-label="Accepting communications from buyers"
-                    />
-                    <span className="toggle-switch__track" aria-hidden />
-                  </label>
+                <div className="form-group">
+                  <label>Legal Description</label>
+                  <textarea
+                    name="legalDescription"
+                    value={formData.legalDescription || ''}
+                    onChange={handleInputChange}
+                    rows={4}
+                    placeholder="Enter the legal description from the deed or tax records..."
+                  />
+                  <p className="form-hint">
+                    The legal description can typically be found on the property deed or county tax records.
+                  </p>
                 </div>
-                <p className="form-hint">When off, buyers will see that you are not accepting offers or inquiries at this time.</p>
               </div>
 
-            {/* Documents section - only show for Verified tier and above */}
-            {(currentTier === 'verified' || currentTier === 'enhanced' || currentTier === 'premium' || currentTier === 'elite') && (
-              <div className="form-group" style={{ marginTop: 24 }}>
-                <label>Documents</label>
-                <p className="form-note">
-                  {currentTier === 'verified' 
-                    ? 'Upload documents to advance to Enhanced tier: deed, tax records, and HOA docs (if applicable).'
-                    : 'Upload additional documents: disclosures and inspection reports help advance to higher tiers.'}
-                </p>
+              {/* Media & Tours */}
+              <div className="form-step">
+                <h2>Media &amp; Tours</h2>
+                <div className="form-group">
+                  <label>Matterport / 3D Tour URL</label>
+                  <input
+                    type="url"
+                    value={matterportTourUrl}
+                    onChange={(e) => setMatterportTourUrl(e.target.value)}
+                    placeholder="https://my.matterport.com/show/?m=..."
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="feature-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={professionalPhotos}
+                      onChange={(e) => setProfessionalPhotos(e.target.checked)}
+                    />
+                    <span>Photos were taken by a professional photographer</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Mortgage & Liens */}
+              <div className="form-step">
+                <h2>Mortgage &amp; Liens</h2>
+                <div className="form-group">
+                  <label>Mortgage?</label>
+                  <select value={hasMortgage} onChange={(e) => setHasMortgage(e.target.value)}>
+                    <option value="">Select</option>
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                  </select>
+                </div>
+                {hasMortgage === 'yes' && (
+                  <>
+                    <div className="form-group">
+                      <label>Remaining Mortgage Balance ($)</label>
+                      <input type="number" value={remainingMortgage} onChange={(e) => setRemainingMortgage(e.target.value)} min="0" step="1000" placeholder="e.g. 250000" />
+                    </div>
+                    <div className="doc-row">
+                      <label className="doc-label">Mortgage document</label>
+                      <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => handleDocumentFileChange('mortgage', f || null)} placeholder="Drop or click" className="doc-drag-drop" />
+                      {existingDocUrls.mortgageDocUrl && <span className="doc-filename">✓ Current file attached</span>}
+                      {documentFiles.mortgage && <span className="doc-filename">✓ {documentFiles.mortgage.name} (new)</span>}
+                    </div>
+                  </>
+                )}
+                <div className="form-group" style={{ marginTop: 16 }}>
+                  <label>Liens</label>
+                  <p className="form-hint">Check any applicable liens on the property.</p>
+                  <div className="features-grid">
+                    <label className="feature-checkbox">
+                      <input type="checkbox" checked={lienTax} onChange={(e) => setLienTax(e.target.checked)} />
+                      <span>Tax lien</span>
+                    </label>
+                    <label className="feature-checkbox">
+                      <input type="checkbox" checked={lienHOA} onChange={(e) => setLienHOA(e.target.checked)} />
+                      <span>HOA lien</span>
+                    </label>
+                    <label className="feature-checkbox">
+                      <input type="checkbox" checked={lienMechanic} onChange={(e) => setLienMechanic(e.target.checked)} />
+                      <span>Mechanic's lien</span>
+                    </label>
+                  </div>
+                  <div className="form-group" style={{ marginTop: 8 }}>
+                    <label>Other liens</label>
+                    <input type="text" value={lienOther} onChange={(e) => setLienOther(e.target.value)} placeholder="Describe any other liens..." />
+                  </div>
+                </div>
+                <div className="doc-row">
+                  <label className="doc-label">Payoff / Lien release document</label>
+                  <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => handleDocumentFileChange('payoff', f || null)} placeholder="Drop or click" className="doc-drag-drop" />
+                  {existingDocUrls.payoffOrLienReleaseUrl && <span className="doc-filename">✓ Current file attached</span>}
+                  {documentFiles.payoff && <span className="doc-filename">✓ {documentFiles.payoff.name} (new)</span>}
+                </div>
+              </div>
+
+              {/* Insurance (expanded) */}
+              <div className="form-step">
+                <h2>Insurance</h2>
+                <div className="form-group">
+                  <label>Insurance?</label>
+                  <select value={hasInsurance} onChange={(e) => setHasInsurance(e.target.value)}>
+                    <option value="">Select</option>
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                  </select>
+                </div>
+                {hasInsurance === 'yes' && (
+                  <div className="form-group">
+                    <label>Approximate Insurance Amount ($/year)</label>
+                    <input type="number" value={insuranceApproximation} onChange={(e) => setInsuranceApproximation(e.target.value)} min="0" step="100" placeholder="e.g. 1800" />
+                  </div>
+                )}
+                <div className="form-group" style={{ marginTop: 16 }}>
+                  <label>Insurance claims?</label>
+                  <select value={hasInsuranceClaims} onChange={(e) => setHasInsuranceClaims(e.target.value)}>
+                    <option value="">Select</option>
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                  </select>
+                </div>
+                {hasInsuranceClaims === 'yes' && (
+                  <>
+                    <div className="form-group">
+                      <label>Insurance Claims Description</label>
+                      <textarea
+                        value={insuranceClaimsDescription}
+                        onChange={(e) => setInsuranceClaimsDescription(e.target.value)}
+                        rows={3}
+                        placeholder="Describe any insurance claims filed on this property..."
+                      />
+                    </div>
+                    <div className="doc-row">
+                      <label className="doc-label">Insurance claims report</label>
+                      <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => handleDocumentFileChange('insuranceClaims', f || null)} placeholder="Drop or click" className="doc-drag-drop" />
+                      {existingDocUrls.insuranceClaimsReportUrl && <span className="doc-filename">✓ Current file attached</span>}
+                      {documentFiles.insuranceClaims && <span className="doc-filename">✓ {documentFiles.insuranceClaims.name} (new)</span>}
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Documents (always shown) */}
+              <div className="form-step">
+                <h2>Documents</h2>
+                <p className="form-note">Upload supporting documents. Higher tier listings require more documentation.</p>
                 <div className="document-uploads">
                   <div className="doc-row">
                     <label className="doc-label">Deed</label>
@@ -754,25 +1015,73 @@ const EditProperty = () => {
                     {existingDocUrls.hoaDocsUrl && <span className="doc-filename">✓ Current file attached</span>}
                     {documentFiles.hoaDocs && <span className="doc-filename">✓ {documentFiles.hoaDocs.name} (new)</span>}
                   </div>
-                  {(currentTier === 'enhanced' || currentTier === 'premium' || currentTier === 'elite') && (
-                    <>
-                      <div className="doc-row">
-                        <label className="doc-label">Disclosure forms</label>
-                        <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => handleDocumentFileChange('disclosureForms', f || null)} placeholder="Drop or click" className="doc-drag-drop" />
-                        {existingDocUrls.disclosureFormsUrl && <span className="doc-filename">✓ Current file attached</span>}
-                        {documentFiles.disclosureForms && <span className="doc-filename">✓ {documentFiles.disclosureForms.name} (new)</span>}
-                      </div>
-                      <div className="doc-row">
-                        <label className="doc-label">Inspection report</label>
-                        <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => handleDocumentFileChange('inspectionReport', f || null)} placeholder="Drop or click" className="doc-drag-drop" />
-                        {existingDocUrls.inspectionReportUrl && <span className="doc-filename">✓ Current file attached</span>}
-                        {documentFiles.inspectionReport && <span className="doc-filename">✓ {documentFiles.inspectionReport.name} (new)</span>}
-                      </div>
-                    </>
-                  )}
+                  <div className="doc-row">
+                    <label className="doc-label">Disclosure forms</label>
+                    <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => handleDocumentFileChange('disclosureForms', f || null)} placeholder="Drop or click" className="doc-drag-drop" />
+                    {existingDocUrls.disclosureFormsUrl && <span className="doc-filename">✓ Current file attached</span>}
+                    {documentFiles.disclosureForms && <span className="doc-filename">✓ {documentFiles.disclosureForms.name} (new)</span>}
+                  </div>
+                  <div className="doc-row">
+                    <label className="doc-label">Inspection report</label>
+                    <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => handleDocumentFileChange('inspectionReport', f || null)} placeholder="Drop or click" className="doc-drag-drop" />
+                    {existingDocUrls.inspectionReportUrl && <span className="doc-filename">✓ Current file attached</span>}
+                    {documentFiles.inspectionReport && <span className="doc-filename">✓ {documentFiles.inspectionReport.name} (new)</span>}
+                  </div>
+                  <div className="doc-row">
+                    <label className="doc-label">Floor plan</label>
+                    <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => handleDocumentFileChange('floorPlan', f || null)} placeholder="Drop or click" className="doc-drag-drop" />
+                    {existingDocUrls.floorPlanUrl && <span className="doc-filename">✓ Current file attached</span>}
+                    {documentFiles.floorPlan && <span className="doc-filename">✓ {documentFiles.floorPlan.name} (new)</span>}
+                  </div>
+                  <div className="doc-row">
+                    <label className="doc-label">Valuation document</label>
+                    <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => handleDocumentFileChange('valuationDoc', f || null)} placeholder="Drop or click" className="doc-drag-drop" />
+                    {existingDocUrls.valuationDocUrl && <span className="doc-filename">✓ Current file attached</span>}
+                    {documentFiles.valuationDoc && <span className="doc-filename">✓ {documentFiles.valuationDoc.name} (new)</span>}
+                  </div>
+                  <div className="doc-row">
+                    <label className="doc-label">Comparable sales report</label>
+                    <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => handleDocumentFileChange('compReport', f || null)} placeholder="Drop or click" className="doc-drag-drop" />
+                    {existingDocUrls.compReportUrl && <span className="doc-filename">✓ Current file attached</span>}
+                    {documentFiles.compReport && <span className="doc-filename">✓ {documentFiles.compReport.name} (new)</span>}
+                  </div>
                 </div>
               </div>
-            )}
+
+              {/* Communication Toggles */}
+              <div className="form-step">
+                <h2>Communication Settings</h2>
+                <div className="form-group">
+                  <div className="toggle-row">
+                    <label className="toggle-row__label">Accepting offers (even when not listed)</label>
+                    <label className="toggle-switch">
+                      <input
+                        type="checkbox"
+                        checked={!!formData.acceptingOffers}
+                        onChange={(e) => setFormData((prev) => prev ? { ...prev, acceptingOffers: e.target.checked } : prev)}
+                        aria-label="Allow buyers to submit a PSA/offer even when not formally listed"
+                      />
+                      <span className="toggle-switch__track" aria-hidden />
+                    </label>
+                  </div>
+                  <p className="form-hint">When on, buyers can submit an offer to this property even if it is not formally listed for sale.</p>
+                </div>
+                <div className="form-group">
+                  <div className="toggle-row">
+                    <label className="toggle-row__label">Accepting communications from buyers</label>
+                    <label className="toggle-switch">
+                      <input
+                        type="checkbox"
+                        checked={!!formData.acceptingCommunications}
+                        onChange={(e) => setFormData((prev) => prev ? { ...prev, acceptingCommunications: e.target.checked } : prev)}
+                        aria-label="Accepting communications from buyers"
+                      />
+                      <span className="toggle-switch__track" aria-hidden />
+                    </label>
+                  </div>
+                  <p className="form-hint">When off, buyers will see that you are not accepting offers or inquiries at this time.</p>
+                </div>
+              </div>
             </>
           )}
 
