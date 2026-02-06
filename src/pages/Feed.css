@@ -402,7 +402,8 @@
   background: var(--color-bg-primary, #0b1020);
 }
 
-.feed-card-media img {
+.feed-card-media img,
+.feed-card-media video {
   width: 100%;
   display: block;
   object-fit: contain;

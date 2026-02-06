@@ -86,6 +86,15 @@ function toHandle(name) {
   return String(name).replace(/\s+/g, '').replace(/[^a-zA-Z0-9]/g, '') || 'user';
 }
 
+function isVideoUrl(url) {
+  if (!url) return false;
+  const lower = url.split('?')[0].toLowerCase();
+  return /\.(mp4|webm|mov|avi|mkv|m4v|ogv)$/.test(lower) || lower.includes('video');
+}
+
+const MAX_VIDEO_SIZE = 50 * 1024 * 1024; // 50MB
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10MB
+
 const FEED_VIEW_HOME = 'home';
 const FEED_VIEW_PROFILE = 'profile';
 const FEED_TAB_FOR_YOU = 'for-you';
@@ -396,16 +405,22 @@ const Feed = () => {
     setPostPropertyId(match?.id || '');
   };
 
-  const handleUploadPostImage = async (file) => {
+  const handleUploadPostMedia = async (file) => {
     if (!file || !user?.uid) return;
+    const isVideo = /^video\//.test(file.type);
+    const maxSize = isVideo ? MAX_VIDEO_SIZE : MAX_IMAGE_SIZE;
+    if (file.size > maxSize) {
+      alert(isVideo ? 'Video must be under 50MB.' : 'Image must be under 10MB.');
+      return;
+    }
     try {
       setPostImageUploading(true);
       const safeName = file.name.replace(/\s+/g, '-');
       const url = await uploadFile(file, `posts/${user.uid}/${Date.now()}_${safeName}`);
       setPostImageUrl(url);
     } catch (err) {
-      console.error('Failed to upload post image', err);
-      alert('Failed to upload image. Please try again.');
+      console.error('Failed to upload post media', err);
+      alert('Failed to upload. Please try again.');
     } finally {
       setPostImageUploading(false);
     }
@@ -803,18 +818,18 @@ const Feed = () => {
               onDrop={(e) => {
                 e.preventDefault();
                 const f = e.dataTransfer?.files?.[0];
-                if (f && /^image\//.test(f.type)) handleUploadPostImage(f);
+                if (f && (/^image\//.test(f.type) || /^video\//.test(f.type))) handleUploadPostMedia(f);
               }}
               onDragOver={(e) => e.preventDefault()}
             >
               <input
                 type="file"
                 ref={postImageInputRef}
-                accept=".png,.jpg,.jpeg,.webp,.gif,image/*"
+                accept=".png,.jpg,.jpeg,.webp,.gif,.mp4,.webm,.mov,.avi,.mkv,image/*,video/*"
                 className="feed-composer-file-input-hidden"
                 onChange={(e) => {
                   const f = e.target.files?.[0];
-                  if (f) handleUploadPostImage(f);
+                  if (f) handleUploadPostMedia(f);
                   e.target.value = '';
                 }}
                 aria-hidden
@@ -939,8 +954,12 @@ const Feed = () => {
                   )}
                   {postImageUrl && (
                     <div className="feed-composer-image-preview">
-                      <img src={postImageUrl} alt="Post" />
-                      <button type="button" className="feed-composer-remove-image" onClick={() => setPostImageUrl('')} aria-label="Remove image">×</button>
+                      {isVideoUrl(postImageUrl) ? (
+                        <video src={postImageUrl} controls muted style={{ width: '100%', maxHeight: 280, objectFit: 'contain', display: 'block', background: 'var(--color-bg-primary, #0b1020)' }} />
+                      ) : (
+                        <img src={postImageUrl} alt="Post" />
+                      )}
+                      <button type="button" className="feed-composer-remove-image" onClick={() => setPostImageUrl('')} aria-label="Remove media">×</button>
                     </div>
                   )}
                   {showPoll && (
@@ -1092,7 +1111,11 @@ function PostCard({
         <p>{renderPostBody(post.body, post)}</p>
         {post.imageUrl && (
           <div className="feed-card-media">
-            <img src={post.imageUrl} alt="Post" />
+            {isVideoUrl(post.imageUrl) ? (
+              <video src={post.imageUrl} controls preload="metadata" />
+            ) : (
+              <img src={post.imageUrl} alt="Post" />
+            )}
           </div>
         )}
         {post.pollOptions?.length > 0 && (

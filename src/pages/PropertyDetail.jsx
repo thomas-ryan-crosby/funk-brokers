@@ -1167,7 +1167,9 @@ const PropertyDetail = () => {
                   <div className="property-post-body">{renderPostBody(post.body, post)}</div>
                     {post.imageUrl && (
                       <div className="property-post-media">
-                        <img src={post.imageUrl} alt="Post media" />
+                        {/\.(mp4|webm|mov|avi|mkv|m4v|ogv)/i.test(post.imageUrl.split('?')[0]) || post.imageUrl.includes('video')
+                          ? <video src={post.imageUrl} controls preload="metadata" style={{ width: '100%', maxHeight: 500, borderRadius: 8 }} />
+                          : <img src={post.imageUrl} alt="Post media" />}
                       </div>
                     )}
                     {post.pollOptions && post.pollOptions.length > 0 && (
