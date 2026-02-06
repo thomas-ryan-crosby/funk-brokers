@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { getUserProfile } from '../services/authService';
+import { getUserProfile, searchUsers } from '../services/authService';
 import { getPurchaseProfile, getSavedSearches, setPurchaseProfile as setPurchaseProfileApi, updatePurchaseProfile } from '../services/profileService';
 import { getPropertiesBySeller } from '../services/propertyService';
 import { uploadFile } from '../services/storageService';
@@ -37,12 +37,13 @@ const UserProfile = () => {
   const [purchaseProfile, setPurchaseProfile] = useState(null);
   const [properties, setProperties] = useState([]);
   const [savedSearches, setSavedSearches] = useState([]);
+  const [resolvedUserId, setResolvedUserId] = useState(userId);
   const [error, setError] = useState('');
   const [editingBuyingPower, setEditingBuyingPower] = useState(false);
   const [buyingPowerForm, setBuyingPowerForm] = useState('');
   const [uploadingDoc, setUploadingDoc] = useState(null);
 
-  const isOwnProfile = user?.uid != null && userId === user.uid;
+  const isOwnProfile = user?.uid != null && resolvedUserId === user.uid;
 
   useEffect(() => {
     const load = async () => {
@@ -50,11 +51,30 @@ const UserProfile = () => {
       try {
         setLoading(true);
         setError('');
-        const [userProfile, buyerProfile, sellerProperties, searches] = await Promise.all([
-          getUserProfile(userId),
-          getPurchaseProfile(userId),
-          getPropertiesBySeller(userId),
-          getSavedSearches(userId),
+        // Try direct UID lookup first
+        let userProfile = await getUserProfile(userId);
+        let uid = userId;
+        // If not found, try username search (supports /user/:handle links)
+        if (!userProfile) {
+          const results = await searchUsers(userId);
+          const match = results.find((u) =>
+            (u.publicUsername || '').toLowerCase() === userId.toLowerCase()
+          );
+          if (match) {
+            userProfile = await getUserProfile(match.id);
+            uid = match.id;
+          }
+        }
+        if (!userProfile) {
+          setError('User not found.');
+          setLoading(false);
+          return;
+        }
+        setResolvedUserId(uid);
+        const [buyerProfile, sellerProperties, searches] = await Promise.all([
+          getPurchaseProfile(uid),
+          getPropertiesBySeller(uid),
+          getSavedSearches(uid),
         ]);
         setProfile(userProfile);
         setPurchaseProfile(buyerProfile);

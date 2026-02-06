@@ -71,11 +71,8 @@ export function renderPostBody(body, post) {
           : <span key={`p${i}`} className="post-inline-tag">{label}</span>
       );
     } else if (tok.type === 'mention') {
-      const uid = post.userTagMap?.[tok.handle];
       elements.push(
-        uid
-          ? <Link key={`m${i}`} to={`/user/${uid}`} className="post-inline-tag">@{tok.handle}</Link>
-          : <span key={`m${i}`} className="post-inline-tag">@{tok.handle}</span>
+        <Link key={`m${i}`} to={`/user/${tok.handle}`} className="post-inline-tag">@{tok.handle}</Link>
       );
     } else if (tok.type === 'hashtag') {
       elements.push(<span key={`h${i}`} className="post-inline-hashtag">#{tok.tag}</span>);
