@@ -122,6 +122,33 @@ module.exports = async (req, res) => {
             now,
           ]
         );
+
+        // ATTOM enrichment: fetch snapshot, normalize, store (non-blocking on failure)
+        const lat = parcel.latitude;
+        const lng = parcel.longitude;
+        if (Number.isFinite(lat) && Number.isFinite(lng)) {
+          try {
+            const { attomFetchSnapshot, resolveAttomIdFromSnapshot, normalizeAddress: normalizeAddr } = require('../_attom');
+            const { normalizeAttomSnapshot } = require('../_attomNormalizer');
+            const delta = 0.002;
+            const data = await attomFetchSnapshot({ n: lat + delta, s: lat - delta, e: lng + delta, w: lng - delta });
+            const normalizedAddr = parcel.address ? normalizeAddr(parcel.address) : null;
+            const match = resolveAttomIdFromSnapshot(data, normalizedAddr);
+            const snapshot = normalizeAttomSnapshot(data);
+            const attomId = match?.attomId ?? null;
+            const funkEstimate = snapshot?.valuation?.avmValue ?? match?.estimate ?? null;
+            console.log('[claim] ATTOM snapshot retrieved:', JSON.stringify(snapshot, null, 2));
+
+            await query(
+              `UPDATE properties SET attom_id = COALESCE(attom_id, $1), attom_snapshot = $2,
+               funk_estimate = COALESCE(funk_estimate, $3), updated_at = now() WHERE id = $4`,
+              [attomId, JSON.stringify(snapshot), funkEstimate, id]
+            );
+          } catch (enrichErr) {
+            console.warn('[claim] ATTOM enrichment failed (claim still succeeded):', enrichErr.message);
+          }
+        }
+
         return res.status(201).json({ id });
       } catch (err) {
         console.warn('[api/properties claim]', err?.message || err);
@@ -220,6 +247,7 @@ module.exports = async (req, res) => {
       'estimatedWorth', 'makeMeMovePrice', 'hasInsurance', 'insuranceApproximation',
       'hasMortgage', 'remainingMortgage', 'mortgageDocUrl', 'payoffOrLienReleaseUrl',
       'lienTax', 'lienHOA', 'lienMechanic', 'lienOtherDetails',
+      'attomSnapshot',
       'verifiedComps', 'videoFiles', 'floorPlanUrl', 'valuationDocUrl', 'compReportUrl',
       'matterportTourUrl', 'hasInsuranceClaims', 'insuranceClaimsDescription', 'insuranceClaimsReportUrl',
       'thirdPartyReviewConfirmed', 'thirdPartyReviewVendorId', 'verified', 'verifiedAt',
@@ -245,7 +273,7 @@ module.exports = async (req, res) => {
     Object.entries(updates).forEach(([k, v]) => {
       idx++;
       const col = toCol(k);
-      if (col === 'photos' || col === 'features' || col === 'verified_comps' || col === 'video_files') {
+      if (col === 'photos' || col === 'features' || col === 'verified_comps' || col === 'video_files' || col === 'attom_snapshot') {
         setCols.push(`${col} = $${idx}`);
         params.push(JSON.stringify(Array.isArray(v) ? v : (v && typeof v === 'object' ? v : [])));
       } else if (col === 'available_for_sale' || col === 'accepting_offers' || col === 'accepting_communications' || col === 'archived' || col === 'has_hoa' || col === 'professional_photos' || col === 'has_insurance' || col === 'has_mortgage' || col === 'lien_tax' || col === 'lien_hoa' || col === 'lien_mechanic' || col === 'has_insurance_claims' || col === 'third_party_review_confirmed' || col === 'verified') {

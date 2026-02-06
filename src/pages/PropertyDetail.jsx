@@ -93,6 +93,14 @@ const PropertyDetail = () => {
   }, [property?.id, isOwner]);
 
   useEffect(() => {
+    // Prefer stored snapshot from claim-time ATTOM fetch
+    if (property?.attomSnapshot) {
+      const sections = property.attomSnapshot;
+      setSnapshotSections(Object.keys(sections).some((k) => sections[k] != null) ? sections : null);
+      setSnapshotLoading(false);
+      return;
+    }
+    // Fallback: live fetch for legacy properties without stored snapshot
     if (!property?.attomId || property.latitude == null || property.longitude == null) {
       setSnapshotSections(null);
       return;
@@ -121,7 +129,7 @@ const PropertyDetail = () => {
         }
       });
     return () => { cancelled = true; };
-  }, [property?.attomId, property?.latitude, property?.longitude]);
+  }, [property?.attomSnapshot, property?.attomId, property?.latitude, property?.longitude]);
 
   const loadFavoritesList = async () => {
     if (!property?.id || !isOwner || favoritesLoading) return;

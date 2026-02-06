@@ -85,6 +85,9 @@ function mapRowToProperty(row) {
     thirdPartyReviewVendorId: row.third_party_review_vendor_id ?? undefined,
     verified: normalizeTriBool(row.verified),
     verifiedAt: row.verified_at ?? undefined,
+    attomSnapshot: row.attom_snapshot && typeof row.attom_snapshot === 'string'
+      ? JSON.parse(row.attom_snapshot)
+      : (row.attom_snapshot ?? null),
   };
 }
 

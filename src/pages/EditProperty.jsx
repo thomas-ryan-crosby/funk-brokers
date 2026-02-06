@@ -71,6 +71,10 @@ const EditProperty = () => {
         setLoading(false);
         return;
       }
+      const snap = p.attomSnapshot;
+      const ph = snap?.physical;
+      const tx = snap?.tax;
+
       setFormData({
         address: p.address || '',
         city: p.city || '',
@@ -78,18 +82,18 @@ const EditProperty = () => {
         zipCode: p.zipCode || '',
         latitude: p.latitude,
         longitude: p.longitude,
-        propertyType: p.propertyType || '',
+        propertyType: p.propertyType || ph?.propertyType || '',
         price: p.price != null ? String(p.price) : '',
         estimatedWorth: p.estimatedWorth != null ? String(p.estimatedWorth) : '',
         makeMeMovePrice: p.makeMeMovePrice != null ? String(p.makeMeMovePrice) : '',
-        squareFeet: p.squareFeet != null ? String(p.squareFeet) : '',
-        lotSize: p.lotSize != null ? String(p.lotSize) : '',
-        yearBuilt: p.yearBuilt != null ? String(p.yearBuilt) : '',
-        bedrooms: p.bedrooms != null ? String(p.bedrooms) : '',
-        bathrooms: p.bathrooms != null ? String(p.bathrooms) : '',
+        squareFeet: p.squareFeet != null ? String(p.squareFeet) : (ph?.livingAreaSqft != null ? String(ph.livingAreaSqft) : ''),
+        lotSize: p.lotSize != null ? String(p.lotSize) : (ph?.lotSizeSqft != null ? String(ph.lotSizeSqft) : ''),
+        yearBuilt: p.yearBuilt != null ? String(p.yearBuilt) : (ph?.yearBuilt != null ? String(ph.yearBuilt) : ''),
+        bedrooms: p.bedrooms != null ? String(p.bedrooms) : (ph?.beds != null ? String(ph.beds) : ''),
+        bathrooms: p.bathrooms != null ? String(p.bathrooms) : (ph?.baths != null ? String(ph.baths) : ''),
         features: Array.isArray(p.features) ? p.features : [],
         hoaFee: p.hoaFee != null ? String(p.hoaFee) : '',
-        propertyTax: p.propertyTax != null ? String(p.propertyTax) : '',
+        propertyTax: p.propertyTax != null ? String(p.propertyTax) : (tx?.taxAmount != null ? String(tx.taxAmount) : ''),
         description: p.description || '',
         acceptingCommunications: p.acceptingCommunications !== false,
       });
