@@ -13,6 +13,7 @@ import { getPropertySnapshot } from '../services/parcelService';
 import { normalizeAttomSnapshot } from '../utils/attomSnapshotNormalizer';
 import metrics from '../utils/metrics';
 import { renderPostBody } from '../utils/renderPostBody';
+import '../pages/Feed.css';
 import PingOwnerModal from '../components/PingOwnerModal';
 import './PropertyDetail.css';
 
@@ -1157,32 +1158,41 @@ const PropertyDetail = () => {
             ) : propertyPosts.length === 0 ? (
               <p className="property-posts-empty">No posts yet for this property.</p>
             ) : (
-              <div className="property-posts-list">
-                {propertyPosts.map((post) => (
-                  <div key={post.id} className="property-post">
-                    <div className="property-post-meta">
-                      <span className="property-post-author">{post.authorName || 'Someone'}</span>
-                      <span className="property-post-date">{formatPostDate(post.createdAt)}</span>
-                    </div>
-                  <div className="property-post-body">{renderPostBody(post.body, post)}</div>
-                    {post.imageUrl && (
-                      <div className="property-post-media">
-                        {/\.(mp4|webm|mov|avi|mkv|m4v|ogv)/i.test(post.imageUrl.split('?')[0]) || post.imageUrl.includes('video')
-                          ? <video src={post.imageUrl} controls preload="metadata" style={{ width: '100%', maxHeight: 500, borderRadius: 8 }} />
-                          : <img src={post.imageUrl} alt="Post media" />}
+              <div className="feed-list">
+                {propertyPosts.map((post) => {
+                  const authorHandle = (post.authorName || '').replace(/\s+/g, '').replace(/[^a-zA-Z0-9]/g, '') || 'user';
+                  return (
+                    <article key={post.id} className="feed-card feed-card--post">
+                      <div className="feed-card-header">
+                        <div className="feed-card-avatar" aria-hidden>
+                          {(post.authorName || 'U').charAt(0).toUpperCase()}
+                        </div>
+                        <div className="feed-card-meta">
+                          <span className="feed-card-name">{post.authorName || 'Someone'}</span>
+                          <span className="feed-card-handle">@{authorHandle}</span>
+                          <span className="feed-card-date">{formatPostDate(post.createdAt)}</span>
+                        </div>
                       </div>
-                    )}
-                    {post.pollOptions && post.pollOptions.length > 0 && (
-                      <div className="property-post-poll">
-                        {post.pollOptions.map((opt, idx) => (
-                          <div key={`${post.id}-opt-${idx}`} className="property-post-poll-option">
-                            {opt}
+                      <div className="feed-card-body">
+                        <p>{renderPostBody(post.body, post)}</p>
+                        {post.imageUrl && (
+                          <div className="feed-card-media">
+                            {/\.(mp4|webm|mov|avi|mkv|m4v|ogv)/i.test(post.imageUrl.split('?')[0]) || post.imageUrl.includes('video')
+                              ? <video src={post.imageUrl} controls preload="metadata" />
+                              : <img src={post.imageUrl} alt="Post media" />}
                           </div>
-                        ))}
+                        )}
+                        {post.pollOptions?.length > 0 && (
+                          <div className="feed-card-poll">
+                            {post.pollOptions.map((opt, idx) => (
+                              <div key={idx} className="feed-card-poll-option">{opt}</div>
+                            ))}
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                ))}
+                    </article>
+                  );
+                })}
               </div>
             )}
           </div>
