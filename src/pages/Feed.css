@@ -363,6 +363,22 @@
   text-decoration: underline;
 }
 
+/* Inline tag links in post body */
+.feed-card-inline-tag {
+  color: #3b82f6;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.feed-card-inline-tag:hover {
+  color: #60a5fa;
+}
+
+.feed-card-inline-hashtag {
+  color: #8b5cf6;
+}
+
 .feed-card-tags {
   display: flex;
   flex-wrap: wrap;

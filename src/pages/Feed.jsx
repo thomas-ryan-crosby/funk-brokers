@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { searchUsers } from '../services/authService';
 import { getPropertiesBySeller } from '../services/propertyService';
-import { getPostsByAuthor, addComment, createPost, deletePost, getCommentsForPost, setPostCommentCount } from '../services/postService';
+import { getPostsByAuthor, addComment, createPost, deletePost, getCommentsForPost, setPostCommentCount, getPostsForProperties } from '../services/postService';
 import { getFollowing, getFollowers, followUser, unfollowUser } from '../services/followService';
 import { getLikedPostIds, likePost, unlikePost } from '../services/likeService';
 import { fetchPropertiesForBrowse } from '../data/firestoreLayer';
@@ -126,6 +126,10 @@ const Feed = () => {
   const [addressTagJustCompleted, setAddressTagJustCompleted] = useState(false);
   const composerBackdropRef = useRef(null);
   const [completedPropertyTags, setCompletedPropertyTags] = useState([]);
+  const [mentionUserMap, setMentionUserMap] = useState({});
+  const [profileTab, setProfileTab] = useState('posts');
+  const [myTaggedPosts, setMyTaggedPosts] = useState([]);
+  const [taggedLoading, setTaggedLoading] = useState(false);
 
   const [commentsByPost, setCommentsByPost] = useState({});
   const [commentsOpen, setCommentsOpen] = useState({});
@@ -198,12 +202,13 @@ const Feed = () => {
     return () => { cancelled = true; };
   }, [addressInlineQuery]);
 
-  const insertMention = useCallback((handle) => {
+  const insertMention = useCallback((handle, userId) => {
     const before = postBody.slice(0, lastAt);
     const after = postBody.slice(composerCursorPosition);
     const newBody = before + '@' + handle + ' ' + after;
     setPostBody(newBody);
     setMentionSuggestions([]);
+    if (userId) setMentionUserMap((prev) => ({ ...prev, [handle]: userId }));
     const newCursor = lastAt + 1 + handle.length + 1;
     setComposerCursorPosition(newCursor);
     setTimeout(() => {
@@ -420,6 +425,7 @@ const Feed = () => {
     setAddressSuggestions([]);
     setAddressSelectedIndex(0);
     setCompletedPropertyTags([]);
+    setMentionUserMap({});
   };
 
   const openPostModal = () => {
@@ -458,6 +464,8 @@ const Feed = () => {
         pollOptions: showPoll ? pollOptions.map((o) => o.trim()).filter(Boolean) : [],
         hashtags,
         userTags,
+        propertyTagRawText: completedPropertyTags[0] || null,
+        userTagMap: Object.keys(mentionUserMap).length > 0 ? mentionUserMap : null,
       });
       closePostModal();
       await refreshCurrentView();
@@ -606,8 +614,41 @@ const Feed = () => {
     }
   }, []);
 
+  const loadMyTaggedPosts = useCallback(async () => {
+    if (!user?.uid) return;
+    setTaggedLoading(true);
+    try {
+      const handle = userProfile?.publicUsername || toHandle(userProfile?.name || user?.displayName);
+      const propertyIds = myProperties.map((p) => p.id).filter(Boolean);
+      const [propertyPosts, allPosts] = await Promise.all([
+        propertyIds.length > 0 ? getPostsForProperties(propertyIds) : Promise.resolve([]),
+        getForYouPosts(200),
+      ]);
+      const mentionPosts = allPosts.filter((p) => p.userTags?.includes(handle));
+      const seen = new Set();
+      const merged = [];
+      for (const p of [...propertyPosts, ...mentionPosts]) {
+        if (!seen.has(p.id)) { seen.add(p.id); merged.push(p); }
+      }
+      merged.sort((a, b) => {
+        const aD = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(a.createdAt || 0);
+        const bD = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(b.createdAt || 0);
+        return bD - aD;
+      });
+      setMyTaggedPosts(merged);
+    } catch (err) {
+      console.error('Failed to load tagged posts', err);
+    } finally {
+      setTaggedLoading(false);
+    }
+  }, [user?.uid, userProfile, myProperties]);
+
+  useEffect(() => {
+    if (feedView === FEED_VIEW_PROFILE && profileTab === 'tags') loadMyTaggedPosts();
+  }, [feedView, profileTab, loadMyTaggedPosts]);
+
   const currentPosts = feedView === FEED_VIEW_PROFILE
-    ? myPosts
+    ? (profileTab === 'tags' ? myTaggedPosts : myPosts)
     : feedTab === FEED_TAB_FOR_YOU
       ? forYouPosts
       : followingPosts;
@@ -693,23 +734,26 @@ const Feed = () => {
                   </div>
                 </div>
               </div>
-              <p className="feed-subtitle">Posts you have posted.</p>
               <div className="feed-header-actions">
                 <button type="button" className="btn btn-primary" onClick={openPostModal}>
                   New Post
                 </button>
+              </div>
+              <div className="feed-tabs">
+                <button type="button" className={`feed-tab ${profileTab === 'posts' ? 'active' : ''}`} onClick={() => setProfileTab('posts')}>Posts</button>
+                <button type="button" className={`feed-tab ${profileTab === 'tags' ? 'active' : ''}`} onClick={() => setProfileTab('tags')}>Tags</button>
               </div>
             </header>
           )}
 
           {error && <div className="feed-alert feed-alert-error">{error}</div>}
 
-          {loading ? (
+          {(loading || (feedView === FEED_VIEW_PROFILE && profileTab === 'tags' && taggedLoading)) ? (
             <div className="feed-loading">Loading...</div>
           ) : currentPosts.length === 0 ? (
             <p className="feed-empty">
               {feedView === FEED_VIEW_PROFILE
-                ? 'You have not posted yet.'
+                ? (profileTab === 'tags' ? 'No one has tagged you or your properties yet.' : 'You have not posted yet.')
                 : feedTab === FEED_TAB_FOLLOWING
                   ? 'Follow users to see their posts here.'
                   : 'No posts yet.'}
@@ -818,7 +862,7 @@ const Feed = () => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
                           const u = mentionSuggestions[mentionSelectedIndex];
-                          if (u) insertMention(u.publicUsername || toHandle(u.name) || 'user');
+                          if (u) insertMention(u.publicUsername || toHandle(u.name) || 'user', u.id);
                           return;
                         }
                       }
@@ -863,7 +907,7 @@ const Feed = () => {
                             className={`feed-composer-mention-item ${idx === mentionSelectedIndex ? 'selected' : ''}`}
                             role="option"
                             aria-selected={idx === mentionSelectedIndex}
-                            onClick={() => insertMention(u.publicUsername || toHandle(u.name) || 'user')}
+                            onClick={() => insertMention(u.publicUsername || toHandle(u.name) || 'user', u.id)}
                           >
                             <span className="feed-composer-mention-handle">@{u.publicUsername || toHandle(u.name) || 'user'}</span>
                             {u.name && <span className="feed-composer-mention-name">{u.name}</span>}
@@ -1017,6 +1061,53 @@ function PostCard({
   const isFollowing = !isOwn && currentUserId && followingIds.includes(post.authorId);
   const authorId = post.authorId;
 
+  // Parse body text and render inline hyperlinked tags
+  const renderPostBody = (body) => {
+    if (!body) return null;
+    const tokens = [];
+    // 1) Find ^property using stored raw text (exact match)
+    const rawTag = post.propertyTagRawText;
+    if (rawTag) {
+      const idx = body.indexOf('^' + rawTag);
+      if (idx >= 0) tokens.push({ start: idx, end: idx + 1 + rawTag.length, type: 'property' });
+    }
+    // 2) Find @mentions
+    const mentionRe = /@([a-zA-Z0-9_]+)/g;
+    let m;
+    while ((m = mentionRe.exec(body)) !== null) {
+      if (!tokens.some((t) => m.index >= t.start && m.index < t.end))
+        tokens.push({ start: m.index, end: m.index + m[0].length, type: 'mention', handle: m[1] });
+    }
+    // 3) Find #hashtags
+    const hashRe = /#([a-zA-Z0-9_]+)/g;
+    while ((m = hashRe.exec(body)) !== null) {
+      if (!tokens.some((t) => m.index >= t.start && m.index < t.end))
+        tokens.push({ start: m.index, end: m.index + m[0].length, type: 'hashtag', tag: m[1] });
+    }
+    tokens.sort((a, b) => a.start - b.start);
+    const elements = [];
+    let pos = 0;
+    tokens.forEach((tok, i) => {
+      if (tok.start > pos) elements.push(<span key={`t${i}`}>{body.slice(pos, tok.start)}</span>);
+      if (tok.type === 'property') {
+        const label = post.propertyAddress || rawTag;
+        elements.push(post.propertyId
+          ? <Link key={`p${i}`} to={`/property/${post.propertyId}`} className="feed-card-inline-tag">{label}</Link>
+          : <span key={`p${i}`} className="feed-card-inline-tag">{label}</span>);
+      } else if (tok.type === 'mention') {
+        const uid = post.userTagMap?.[tok.handle];
+        elements.push(uid
+          ? <Link key={`m${i}`} to={`/user/${uid}`} className="feed-card-inline-tag">@{tok.handle}</Link>
+          : <span key={`m${i}`} className="feed-card-inline-tag">@{tok.handle}</span>);
+      } else if (tok.type === 'hashtag') {
+        elements.push(<span key={`h${i}`} className="feed-card-inline-hashtag">#{tok.tag}</span>);
+      }
+      pos = tok.end;
+    });
+    if (pos < body.length) elements.push(<span key="tail">{body.slice(pos)}</span>);
+    return elements;
+  };
+
   return (
     <article className="feed-card feed-card--post">
       <div className="feed-card-header">
@@ -1026,16 +1117,6 @@ function PostCard({
         <div className="feed-card-meta">
           <span className="feed-card-name">{displayName}</span>
           <span className="feed-card-handle">@{handleStr}</span>
-          {post.propertyAddress && (
-            <span className="feed-card-context">
-              About{' '}
-              {post.propertyId ? (
-                <Link to={`/property/${post.propertyId}`} className="feed-card-link">{post.propertyAddress}</Link>
-              ) : (
-                post.propertyAddress
-              )}
-            </span>
-          )}
           <span className="feed-card-date">{formatDateShort(post.createdAt)}</span>
         </div>
         <div className="feed-card-actions-top">
@@ -1056,17 +1137,7 @@ function PostCard({
         </div>
       </div>
       <div className="feed-card-body">
-        <p>{post.body}</p>
-        {(post.hashtags?.length || post.userTags?.length) && (
-          <div className="feed-card-tags">
-            {post.hashtags?.map((tag) => (
-              <span key={`h-${tag}`} className="feed-tag">#{tag}</span>
-            ))}
-            {post.userTags?.map((tag) => (
-              <span key={`u-${tag}`} className="feed-tag">@{tag}</span>
-            ))}
-          </div>
-        )}
+        <p>{renderPostBody(post.body)}</p>
         {post.imageUrl && (
           <div className="feed-card-media">
             <img src={post.imageUrl} alt="Post" />
