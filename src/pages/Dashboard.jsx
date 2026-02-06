@@ -306,6 +306,36 @@ const Dashboard = () => {
   const activeList = myProperties.filter((p) => !p.archived);
   const archivedList = myProperties.filter((p) => p.archived);
 
+  // Portfolio overview metrics
+  const portfolioMetrics = useMemo(() => {
+    if (activeList.length === 0) return null;
+    let totalValue = 0;
+    let totalEquity = 0;
+    let totalSqFt = 0;
+    const tierCounts = {};
+    let pendingOffers = 0;
+
+    for (const p of activeList) {
+      const value = p.estimatedWorth ?? p.funkEstimate ?? p.price ?? 0;
+      totalValue += value;
+      totalEquity += value - (p.remainingMortgage ?? 0);
+      totalSqFt += p.squareFeet ?? 0;
+      const tier = getListingTier(p);
+      tierCounts[tier] = (tierCounts[tier] || 0) + 1;
+      const offers = offersByProperty[p.id] || [];
+      pendingOffers += offers.filter((o) => o.status === 'pending').length;
+    }
+
+    // Most common tier
+    let avgTier = 'basic';
+    let maxCount = 0;
+    for (const [tier, count] of Object.entries(tierCounts)) {
+      if (count > maxCount) { maxCount = count; avgTier = tier; }
+    }
+
+    return { totalValue, totalEquity, totalSqFt, avgTier, pendingOffers };
+  }, [activeList, offersByProperty]);
+
   const handleArchive = async (propertyId) => {
     try {
       await archiveProperty(propertyId);
@@ -789,6 +819,37 @@ const Dashboard = () => {
                   </p>
                 )}
               </div>
+
+              {portfolioMetrics && (
+                <div className="portfolio-overview">
+                  <div className="portfolio-stat">
+                    <span className="portfolio-stat-value">{activeList.length}</span>
+                    <span className="portfolio-stat-label">Properties</span>
+                  </div>
+                  <div className="portfolio-stat">
+                    <span className="portfolio-stat-value">{formatCurrency(portfolioMetrics.totalValue)}</span>
+                    <span className="portfolio-stat-label">Portfolio Value</span>
+                  </div>
+                  <div className="portfolio-stat">
+                    <span className="portfolio-stat-value">{formatCurrency(portfolioMetrics.totalEquity)}</span>
+                    <span className="portfolio-stat-label">Estimated Equity</span>
+                  </div>
+                  <div className="portfolio-stat">
+                    <span className="portfolio-stat-value">{portfolioMetrics.totalSqFt.toLocaleString()}</span>
+                    <span className="portfolio-stat-label">Total Sq Ft</span>
+                  </div>
+                  <div className="portfolio-stat">
+                    <span className="portfolio-stat-value">{getListingTierLabel(portfolioMetrics.avgTier)}</span>
+                    <span className="portfolio-stat-label">Avg Tier</span>
+                  </div>
+                  {portfolioMetrics.pendingOffers > 0 && (
+                    <div className="portfolio-stat portfolio-stat-pending">
+                      <span className="portfolio-stat-value">{portfolioMetrics.pendingOffers}</span>
+                      <span className="portfolio-stat-label">Pending Offers</span>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {activeList.length > 0 && (
                 <div className="properties-list">
