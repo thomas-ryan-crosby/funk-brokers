@@ -71,6 +71,22 @@
   line-height: 1.6;
 }
 
+/* Inline tag links in post body */
+.post-inline-tag {
+  color: #3b82f6;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.post-inline-tag:hover {
+  color: #60a5fa;
+}
+
+.post-inline-hashtag {
+  color: #8b5cf6;
+}
+
 .property-post-tags {
   display: flex;
   flex-wrap: wrap;

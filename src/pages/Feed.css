@@ -363,19 +363,19 @@
   text-decoration: underline;
 }
 
-/* Inline tag links in post body */
-.feed-card-inline-tag {
+/* Inline tag links in post body (shared across Feed + PropertyDetail) */
+.post-inline-tag {
   color: #3b82f6;
   text-decoration: underline;
   text-underline-offset: 2px;
   cursor: pointer;
 }
 
-.feed-card-inline-tag:hover {
+.post-inline-tag:hover {
   color: #60a5fa;
 }
 
-.feed-card-inline-hashtag {
+.post-inline-hashtag {
   color: #8b5cf6;
 }
 

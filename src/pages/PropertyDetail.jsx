@@ -12,6 +12,7 @@ import { getPostsForPropertyOrAddress } from '../services/postService';
 import { getPropertySnapshot } from '../services/parcelService';
 import { normalizeAttomSnapshot } from '../utils/attomSnapshotNormalizer';
 import metrics from '../utils/metrics';
+import { renderPostBody } from '../utils/renderPostBody';
 import PingOwnerModal from '../components/PingOwnerModal';
 import './PropertyDetail.css';
 
@@ -1163,22 +1164,7 @@ const PropertyDetail = () => {
                       <span className="property-post-author">{post.authorName || 'Someone'}</span>
                       <span className="property-post-date">{formatPostDate(post.createdAt)}</span>
                     </div>
-                  <div className="property-post-body">{post.body}</div>
-                  {post.propertyAddress && post.propertyId && (
-                    <div className="property-post-link">
-                      <Link to={`/property/${post.propertyId}`}>{post.propertyAddress}</Link>
-                    </div>
-                  )}
-                  {(post.hashtags?.length || post.userTags?.length) && (
-                    <div className="property-post-tags">
-                      {post.hashtags?.map((tag) => (
-                        <span key={`${post.id}-hash-${tag}`} className="property-post-tag">#{tag}</span>
-                      ))}
-                      {post.userTags?.map((tag) => (
-                        <span key={`${post.id}-user-${tag}`} className="property-post-tag">@{tag}</span>
-                      ))}
-                    </div>
-                  )}
+                  <div className="property-post-body">{renderPostBody(post.body, post)}</div>
                     {post.imageUrl && (
                       <div className="property-post-media">
                         <img src={post.imageUrl} alt="Post media" />

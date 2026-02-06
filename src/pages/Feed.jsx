@@ -12,6 +12,7 @@ import AddressAutocomplete from '../components/AddressAutocomplete';
 import { getPredictions as getMapboxPredictions } from '../services/mapboxGeocodeService';
 import { getForYouPosts, getFollowingPosts } from '../services/socialApiService';
 import metrics from '../utils/metrics';
+import { renderPostBody } from '../utils/renderPostBody';
 import './Feed.css';
 
 function formatDateShort(v) {
@@ -464,8 +465,6 @@ const Feed = () => {
         pollOptions: showPoll ? pollOptions.map((o) => o.trim()).filter(Boolean) : [],
         hashtags,
         userTags,
-        propertyTagRawText: completedPropertyTags[0] || null,
-        userTagMap: Object.keys(mentionUserMap).length > 0 ? mentionUserMap : null,
       });
       closePostModal();
       await refreshCurrentView();
@@ -1061,53 +1060,6 @@ function PostCard({
   const isFollowing = !isOwn && currentUserId && followingIds.includes(post.authorId);
   const authorId = post.authorId;
 
-  // Parse body text and render inline hyperlinked tags
-  const renderPostBody = (body) => {
-    if (!body) return null;
-    const tokens = [];
-    // 1) Find ^property using stored raw text (exact match)
-    const rawTag = post.propertyTagRawText;
-    if (rawTag) {
-      const idx = body.indexOf('^' + rawTag);
-      if (idx >= 0) tokens.push({ start: idx, end: idx + 1 + rawTag.length, type: 'property' });
-    }
-    // 2) Find @mentions
-    const mentionRe = /@([a-zA-Z0-9_]+)/g;
-    let m;
-    while ((m = mentionRe.exec(body)) !== null) {
-      if (!tokens.some((t) => m.index >= t.start && m.index < t.end))
-        tokens.push({ start: m.index, end: m.index + m[0].length, type: 'mention', handle: m[1] });
-    }
-    // 3) Find #hashtags
-    const hashRe = /#([a-zA-Z0-9_]+)/g;
-    while ((m = hashRe.exec(body)) !== null) {
-      if (!tokens.some((t) => m.index >= t.start && m.index < t.end))
-        tokens.push({ start: m.index, end: m.index + m[0].length, type: 'hashtag', tag: m[1] });
-    }
-    tokens.sort((a, b) => a.start - b.start);
-    const elements = [];
-    let pos = 0;
-    tokens.forEach((tok, i) => {
-      if (tok.start > pos) elements.push(<span key={`t${i}`}>{body.slice(pos, tok.start)}</span>);
-      if (tok.type === 'property') {
-        const label = post.propertyAddress || rawTag;
-        elements.push(post.propertyId
-          ? <Link key={`p${i}`} to={`/property/${post.propertyId}`} className="feed-card-inline-tag">{label}</Link>
-          : <span key={`p${i}`} className="feed-card-inline-tag">{label}</span>);
-      } else if (tok.type === 'mention') {
-        const uid = post.userTagMap?.[tok.handle];
-        elements.push(uid
-          ? <Link key={`m${i}`} to={`/user/${uid}`} className="feed-card-inline-tag">@{tok.handle}</Link>
-          : <span key={`m${i}`} className="feed-card-inline-tag">@{tok.handle}</span>);
-      } else if (tok.type === 'hashtag') {
-        elements.push(<span key={`h${i}`} className="feed-card-inline-hashtag">#{tok.tag}</span>);
-      }
-      pos = tok.end;
-    });
-    if (pos < body.length) elements.push(<span key="tail">{body.slice(pos)}</span>);
-    return elements;
-  };
-
   return (
     <article className="feed-card feed-card--post">
       <div className="feed-card-header">
@@ -1137,7 +1089,7 @@ function PostCard({
         </div>
       </div>
       <div className="feed-card-body">
-        <p>{renderPostBody(post.body)}</p>
+        <p>{renderPostBody(post.body, post)}</p>
         {post.imageUrl && (
           <div className="feed-card-media">
             <img src={post.imageUrl} alt="Post" />
