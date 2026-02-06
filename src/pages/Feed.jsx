@@ -125,6 +125,7 @@ const Feed = () => {
   const [addressSelectedIndex, setAddressSelectedIndex] = useState(0);
   const [addressTagJustCompleted, setAddressTagJustCompleted] = useState(false);
   const composerBackdropRef = useRef(null);
+  const [completedPropertyTags, setCompletedPropertyTags] = useState([]);
 
   const [commentsByPost, setCommentsByPost] = useState({});
   const [commentsOpen, setCommentsOpen] = useState({});
@@ -217,10 +218,11 @@ const Feed = () => {
     const before = postBody.slice(0, lastCaret + 1);
     const after = postBody.slice(composerCursorPosition);
     const text = (formattedAddress || '').trim();
-    const newBody = before + text + '\n' + after;
+    const newBody = before + text + ' ' + after;
     setPostBody(newBody);
     setAddressSuggestions([]);
     setAddressTagJustCompleted(true);
+    if (text) setCompletedPropertyTags((prev) => [...prev, text]);
     const newCursor = lastCaret + 1 + text.length + 1;
     setComposerCursorPosition(newCursor);
     setTimeout(() => {
@@ -417,6 +419,7 @@ const Feed = () => {
     setMentionSelectedIndex(0);
     setAddressSuggestions([]);
     setAddressSelectedIndex(0);
+    setCompletedPropertyTags([]);
   };
 
   const openPostModal = () => {
@@ -578,17 +581,23 @@ const Feed = () => {
 
   /** Build highlighted HTML mirroring postBody with @mentions and ^property tags styled */
   const buildHighlightedText = useCallback((text) => {
-    // Escape HTML, then wrap @mentions and ^property in highlight spans
-    const escaped = text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/\n$/g, '\n\n'); // trailing newline needs extra for height match
-    return escaped
-      .replace(/@([a-zA-Z0-9_]+)/g, '<span class="feed-composer-highlight">@$1</span>')
-      .replace(/\^([^\n]+)/g, '<span class="feed-composer-highlight">^$1</span>')
-      .replace(/#([a-zA-Z0-9_]+)/g, '<span class="feed-composer-highlight-hash">#$1</span>');
-  }, []);
+    const escHtml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    let escaped = escHtml(text).replace(/\n$/g, '\n\n');
+    // 1) Highlight tracked ^property tags (addresses contain spaces, so regex alone can't scope them)
+    for (const addr of completedPropertyTags) {
+      const escapedAddr = escHtml(addr);
+      const safe = escapedAddr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      escaped = escaped.replace(
+        new RegExp(`\\^${safe}`, 'g'),
+        `<span class="feed-composer-highlight">^${escapedAddr}</span>`
+      );
+    }
+    // 2) Highlight @mentions (single-word tokens — regex is reliable)
+    escaped = escaped.replace(/@([a-zA-Z0-9_]+)/g, '<span class="feed-composer-highlight">@$1</span>');
+    // 3) Highlight #hashtags
+    escaped = escaped.replace(/#([a-zA-Z0-9_]+)/g, '<span class="feed-composer-highlight-hash">#$1</span>');
+    return escaped;
+  }, [completedPropertyTags]);
 
   const handleComposerScroll = useCallback(() => {
     if (composerTextareaRef.current && composerBackdropRef.current) {
