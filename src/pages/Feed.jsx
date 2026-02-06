@@ -124,6 +124,7 @@ const Feed = () => {
   const [addressLoading, setAddressLoading] = useState(false);
   const [addressSelectedIndex, setAddressSelectedIndex] = useState(0);
   const [addressTagJustCompleted, setAddressTagJustCompleted] = useState(false);
+  const composerBackdropRef = useRef(null);
 
   const [commentsByPost, setCommentsByPost] = useState({});
   const [commentsOpen, setCommentsOpen] = useState({});
@@ -575,6 +576,27 @@ const Feed = () => {
     }
   };
 
+  /** Build highlighted HTML mirroring postBody with @mentions and ^property tags styled */
+  const buildHighlightedText = useCallback((text) => {
+    // Escape HTML, then wrap @mentions and ^property in highlight spans
+    const escaped = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/\n$/g, '\n\n'); // trailing newline needs extra for height match
+    return escaped
+      .replace(/@([a-zA-Z0-9_]+)/g, '<span class="feed-composer-highlight">@$1</span>')
+      .replace(/\^([^\n@#]+?)(?=\s*[@#\n]|$)/g, '<span class="feed-composer-highlight">^$1</span>')
+      .replace(/#([a-zA-Z0-9_]+)/g, '<span class="feed-composer-highlight-hash">#$1</span>');
+  }, []);
+
+  const handleComposerScroll = useCallback(() => {
+    if (composerTextareaRef.current && composerBackdropRef.current) {
+      composerBackdropRef.current.scrollTop = composerTextareaRef.current.scrollTop;
+      composerBackdropRef.current.scrollLeft = composerTextareaRef.current.scrollLeft;
+    }
+  }, []);
+
   const currentPosts = feedView === FEED_VIEW_PROFILE
     ? myPosts
     : feedTab === FEED_TAB_FOR_YOU
@@ -750,9 +772,15 @@ const Feed = () => {
                   {(userProfile?.name || user?.displayName || 'U').charAt(0).toUpperCase()}
                 </div>
                 <div className="feed-composer-input-wrap">
+                  <div
+                    ref={composerBackdropRef}
+                    className="feed-composer-backdrop"
+                    aria-hidden
+                    dangerouslySetInnerHTML={{ __html: buildHighlightedText(postBody) }}
+                  />
                   <textarea
                     ref={composerTextareaRef}
-                    className="feed-composer-textarea"
+                    className="feed-composer-textarea feed-composer-textarea--highlighted"
                     value={postBody}
                     onChange={(e) => {
                       const next = e.target.value;
@@ -761,6 +789,7 @@ const Feed = () => {
                       if ((next.match(/\^/g) || []).length > (postBody.match(/\^/g) || []).length) setAddressTagJustCompleted(false);
                     }}
                     onSelect={(e) => setComposerCursorPosition(e.target.selectionStart ?? 0)}
+                    onScroll={handleComposerScroll}
                     onKeyDown={(e) => {
                       if (showMentionDropdown && mentionSuggestions.length > 0) {
                         if (e.key === 'Escape') {

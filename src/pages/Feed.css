@@ -614,6 +614,44 @@
   color: var(--color-text-muted, #94a3b8);
 }
 
+/* Highlight backdrop – mirrors textarea text with colored @mentions, ^properties, #hashtags */
+.feed-composer-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 12px 0;
+  font-size: 18px;
+  font-family: inherit;
+  line-height: inherit;
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow: hidden;
+  pointer-events: none;
+  color: transparent;
+}
+
+.feed-composer-textarea--highlighted {
+  color: transparent;
+  caret-color: var(--color-text-primary, #f8fafc);
+  position: relative;
+  z-index: 1;
+}
+
+.feed-composer-highlight {
+  color: #3b82f6;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.feed-composer-highlight-hash {
+  color: #8b5cf6;
+  text-decoration: underline;
+  text-decoration-style: dotted;
+  text-underline-offset: 2px;
+}
+
 .feed-composer-mention-dropdown {
   position: absolute;
   left: 0;
