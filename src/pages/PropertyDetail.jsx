@@ -822,190 +822,188 @@ const PropertyDetail = () => {
                 <p className="detail-section-loading">Loading public records…</p>
               </div>
             )}
-            {!snapshotLoading && (
-              <>
-                {/* A) Physical Characteristics — snapshot or property fallback */}
-                {(snapshotSections?.physical || property.bedrooms != null || property.squareFeet != null || property.propertyType || property.yearBuilt) && (
+            {!snapshotLoading && snapshotSections && (() => {
+              const ph = snapshotSections.physical;
+              const ow = snapshotSections.ownership;
+              const mg = snapshotSections.mortgage;
+              const sh = snapshotSections.salesHistory;
+              const va = snapshotSections.valuation;
+              const tx = snapshotSections.tax;
+              const di = snapshotSections.distress;
+              const dash = '—';
+              const fmtPrice = (v) => (v != null && Number.isFinite(Number(v)) ? formatPrice(v) : dash);
+              const fmtNum = (v, suffix) => (v != null && Number.isFinite(Number(v)) ? `${formatNumber(v)}${suffix || ''}` : dash);
+              const fmtStr = (v) => (v != null && v !== '' ? String(v) : dash);
+              const fmtDt = (v) => (v != null && v !== '' ? formatDate(v) : dash);
+              const fmtLTV = (v) => {
+                if (v == null || v === '') return dash;
+                return typeof v === 'number' ? `${(v * 100).toFixed(1)}%` : String(v);
+              };
+              const fmtConf = (v) => {
+                if (v == null || v === '') return dash;
+                return typeof v === 'number' ? `${(v * 100).toFixed(0)}%` : String(v);
+              };
+              return (
+                <>
+                  {/* A) Physical Characteristics */}
                   <div className="property-details-card property-detail-section-card">
                     <h3>Physical Characteristics</h3>
-                    {(() => {
-                      const ph = snapshotSections?.physical;
-                      return (
-                        <>
-                          <div className="detail-row"><span className="detail-label">Property type</span><span className="detail-value">{propTypeLabel(ph?.propertyType || property.propertyType)}</span></div>
-                          {(ph?.livingAreaSqft ?? property.squareFeet) != null && <div className="detail-row"><span className="detail-label">Living area</span><span className="detail-value">{formatNumber(ph?.livingAreaSqft ?? property.squareFeet)} sq ft</span></div>}
-                          {(ph?.lotSizeSqft ?? property.lotSize) != null && <div className="detail-row"><span className="detail-label">Lot size</span><span className="detail-value">{formatNumber(ph?.lotSizeSqft ?? property.lotSize)} sq ft</span></div>}
-                          {(ph?.yearBuilt ?? property.yearBuilt) != null && <div className="detail-row"><span className="detail-label">Year built</span><span className="detail-value">{ph?.yearBuilt ?? property.yearBuilt}</span></div>}
-                          {(ph?.beds ?? property.bedrooms) != null && <div className="detail-row"><span className="detail-label">Beds</span><span className="detail-value">{ph?.beds ?? property.bedrooms}</span></div>}
-                          {(ph?.baths ?? property.bathrooms) != null && <div className="detail-row"><span className="detail-label">Baths</span><span className="detail-value">{ph?.baths ?? property.bathrooms}</span></div>}
-                          {ph?.constructionType && <div className="detail-row"><span className="detail-label">Construction type</span><span className="detail-value">{ph.constructionType}</span></div>}
-                          {ph?.stories != null && <div className="detail-row"><span className="detail-label">Stories</span><span className="detail-value">{ph.stories}</span></div>}
-                        </>
-                      );
-                    })()}
+                    <div className="detail-row"><span className="detail-label">Property type</span><span className="detail-value">{propTypeLabel(ph?.propertyType || property.propertyType) || dash}</span></div>
+                    <div className="detail-row"><span className="detail-label">Living area</span><span className="detail-value">{fmtNum(ph?.livingAreaSqft ?? property.squareFeet, ' sq ft')}</span></div>
+                    <div className="detail-row"><span className="detail-label">Lot size</span><span className="detail-value">{fmtNum(ph?.lotSizeSqft ?? property.lotSize, ' sq ft')}</span></div>
+                    <div className="detail-row"><span className="detail-label">Year built</span><span className="detail-value">{fmtStr(ph?.yearBuilt ?? property.yearBuilt)}</span></div>
+                    <div className="detail-row"><span className="detail-label">Beds</span><span className="detail-value">{fmtStr(ph?.beds ?? property.bedrooms)}</span></div>
+                    <div className="detail-row"><span className="detail-label">Baths</span><span className="detail-value">{fmtStr(ph?.baths ?? property.bathrooms)}</span></div>
+                    <div className="detail-row"><span className="detail-label">Construction type</span><span className="detail-value">{fmtStr(ph?.constructionType)}</span></div>
+                    <div className="detail-row"><span className="detail-label">Stories</span><span className="detail-value">{fmtStr(ph?.stories)}</span></div>
                   </div>
-                )}
 
-                {/* B) Ownership & Deed */}
-                {snapshotSections?.ownership && (
+                  {/* B) Ownership & Deed */}
                   <div className="property-details-card property-detail-section-card">
                     <h3>Ownership &amp; Deed Events</h3>
-                    {snapshotSections.ownership.currentOwnerNames?.length > 0 && (
-                      <div className="detail-row">
-                        <span className="detail-label">Current owner(s)</span>
-                        <span className="detail-value detail-value-list">{snapshotSections.ownership.currentOwnerNames.join(', ')}</span>
-                      </div>
-                    )}
-                    {snapshotSections.ownership.lastTransferDate && <div className="detail-row"><span className="detail-label">Last transfer date</span><span className="detail-value">{formatDate(snapshotSections.ownership.lastTransferDate)}</span></div>}
-                    {snapshotSections.ownership.lastDeedType && <div className="detail-row"><span className="detail-label">Last deed type</span><span className="detail-value">{snapshotSections.ownership.lastDeedType}</span></div>}
-                    {snapshotSections.ownership.lastRecordingDate && <div className="detail-row"><span className="detail-label">Last recording date</span><span className="detail-value">{formatDate(snapshotSections.ownership.lastRecordingDate)}</span></div>}
-                    {snapshotSections.ownership.lastSalePrice != null && <div className="detail-row"><span className="detail-label">Last sale price</span><span className="detail-value">{formatPrice(snapshotSections.ownership.lastSalePrice)}</span></div>}
-                    {snapshotSections.ownership.ownershipChain?.length > 0 && (
+                    <div className="detail-row"><span className="detail-label">Current owner(s)</span><span className="detail-value detail-value-list">{ow?.currentOwnerNames?.length > 0 ? ow.currentOwnerNames.join(', ') : dash}</span></div>
+                    <div className="detail-row"><span className="detail-label">Last transfer date</span><span className="detail-value">{fmtDt(ow?.lastTransferDate)}</span></div>
+                    <div className="detail-row"><span className="detail-label">Last deed type</span><span className="detail-value">{fmtStr(ow?.lastDeedType)}</span></div>
+                    <div className="detail-row"><span className="detail-label">Last recording date</span><span className="detail-value">{fmtDt(ow?.lastRecordingDate)}</span></div>
+                    <div className="detail-row"><span className="detail-label">Last sale price</span><span className="detail-value">{fmtPrice(ow?.lastSalePrice)}</span></div>
+                    {ow?.ownershipChain?.length > 0 && (
                       <div className="detail-section-list">
                         <span className="detail-label">Ownership chain</span>
                         <ul className="detail-value-list-ul">
-                          {snapshotSections.ownership.ownershipChain.map((e, i) => (
+                          {ow.ownershipChain.map((e, i) => (
                             <li key={i}>
-                              {e.seller && <span>{e.seller}</span>} → {e.buyer && <span>{e.buyer}</span>}
-                              {e.saleDate && <span> · {formatDate(e.saleDate)}</span>}
-                              {e.price != null && <span> · {formatPrice(e.price)}</span>}
-                              {e.deedType && <span> · {e.deedType}</span>}
-                              {e.recordingDate && <span> · Rec. {formatDate(e.recordingDate)}</span>}
+                              {e.seller || dash} → {e.buyer || dash}
+                              {' · '}{fmtDt(e.saleDate)}
+                              {' · '}{fmtPrice(e.price)}
+                              {e.deedType && ` · ${e.deedType}`}
+                              {e.recordingDate && ` · Rec. ${formatDate(e.recordingDate)}`}
                             </li>
                           ))}
                         </ul>
                       </div>
                     )}
                   </div>
-                )}
 
-                {/* C) Mortgage & Financing */}
-                {snapshotSections?.mortgage && (
+                  {/* C) Mortgage & Financing */}
                   <div className="property-details-card property-detail-section-card">
                     <h3>Mortgage &amp; Financing</h3>
-                    {snapshotSections.mortgage.activeMortgages?.length > 0 && (
-                      <div className="detail-section-list">
-                        <span className="detail-label">Active mortgage(s)</span>
+                    <div className="detail-section-list">
+                      <span className="detail-label">Active mortgage(s)</span>
+                      {mg?.activeMortgages?.length > 0 ? (
                         <ul className="detail-value-list-ul">
-                          {snapshotSections.mortgage.activeMortgages.map((m, i) => (
+                          {mg.activeMortgages.map((m, i) => (
                             <li key={i}>
-                              {m.originalLoanAmount != null && formatPrice(m.originalLoanAmount)}
-                              {m.lenderName && ` · ${m.lenderName}`}
-                              {m.loanType && ` · ${m.loanType}`}
-                              {(m.interestRate != null && m.interestRate !== '') && ` · Rate ${m.interestRate}`}
-                              {m.recordingDate && ` · ${formatDate(m.recordingDate)}`}
+                              {fmtPrice(m.originalLoanAmount)}
+                              {m.lenderName ? ` · ${m.lenderName}` : ''}
+                              {m.loanType ? ` · ${m.loanType}` : ''}
+                              {(m.interestRate != null && m.interestRate !== '') ? ` · Rate ${m.interestRate}` : ''}
+                              {m.recordingDate ? ` · ${formatDate(m.recordingDate)}` : ''}
                             </li>
                           ))}
                         </ul>
-                      </div>
-                    )}
-                    {snapshotSections.mortgage.refinanceEvents?.length > 0 && (
-                      <div className="detail-section-list">
-                        <span className="detail-label">Refinance events</span>
+                      ) : <p className="detail-value">{dash}</p>}
+                    </div>
+                    <div className="detail-section-list">
+                      <span className="detail-label">Refinance events</span>
+                      {mg?.refinanceEvents?.length > 0 ? (
                         <ul className="detail-value-list-ul">
-                          {snapshotSections.mortgage.refinanceEvents.map((e, i) => (
-                            <li key={i}>{formatDate(e.date)} {e.originalLoanAmount != null && ` · ${formatPrice(e.originalLoanAmount)}`} {e.lenderName && ` · ${e.lenderName}`}</li>
+                          {mg.refinanceEvents.map((e, i) => (
+                            <li key={i}>{fmtDt(e.date)}{e.originalLoanAmount != null ? ` · ${formatPrice(e.originalLoanAmount)}` : ''}{e.lenderName ? ` · ${e.lenderName}` : ''}</li>
                           ))}
                         </ul>
-                      </div>
-                    )}
-                    {snapshotSections.mortgage.secondaryLiensOrHelocs?.length > 0 && (
-                      <div className="detail-section-list">
-                        <span className="detail-label">Secondary liens / HELOCs</span>
+                      ) : <p className="detail-value">{dash}</p>}
+                    </div>
+                    <div className="detail-section-list">
+                      <span className="detail-label">Secondary liens / HELOCs</span>
+                      {mg?.secondaryLiensOrHelocs?.length > 0 ? (
                         <ul className="detail-value-list-ul">
-                          {snapshotSections.mortgage.secondaryLiensOrHelocs.map((e, i) => (
-                            <li key={i}>{e.amount != null && formatPrice(e.amount)} {e.lenderName && ` · ${e.lenderName}`} {e.type && ` · ${e.type}`} {e.recordingDate && ` · ${formatDate(e.recordingDate)}`}</li>
+                          {mg.secondaryLiensOrHelocs.map((e, i) => (
+                            <li key={i}>{fmtPrice(e.amount)}{e.lenderName ? ` · ${e.lenderName}` : ''}{e.type ? ` · ${e.type}` : ''}{e.recordingDate ? ` · ${formatDate(e.recordingDate)}` : ''}</li>
                           ))}
                         </ul>
-                      </div>
-                    )}
+                      ) : <p className="detail-value">{dash}</p>}
+                    </div>
                   </div>
-                )}
 
-                {/* D) Sales History */}
-                {snapshotSections?.salesHistory?.salesHistory?.length > 0 && (
+                  {/* D) Sales History */}
                   <div className="property-details-card property-detail-section-card">
                     <h3>Sales History</h3>
-                    <ul className="detail-value-list-ul">
-                      {snapshotSections.salesHistory.salesHistory.map((s, i) => (
-                        <li key={i}>
-                          {formatDate(s.saleDate)} · {s.salePrice != null ? formatPrice(s.salePrice) : '—'}
-                          {s.armsLengthIndicator && ` · Arms length: ${s.armsLengthIndicator}`}
-                          {s.transactionType && ` · ${s.transactionType}`}
-                          {s.flipSignal && ` · Flip: ${s.flipSignal}`}
-                        </li>
-                      ))}
-                    </ul>
+                    {sh?.salesHistory?.length > 0 ? (
+                      <ul className="detail-value-list-ul">
+                        {sh.salesHistory.map((s, i) => (
+                          <li key={i}>
+                            {fmtDt(s.saleDate)} · {fmtPrice(s.salePrice)}
+                            {s.armsLengthIndicator ? ` · Arms length: ${s.armsLengthIndicator}` : ''}
+                            {s.transactionType ? ` · ${s.transactionType}` : ''}
+                            {s.flipSignal ? ` · Flip: ${s.flipSignal}` : ''}
+                          </li>
+                        ))}
+                      </ul>
+                    ) : <p className="detail-value">{dash}</p>}
                   </div>
-                )}
 
-                {/* E) Valuation & Equity */}
-                {snapshotSections?.valuation && (
+                  {/* E) Valuation & Equity */}
                   <div className="property-details-card property-detail-section-card">
                     <h3>Valuation &amp; Equity</h3>
-                    {snapshotSections.valuation.avmValue != null && <div className="detail-row"><span className="detail-label">AVM value</span><span className="detail-value">{formatPrice(snapshotSections.valuation.avmValue)}</span></div>}
-                    {snapshotSections.valuation.estimatedEquity != null && <div className="detail-row"><span className="detail-label">Estimated equity</span><span className="detail-value">{formatPrice(snapshotSections.valuation.estimatedEquity)}</span></div>}
-                    {(snapshotSections.valuation.estimatedLTV != null && snapshotSections.valuation.estimatedLTV !== '') && <div className="detail-row"><span className="detail-label">Estimated LTV</span><span className="detail-value">{typeof snapshotSections.valuation.estimatedLTV === 'number' ? `${(snapshotSections.valuation.estimatedLTV * 100).toFixed(1)}%` : snapshotSections.valuation.estimatedLTV}</span></div>}
-                    {snapshotSections.valuation.priceTrendIndicators && <div className="detail-row"><span className="detail-label">Price trend</span><span className="detail-value">{snapshotSections.valuation.priceTrendIndicators}</span></div>}
-                    {(snapshotSections.valuation.confidenceScore != null && snapshotSections.valuation.confidenceScore !== '') && <div className="detail-row"><span className="detail-label">Confidence score</span><span className="detail-value">{typeof snapshotSections.valuation.confidenceScore === 'number' ? `${(snapshotSections.valuation.confidenceScore * 100).toFixed(0)}%` : snapshotSections.valuation.confidenceScore}</span></div>}
+                    <div className="detail-row"><span className="detail-label">AVM value</span><span className="detail-value">{fmtPrice(va?.avmValue)}</span></div>
+                    <div className="detail-row"><span className="detail-label">Estimated equity</span><span className="detail-value">{fmtPrice(va?.estimatedEquity)}</span></div>
+                    <div className="detail-row"><span className="detail-label">Estimated LTV</span><span className="detail-value">{fmtLTV(va?.estimatedLTV)}</span></div>
+                    <div className="detail-row"><span className="detail-label">Price trend</span><span className="detail-value">{fmtStr(va?.priceTrendIndicators)}</span></div>
+                    <div className="detail-row"><span className="detail-label">Confidence score</span><span className="detail-value">{fmtConf(va?.confidenceScore)}</span></div>
                   </div>
-                )}
 
-                {/* F) Tax & Assessment */}
-                {snapshotSections?.tax && (
+                  {/* F) Tax & Assessment */}
                   <div className="property-details-card property-detail-section-card">
                     <h3>Tax &amp; Assessment</h3>
-                    {snapshotSections.tax.assessedValueLand != null && <div className="detail-row"><span className="detail-label">Assessed value (land)</span><span className="detail-value">{formatPrice(snapshotSections.tax.assessedValueLand)}</span></div>}
-                    {snapshotSections.tax.assessedValueImprovement != null && <div className="detail-row"><span className="detail-label">Assessed value (improvement)</span><span className="detail-value">{formatPrice(snapshotSections.tax.assessedValueImprovement)}</span></div>}
-                    {snapshotSections.tax.assessedValueTotal != null && <div className="detail-row"><span className="detail-label">Assessed value (total)</span><span className="detail-value">{formatPrice(snapshotSections.tax.assessedValueTotal)}</span></div>}
-                    {snapshotSections.tax.taxMarketValue != null && <div className="detail-row"><span className="detail-label">Tax market value</span><span className="detail-value">{formatPrice(snapshotSections.tax.taxMarketValue)}</span></div>}
-                    {(snapshotSections.tax.taxYear != null && snapshotSections.tax.taxYear !== '') && <div className="detail-row"><span className="detail-label">Tax year</span><span className="detail-value">{snapshotSections.tax.taxYear}</span></div>}
-                    {snapshotSections.tax.taxAmount != null && <div className="detail-row"><span className="detail-label">Tax amount</span><span className="detail-value">{formatPrice(snapshotSections.tax.taxAmount)}/year</span></div>}
-                    {snapshotSections.tax.exemptions?.length > 0 && (
-                      <div className="detail-row">
-                        <span className="detail-label">Exemptions</span>
-                        <span className="detail-value detail-value-list">{snapshotSections.tax.exemptions.join(', ')}</span>
-                      </div>
-                    )}
+                    <div className="detail-row"><span className="detail-label">Assessed value (land)</span><span className="detail-value">{fmtPrice(tx?.assessedValueLand)}</span></div>
+                    <div className="detail-row"><span className="detail-label">Assessed value (improvement)</span><span className="detail-value">{fmtPrice(tx?.assessedValueImprovement)}</span></div>
+                    <div className="detail-row"><span className="detail-label">Assessed value (total)</span><span className="detail-value">{fmtPrice(tx?.assessedValueTotal)}</span></div>
+                    <div className="detail-row"><span className="detail-label">Tax market value</span><span className="detail-value">{fmtPrice(tx?.taxMarketValue)}</span></div>
+                    <div className="detail-row"><span className="detail-label">Tax year</span><span className="detail-value">{fmtStr(tx?.taxYear)}</span></div>
+                    <div className="detail-row"><span className="detail-label">Tax amount</span><span className="detail-value">{tx?.taxAmount != null ? `${formatPrice(tx.taxAmount)}/year` : dash}</span></div>
+                    <div className="detail-row"><span className="detail-label">Exemptions</span><span className="detail-value detail-value-list">{tx?.exemptions?.length > 0 ? tx.exemptions.join(', ') : dash}</span></div>
                   </div>
-                )}
 
-                {/* G) Distress / Default */}
-                {snapshotSections?.distress && (
+                  {/* G) Distress / Default */}
                   <div className="property-details-card property-detail-section-card">
                     <h3>Distress / Default Indicators</h3>
-                    {snapshotSections.distress.foreclosureFilings?.length > 0 && (
-                      <div className="detail-section-list">
-                        <span className="detail-label">Foreclosure filings</span>
+                    <div className="detail-section-list">
+                      <span className="detail-label">Foreclosure filings</span>
+                      {di?.foreclosureFilings?.length > 0 ? (
                         <ul className="detail-value-list-ul">
-                          {snapshotSections.distress.foreclosureFilings.map((f, i) => (
+                          {di.foreclosureFilings.map((f, i) => (
                             <li key={i}>{typeof f === 'object' ? JSON.stringify(f) : String(f)}</li>
                           ))}
                         </ul>
-                      </div>
-                    )}
-                    {snapshotSections.distress.preForeclosure != null && (
-                      <div className="detail-row">
-                        <span className="detail-label">Pre-foreclosure</span>
-                        <span className="detail-value">{typeof snapshotSections.distress.preForeclosure === 'object' ? 'Yes' : String(snapshotSections.distress.preForeclosure)}</span>
-                      </div>
-                    )}
-                    {snapshotSections.distress.auctionNotices?.length > 0 && (
-                      <div className="detail-section-list">
-                        <span className="detail-label">Auction notices</span>
+                      ) : <p className="detail-value">{dash}</p>}
+                    </div>
+                    <div className="detail-row"><span className="detail-label">Pre-foreclosure</span><span className="detail-value">{di?.preForeclosure != null ? (typeof di.preForeclosure === 'object' ? 'Yes' : String(di.preForeclosure)) : dash}</span></div>
+                    <div className="detail-section-list">
+                      <span className="detail-label">Auction notices</span>
+                      {di?.auctionNotices?.length > 0 ? (
                         <ul className="detail-value-list-ul">
-                          {snapshotSections.distress.auctionNotices.map((a, i) => (
+                          {di.auctionNotices.map((a, i) => (
                             <li key={i}>{typeof a === 'object' ? JSON.stringify(a) : String(a)}</li>
                           ))}
                         </ul>
-                      </div>
-                    )}
-                    {snapshotSections.distress.reoStatus && (
-                      <div className="detail-row"><span className="detail-label">REO status</span><span className="detail-value">{snapshotSections.distress.reoStatus}</span></div>
-                    )}
+                      ) : <p className="detail-value">{dash}</p>}
+                    </div>
+                    <div className="detail-row"><span className="detail-label">REO status</span><span className="detail-value">{fmtStr(di?.reoStatus)}</span></div>
                   </div>
-                )}
-              </>
+                </>
+              );
+            })()}
+            {/* Legacy properties without snapshot: show basic physical if available */}
+            {!snapshotLoading && !snapshotSections && (property.bedrooms != null || property.squareFeet != null || property.propertyType || property.yearBuilt) && (
+              <div className="property-details-card property-detail-section-card">
+                <h3>Physical Characteristics</h3>
+                <div className="detail-row"><span className="detail-label">Property type</span><span className="detail-value">{propTypeLabel(property.propertyType) || '—'}</span></div>
+                {property.squareFeet != null && <div className="detail-row"><span className="detail-label">Living area</span><span className="detail-value">{formatNumber(property.squareFeet)} sq ft</span></div>}
+                {property.lotSize != null && <div className="detail-row"><span className="detail-label">Lot size</span><span className="detail-value">{formatNumber(property.lotSize)} sq ft</span></div>}
+                {property.yearBuilt != null && <div className="detail-row"><span className="detail-label">Year built</span><span className="detail-value">{property.yearBuilt}</span></div>}
+                {property.bedrooms != null && <div className="detail-row"><span className="detail-label">Beds</span><span className="detail-value">{property.bedrooms}</span></div>}
+                {property.bathrooms != null && <div className="detail-row"><span className="detail-label">Baths</span><span className="detail-value">{property.bathrooms}</span></div>}
+              </div>
             )}
 
             {(() => {
