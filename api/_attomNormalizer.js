@@ -34,20 +34,20 @@ function normalizePhysical(p) {
   const rooms = building.rooms ?? building ?? {};
   const size = building.size ?? building ?? {};
   const summary = p.summary ?? {};
-  const propType = pick(p, 'summary.proptype', 'summary.propType', 'propertyType', 'proptype') ?? summary.proptype ?? summary.propType;
+  const propType = pick(p, 'summary.proptype', 'summary.propType', 'summary.propertyType', 'propertyType', 'proptype') ?? summary.proptype ?? summary.propType;
   const livingArea = num(pick(p, 'building.size.universalsize', 'building.size.universalSize', 'building.size.buildingSize', 'squarefeet', 'squareFeet')) ?? num(size.universalsize ?? size.universalSize ?? size.buildingSize);
-  const lotSize = num(pick(p, 'lot.lotSize1', 'lot.size', 'lotSizeSqft', 'lotSize'));
-  const yearBuilt = num(pick(p, 'building.yearBuilt', 'yearbuilt', 'yearBuilt')) ?? str(pick(p, 'building.yearBuilt', 'yearbuilt', 'yearBuilt'));
-  const beds = num(rooms.beds ?? p.beds);
-  const baths = num(rooms.bathstotal ?? rooms.bathsTotal ?? p.bathstotal ?? p.bathsTotal ?? p.baths);
+  const lotSize = num(pick(p, 'lot.lotSize1', 'lot.lotsize1', 'lot.size', 'lotSizeSqft', 'lotSize'));
+  const yearBuilt = num(pick(p, 'summary.yearbuilt', 'summary.yearBuilt', 'building.yearBuilt', 'building.yearbuilt', 'yearbuilt', 'yearBuilt')) ?? str(pick(p, 'summary.yearbuilt', 'building.yearBuilt', 'yearbuilt'));
+  const beds = num(pick(p, 'building.rooms.beds', 'building.rooms.bathstotal') == null ? null : null) ?? num(rooms.beds ?? rooms.bedrooms ?? p.beds);
+  const baths = num(rooms.bathstotal ?? rooms.bathsTotal ?? rooms.bathsfull ?? p.bathstotal ?? p.bathsTotal ?? p.baths);
   const constructionType = str(pick(p, 'building.constructionType', 'building.constructiontype', 'constructionType'));
-  const stories = num(pick(p, 'building.stories', 'stories'));
+  const stories = num(pick(p, 'building.stories', 'building.storeys', 'stories'));
   if (!propType && livingArea == null && lotSize == null && yearBuilt == null && beds == null && baths == null && !constructionType && stories == null) return null;
   return {
     propertyType: str(propType),
     livingAreaSqft: livingArea,
     lotSizeSqft: lotSize,
-    yearBuilt: yearBuilt != null ? yearBuilt : str(pick(p, 'building.yearBuilt', 'yearbuilt', 'yearBuilt')),
+    yearBuilt,
     beds,
     baths,
     constructionType,
@@ -60,11 +60,11 @@ function normalizeOwnership(p) {
   if (!p) return null;
   const owner = p.owner ?? p.ownership ?? {};
   const sale = p.sale ?? {};
-  const saleAmt = sale.amount ?? sale;
-  const salePrice = num(saleAmt?.saleAmt ?? saleAmt?.saleamt ?? sale.saleAmt ?? sale.saleamt);
-  const saleDate = str(sale.saleSearchDate ?? sale.salesearchdate ?? sale.saleTransDate ?? sale.saletransdate ?? sale.recordingDate ?? sale.recordingdate);
+  const saleAmtObj = sale.amount ?? {};
+  const salePrice = num(saleAmtObj.saleamt ?? saleAmtObj.saleAmt ?? sale.saleAmt ?? sale.saleamt);
+  const saleDate = str(sale.salesearchdate ?? sale.saleSearchDate ?? sale.saleTransDate ?? sale.saletransdate ?? sale.recordingDate ?? sale.recordingdate);
   const deedType = str(sale.deedType ?? sale.deedtype ?? sale.type);
-  const recordingDate = str(sale.recordingDate ?? sale.recordingdate ?? sale.documentDate ?? sale.documentdate);
+  const recordingDate = str(saleAmtObj.salerecdate ?? sale.recordingDate ?? sale.recordingdate ?? sale.documentDate ?? sale.documentdate);
   const ownerNames = arr(owner.owner ?? owner.name ?? owner.ownerName).map((n) => (typeof n === 'string' ? n : n?.name ?? n?.fullName));
   const ownerNameSingle = str(owner.owner ?? owner.name ?? owner.ownerName);
   if (ownerNameSingle && !ownerNames.includes(ownerNameSingle)) ownerNames.push(ownerNameSingle);
@@ -124,13 +124,16 @@ function normalizeMortgage(p) {
 function normalizeSalesHistory(p) {
   if (!p) return null;
   const sales = arr(p.sales ?? p.saleHistory ?? p.salesHistory ?? (p.sale ? [p.sale] : []));
-  const salesHistory = sales.map((s) => ({
-    saleDate: str(s.saleSearchDate ?? s.saleTransDate ?? s.recordingDate ?? s.date ?? s.saleDate),
-    salePrice: num(s.saleAmt ?? s.saleamt ?? s.amount ?? s.price),
-    armsLengthIndicator: str(s.armsLength ?? s.armslength ?? s.armsLengthIndicator),
-    transactionType: str(s.transactionType ?? s.transactiontype ?? s.type),
-    flipSignal: str(s.flipSignal ?? s.flipsignal) ?? (s.flip === true || s.flip === 'Y' ? 'Y' : null),
-  })).filter((e) => e.saleDate || e.salePrice != null);
+  const salesHistory = sales.map((s) => {
+    const sAmtObj = s.amount && typeof s.amount === 'object' ? s.amount : {};
+    return {
+      saleDate: str(s.salesearchdate ?? s.saleSearchDate ?? s.saleTransDate ?? s.recordingDate ?? s.date ?? s.saleDate),
+      salePrice: num(sAmtObj.saleamt ?? sAmtObj.saleAmt ?? s.saleAmt ?? s.saleamt ?? s.price),
+      armsLengthIndicator: str(s.armsLength ?? s.armslength ?? s.armsLengthIndicator),
+      transactionType: str(sAmtObj.saletranstype ?? s.transactionType ?? s.transactiontype ?? s.type),
+      flipSignal: str(s.flipSignal ?? s.flipsignal) ?? (s.flip === true || s.flip === 'Y' ? 'Y' : null),
+    };
+  }).filter((e) => e.saleDate || e.salePrice != null);
   if (!salesHistory.length) return null;
   return { salesHistory };
 }
@@ -141,14 +144,18 @@ function normalizeValuation(p) {
   const avm = p.avm ?? p.valuation ?? {};
   const amt = avm.amount ?? avm;
   const avmValue = num(amt?.value ?? amt?.amount ?? avm?.value ?? avm?.amount ?? p.estimate);
+  const avmHigh = num(amt?.high);
+  const avmLow = num(amt?.low);
   const equity = p.equity ?? p.estimatedEquity ?? {};
-  const estimatedEquity = num(equity?.amount ?? equity?.value ?? equity ?? p.estimatedEquity);
+  const estimatedEquity = num(equity?.amount ?? equity?.value ?? (typeof equity === 'number' ? equity : null) ?? p.estimatedEquity);
   const estimatedLTV = num(p.estimatedLTV ?? p.estimatedltv ?? p.ltv) ?? str(p.estimatedLTV ?? p.ltv);
   const priceTrend = str(p.priceTrend ?? p.priceTrendIndicators ?? p.trend);
-  const confidenceScore = num(p.confidenceScore ?? p.confidence ?? avm?.confidence) ?? str(p.confidenceScore ?? avm?.confidence);
-  if (avmValue == null && estimatedEquity == null && estimatedLTV == null && !priceTrend && confidenceScore == null) return null;
+  const confidenceScore = num(amt?.scr ?? avm?.confidence ?? p.confidenceScore ?? p.confidence) ?? str(avm?.confidence ?? p.confidenceScore);
+  if (avmValue == null && avmHigh == null && avmLow == null && estimatedEquity == null && estimatedLTV == null && !priceTrend && confidenceScore == null) return null;
   return {
     avmValue,
+    avmHigh,
+    avmLow,
     estimatedEquity,
     estimatedLTV,
     priceTrendIndicators: priceTrend || null,
@@ -159,21 +166,31 @@ function normalizeValuation(p) {
 /** F) Tax & Assessment */
 function normalizeTax(p) {
   if (!p) return null;
-  const tax = p.tax ?? p.assessment ?? p.assessed ?? {};
-  const assessedValueLand = num(tax.assessedValueLand ?? tax.assessedvalueland ?? tax.landValue ?? tax.land);
-  const assessedValueImprovement = num(tax.assessedValueImprovement ?? tax.assessedvalueimprovement ?? tax.improvementValue ?? tax.improvement);
-  const assessedValueTotal = num(tax.assessedValueTotal ?? tax.assessedvaluetotal ?? tax.total ?? tax.assessedValue) ?? (assessedValueLand != null || assessedValueImprovement != null ? (assessedValueLand ?? 0) + (assessedValueImprovement ?? 0) : null);
-  const taxMarketValue = num(tax.taxMarketValue ?? tax.taxmarketvalue ?? tax.marketValue ?? tax.market);
-  const taxYear = num(tax.taxYear ?? tax.taxyear ?? tax.year) ?? str(tax.taxYear ?? tax.taxYear);
-  const taxAmount = num(tax.taxAmount ?? tax.taxamount ?? tax.amount ?? p.propertyTax);
-  const exemptions = arr(tax.exemptions ?? tax.exemption).filter(Boolean).map((e) => (typeof e === 'string' ? e : e?.type ?? e?.name ?? JSON.stringify(e)));
-  if (assessedValueLand == null && assessedValueImprovement == null && assessedValueTotal == null && taxMarketValue == null && taxYear == null && taxAmount == null && !exemptions.length) return null;
+  // ATTOM nests: assessment.assessed.*, assessment.market.*, assessment.tax.*
+  const assess = p.assessment ?? {};
+  const assessed = assess.assessed ?? {};
+  const market = assess.market ?? {};
+  const taxSub = assess.tax ?? {};
+  // Also support flattened shapes from other providers
+  const tax = p.tax ?? {};
+  const assessedValueLand = num(assessed.assdlandvalue ?? tax.assessedValueLand ?? tax.assessedvalueland ?? tax.landValue);
+  const assessedValueImprovement = num(assessed.assdimprvalue ?? tax.assessedValueImprovement ?? tax.assessedvalueimprovement ?? tax.improvementValue);
+  const assessedValueTotal = num(assessed.assdttlvalue ?? tax.assessedValueTotal ?? tax.assessedvaluetotal ?? tax.assessedValue) ?? (assessedValueLand != null || assessedValueImprovement != null ? (assessedValueLand ?? 0) + (assessedValueImprovement ?? 0) : null);
+  const taxMarketValue = num(market.mktttlvalue ?? tax.taxMarketValue ?? tax.taxmarketvalue ?? tax.marketValue);
+  const marketValueLand = num(market.mktlandvalue);
+  const marketValueImprovement = num(market.mktimprvalue);
+  const taxYear = num(taxSub.taxyear ?? tax.taxYear ?? tax.taxyear ?? tax.year) ?? str(taxSub.taxyear ?? tax.taxYear);
+  const taxAmount = num(taxSub.taxamt ?? tax.taxAmount ?? tax.taxamount ?? tax.amount ?? p.propertyTax);
+  const exemptions = arr(tax.exemptions ?? tax.exemption ?? assess.exemptions).filter(Boolean).map((e) => (typeof e === 'string' ? e : e?.type ?? e?.name ?? JSON.stringify(e)));
+  if (assessedValueLand == null && assessedValueImprovement == null && assessedValueTotal == null && taxMarketValue == null && marketValueLand == null && marketValueImprovement == null && taxYear == null && taxAmount == null && !exemptions.length) return null;
   return {
     assessedValueLand,
     assessedValueImprovement,
     assessedValueTotal,
     taxMarketValue,
-    taxYear: taxYear != null ? taxYear : str(tax.taxYear ?? tax.year),
+    marketValueLand,
+    marketValueImprovement,
+    taxYear,
     taxAmount,
     exemptions: exemptions.length ? exemptions : null,
   };

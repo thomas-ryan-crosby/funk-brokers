@@ -946,6 +946,7 @@ const PropertyDetail = () => {
                   <div className="property-details-card property-detail-section-card">
                     <h3>Valuation &amp; Equity</h3>
                     <div className="detail-row"><span className="detail-label">AVM value</span><span className="detail-value">{fmtPrice(va?.avmValue)}</span></div>
+                    <div className="detail-row"><span className="detail-label">AVM range (low–high)</span><span className="detail-value">{va?.avmLow != null && va?.avmHigh != null ? `${formatPrice(va.avmLow)} – ${formatPrice(va.avmHigh)}` : dash}</span></div>
                     <div className="detail-row"><span className="detail-label">Estimated equity</span><span className="detail-value">{fmtPrice(va?.estimatedEquity)}</span></div>
                     <div className="detail-row"><span className="detail-label">Estimated LTV</span><span className="detail-value">{fmtLTV(va?.estimatedLTV)}</span></div>
                     <div className="detail-row"><span className="detail-label">Price trend</span><span className="detail-value">{fmtStr(va?.priceTrendIndicators)}</span></div>
@@ -958,7 +959,9 @@ const PropertyDetail = () => {
                     <div className="detail-row"><span className="detail-label">Assessed value (land)</span><span className="detail-value">{fmtPrice(tx?.assessedValueLand)}</span></div>
                     <div className="detail-row"><span className="detail-label">Assessed value (improvement)</span><span className="detail-value">{fmtPrice(tx?.assessedValueImprovement)}</span></div>
                     <div className="detail-row"><span className="detail-label">Assessed value (total)</span><span className="detail-value">{fmtPrice(tx?.assessedValueTotal)}</span></div>
-                    <div className="detail-row"><span className="detail-label">Tax market value</span><span className="detail-value">{fmtPrice(tx?.taxMarketValue)}</span></div>
+                    <div className="detail-row"><span className="detail-label">Market value (total)</span><span className="detail-value">{fmtPrice(tx?.taxMarketValue)}</span></div>
+                    <div className="detail-row"><span className="detail-label">Market value (land)</span><span className="detail-value">{fmtPrice(tx?.marketValueLand)}</span></div>
+                    <div className="detail-row"><span className="detail-label">Market value (improvement)</span><span className="detail-value">{fmtPrice(tx?.marketValueImprovement)}</span></div>
                     <div className="detail-row"><span className="detail-label">Tax year</span><span className="detail-value">{fmtStr(tx?.taxYear)}</span></div>
                     <div className="detail-row"><span className="detail-label">Tax amount</span><span className="detail-value">{tx?.taxAmount != null ? `${formatPrice(tx.taxAmount)}/year` : dash}</span></div>
                     <div className="detail-row"><span className="detail-label">Exemptions</span><span className="detail-value detail-value-list">{tx?.exemptions?.length > 0 ? tx.exemptions.join(', ') : dash}</span></div>
