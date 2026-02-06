@@ -54,6 +54,7 @@ const PropertyMap = ({ properties = [], onPropertiesInView }) => {
   const [unlistedParcels, setUnlistedParcels] = useState([]);
   const [selectedUnlistedParcel, setSelectedUnlistedParcel] = useState(null);
   const [claiming, setClaiming] = useState(false);
+  const geolocatedRef = useRef(false);
 
   const handleClaimUnlisted = async (parcel) => {
     if (!isAuthenticated || !user?.uid) {
@@ -112,6 +113,22 @@ const PropertyMap = ({ properties = [], onPropertiesInView }) => {
           });
         }
       });
+
+      // Request user location to center the map on their area
+      if (navigator.geolocation) {
+        geolocatedRef.current = 'pending';
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            geolocatedRef.current = true;
+            const m = mapInstanceRef.current;
+            if (m) {
+              m.flyTo({ center: [pos.coords.longitude, pos.coords.latitude], zoom: 12, speed: 1.5 });
+            }
+          },
+          () => { geolocatedRef.current = false; },
+          { enableHighAccuracy: false, timeout: 8000, maximumAge: 300000 }
+        );
+      }
     }
 
     const map = mapInstanceRef.current;
@@ -170,7 +187,8 @@ const PropertyMap = ({ properties = [], onPropertiesInView }) => {
         map.setCenter([withCoords[0].longitude, withCoords[0].latitude]);
         map.setZoom(14);
       }
-    } else {
+    } else if (!geolocatedRef.current) {
+      // Only reset to default if geolocation hasn't taken over
       map.setCenter(DEFAULT_CENTER);
       map.setZoom(DEFAULT_ZOOM);
     }
