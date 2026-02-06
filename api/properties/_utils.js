@@ -83,6 +83,7 @@ function mapRowToProperty(row) {
     insuranceClaimsReportUrl: row.insurance_claims_report_url ?? undefined,
     thirdPartyReviewConfirmed: normalizeTriBool(row.third_party_review_confirmed),
     thirdPartyReviewVendorId: row.third_party_review_vendor_id ?? undefined,
+    legalDescription: row.legal_description ?? undefined,
     verified: normalizeTriBool(row.verified),
     verifiedAt: row.verified_at ?? undefined,
     attomSnapshot: row.attom_snapshot && typeof row.attom_snapshot === 'string'

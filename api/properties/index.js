@@ -250,6 +250,7 @@ module.exports = async (req, res) => {
       'attomSnapshot',
       'verifiedComps', 'videoFiles', 'floorPlanUrl', 'valuationDocUrl', 'compReportUrl',
       'matterportTourUrl', 'hasInsuranceClaims', 'insuranceClaimsDescription', 'insuranceClaimsReportUrl',
+      'legalDescription',
       'thirdPartyReviewConfirmed', 'thirdPartyReviewVendorId', 'verified', 'verifiedAt',
     ];
     const updates = {};

@@ -4,11 +4,11 @@
  * Verified Buyer Score: 0–100 from purchase profile completeness; 100 when buyerVerified.
  *
  * Property tiers (6-tier system):
- * - Basic (Claimed): Address + property type + 1 photo
+ * - Basic (Claimed): Address + property type
  * - Complete: Property basics + pricing + 1 photo
- * - Verified: Detailed description + 5+ photos (no docs)
- * - Enhanced: Deed + HOA docs (if applicable) + verified pricing + pro photos (30+) + floor plan + video
- * - Premium: Disclosures + pro photos (30+) + floor plan + video + Matterport URL
+ * - Verified: Property description + legal description + 5+ photos (no docs)
+ * - Enhanced: Deed + HOA docs (if applicable) + verified pricing + pro photos (15+) + floor plan + video
+ * - Premium: Disclosures + pro photos (15+) + floor plan + video + Matterport URL
  * - Elite: Mortgage docs (if applicable) + inspection report + insurance claims rule + 3rd party value review
  */
 
@@ -58,8 +58,7 @@ function meetsBasicTier(p) {
   if (!p) return false;
   const hasAddress = !!(p.address && (p.city || p.state || p.zipCode));
   const hasType = !!p.propertyType;
-  const hasPhoto = (p.photos?.length ?? 0) >= 1;
-  return hasAddress && hasType && hasPhoto;
+  return hasAddress && hasType;
 }
 
 /**
@@ -89,7 +88,8 @@ function meetsVerifiedTier(p) {
   if (!meetsCompleteTier(p)) return false;
   const hasEnoughPhotos = (p.photos?.length ?? 0) >= 5;
   const hasRichDescription = !!(p.description && p.description.trim().length >= 200);
-  return hasEnoughPhotos && hasRichDescription;
+  const hasLegalDescription = !!(p.legalDescription && p.legalDescription.trim().length > 0);
+  return hasEnoughPhotos && hasRichDescription && hasLegalDescription;
 }
 
 /**
@@ -101,7 +101,7 @@ function meetsEnhancedTier(p) {
   const hasHoaDocs = p.hasHOA === true ? !!p.hoaDocsUrl : true; // If no HOA, skip requirement
   const hasVerifiedPricing = !!(p.valuationDocUrl || p.compReportUrl || (Array.isArray(p.verifiedComps) && p.verifiedComps.length >= 1));
   const hasProPhotosConfirmed = p.professionalPhotos === true;
-  const hasEnoughPhotos = (p.photos?.length ?? 0) >= 30;
+  const hasEnoughPhotos = (p.photos?.length ?? 0) >= 15;
   const hasFloorPlan = !!p.floorPlanUrl;
   const hasVideo = !!(p.videoTourUrl || (Array.isArray(p.videoFiles) && p.videoFiles.length > 0) || (Array.isArray(p.videos) && p.videos.length > 0));
   return hasDeed && hasHoaDocs && hasVerifiedPricing && hasProPhotosConfirmed && hasEnoughPhotos && hasFloorPlan && hasVideo;
@@ -114,7 +114,7 @@ function meetsPremiumTier(p) {
   if (!meetsEnhancedTier(p)) return false;
   const hasDisclosures = !!p.disclosureFormsUrl;
   const hasProPhotosConfirmed = p.professionalPhotos === true;
-  const hasEnoughPhotos = (p.photos?.length ?? 0) >= 30;
+  const hasEnoughPhotos = (p.photos?.length ?? 0) >= 15;
   const hasFloorPlan = !!p.floorPlanUrl;
   const hasVideo = !!(p.videoTourUrl || (Array.isArray(p.videoFiles) && p.videoFiles.length > 0) || (Array.isArray(p.videos) && p.videos.length > 0));
   const hasMatterport = !!p.matterportTourUrl;
@@ -226,7 +226,8 @@ export function getListingTierProgress(p) {
 
   if (tier === 'complete') {
     const steps = [
-      { done: descLength >= 200, label: `Description (${descLength}/200 characters)` },
+      { done: descLength >= 200, label: `Property description (${descLength}/200 characters)` },
+      { done: !!(p?.legalDescription && p.legalDescription.trim().length > 0), label: 'Legal description' },
       { done: photoCount >= 5, label: `Photos (${photoCount}/5 minimum)` },
     ];
     const completed = steps.filter((s) => s.done).length;
@@ -245,7 +246,7 @@ export function getListingTierProgress(p) {
       { done: p?.hasHOA === true ? !!p?.hoaDocsUrl : true, label: p?.hasHOA === true ? 'HOA documents' : 'HOA documents (N/A)' },
       { done: !!(p?.valuationDocUrl || p?.compReportUrl || (p?.verifiedComps?.length ?? 0) >= 1), label: 'Verified pricing (comps or appraisal)' },
       { done: p?.professionalPhotos === true, label: 'Professional photos checkbox' },
-      { done: photoCount >= 30, label: `Photos (${photoCount}/30 minimum)` },
+      { done: photoCount >= 15, label: `Photos (${photoCount}/15 minimum)` },
       { done: !!p?.floorPlanUrl, label: 'Floor plan' },
       { done: !!(p?.videoTourUrl || (Array.isArray(p?.videoFiles) && p.videoFiles.length > 0) || (Array.isArray(p?.videos) && p.videos.length > 0)), label: 'Video' },
     ];

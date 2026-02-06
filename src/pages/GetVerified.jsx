@@ -195,7 +195,7 @@ const GetVerified = () => {
       if (hasHOA === 'yes') inc(!!(property?.hoaDocsUrl || hoaDocsFile));
       inc(hasVerifiedPricing);
       inc(hasProPhotos);
-      inc(totalPhotos >= 30);
+      inc(totalPhotos >= 15);
       inc(hasFloorPlan);
       inc(hasVideo);
     } else if (currentTier === 'enhanced') {
@@ -247,7 +247,7 @@ const GetVerified = () => {
       const hasFloorPlan = !!(property.floorPlanUrl || floorPlanFile);
       const hasVideo = !!(property.videoTourUrl || (Array.isArray(property.videoFiles) && property.videoFiles.length > 0) || (Array.isArray(property.videos) && property.videos.length > 0) || videoFiles.length > 0);
       if (!professionalPhotos && property.professionalPhotos !== true) errs.push('Professional photos checkbox');
-      if (totalPhotos < 30) errs.push('30+ photos');
+      if (totalPhotos < 15) errs.push('15+ photos');
       if (!hasFloorPlan) errs.push('Floor plan');
       if (!hasVideo) errs.push('Video');
       console.debug('[GetVerified] Verified tier checks', {
@@ -974,7 +974,7 @@ const GetVerified = () => {
               {isVerifiedTier && (
                 <>
                   <h2>Professional Assets</h2>
-                  <p className="form-note">Add professional photos (30+), a floor plan, and a video to reach Enhanced.</p>
+                  <p className="form-note">Add professional photos (15+), a floor plan, and a video to reach Enhanced.</p>
                   <div className="form-group">
                     <label>Professional Photos *</label>
                     <label className="toggle-label">
@@ -984,9 +984,9 @@ const GetVerified = () => {
                   </div>
                   <div className="form-group">
                     <label>Photos *</label>
-                    <p className="form-hint">At least 30 photos required.</p>
+                    <p className="form-hint">At least 15 photos required.</p>
                     <DragDropFileInput multiple accept="image/*" onChange={(files) => handlePhotoFiles(files || [])} placeholder="Drop photos here or click to browse" />
-                    <p className="form-hint">Total photos: {totalPhotoCount} / 30 minimum</p>
+                    <p className="form-hint">Total photos: {totalPhotoCount} / 15 minimum</p>
                   </div>
                   <div className="form-group">
                     <label>Floor plan *</label>
@@ -1030,8 +1030,8 @@ const GetVerified = () => {
                   <h2>Confirm Assets</h2>
                   <p className="form-note">Confirm all professional assets are present.</p>
                   <div className="form-group">
-                    <p className={totalPhotoCount >= 30 ? 'on-file' : 'form-hint form-hint--warn'}>
-                      {totalPhotoCount >= 30 ? `✓ ${totalPhotoCount} photos` : '30+ photos required'}
+                    <p className={totalPhotoCount >= 15 ? 'on-file' : 'form-hint form-hint--warn'}>
+                      {totalPhotoCount >= 15 ? `✓ ${totalPhotoCount} photos` : '15+ photos required'}
                     </p>
                     <p className={property?.floorPlanUrl ? 'on-file' : 'form-hint form-hint--warn'}>
                       {property?.floorPlanUrl ? '✓ Floor plan on file' : 'Floor plan required'}

@@ -95,6 +95,7 @@ const EditProperty = () => {
         hoaFee: p.hoaFee != null ? String(p.hoaFee) : '',
         propertyTax: p.propertyTax != null ? String(p.propertyTax) : (tx?.taxAmount != null ? String(tx.taxAmount) : ''),
         description: p.description || '',
+        legalDescription: p.legalDescription || '',
         acceptingCommunications: p.acceptingCommunications !== false,
       });
       // Set HOA and Insurance toggles
@@ -259,11 +260,17 @@ const EditProperty = () => {
     }
     if (isCompleteToVerified) {
       const descLen = (formData.description || '').trim().length;
+      const legalDescLen = (formData.legalDescription || '').trim().length;
       const totalPhotos = existingPhotos.length + newPhotoPreviews.length;
-      console.debug('[EditProperty] Complete → Verified validation', { descLen, totalPhotos });
+      console.debug('[EditProperty] Complete → Verified validation', { descLen, legalDescLen, totalPhotos });
       if (descLen < 200) {
-        setError('Please add a detailed description (200+ characters).');
+        setError('Please add a detailed property description (200+ characters).');
         console.warn('[EditProperty] Blocked: description too short', { descLen });
+        return;
+      }
+      if (legalDescLen === 0) {
+        setError('Please add a legal description for the property.');
+        console.warn('[EditProperty] Blocked: legal description missing');
         return;
       }
       if (totalPhotos < 5) {
@@ -322,6 +329,7 @@ const EditProperty = () => {
         insuranceApproximation: hasInsurance === 'yes' && insuranceApproximation ? parseFloat(insuranceApproximation) : null,
         propertyTax: formData.propertyTax ? parseFloat(formData.propertyTax) : null,
         description: (formData.description || '').trim(),
+        legalDescription: (formData.legalDescription || '').trim(),
         photos,
         ...docUrls,
         acceptingOffers: !!formData.acceptingOffers,
@@ -625,9 +633,9 @@ const EditProperty = () => {
           {isCompleteToVerified && (
             <div className="form-step">
               <h2>Property Description</h2>
-              <p className="form-note">Add a detailed description (200+ characters) and at least 5 photos to reach Verified.</p>
+              <p className="form-note">Add a detailed property description (200+ characters), a legal description, and at least 5 photos to reach Verified.</p>
               <div className="form-group">
-                <label>Description *</label>
+                <label>Property Description *</label>
                 <textarea
                   name="description"
                   value={formData.description || ''}
@@ -640,6 +648,20 @@ const EditProperty = () => {
                 <p className="form-hint">
                   {(formData.description || '').length} / 200 characters minimum
                   {(formData.description || '').length >= 200 && ' ✓'}
+                </p>
+              </div>
+              <div className="form-group">
+                <label>Legal Description *</label>
+                <textarea
+                  name="legalDescription"
+                  value={formData.legalDescription || ''}
+                  onChange={handleInputChange}
+                  rows={4}
+                  placeholder="Enter the legal description from the deed or tax records..."
+                  required
+                />
+                <p className="form-hint">
+                  The legal description can typically be found on the property deed or county tax records.
                 </p>
               </div>
               <div className="form-group">

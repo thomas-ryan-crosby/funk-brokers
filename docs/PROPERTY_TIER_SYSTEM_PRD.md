@@ -119,7 +119,7 @@ The Property Tier System gamifies property listing completion by creating a clea
 - Complete 3-screen flow:
   - Screen 1: Upload documents (Deed, HOA docs if applicable)
   - Screen 2: Verified pricing info (via comparable analysis tool or uploaded appraisal report)
-  - Screen 3: Professional photos (30+), Floor plan, Video
+  - Screen 3: Professional photos (15+), Floor plan, Video
 
 ---
 
@@ -313,7 +313,7 @@ For each tier, calculate progress toward the next tier:
 4. **User completes 3-screen flow** → Progresses to Enhanced
    - Screen 1: Documents (Deed, HOA)
    - Screen 2: Verified Pricing
-   - Screen 3: Professional Assets (30+ photos, floor plan, video)
+   - Screen 3: Professional Assets (15+ photos, floor plan, video)
 5. **User completes 3-screen flow** → Progresses to Premium
    - Screen 1: Disclosure Forms
    - Screen 2: (No action needed)
@@ -403,7 +403,7 @@ For each tier, calculate progress toward the next tier:
 - [ ] Add insurance claims question (5 years) with Yes/No
 - [ ] If Yes: require description + document upload (insuranceClaimsReportUrl)
 - [ ] Add Matterport link URL field
-- [ ] Update photo requirements (1 for Complete, 5 for Verified, 30+ for Enhanced+)
+- [ ] Update photo requirements (1 for Complete, 5 for Verified, 15+ for Enhanced+)
 - [ ] Add floor plan upload field (required for Enhanced+)
 - [ ] Add video upload field (required for Enhanced+)
 - [ ] Add professional photos checkbox (Enhanced+)
@@ -426,9 +426,9 @@ For each tier, calculate progress toward the next tier:
 - Basic (Claimed): 1+ photo
 - Complete: 1+ photo
 - Verified: 5+ photos
-- Enhanced: 30+ high quality professional photos
-- Premium: 30+ high quality professional photos
-- Elite: 30+ high quality professional photos
+- Enhanced: 15+ high quality professional photos
+- Premium: 15+ high quality professional photos
+- Elite: 15+ high quality professional photos
 
 ### Document Requirements
 - Documents start at Enhanced tier
