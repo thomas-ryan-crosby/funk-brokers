@@ -1104,9 +1104,9 @@ const PropertyDetail = () => {
                         // Basic/Complete → need property info (edit property)
                         // Verified/Enhanced/Premium → need documents/advanced assets (get verified)
                         const needsDocuments = prog.tier === 'verified' || prog.tier === 'enhanced' || prog.tier === 'premium';
-                        const advanceUrl = needsDocuments 
+                        const advanceUrl = needsDocuments
                           ? `/property/${property.id}/get-verified`
-                          : `/property/${property.id}/edit`;
+                          : `/property/${property.id}/edit?advance=true`;
                         let advanceText;
                         if (needsDocuments) {
                           if (prog.tier === 'verified') {

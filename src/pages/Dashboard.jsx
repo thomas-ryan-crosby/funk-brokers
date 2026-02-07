@@ -870,9 +870,9 @@ const Dashboard = () => {
                             {(() => {
                               // Determine the best route based on current tier and next tier
                               const needsDocuments = tierProgress.tier === 'verified' || tierProgress.tier === 'enhanced' || tierProgress.tier === 'premium';
-                              const advanceUrl = needsDocuments 
+                              const advanceUrl = needsDocuments
                                 ? `/property/${property.id}/get-verified`
-                                : `/property/${property.id}/edit`;
+                                : `/property/${property.id}/edit?advance=true`;
                               return (
                                 <Link to={advanceUrl} className="property-tier-nudge-link">Add info</Link>
                               );

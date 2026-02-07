@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { getPropertyById, updateProperty } from '../services/propertyService';
 import { uploadFile, uploadMultipleFiles } from '../services/storageService';
@@ -18,8 +18,9 @@ const commonFeatures = [
 const EditProperty = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const location = useLocation();
   const { user, isAuthenticated, loading: authLoading } = useAuth();
+  const [searchParams] = useSearchParams();
+  const isAdvanceMode = searchParams.get('advance') === 'true';
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -314,17 +315,18 @@ const EditProperty = () => {
       return;
     }
     
-    // Determine if coming from tier advancement
-    const isBasicToComplete = currentTier === 'basic';
-    const isCompleteToVerified = currentTier === 'complete';
+    // Determine if coming from tier advancement (only when ?advance=true)
+    const isBasicToComplete = isAdvanceMode && currentTier === 'basic';
+    const isCompleteToVerified = isAdvanceMode && currentTier === 'complete';
     console.debug('[EditProperty] Submit start', {
       id,
       currentTier,
+      isAdvanceMode,
       isBasicToComplete,
       isCompleteToVerified,
       step,
     });
-    
+
     // If Basic → Complete multi-step form and not on final step, handle next
     if (isBasicToComplete && step < 3) {
       console.debug('[EditProperty] Advancing to next step (Basic → Complete)', { step });
@@ -453,29 +455,33 @@ const EditProperty = () => {
       });
       await updateProperty(id, updates);
       
-      // Check if property advanced to next tier
-      const updatedProperty = await getPropertyById(id);
-      console.debug('[EditProperty] Updated property fetched', updatedProperty);
-      const newTier = getListingTier(updatedProperty);
-      console.debug('[EditProperty] Tier after update', { currentTier, newTier });
-      
-      // Show celebration if tier advanced
-      if (currentTier === 'basic' && newTier === 'complete') {
-        setCelebratingTier('Complete');
-        setShowCelebration(true);
-        setTimeout(() => {
-          setShowCelebration(false);
+      // Check if property advanced to next tier (only relevant in advance mode)
+      if (isAdvanceMode) {
+        const updatedProperty = await getPropertyById(id);
+        console.debug('[EditProperty] Updated property fetched', updatedProperty);
+        const newTier = getListingTier(updatedProperty);
+        console.debug('[EditProperty] Tier after update', { currentTier, newTier });
+
+        if (currentTier === 'basic' && newTier === 'complete') {
+          setCelebratingTier('Complete');
+          setShowCelebration(true);
+          setTimeout(() => {
+            setShowCelebration(false);
+            navigate(`/property/${id}`);
+          }, 2500);
+        } else if (currentTier === 'complete' && newTier === 'verified') {
+          setCelebratingTier('Verified');
+          setShowCelebration(true);
+          setTimeout(() => {
+            setShowCelebration(false);
+            navigate(`/property/${id}`);
+          }, 2500);
+        } else {
+          console.warn('[EditProperty] Tier did not advance as expected', { currentTier, newTier });
           navigate(`/property/${id}`);
-        }, 2500);
-      } else if (currentTier === 'complete' && newTier === 'verified') {
-        setCelebratingTier('Verified');
-        setShowCelebration(true);
-        setTimeout(() => {
-          setShowCelebration(false);
-          navigate(`/property/${id}`);
-        }, 2500);
+        }
       } else {
-        console.warn('[EditProperty] Tier did not advance as expected', { currentTier, newTier });
+        // Regular edit — just navigate back
         navigate(`/property/${id}`);
       }
     } catch (err) {
@@ -502,13 +508,11 @@ const EditProperty = () => {
   }
   if (!formData) return null;
 
-  // Determine if coming from tier advancement
-  // Basic → Complete: needs property info (multi-step form)
-  // Complete → Verified: needs ONLY description + 5+ photos
-  const isBasicToComplete = currentTier === 'basic';
-  const isCompleteToVerified = currentTier === 'complete';
+  // Determine if coming from tier advancement (only when ?advance=true is in URL)
+  const isBasicToComplete = isAdvanceMode && currentTier === 'basic';
+  const isCompleteToVerified = isAdvanceMode && currentTier === 'complete';
   const isTierAdvancement = isBasicToComplete || isCompleteToVerified;
-  const advancementMessage = isBasicToComplete 
+  const advancementMessage = isBasicToComplete
     ? 'Complete items below to advance to Complete tier'
     : (isCompleteToVerified
     ? 'Complete the additional items below to advance to Verified tier'
@@ -642,22 +646,26 @@ const EditProperty = () => {
                   </div>
                 )}
                 
-                {/* Insurance Toggle */}
-                <div className="form-group">
-                  <label>Insurance? *</label>
-                  <select value={hasInsurance} onChange={(e) => setHasInsurance(e.target.value)} required>
-                    <option value="">Select</option>
-                    <option value="yes">Yes</option>
-                    <option value="no">No</option>
-                  </select>
-                </div>
-                {hasInsurance === 'yes' && (
-                  <div className="form-group">
-                    <label>Approximate Insurance Amount ($/year) *</label>
-                    <input type="number" value={insuranceApproximation} onChange={(e) => setInsuranceApproximation(e.target.value)} min="0" step="100" placeholder="e.g. 1800" required />
-                  </div>
+                {/* Insurance Toggle — only shown here during tier advancement; regular edit has a dedicated Insurance section */}
+                {isTierAdvancement && (
+                  <>
+                    <div className="form-group">
+                      <label>Insurance? *</label>
+                      <select value={hasInsurance} onChange={(e) => setHasInsurance(e.target.value)} required>
+                        <option value="">Select</option>
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                      </select>
+                    </div>
+                    {hasInsurance === 'yes' && (
+                      <div className="form-group">
+                        <label>Approximate Insurance Amount ($/year) *</label>
+                        <input type="number" value={insuranceApproximation} onChange={(e) => setInsuranceApproximation(e.target.value)} min="0" step="100" placeholder="e.g. 1800" required />
+                      </div>
+                    )}
+                  </>
                 )}
-                
+
                 <div className="form-group">
                   <label>Features</label>
                   <div className="features-grid">
