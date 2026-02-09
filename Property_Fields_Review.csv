@@ -1,0 +1,105 @@
+Category,Field Name,DB Column,Data Type,ATTOM Source,ATTOM Snapshot Path,Basic (Claimed),Complete,Verified,Enhanced,Premium,Elite,User Editable,Conditional On,Notes
+Location & ID,id,id,UUID,No,,Auto,Auto,Auto,Auto,Auto,Auto,No,,Primary key - auto-generated
+Location & ID,sellerId,seller_id,string,No,,Auto,Auto,Auto,Auto,Auto,Auto,No,,Set from authenticated user
+Location & ID,address,address,string,No,,REQUIRED,REQUIRED,REQUIRED,REQUIRED,REQUIRED,REQUIRED,Yes,,Street address
+Location & ID,city,city,string,No,,REQUIRED*,REQUIRED*,REQUIRED*,REQUIRED*,REQUIRED*,REQUIRED*,Yes,,"*At least one of city/state/zip required"
+Location & ID,state,state,string,No,,REQUIRED*,REQUIRED*,REQUIRED*,REQUIRED*,REQUIRED*,REQUIRED*,Yes,,"*At least one of city/state/zip required"
+Location & ID,zipCode,zip_code,string,No,,REQUIRED*,REQUIRED*,REQUIRED*,REQUIRED*,REQUIRED*,REQUIRED*,Yes,,"*At least one of city/state/zip required"
+Location & ID,latitude,latitude,number,No,,Optional,Optional,Optional,Optional,Optional,Optional,Yes (auto),,Set from address autocomplete
+Location & ID,longitude,longitude,number,No,,Optional,Optional,Optional,Optional,Optional,Optional,Yes (auto),,Set from address autocomplete
+Location & ID,attomId,attom_id,string,Yes,,Optional,Optional,Optional,Optional,Optional,Optional,No,,ATTOM property identifier - set on claim
+Physical,propertyType,property_type,string,Yes,attomSnapshot.physical.propertyType,REQUIRED,REQUIRED,REQUIRED,REQUIRED,REQUIRED,REQUIRED,Yes,,"Options: single-family, condo, townhouse, multi-family, land"
+Physical,bedrooms,bedrooms,number,Yes,attomSnapshot.physical.beds,Optional,REQUIRED,REQUIRED,REQUIRED,REQUIRED,REQUIRED,Yes,,Pre-filled from ATTOM if available
+Physical,bathrooms,bathrooms,number,Yes,attomSnapshot.physical.baths,Optional,REQUIRED,REQUIRED,REQUIRED,REQUIRED,REQUIRED,Yes,,Pre-filled from ATTOM if available; supports 0.5 increments
+Physical,squareFeet,square_feet,number,Yes,attomSnapshot.physical.livingAreaSqft,Optional,REQUIRED,REQUIRED,REQUIRED,REQUIRED,REQUIRED,Yes,,Pre-filled from ATTOM if available
+Physical,lotSize,lot_size,number,Yes,attomSnapshot.physical.lotSizeSqft,Optional,REQUIRED,REQUIRED,REQUIRED,REQUIRED,REQUIRED,Yes,,Pre-filled from ATTOM if available
+Physical,yearBuilt,year_built,number,Yes,attomSnapshot.physical.yearBuilt,Optional,REQUIRED,REQUIRED,REQUIRED,REQUIRED,REQUIRED,Yes,,Pre-filled from ATTOM if available
+Physical,features,features,JSON array,No,,Optional,Optional,Optional,Optional,Optional,Optional,Yes,,"Checkboxes: Garage, Fireplace, Pool, Garden, Hardwood Floors, Updated Kitchen, Updated Bathroom, Central Air, Central Heat, Washer/Dryer, Dishwasher, Garbage Disposal"
+Housing Costs,propertyTax,property_tax,number,Yes,attomSnapshot.tax.taxAmount,Optional,REQUIRED,REQUIRED,REQUIRED,REQUIRED,REQUIRED,Yes,,Annual property tax; pre-filled from ATTOM tax data
+Housing Costs,hasHOA,has_hoa,boolean,No,,Optional,REQUIRED,REQUIRED,REQUIRED,REQUIRED,REQUIRED,Yes,,Yes/No selection required
+Housing Costs,hoaFee,hoa_fee,number,No,,Optional,REQUIRED*,REQUIRED*,REQUIRED*,REQUIRED*,REQUIRED*,Yes,hasHOA=yes,*Required only if hasHOA=yes; monthly amount
+Housing Costs,hasInsurance,has_insurance,boolean,No,,Optional,REQUIRED,REQUIRED,REQUIRED,REQUIRED,REQUIRED,Yes,,Yes/No selection required
+Housing Costs,insuranceApproximation,insurance_approximation,number,No,,Optional,REQUIRED*,REQUIRED*,REQUIRED*,REQUIRED*,REQUIRED*,Yes,hasInsurance=yes,*Required only if hasInsurance=yes; annual amount
+Pricing,price,price,number,No,,Optional,Optional,Optional,Optional,Optional,Optional,Yes,,Asking price; defaults to estimatedWorth if not set
+Pricing,estimatedWorth,estimated_worth,number,No,,Optional,REQUIRED,REQUIRED,REQUIRED,REQUIRED,REQUIRED,Yes,,Owner's estimated property value
+Pricing,makeMeMovePrice,make_me_move_price,number,No,,Optional,REQUIRED,REQUIRED,REQUIRED,REQUIRED,REQUIRED,Yes,,"Pack-my-bags price"
+Pricing,funkEstimate,funk_estimate,number,Yes (AVM),attomSnapshot.valuation.avmValue,Optional,Optional,Optional,Optional,Optional,Optional,No,,Platform estimate from ATTOM AVM or manual
+Description,description,description,text,No,,Optional,Optional,REQUIRED (200+ chars),REQUIRED,REQUIRED,REQUIRED,Yes,,Min 200 characters for Verified tier
+Description,legalDescription,legal_description,text,No,,Optional,Optional,REQUIRED,REQUIRED,REQUIRED,REQUIRED,Yes,,From deed or county tax records
+Photos & Media,photos,photos,JSON array,No,,Optional (1+),REQUIRED (1+),REQUIRED (5+),REQUIRED (15+),REQUIRED (15+),REQUIRED (15+),Yes,,"Array of photo URLs; first is cover image; drag-to-reorder in edit"
+Photos & Media,professionalPhotos,professional_photos,boolean,No,,Optional,Optional,Optional,REQUIRED (true),REQUIRED (true),REQUIRED (true),Yes,,Checkbox: photos taken by professional photographer
+Photos & Media,floorPlanUrl,floor_plan_url,string (URL),No,,Optional,Optional,Optional,REQUIRED,REQUIRED,REQUIRED,Yes,,Document upload for floor plan
+Photos & Media,videoTourUrl,—,string (URL),No,,Optional,Optional,Optional,REQUIRED*,REQUIRED*,REQUIRED*,Yes,,"*At least one video source required (videoTourUrl OR videoFiles OR videos)"
+Photos & Media,videoFiles,video_files,JSON array,No,,Optional,Optional,Optional,REQUIRED*,REQUIRED*,REQUIRED*,Yes,,"*At least one video source required"
+Photos & Media,matterportTourUrl,matterport_tour_url,string (URL),No,,Optional,Optional,Optional,Optional,REQUIRED,REQUIRED,Yes,,Matterport 3D tour URL
+Mortgage & Financing,hasMortgage,has_mortgage,boolean,No,,Optional,Optional,Optional,Optional,Optional,Optional,Yes,,Yes/No selection
+Mortgage & Financing,remainingMortgage,remaining_mortgage,number,No,,Optional,Optional,Optional,Optional,Optional,Optional,Yes,hasMortgage=yes,Remaining mortgage balance
+Mortgage & Financing,mortgageDocUrl,mortgage_doc_url,string (URL),No,,Optional,Optional,Optional,Optional,Optional,REQUIRED*,Yes,hasMortgage=yes,"*Required if hasMortgage=yes; one of mortgageDoc or payoff required"
+Mortgage & Financing,payoffOrLienReleaseUrl,payoff_or_lien_release_url,string (URL),No,,Optional,Optional,Optional,Optional,Optional,REQUIRED*,Yes,hasMortgage=yes,"*Required if hasMortgage=yes; one of mortgageDoc or payoff required"
+Liens,lienTax,lien_tax,boolean,No,,Optional,Optional,Optional,Optional,Optional,Optional,Yes,,Tax lien checkbox
+Liens,lienHOA,lien_hoa,boolean,No,,Optional,Optional,Optional,Optional,Optional,Optional,Yes,,HOA lien checkbox
+Liens,lienMechanic,lien_mechanic,boolean,No,,Optional,Optional,Optional,Optional,Optional,Optional,Yes,,Mechanic's lien checkbox
+Liens,lienOther,lien_other_details,string,No,,Optional,Optional,Optional,Optional,Optional,Optional,Yes,,Free text for other liens
+Insurance Claims,hasInsuranceClaims,has_insurance_claims,boolean,No,,Optional,Optional,Optional,Optional,Optional,REQUIRED,Yes,,Yes/No selection; must be answered for Elite
+Insurance Claims,insuranceClaimsDescription,insurance_claims_description,text,No,,Optional,Optional,Optional,Optional,Optional,REQUIRED*,Yes,hasInsuranceClaims=yes,*Required if hasInsuranceClaims=yes
+Insurance Claims,insuranceClaimsReportUrl,insurance_claims_report_url,string (URL),No,,Optional,Optional,Optional,Optional,Optional,REQUIRED*,Yes,hasInsuranceClaims=yes,*Required if hasInsuranceClaims=yes
+Documents,deedUrl,deed_url,string (URL),No,,Optional,Optional,Optional,REQUIRED,REQUIRED,REQUIRED,Yes,,Property deed document
+Documents,propertyTaxRecordUrl,property_tax_record_url,string (URL),No,,Optional,Optional,Optional,Optional,Optional,Optional,Yes,,Property tax record document
+Documents,hoaDocsUrl,hoa_docs_url,string (URL),No,,Optional,Optional,Optional,REQUIRED*,REQUIRED*,REQUIRED*,Yes,hasHOA=yes,*Required only if hasHOA=yes
+Documents,disclosureFormsUrl,disclosure_forms_url,string (URL),No,,Optional,Optional,Optional,Optional,REQUIRED,REQUIRED,Yes,,Disclosure forms document
+Documents,inspectionReportUrl,inspection_report_url,string (URL),No,,Optional,Optional,Optional,Optional,Optional,REQUIRED,Yes,,Inspection report document
+Documents,valuationDocUrl,valuation_doc_url,string (URL),No,,Optional,Optional,Optional,REQUIRED*,REQUIRED*,REQUIRED*,Yes,,"*Part of verified pricing: need one of valuationDoc OR compReport OR verifiedComps"
+Documents,compReportUrl,comp_report_url,string (URL),No,,Optional,Optional,Optional,REQUIRED*,REQUIRED*,REQUIRED*,Yes,,"*Part of verified pricing: need one of valuationDoc OR compReport OR verifiedComps"
+Documents,verifiedComps,verified_comps,JSON array,No,,Optional,Optional,Optional,REQUIRED*,REQUIRED*,REQUIRED*,No,,"*Part of verified pricing: need one of valuationDoc OR compReport OR verifiedComps"
+Verification,thirdPartyReviewConfirmed,third_party_review_confirmed,boolean,No,,Optional,Optional,Optional,Optional,Optional,REQUIRED*,No,,"*Part of 3rd party review: satisfied if this+vendorId OR valuationDoc OR compReport"
+Verification,thirdPartyReviewVendorId,third_party_review_vendor_id,string,No,,Optional,Optional,Optional,Optional,Optional,REQUIRED*,No,,"*Part of 3rd party review"
+Status & Listing,status,status,enum,No,,Auto,Auto,Auto,Auto,Auto,Auto,Partial,,"Values: active, not_listed, under_contract, withdrawn, archived"
+Status & Listing,archived,archived,boolean,No,,Optional,Optional,Optional,Optional,Optional,Optional,Yes,,Soft delete flag
+Status & Listing,availableForSale,available_for_sale,boolean,No,,Optional,Optional,Optional,Optional,Optional,Optional,Yes,,Property listed for sale
+Status & Listing,acceptingOffers,accepting_offers,boolean,No,,Optional,Optional,Optional,Optional,Optional,Optional,Yes,,Accept offers even when not listed
+Status & Listing,acceptingCommunications,accepting_communications,boolean,No,,Default true,Default true,Default true,Default true,Default true,Default true,Yes,,Accept buyer communications
+Status & Listing,verified,verified,boolean,No,,Optional,Optional,Optional,Optional,Optional,Optional,No,,Manual verification override
+Status & Listing,verifiedAt,verified_at,timestamp,No,,Optional,Optional,Optional,Optional,Optional,Optional,No,,When manual verification occurred
+Seller Info,sellerName,seller_name,string,No,,Auto,Auto,Auto,Auto,Auto,Auto,No,,Set from user profile
+Seller Info,sellerEmail,seller_email,string,No,,Auto,Auto,Auto,Auto,Auto,Auto,No,,Set from user profile
+Timestamps,createdAt,created_at,timestamp,No,,Auto,Auto,Auto,Auto,Auto,Auto,No,,Property creation timestamp
+Timestamps,updatedAt,updated_at,timestamp,No,,Auto,Auto,Auto,Auto,Auto,Auto,No,,Last update timestamp
+ATTOM Snapshot,attomSnapshot,attom_snapshot,JSONB,Yes (all),,Auto,Auto,Auto,Auto,Auto,Auto,No,,Full ATTOM data stored as JSON - see ATTOM sections below
+ATTOM - Physical,attomSnapshot.physical.propertyType,—,string,Yes,,—,—,—,—,—,—,No,,Pre-fills propertyType on claim
+ATTOM - Physical,attomSnapshot.physical.livingAreaSqft,—,number,Yes,,—,—,—,—,—,—,No,,Pre-fills squareFeet on claim
+ATTOM - Physical,attomSnapshot.physical.lotSizeSqft,—,number,Yes,,—,—,—,—,—,—,No,,Pre-fills lotSize on claim
+ATTOM - Physical,attomSnapshot.physical.yearBuilt,—,number,Yes,,—,—,—,—,—,—,No,,Pre-fills yearBuilt on claim
+ATTOM - Physical,attomSnapshot.physical.beds,—,number,Yes,,—,—,—,—,—,—,No,,Pre-fills bedrooms on claim
+ATTOM - Physical,attomSnapshot.physical.baths,—,number,Yes,,—,—,—,—,—,—,No,,Pre-fills bathrooms on claim
+ATTOM - Physical,attomSnapshot.physical.constructionType,—,string,Yes,,—,—,—,—,—,—,No,,Display only on property detail
+ATTOM - Physical,attomSnapshot.physical.stories,—,number,Yes,,—,—,—,—,—,—,No,,Display only on property detail
+ATTOM - Ownership,attomSnapshot.ownership.currentOwnerNames,—,string[],Yes,,—,—,—,—,—,—,No,,Display only
+ATTOM - Ownership,attomSnapshot.ownership.lastSalePrice,—,number,Yes,,—,—,—,—,—,—,No,,Display only
+ATTOM - Ownership,attomSnapshot.ownership.lastTransferDate,—,string,Yes,,—,—,—,—,—,—,No,,Display only
+ATTOM - Ownership,attomSnapshot.ownership.lastDeedType,—,string,Yes,,—,—,—,—,—,—,No,,Display only
+ATTOM - Ownership,attomSnapshot.ownership.lastRecordingDate,—,string,Yes,,—,—,—,—,—,—,No,,Display only
+ATTOM - Ownership,attomSnapshot.ownership.ownershipChain,—,object[],Yes,,—,—,—,—,—,—,No,,"Array of {seller, buyer, saleDate, price, deedType, recordingDate}"
+ATTOM - Mortgage,attomSnapshot.mortgage.activeMortgages,—,object[],Yes,,—,—,—,—,—,—,No,,"Array of {originalLoanAmount, lenderName, loanType, interestRate, recordingDate}"
+ATTOM - Mortgage,attomSnapshot.mortgage.refinanceEvents,—,object[],Yes,,—,—,—,—,—,—,No,,"Array of {date, originalLoanAmount, lenderName}"
+ATTOM - Mortgage,attomSnapshot.mortgage.secondaryLiensOrHelocs,—,object[],Yes,,—,—,—,—,—,—,No,,"Array of {amount, lenderName, type, recordingDate}"
+ATTOM - Sales,attomSnapshot.salesHistory.salesHistory,—,object[],Yes,,—,—,—,—,—,—,No,,"Array of {saleDate, salePrice, armsLengthIndicator, transactionType, flipSignal}"
+ATTOM - Valuation,attomSnapshot.valuation.avmValue,—,number,Yes,,—,—,—,—,—,—,No,,Automated Valuation Model value; feeds funkEstimate
+ATTOM - Valuation,attomSnapshot.valuation.avmHigh,—,number,Yes,,—,—,—,—,—,—,No,,AVM high estimate
+ATTOM - Valuation,attomSnapshot.valuation.avmLow,—,number,Yes,,—,—,—,—,—,—,No,,AVM low estimate
+ATTOM - Valuation,attomSnapshot.valuation.estimatedEquity,—,number,Yes,,—,—,—,—,—,—,No,,Display only
+ATTOM - Valuation,attomSnapshot.valuation.estimatedLTV,—,number/string,Yes,,—,—,—,—,—,—,No,,Loan-to-value ratio
+ATTOM - Valuation,attomSnapshot.valuation.priceTrendIndicators,—,string,Yes,,—,—,—,—,—,—,No,,Display only
+ATTOM - Valuation,attomSnapshot.valuation.confidenceScore,—,number/string,Yes,,—,—,—,—,—,—,No,,AVM confidence score
+ATTOM - Tax,attomSnapshot.tax.assessedValueLand,—,number,Yes,,—,—,—,—,—,—,No,,Display only
+ATTOM - Tax,attomSnapshot.tax.assessedValueImprovement,—,number,Yes,,—,—,—,—,—,—,No,,Display only
+ATTOM - Tax,attomSnapshot.tax.assessedValueTotal,—,number,Yes,,—,—,—,—,—,—,No,,Display only
+ATTOM - Tax,attomSnapshot.tax.taxMarketValue,—,number,Yes,,—,—,—,—,—,—,No,,Display only
+ATTOM - Tax,attomSnapshot.tax.marketValueLand,—,number,Yes,,—,—,—,—,—,—,No,,Display only
+ATTOM - Tax,attomSnapshot.tax.marketValueImprovement,—,number,Yes,,—,—,—,—,—,—,No,,Display only
+ATTOM - Tax,attomSnapshot.tax.taxYear,—,number/string,Yes,,—,—,—,—,—,—,No,,Display only
+ATTOM - Tax,attomSnapshot.tax.taxAmount,—,number,Yes,,—,—,—,—,—,—,No,,Pre-fills propertyTax on claim
+ATTOM - Tax,attomSnapshot.tax.exemptions,—,string[],Yes,,—,—,—,—,—,—,No,,Display only
+ATTOM - Distress,attomSnapshot.distress.foreclosureFilings,—,object[],Yes,,—,—,—,—,—,—,No,,Display only
+ATTOM - Distress,attomSnapshot.distress.preForeclosure,—,boolean/object,Yes,,—,—,—,—,—,—,No,,Display only
+ATTOM - Distress,attomSnapshot.distress.auctionNotices,—,object[],Yes,,—,—,—,—,—,—,No,,Display only
+ATTOM - Distress,attomSnapshot.distress.reoStatus,—,string,Yes,,—,—,—,—,—,—,No,,Display only

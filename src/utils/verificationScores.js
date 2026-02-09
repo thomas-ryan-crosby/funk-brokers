@@ -7,9 +7,9 @@
  * - Basic (Claimed): Address + property type
  * - Complete: Property basics + pricing + 1 photo
  * - Verified: Property description + legal description + 5+ photos (no docs)
- * - Enhanced: Deed + HOA docs (if applicable) + verified pricing + pro photos (15+) + floor plan + video
- * - Premium: Disclosures + pro photos (15+) + floor plan + video + Matterport URL
- * - Elite: Mortgage docs (if applicable) + inspection report + insurance claims rule + 3rd party value review
+ * - Enhanced: Deed + HOA docs (if applicable) + verified pricing + pro photos (15+) + floor plan + video (videoFiles)
+ * - Premium: Disclosures + pro photos (15+) + floor plan + video (videoFiles) + Matterport URL
+ * - Elite: Mortgage docs (if applicable) + inspection report + insurance claims rule + valuation/comp doc
  */
 
 /**
@@ -103,7 +103,7 @@ function meetsEnhancedTier(p) {
   const hasProPhotosConfirmed = p.professionalPhotos === true;
   const hasEnoughPhotos = (p.photos?.length ?? 0) >= 15;
   const hasFloorPlan = !!p.floorPlanUrl;
-  const hasVideo = !!(p.videoTourUrl || (Array.isArray(p.videoFiles) && p.videoFiles.length > 0) || (Array.isArray(p.videos) && p.videos.length > 0));
+  const hasVideo = Array.isArray(p.videoFiles) && p.videoFiles.length > 0;
   return hasDeed && hasHoaDocs && hasVerifiedPricing && hasProPhotosConfirmed && hasEnoughPhotos && hasFloorPlan && hasVideo;
 }
 
@@ -116,7 +116,7 @@ function meetsPremiumTier(p) {
   const hasProPhotosConfirmed = p.professionalPhotos === true;
   const hasEnoughPhotos = (p.photos?.length ?? 0) >= 15;
   const hasFloorPlan = !!p.floorPlanUrl;
-  const hasVideo = !!(p.videoTourUrl || (Array.isArray(p.videoFiles) && p.videoFiles.length > 0) || (Array.isArray(p.videos) && p.videos.length > 0));
+  const hasVideo = Array.isArray(p.videoFiles) && p.videoFiles.length > 0;
   const hasMatterport = !!p.matterportTourUrl;
   return hasDisclosures && hasProPhotosConfirmed && hasEnoughPhotos && hasFloorPlan && hasVideo && hasMatterport;
 }
@@ -132,12 +132,8 @@ function meetsEliteTier(p) {
   const insuranceClaimsSatisfied = p.hasInsuranceClaims === true
     ? (!!p.insuranceClaimsReportUrl && !!(p.insuranceClaimsDescription || '').trim())
     : (p.hasInsuranceClaims === false);
-  const hasThirdPartyReview = !!(
-    (p.thirdPartyReviewConfirmed === true && (p.thirdPartyReviewVendorId || p.thirdPartyReviewVendor)) ||
-    p.valuationDocUrl ||
-    p.compReportUrl
-  );
-  return hasMortgageDocs && hasInspectionReport && insuranceClaimsAnswered && insuranceClaimsSatisfied && hasThirdPartyReview;
+  const hasValueDoc = !!(p.valuationDocUrl || p.compReportUrl);
+  return hasMortgageDocs && hasInspectionReport && insuranceClaimsAnswered && insuranceClaimsSatisfied && hasValueDoc;
 }
 
 /**
@@ -248,7 +244,7 @@ export function getListingTierProgress(p) {
       { done: p?.professionalPhotos === true, label: 'Professional photos checkbox' },
       { done: photoCount >= 15, label: `Photos (${photoCount}/15 minimum)` },
       { done: !!p?.floorPlanUrl, label: 'Floor plan' },
-      { done: !!(p?.videoTourUrl || (Array.isArray(p?.videoFiles) && p.videoFiles.length > 0) || (Array.isArray(p?.videos) && p.videos.length > 0)), label: 'Video' },
+      { done: Array.isArray(p?.videoFiles) && p.videoFiles.length > 0, label: 'Video' },
     ];
     const completed = steps.filter((s) => s.done).length;
     const missingItems = steps.filter((s) => !s.done).map((s) => s.label);
@@ -281,7 +277,7 @@ export function getListingTierProgress(p) {
       { done: !!p?.inspectionReportUrl, label: 'Inspection report' },
       { done: p?.hasInsuranceClaims === true || p?.hasInsuranceClaims === false, label: 'Insurance claims question' },
       { done: p?.hasInsuranceClaims === true ? (!!p?.insuranceClaimsReportUrl && !!(p?.insuranceClaimsDescription || '').trim()) : (p?.hasInsuranceClaims === false), label: 'Insurance claims documentation' },
-      { done: !!((p?.thirdPartyReviewConfirmed === true && (p?.thirdPartyReviewVendorId || p?.thirdPartyReviewVendor)) || p?.valuationDocUrl || p?.compReportUrl), label: '3rd party value review' },
+      { done: !!(p?.valuationDocUrl || p?.compReportUrl), label: 'Valuation or comp report' },
     ];
     const completed = steps.filter((s) => s.done).length;
     const missingItems = steps.filter((s) => !s.done).map((s) => s.label);

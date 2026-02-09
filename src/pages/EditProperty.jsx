@@ -567,29 +567,36 @@ const EditProperty = () => {
           {/* Step 1: Address + Property Info (only for Basic → Complete step 1, or always if not tier advancement) */}
           {((isBasicToComplete && step === 1) || (!isTierAdvancement)) && (
             <>
-              {/* Address */}
+              {/* Address — editable only during tier advancement (initial setup); read-only in regular edit */}
               <div className="form-step">
                 <h2>Address</h2>
-                <div className="form-group">
-                  <label>Address *</label>
-                  <AddressAutocomplete
-                    name="address"
-                    value={addressInputValue}
-                    onAddressChange={(v) => {
-                      setAddressInputValue(v);
-                      if (!v.trim()) setFormData((prev) => (prev ? { ...prev, address: '', city: '', state: '', zipCode: '', latitude: undefined, longitude: undefined } : prev));
-                    }}
-                    onAddressSelect={(obj) => {
-                      setFormData((prev) => (prev ? { ...prev, ...obj } : prev));
-                      setAddressInputValue([obj.address, obj.city, obj.state, obj.zipCode].filter(Boolean).join(', '));
-                    }}
-                    placeholder="Select an address from the list (start typing to search)"
-                    required
-                  />
-                  {formData.address && (formData.city || formData.zipCode) && (
-                    <p className="form-hint">✓ Address verified from selection</p>
-                  )}
-                </div>
+                {isTierAdvancement ? (
+                  <div className="form-group">
+                    <label>Address *</label>
+                    <AddressAutocomplete
+                      name="address"
+                      value={addressInputValue}
+                      onAddressChange={(v) => {
+                        setAddressInputValue(v);
+                        if (!v.trim()) setFormData((prev) => (prev ? { ...prev, address: '', city: '', state: '', zipCode: '', latitude: undefined, longitude: undefined } : prev));
+                      }}
+                      onAddressSelect={(obj) => {
+                        setFormData((prev) => (prev ? { ...prev, ...obj } : prev));
+                        setAddressInputValue([obj.address, obj.city, obj.state, obj.zipCode].filter(Boolean).join(', '));
+                      }}
+                      placeholder="Select an address from the list (start typing to search)"
+                      required
+                    />
+                    {formData.address && (formData.city || formData.zipCode) && (
+                      <p className="form-hint">✓ Address verified from selection</p>
+                    )}
+                  </div>
+                ) : (
+                  <div className="form-group">
+                    <p className="address-readonly">{[formData.address, formData.city, formData.state, formData.zipCode].filter(Boolean).join(', ')}</p>
+                    <p className="form-hint">To change the address, delete this property and create a new listing.</p>
+                  </div>
+                )}
               </div>
 
               {/* About the home */}

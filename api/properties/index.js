@@ -239,7 +239,7 @@ module.exports = async (req, res) => {
     if (!id) return res.status(400).json({ error: 'Missing id' });
     const allowed = [
       'address', 'city', 'state', 'zipCode', 'latitude', 'longitude', 'attomId', 'propertyType',
-      'bedrooms', 'bathrooms', 'squareFeet', 'price', 'funkEstimate', 'photos', 'features',
+      'bedrooms', 'bathrooms', 'squareFeet', 'price', 'photos', 'features',
       'status', 'availableForSale', 'acceptingOffers', 'acceptingCommunications', 'archived',
       'description', 'lotSize', 'yearBuilt', 'hoaFee', 'propertyTax', 'imGonePrice', 'hasHOA', 'has_h_o_a',
       'deedUrl', 'propertyTaxRecordUrl', 'hoaDocsUrl', 'disclosureFormsUrl', 'inspectionReportUrl',
@@ -251,7 +251,7 @@ module.exports = async (req, res) => {
       'verifiedComps', 'videoFiles', 'floorPlanUrl', 'valuationDocUrl', 'compReportUrl',
       'matterportTourUrl', 'hasInsuranceClaims', 'insuranceClaimsDescription', 'insuranceClaimsReportUrl',
       'legalDescription',
-      'thirdPartyReviewConfirmed', 'thirdPartyReviewVendorId', 'verified', 'verifiedAt',
+      'verified', 'verifiedAt',
     ];
     const updates = {};
     allowed.forEach((k) => {
@@ -277,13 +277,13 @@ module.exports = async (req, res) => {
       if (col === 'photos' || col === 'features' || col === 'verified_comps' || col === 'video_files' || col === 'attom_snapshot') {
         setCols.push(`${col} = $${idx}`);
         params.push(JSON.stringify(Array.isArray(v) ? v : (v && typeof v === 'object' ? v : [])));
-      } else if (col === 'available_for_sale' || col === 'accepting_offers' || col === 'accepting_communications' || col === 'archived' || col === 'has_hoa' || col === 'professional_photos' || col === 'has_insurance' || col === 'has_mortgage' || col === 'lien_tax' || col === 'lien_hoa' || col === 'lien_mechanic' || col === 'has_insurance_claims' || col === 'third_party_review_confirmed' || col === 'verified') {
+      } else if (col === 'available_for_sale' || col === 'accepting_offers' || col === 'accepting_communications' || col === 'archived' || col === 'has_hoa' || col === 'professional_photos' || col === 'has_insurance' || col === 'has_mortgage' || col === 'lien_tax' || col === 'lien_hoa' || col === 'lien_mechanic' || col === 'has_insurance_claims' || col === 'verified') {
         setCols.push(`${col} = $${idx}`);
         params.push(v === true);
       } else if (k === 'bedrooms' || k === 'squareFeet' || k === 'yearBuilt') {
         setCols.push(`${snake(k)} = $${idx}`);
         params.push(v == null ? null : Number(v));
-      } else if (k === 'bathrooms' || k === 'price' || k === 'funkEstimate' || k === 'lotSize' || k === 'hoaFee' || k === 'propertyTax' || k === 'imGonePrice' || k === 'estimatedWorth' || k === 'makeMeMovePrice' || k === 'insuranceApproximation' || k === 'remainingMortgage') {
+      } else if (k === 'bathrooms' || k === 'price' || k === 'lotSize' || k === 'hoaFee' || k === 'propertyTax' || k === 'imGonePrice' || k === 'estimatedWorth' || k === 'makeMeMovePrice' || k === 'insuranceApproximation' || k === 'remainingMortgage') {
         setCols.push(`${snake(k)} = $${idx}`);
         params.push(v == null ? null : Number(v));
       } else {

@@ -34,7 +34,11 @@ function mapRowToProperty(row) {
     bathrooms: row.bathrooms != null ? Number(row.bathrooms) : null,
     squareFeet: row.square_feet,
     price: row.price != null ? Number(row.price) : null,
-    funkEstimate: row.funk_estimate != null ? Number(row.funk_estimate) : null,
+    funkEstimate: row.funk_estimate != null
+      ? Number(row.funk_estimate)
+      : (row.attom_snapshot
+        ? (typeof row.attom_snapshot === 'string' ? JSON.parse(row.attom_snapshot) : row.attom_snapshot)?.valuation?.avmValue ?? null
+        : null),
     photos: normalizeJsonArray(row.photos),
     features: normalizeJsonArray(row.features),
     status: row.status,
@@ -81,8 +85,6 @@ function mapRowToProperty(row) {
     hasInsuranceClaims: normalizeTriBool(row.has_insurance_claims),
     insuranceClaimsDescription: row.insurance_claims_description ?? undefined,
     insuranceClaimsReportUrl: row.insurance_claims_report_url ?? undefined,
-    thirdPartyReviewConfirmed: normalizeTriBool(row.third_party_review_confirmed),
-    thirdPartyReviewVendorId: row.third_party_review_vendor_id ?? undefined,
     legalDescription: row.legal_description ?? undefined,
     verified: normalizeTriBool(row.verified),
     verifiedAt: row.verified_at ?? undefined,

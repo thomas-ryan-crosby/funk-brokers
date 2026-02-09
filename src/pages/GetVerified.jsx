@@ -76,9 +76,6 @@ const GetVerified = () => {
   const [hasInsuranceClaims, setHasInsuranceClaims] = useState('');
   const [insuranceClaimsDescription, setInsuranceClaimsDescription] = useState('');
   const [insuranceClaimsFile, setInsuranceClaimsFile] = useState(null);
-  const [thirdPartyReviewConfirmed, setThirdPartyReviewConfirmed] = useState(false);
-  const [thirdPartyReviewVendorId, setThirdPartyReviewVendorId] = useState('');
-  const [vendors, setVendors] = useState([]);
 
   const tierOrder = ['basic', 'complete', 'verified', 'enhanced', 'premium', 'elite'];
   const getTierIndex = (tier) => tierOrder.indexOf(tier);
@@ -147,8 +144,6 @@ const GetVerified = () => {
       setMatterportTourUrl(p.matterportTourUrl || '');
       setHasInsuranceClaims(p.hasInsuranceClaims === true ? 'yes' : p.hasInsuranceClaims === false ? 'no' : '');
       setInsuranceClaimsDescription(p.insuranceClaimsDescription || '');
-      setThirdPartyReviewConfirmed(!!p.thirdPartyReviewConfirmed);
-      setThirdPartyReviewVendorId(p.thirdPartyReviewVendorId || '');
     } catch (err) {
       setError('Property not found or failed to load.');
       console.error(err);
@@ -171,7 +166,7 @@ const GetVerified = () => {
 
     const hasVerifiedPricing = !!(property?.valuationDocUrl || property?.compReportUrl || valuationDocFile || compReportFile || (useCompAnalysis && verifiedComps.length >= 1));
     const totalPhotos = totalPhotoCount;
-    const hasVideo = !!(property?.videoTourUrl || (Array.isArray(property?.videoFiles) && property.videoFiles.length > 0) || (Array.isArray(property?.videos) && property.videos.length > 0) || videoFiles.length > 0);
+    const hasVideo = (Array.isArray(property?.videoFiles) && property.videoFiles.length > 0) || videoFiles.length > 0;
     const hasFloorPlan = !!(property?.floorPlanUrl || floorPlanFile);
     const hasMatterport = !!(matterportTourUrl.trim() || property?.matterportTourUrl);
     const hasProPhotos = professionalPhotos || property?.professionalPhotos === true;
@@ -184,11 +179,7 @@ const GetVerified = () => {
     const insuranceSatisfied = hasInsuranceClaims === 'yes'
       ? !!((insuranceClaimsDescription || '').trim() && (property?.insuranceClaimsReportUrl || insuranceClaimsFile))
       : (hasInsuranceClaims === 'no');
-    const thirdPartyReviewSatisfied = !!(
-      (thirdPartyReviewConfirmed && thirdPartyReviewVendorId) ||
-      property?.valuationDocUrl || valuationDocFile ||
-      property?.compReportUrl || compReportFile
-    );
+    const hasValueDoc = !!(property?.valuationDocUrl || valuationDocFile || property?.compReportUrl || compReportFile);
 
     if (currentTier === 'verified') {
       inc(!!(property?.deedUrl || deedFile));
@@ -206,7 +197,7 @@ const GetVerified = () => {
       inc(hasInspection);
       inc(insuranceAnswered);
       inc(insuranceSatisfied);
-      inc(thirdPartyReviewSatisfied);
+      inc(hasValueDoc);
     } else {
       return { completed: 1, total: 1, percentage: 100 };
     }
@@ -245,7 +236,7 @@ const GetVerified = () => {
       if (!hasVerifiedPricing) errs.push('Verified pricing (comps or appraisal)');
       const totalPhotos = totalPhotoCount;
       const hasFloorPlan = !!(property.floorPlanUrl || floorPlanFile);
-      const hasVideo = !!(property.videoTourUrl || (Array.isArray(property.videoFiles) && property.videoFiles.length > 0) || (Array.isArray(property.videos) && property.videos.length > 0) || videoFiles.length > 0);
+      const hasVideo = (Array.isArray(property.videoFiles) && property.videoFiles.length > 0) || videoFiles.length > 0;
       if (!professionalPhotos && property.professionalPhotos !== true) errs.push('Professional photos checkbox');
       if (totalPhotos < 15) errs.push('15+ photos');
       if (!hasFloorPlan) errs.push('Floor plan');
@@ -287,15 +278,15 @@ const GetVerified = () => {
         if (!insuranceClaimsDescription.trim()) errs.push('Insurance claims description');
         if (!property.insuranceClaimsReportUrl && !insuranceClaimsFile) errs.push('Insurance claims document');
       }
-      const thirdPartySatisfied = (thirdPartyReviewConfirmed && thirdPartyReviewVendorId) || property.valuationDocUrl || valuationDocFile || property.compReportUrl || compReportFile;
-      if (!thirdPartySatisfied) errs.push('3rd party value review (vendor or appraisal)');
+      const hasValueDocValidation = !!(property.valuationDocUrl || valuationDocFile || property.compReportUrl || compReportFile);
+      if (!hasValueDocValidation) errs.push('Valuation or comp report');
       console.debug('[GetVerified] Premium tier checks', {
         hasMortgageDocs,
         hasInspection,
         hasInsuranceClaims: hasInsuranceClaims,
         hasClaimsDoc: !!(property.insuranceClaimsReportUrl || insuranceClaimsFile),
         hasClaimsDesc: !!insuranceClaimsDescription.trim(),
-        thirdPartySatisfied,
+        hasValueDoc: hasValueDocValidation,
       });
     }
 
@@ -424,13 +415,6 @@ const GetVerified = () => {
         updates.insuranceClaimsReportUrl = url;
         setInsuranceClaimsFile(null);
       }
-      updates.thirdPartyReviewConfirmed = !!thirdPartyReviewConfirmed;
-      if (thirdPartyReviewConfirmed && thirdPartyReviewVendorId) {
-        updates.thirdPartyReviewVendorId = thirdPartyReviewVendorId;
-      } else if (!thirdPartyReviewConfirmed) {
-        updates.thirdPartyReviewVendorId = null;
-      }
-
       if (Object.keys(updates).length > 0) {
         console.debug('[GetVerified] Save progress update payload', updates);
         await updateProperty(id, updates);
@@ -572,8 +556,6 @@ const GetVerified = () => {
         hasInsuranceClaims: hasInsuranceClaims === 'yes' ? true : hasInsuranceClaims === 'no' ? false : null,
         insuranceClaimsDescription: insuranceClaimsDescription.trim() || property.insuranceClaimsDescription || null,
         insuranceClaimsReportUrl: insuranceClaimsReportUrl ?? property.insuranceClaimsReportUrl ?? null,
-        thirdPartyReviewConfirmed: thirdPartyReviewConfirmed || property.thirdPartyReviewConfirmed || null,
-        thirdPartyReviewVendorId: thirdPartyReviewVendorId || property.thirdPartyReviewVendorId || null,
       };
       Object.keys(updates).forEach((key) => {
         if (updates[key] === undefined) delete updates[key];
@@ -932,27 +914,10 @@ const GetVerified = () => {
 
               {isPremiumTier && (
                 <>
-                  <h2>3rd Party Value Review</h2>
-                  <p className="form-note">Confirm a certified vendor reviewed the value, or upload an appraisal report.</p>
+                  <h2>Valuation Documentation</h2>
+                  <p className="form-note">Upload an appraisal or comparable sales report to reach Elite tier.</p>
                   <div className="form-group">
-                    <label className="toggle-label">
-                      <input type="checkbox" checked={thirdPartyReviewConfirmed} onChange={(e) => setThirdPartyReviewConfirmed(e.target.checked)} />
-                      <span>Certified vendor reviewed the property value</span>
-                    </label>
-                  </div>
-                  {thirdPartyReviewConfirmed && (
-                    <div className="form-group">
-                      <label>Link the vendor *</label>
-                      <select value={thirdPartyReviewVendorId} onChange={(e) => setThirdPartyReviewVendorId(e.target.value)}>
-                        <option value="">Select vendor</option>
-                        {vendors.map((v) => (
-                          <option key={v.id} value={v.id}>{v.vendorName || 'Vendor'}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-                  <div className="form-group">
-                    <label>Appraisal report (optional alternative)</label>
+                    <label>Appraisal / valuation report</label>
                     <DragDropFileInput accept=".pdf,.jpg,.jpeg,.png" onChange={(f) => setValuationDocFile(f || null)} placeholder="Drop appraisal report here or click to browse" />
                     {property?.valuationDocUrl && (
                       <a className="doc-filename" href={property.valuationDocUrl} target="_blank" rel="noreferrer">✓ Appraisal on file</a>
@@ -999,8 +964,8 @@ const GetVerified = () => {
                   <div className="form-group">
                     <label>Video *</label>
                     <DragDropFileInput multiple accept="video/*" onChange={(files) => setVideoFiles(Array.isArray(files) ? files : files ? [files] : [])} placeholder="Drop videos here or click to browse" />
-                    {(property?.videoFiles?.length || property?.videos?.length) && (
-                      <p className="doc-filename">✓ {((property?.videoFiles?.length ?? 0) + (property?.videos?.length ?? 0))} video(s) on file</p>
+                    {property?.videoFiles?.length > 0 && (
+                      <p className="doc-filename">✓ {property.videoFiles.length} video(s) on file</p>
                     )}
                     {videoFiles.length > 0 && <p className="doc-filename">✓ {videoFiles.length} video(s) selected</p>}
                     {typeof videoUploadProgress === 'number' && (
@@ -1036,8 +1001,8 @@ const GetVerified = () => {
                     <p className={property?.floorPlanUrl ? 'on-file' : 'form-hint form-hint--warn'}>
                       {property?.floorPlanUrl ? '✓ Floor plan on file' : 'Floor plan required'}
                     </p>
-                    <p className={(property?.videoTourUrl || (Array.isArray(property?.videos) && property.videos.length > 0)) ? 'on-file' : 'form-hint form-hint--warn'}>
-                      {(property?.videoTourUrl || (Array.isArray(property?.videos) && property.videos.length > 0)) ? '✓ Video on file' : 'Video required'}
+                    <p className={(Array.isArray(property?.videoFiles) && property.videoFiles.length > 0) ? 'on-file' : 'form-hint form-hint--warn'}>
+                      {(Array.isArray(property?.videoFiles) && property.videoFiles.length > 0) ? '✓ Video on file' : 'Video required'}
                     </p>
                     <p className={property?.matterportTourUrl ? 'on-file' : 'form-hint form-hint--warn'}>
                       {property?.matterportTourUrl ? '✓ Matterport linked' : 'Matterport URL required'}
